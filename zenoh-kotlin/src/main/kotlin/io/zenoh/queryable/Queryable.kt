@@ -81,6 +81,11 @@ class Queryable<R> internal constructor(
         undeclare()
     }
 
+    @Suppress("removal")
+    protected fun finalize() {
+        jniQueryable?.close()
+    }
+
     companion object {
 
         /**

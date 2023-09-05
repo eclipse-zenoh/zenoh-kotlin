@@ -121,8 +121,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
             // Do nothing, the pointer will be freed.
         }
         Err(arc_session) => {
-            // This shouldn't happen since from the Kotlin codebase all the subscriptions to the
-            // session, keeping a reference to it, are collected before closing it.
             let ref_count = Arc::strong_count(&arc_session);
             log::error!("Unable to close the session.");
             _ = Error::Session(format!(
@@ -133,7 +131,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
             ))
             .throw_on_jvm(&mut env)
             .map_err(|err| log::error!("Unable to throw exception on session failure: {}", err));
-            std::mem::forget(arc_session);
         }
     };
 }

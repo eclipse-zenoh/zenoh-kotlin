@@ -61,6 +61,11 @@ class Query internal constructor(
         }
     }
 
+    @Suppress("removal")
+    protected fun finalize() {
+        close()
+    }
+
     /**
      * Perform a reply operation to the remote [Query].
      *

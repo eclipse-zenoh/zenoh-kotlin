@@ -140,7 +140,7 @@ class KeyExpr internal constructor(internal var jniKeyExpr: JNIKeyExpr? = null):
 
     @Suppress("removal")
     protected fun finalize() {
-        close()
+        jniKeyExpr?.close()
     }
 
     override fun equals(other: Any?): Boolean {

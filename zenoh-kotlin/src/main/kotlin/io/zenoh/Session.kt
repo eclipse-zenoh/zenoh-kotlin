@@ -29,25 +29,18 @@ import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
-import java.lang.ref.Cleaner
-import java.lang.ref.Cleaner.Cleanable
 import java.time.Duration
 
 /**
  * A Zenoh Session, the core interaction point with a Zenoh network.
  *
  * A session is typically associated with declarations such as [Publisher]s, [Subscriber]s, or [Queryable]s, which are
- * declared using [declarePublisher], [declareSubscriber], and [declareQueryable], respectively. The session keeps track
- * of all these declarations, and their behavior is bound to the lifespan of the session from which they were declared.
+ * declared using [declarePublisher], [declareSubscriber], and [declareQueryable], respectively.
  * Other operations such as simple Put, Get or Delete can be performed from a session using [put], [get] and [delete].
  * Finally, it's possible to declare key expressions ([KeyExpr]) as well.
  *
  * Sessions are open upon creation and can be closed manually by calling [close]. Alternatively, the session will be
  * automatically closed when used with Java's try-with-resources statement or its Kotlin counterpart, [use].
- *
- * When a session is closed, all the declarations are automatically undeclared, and an attempt is made to garbage collect
- * them. If a dangling reference to a declaration is retained, subsequent operations performed after the session is closed
- * will be discarded.
  *
  * For optimal performance and adherence to good practices, it is recommended to have only one running session, which
  * is sufficient for most use cases. You should _never_ construct one session per publisher/subscriber, as this will
@@ -57,11 +50,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     private var jniSession: JNISession? = JNISession()
 
-    private var declarations: ArrayList<Cleanable> = arrayListOf()
-
     companion object {
-        /** Cleaner to collect [SessionDeclaration]s after closing the session. */
-        private val cleaner = Cleaner.create()
 
         private val sessionClosedException = SessionException("Session is closed.")
 
@@ -72,7 +61,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
          */
         fun open(): Result<Session> {
             val session = Session(Config.default())
-            cleaner.register(session) { session.close() }
             return session.launch()
         }
 
@@ -84,7 +72,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
          */
         fun open(config: Config): Result<Session> {
             val session = Session(config)
-            cleaner.register(session) { session.close() }
             return session.launch()
         }
     }
@@ -93,13 +80,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         Zenoh.load()
     }
 
-    /** Close the session and clean all the associated declarations. */
+    /** Close the session. */
     override fun close() {
-        declarations.forEach() { declaration -> declaration.clean() }
-        synchronized(this) {
-            jniSession?.close()
-            jniSession = null
-        }
+        jniSession?.close()
+        jniSession = null
+    }
+
+    @Suppress("removal")
+    protected fun finalize() {
+        jniSession?.close()
     }
 
     /**
@@ -367,7 +356,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     internal fun resolvePublisher(builder: Publisher.Builder): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(builder).onSuccess { publisher -> declarations.add(cleaner.register(publisher) { publisher.undeclare() }) }
+            declarePublisher(builder)
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -378,9 +367,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         reliability: Reliability
     ): Result<Subscriber<R>> {
         return jniSession?.run {
-            declareSubscriber(keyExpr, callback, receiver, reliability).onSuccess { subscriber ->
-                declarations.add(cleaner.register(subscriber) { subscriber.undeclare() })
-            }
+            declareSubscriber(keyExpr, callback, receiver, reliability)
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -391,11 +378,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         complete: Boolean
     ): Result<Queryable<R>> {
         return jniSession?.run {
-            declareQueryable(keyExpr, callback, receiver, complete).onSuccess { queryable ->
-                declarations.add(cleaner.register(
-                    queryable
-                ) { queryable.undeclare() })
-            }
+            declareQueryable(keyExpr, callback, receiver, complete)
         } ?: Result.failure(sessionClosedException)
     }
 
