@@ -16,6 +16,7 @@ package io.zenoh
 
 import io.zenoh.exceptions.SessionException
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.sample.Sample
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFailsWith
@@ -64,11 +65,24 @@ class SessionTest {
     }
 
     @Test
-    fun sessionClose_declarationsAreDroppedAfterClosingSessionTest() {
+    fun sessionClose_declarationsAreAliveAfterClosingSessionTest() {
         val session = Session.open().getOrThrow()
+        var receivedSample: Sample? = null
+
         val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res().getOrThrow()
         session.close()
-        assertFalse(publisher.isValid())
+
+        assertTrue(publisher.isValid())
+        assertTrue(subscriber.isValid())
+
+        publisher.put("Test").res()
+        Thread.sleep(1000)
+        assertNotNull(receivedSample)
+        assertEquals("Test", receivedSample!!.value.payload.decodeToString())
+
+        subscriber.close()
+        publisher.close()
     }
 
     @Test

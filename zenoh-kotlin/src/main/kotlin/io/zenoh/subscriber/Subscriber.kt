@@ -81,6 +81,11 @@ class Subscriber<R> internal constructor(
         undeclare()
     }
 
+    @Suppress("removal")
+    protected fun finalize() {
+        jniSubscriber?.close()
+    }
+
     companion object {
 
         /**

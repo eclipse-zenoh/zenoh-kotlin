@@ -148,6 +148,11 @@ class Publisher internal constructor(
         jniPublisher = null
     }
 
+    @Suppress("removal")
+    protected fun finalize() {
+        jniPublisher?.close()
+    }
+
     /**
      * Publisher Builder.
      *
