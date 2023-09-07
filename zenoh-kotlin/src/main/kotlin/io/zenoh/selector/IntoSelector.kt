@@ -12,14 +12,18 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.keyexpr
+package io.zenoh.selector
 
 import io.zenoh.exceptions.KeyExprException
+import io.zenoh.keyexpr.KeyExpr
 
-fun String.intoKeyExpr(): Result<KeyExpr> = runCatching {
+fun String.intoSelector(): Result<Selector> = runCatching {
     if (this.isEmpty()) {
         return Result.failure(KeyExprException("Attempting to create a KeyExpr from an empty string."))
     }
-    return KeyExpr.autocanonize(this)
+    val result = this.split('?', limit = 2)
+    val keyExpr = KeyExpr.autocanonize(result[0]).getOrThrow()
+    val params = if (result.size == 2) result[1] else ""
+    return Result.success(Selector(keyExpr, params))
 }
 

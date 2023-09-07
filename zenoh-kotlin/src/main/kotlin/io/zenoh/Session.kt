@@ -25,6 +25,7 @@ import io.zenoh.query.*
 import io.zenoh.queryable.Query
 import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
+import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import io.zenoh.value.Value
@@ -273,10 +274,38 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     }
      * }
      * ```
+     * @param selector The [KeyExpr] to be used for the get operation.
+     * @return a resolvable [Get.Builder] with a [Channel] receiver.
+     */
+    fun get(selector: Selector): Get.Builder<Channel<Reply>> = Get.newBuilder(this, selector)
+
+    /**
+     * Declare a [Get] with a [Channel] receiver.
+     *
+     * ```kotlin
+     * val timeout = Duration.ofMillis(10000)
+     * println("Opening Session")
+     * Session.open().onSuccess { session -> session.use {
+     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
+     *         session.get(keyExpr)
+     *             .consolidation(ConsolidationMode.NONE)
+     *             .target(QueryTarget.BEST_MATCHING)
+     *             .withValue("Get value example")
+     *             .with { reply -> println("Received reply $reply") }
+     *             .timeout(timeout)
+     *             .res()
+     *             .onSuccess {
+     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
+     *                 Thread.sleep(timeout.toMillis())
+     *             }
+     *         }
+     *     }
+     * }
+     * ```
      * @param keyExpr The [KeyExpr] to be used for the get operation.
      * @return a resolvable [Get.Builder] with a [Channel] receiver.
      */
-    fun get(keyExpr: KeyExpr): Get.Builder<Channel<Reply>> = Get.newBuilder(this, keyExpr)
+    fun get(keyExpr: KeyExpr): Get.Builder<Channel<Reply>> = Get.newBuilder(this, Selector(keyExpr))
 
     /**
      * Declare a [Put] with the provided value on the specified key expression.
@@ -383,7 +412,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     internal fun <R> resolveGet(
-        keyExpr: KeyExpr,
+        selector: Selector,
         callback: Callback<Reply>,
         receiver: R?,
         timeout: Duration,
@@ -392,7 +421,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         value: Value?
     ): Result<R?> {
         return jniSession?.run {
-            performGet(keyExpr, callback, receiver, timeout, target, consolidation, value)
+            performGet(selector, callback, receiver, timeout, target, consolidation, value)
         } ?: Result.failure(sessionClosedException)
     }
 
