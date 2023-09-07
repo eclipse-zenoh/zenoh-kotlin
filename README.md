@@ -118,10 +118,7 @@ aimed to make the design as stable as possible from the very beginning, so chang
 
 ### Missing features
 
-There are some missing features we will implement soon. The most notorious are:
-
-* Missing pull subscriber.
-* Specifying parameters to a query through a selector.
+There are some missing features we will implement soon. The most notorious is the Pull Subscriber feature.
 
 ### Performance
 
