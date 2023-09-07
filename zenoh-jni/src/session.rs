@@ -435,8 +435,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr`: The key expression for the `get` operation as a `JString`.
-/// - `ptr`: A raw pointer to the Zenoh session.
+/// - `key_expr`: Pointer to the key expression for the `get`.
+/// - `selector_params`: Parameters of the selector.
+/// - `session_ptr`: A raw pointer to the Zenoh session.
 /// - `callback`: An instance of the Java/Kotlin `JNIGetCallback` function interface to be called upon receiving a reply.
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
@@ -458,6 +459,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr: *const KeyExpr<'static>,
+    selector_params: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
     timeout_ms: jlong,
@@ -469,6 +471,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     match on_get_query(
         &mut env,
         &key_expr,
+        selector_params,
         &session,
         callback,
         timeout_ms,
@@ -498,6 +501,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the operation.
+/// - `selector_params`: Parameters of the selector.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session].
 /// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
 /// - `timeout_ms`: The timeout in milliseconds.
@@ -522,6 +526,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
+    selector_params: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
     timeout_ms: jlong,
@@ -535,6 +540,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
     match on_get_query(
         &mut env,
         &key_expr,
+        selector_params,
         &session,
         callback,
         timeout_ms,
@@ -560,7 +566,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
 ///
 /// Parameters:
 /// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr`: The key expression for the `get` operation as a `JString`.
+/// - `key_expr`: The key expression for the `get` operation.
 /// - `session`: An `Arc<Session>` representing the Zenoh session.
 /// - `callback`: A Java/Kotlin `JNIGetCallback` interface callback to be called upon receiving a reply.
 /// - `timeout_ms`: The timeout in milliseconds.
@@ -576,6 +582,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
 fn on_get_query(
     env: &mut JNIEnv,
     key_expr: &Arc<KeyExpr<'static>>,
+    selector_params: JString,
     session: &Arc<Session>,
     callback: JObject,
     timeout_ms: jlong,
@@ -587,11 +594,13 @@ fn on_get_query(
     let callback_global_ref = get_callback_global_ref(env, callback)?;
     let query_target = decode_query_target(target)?;
     let consolidation = decode_consolidation(consolidation)?;
+    let selector_params = decode_string(env, selector_params)?;
     let timeout = Duration::from_millis(timeout_ms as u64);
 
     let key_expr_clone = key_expr.deref().clone();
+    let selector = Selector::from(key_expr_clone).with_parameters(&selector_params);
     let mut get_builder = session
-        .get(key_expr_clone)
+        .get(selector)
         .callback(move |reply| {
             log::debug!("Receiving reply through JNI: {:?}", reply);
             let env = match java_vm.attach_current_thread_as_daemon() {

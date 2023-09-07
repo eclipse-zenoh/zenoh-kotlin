@@ -14,23 +14,18 @@
 
 package io.zenoh
 
-import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.query.ConsolidationMode
-import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
+import io.zenoh.selector.intoSelector
 import java.time.Duration
 
 fun main() {
     val timeout = Duration.ofMillis(1000)
     Session.open().onSuccess { session ->
         session.use {
-            val keyExpressionResult = "demo/example/**".intoKeyExpr()
-            keyExpressionResult.onSuccess { keyExpr ->
-                keyExpr.use {
-                    val request = session.get(keyExpr)
-                        .consolidation(ConsolidationMode.NONE)
-                        .target(QueryTarget.BEST_MATCHING)
-                        .withValue("Get value example")
+            val selectorResult = "demo/example/**".intoSelector()
+            selectorResult.onSuccess { selector ->
+                selector.use {
+                    val request = session.get(selector)
                         .with { reply ->
                             if (reply is Reply.Success) {
                                 println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")

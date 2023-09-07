@@ -19,6 +19,7 @@ import io.zenoh.Session
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
@@ -30,8 +31,8 @@ import java.time.Duration
  * ```
  * println("Opening Session")
  * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
- *         session.get(keyExpr)
+ *     "demo/kotlin/example".intoSelector().onSuccess { selector ->
+ *         session.get(selector)
  *             .consolidation(ConsolidationMode.NONE)
  *             .target(QueryTarget.BEST_MATCHING)
  *             .withValue("Get value example")
@@ -45,24 +46,19 @@ import java.time.Duration
  * ```
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, R will be [Unit].
- * @property keyExpr The [KeyExpr] upon which the get operation will be performed.
- * @property receiver The receiver, of the handler, if no handler is specified then the receiver is set as null and
- * [R] is set as [Unit].
- * @constructor Internal constructor. A Get operation must be created through the [Builder] obtained after calling
- * [Session.get] or alternatively through [newBuilder].
  */
-class Get<R> internal constructor(val keyExpr: KeyExpr, val receiver: R?) {
+class Get<R> private constructor() {
 
     companion object {
         /**
          * Creates a bew [Builder] associated to the specified [session] and [keyExpr].
          *
          * @param session The [Session] from which the query will be triggered.
-         * @param keyExpr The [KeyExpr] upon which the query will be performed.
+         * @param selector The [Selector] with which the query will be performed.
          * @return A [Builder] with a default [ChannelHandler] to handle any incoming [Reply].
          */
-        fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<Channel<Reply>> {
-            return Builder(session, keyExpr, handler = ChannelHandler(Channel()))
+        fun newBuilder(session: Session, selector: Selector): Builder<Channel<Reply>> {
+            return Builder(session, selector, handler = ChannelHandler(Channel()))
         }
     }
 
@@ -75,28 +71,28 @@ class Get<R> internal constructor(val keyExpr: KeyExpr, val receiver: R?) {
      *
      * @param R The receiver type of the [Handler] implementation, defaults to [Unit] when no handler is specified.
      * @property session The [Session] from which the query will be performed.
-     * @property keyExpr The [KeyExpr] upon which the get query will be performed.
+     * @property selector The [Selector] with which the get query will be performed.
      * @constructor Creates a Builder. This constructor is internal and should not be called directly. Instead, this
      * builder should be obtained through the [Session] after calling [Session.get].
      */
     class Builder<R> internal constructor(
         private val session: Session,
-        private val keyExpr: KeyExpr,
+        private val selector: Selector,
         private var callback: Callback<Reply>? = null,
         private var handler: Handler<Reply, R>? = null,
     ) {
 
         private var timeout = Duration.ofMillis(10000)
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
-        private var consolidation: ConsolidationMode = ConsolidationMode.NONE // None
+        private var consolidation: ConsolidationMode = ConsolidationMode.NONE
         private var value: Value? = null
 
-        private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.keyExpr) {
+        private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
             this.handler = handler
             copyParams(other)
         }
 
-        private constructor(other: Builder<*>, callback: Callback<Reply>?) : this(other.session, other.keyExpr) {
+        private constructor(other: Builder<*>, callback: Callback<Reply>?) : this(other.session, other.selector) {
             this.callback = callback
             copyParams(other)
         }
@@ -160,7 +156,7 @@ class Get<R> internal constructor(val keyExpr: KeyExpr, val receiver: R?) {
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
             return session.run {
                 resolveGet(
-                    keyExpr,
+                    selector,
                     resolvedCallback,
                     handler?.receiver(),
                     timeout,

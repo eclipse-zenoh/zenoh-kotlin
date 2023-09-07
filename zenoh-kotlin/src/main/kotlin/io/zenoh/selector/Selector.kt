@@ -24,18 +24,17 @@ import io.zenoh.keyexpr.KeyExpr
  *  * filtering by value,
  *  * filtering by metadata, such as the timestamp of a value
  *
- * # Important
- *
- * **This class is still a work in progress. Functionality to decode the parameters is not yet implemented, nor we
- * can use the selector for queries. However, at this stage, within the context of a [io.zenoh.queryable.Query] being
- * received, if parameters are received from a remote query, the [parameters] property will be properly filled.**
- *
  * @property keyExpr The [KeyExpr] of the selector.
  * @property parameters The parameters of the selector.
  */
-class Selector(val keyExpr: KeyExpr, val parameters: String) {
+class Selector(val keyExpr: KeyExpr, val parameters: String = ""): AutoCloseable {
 
     override fun toString(): String {
         return if (parameters.isEmpty()) "$keyExpr" else "$keyExpr?$parameters"
+    }
+
+    /** Closes the selector's [KeyExpr]. */
+    override fun close() {
+        keyExpr.close()
     }
 }

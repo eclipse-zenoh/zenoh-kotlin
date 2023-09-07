@@ -21,6 +21,7 @@ import io.zenoh.prelude.SampleKind
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
+import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -72,6 +73,26 @@ class GetTest {
         queryable.undeclare()
         sessionA.close()
         sessionB.close()
+    }
+
+    @Test
+    fun getWithSelectorParamsTest() {
+        val session = Session.open().getOrThrow()
+
+        var receivedParams = ""
+        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
+        val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
+            receivedParams = query.parameters
+        }}.res().getOrThrow()
+
+        val params = "arg1=val1,arg2=val2"
+        val selector = Selector(keyExpr, params)
+        session.get(selector).res()
+
+        queryable.close()
+        session.close()
+
+        assertEquals(params, receivedParams)
     }
 
     @Test

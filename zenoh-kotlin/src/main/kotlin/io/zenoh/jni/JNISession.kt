@@ -97,7 +97,7 @@ internal class JNISession() {
     }
 
     fun <R> performGet(
-        keyExpr: KeyExpr,
+        selector: Selector,
         callback: Callback<Reply>,
         receiver: R?,
         timeout: Duration,
@@ -118,7 +118,8 @@ internal class JNISession() {
         }
         if (value == null) {
             getViaJNI(
-                keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.parameters,
                 sessionPtr.get(),
                 getCallback,
                 timeout.toMillis(),
@@ -127,7 +128,8 @@ internal class JNISession() {
             )
         } else {
             getWithValueViaJNI(
-                keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.parameters,
                 sessionPtr.get(),
                 getCallback,
                 timeout.toMillis(),
@@ -195,6 +197,7 @@ internal class JNISession() {
     @Throws(Exception::class)
     private external fun getViaJNI(
         keyExpr: Long,
+        selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
         timeoutMs: Long,
@@ -205,6 +208,7 @@ internal class JNISession() {
     @Throws(Exception::class)
     private external fun getWithValueViaJNI(
         keyExpr: Long,
+        selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
         timeoutMs: Long,
