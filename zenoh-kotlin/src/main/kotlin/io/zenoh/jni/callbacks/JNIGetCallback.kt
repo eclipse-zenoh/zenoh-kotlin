@@ -14,7 +14,7 @@
 
 package io.zenoh.jni.callbacks
 
-fun interface JNIGetCallback {
+internal fun interface JNIGetCallback {
 
     fun run(
         replierId: String,
