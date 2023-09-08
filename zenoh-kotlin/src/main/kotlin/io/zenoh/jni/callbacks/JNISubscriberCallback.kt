@@ -14,7 +14,7 @@
 
 package io.zenoh.jni.callbacks
 
-fun interface JNISubscriberCallback {
+internal fun interface JNISubscriberCallback {
     fun run(
         keyExpr: Long,
         payload: ByteArray,
