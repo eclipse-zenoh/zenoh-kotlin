@@ -1,22 +1,17 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: CI
+name: Release
 
 on:
-  push:
-    branches: [ "**" ]
-  pull_request:
-    branches: [ "**" ]
+  release:
+    types: [published]
   schedule:
-    - cron: "0 6 * * 1-5"
+    - cron: "0 1 * * 1-5"
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci:
+  release:
     name: Build on ${{ matrix.os }}
     runs-on: [ "${{ matrix.os }}" ]
     strategy:
@@ -31,7 +26,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
-      
+
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -56,6 +51,27 @@ jobs:
       - name: Cargo Test
         working-directory: zenoh-jni
         run: cargo test --verbose -- --nocapture
-      
+
       - name: Gradle Build
         run: gradle build --scan
+
+  build_doc_and_deploy:
+    name: Build and Deploy Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build doc
+        run: |
+          cd zenoh-kotlin
+          gradle dokkaHtml
+
+      - name: Deploy doc
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./zenoh-kotlin/build/dokka/html
+
