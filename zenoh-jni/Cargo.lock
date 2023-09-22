@@ -3225,7 +3225,7 @@ dependencies = [
 
 [[package]]
 name = "zenoh_jni"
-version = "0.10.0-dev"
+version = "0.10.0-rc"
 dependencies = [
  "android-logd-logger",
  "async-std",
