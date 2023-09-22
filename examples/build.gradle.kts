@@ -15,6 +15,14 @@
 group = "io.zenoh"
 version = "0.10.0-rc"
 
+plugins {
+    kotlin("jvm") version "1.9.0"
+}
+
+kotlin {
+    jvmToolchain(11)
+}
+
 dependencies {
     implementation(project(":zenoh-kotlin"))
     implementation("commons-net:commons-net:3.9.0")
