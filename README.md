@@ -1,6 +1,7 @@
 <img src="https://raw.githubusercontent.com/eclipse-zenoh/zenoh/master/zenoh-dragon.png" height="150">
 
 [![CI](https://github.com/eclipse-zenoh/zenoh-kotlin/workflows/CI/badge.svg)](https://github.com/eclipse-zenoh/zenoh-kotlin/actions?query=workflow%3A%22CI%22)
+[![Release status](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml/badge.svg)](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml)
 [![Discussion](https://img.shields.io/badge/discussion-on%20github-blue)](https://github.com/eclipse-zenoh/roadmap/discussions)
 [![Discord](https://img.shields.io/badge/chat-on%20discord-blue)](https://discord.gg/2GJ958VuHs)
 [![License](https://img.shields.io/badge/License-EPL%202.0-blue)](https://choosealicense.com/licenses/epl-2.0/)
@@ -23,6 +24,12 @@ Check the website [zenoh.io](http://zenoh.io) and the [roadmap](https://github.c
 This repository provides a Kotlin binding based on the main [Zenoh implementation written in Rust](https://github.com/eclipse-zenoh/zenoh).
 
 The code relies on native code written in Rust and communicates with it via the Java Native Interface (JNI).
+
+## Documentation
+
+The documentation of the API is published at https://eclipse-zenoh.github.io/zenoh-kotlin/index.html. 
+
+Alternatively, you can build it locally as [explained below](#building-the-documentation).
 
 ----
 
@@ -87,6 +94,16 @@ Then you can build by simply:
 
 
 That was it! We now can build our first Kotlin app using Zenoh!
+
+### Building the documentation
+
+Because it's a Kotlin project, we use [Dokka](https://kotlinlang.org/docs/dokka-introduction.html) to generate the documentation.
+
+In order to build it, run:
+```bash
+gradle zenoh-kotlin:dokkaHtml
+```
+
 
 ---
 
