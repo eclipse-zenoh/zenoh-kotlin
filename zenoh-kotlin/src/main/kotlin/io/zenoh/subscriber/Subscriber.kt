@@ -37,7 +37,6 @@ import kotlinx.coroutines.channels.Channel
  *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
  *             session.declareSubscriber(keyExpr)
  *                 .bestEffort()
- *                 .reliability(Reliability.RELIABLE)
  *                 .res()
  *                 .onSuccess { subscriber ->
  *                     subscriber.use {

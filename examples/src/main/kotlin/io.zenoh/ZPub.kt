@@ -15,34 +15,30 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
 
 fun main() {
     println("Opening session...")
-    Session.open().onSuccess {
-        it.use { session ->
-            val keyExpressionResult = "demo/example/zenoh-kotlin-pub".intoKeyExpr()
-            keyExpressionResult.onSuccess { keyExpr ->
+    Session.open().onSuccess { session ->
+        session.use {
+            "demo/example/zenoh-kotlin-pub".intoKeyExpr().onSuccess { keyExpr ->
                 keyExpr.use {
                     println("Declaring publisher on '$keyExpr'...")
-                    session.declarePublisher(keyExpr).priority(Priority.REALTIME)
-                        .congestionControl(CongestionControl.DROP).res().onSuccess { pub ->
-                            pub.use {
-                                var idx = 0
-                                while (true) {
-                                    Thread.sleep(1000)
-                                    val payload = "Pub from Kotlin!"
-                                    println(
-                                        "Putting Data ('$keyExpr': '[${
-                                            idx.toString().padStart(4, ' ')
-                                        }] $payload')..."
-                                    )
-                                    pub.put(payload).res()
-                                    idx++
-                                }
+                    session.declarePublisher(keyExpr).res().onSuccess { pub ->
+                        pub.use {
+                            var idx = 0
+                            while (true) {
+                                Thread.sleep(1000)
+                                val payload = "Pub from Kotlin!"
+                                println(
+                                    "Putting Data ('$keyExpr': '[${
+                                        idx.toString().padStart(4, ' ')
+                                    }] $payload')..."
+                                )
+                                pub.put(payload).res()
+                                idx++
                             }
                         }
+                    }
                 }
             }
         }

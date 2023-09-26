@@ -15,7 +15,6 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.subscriber.Reliability
 import kotlinx.coroutines.runBlocking
 
 fun main() {
@@ -23,12 +22,9 @@ fun main() {
     Session.open().onSuccess { session ->
         session.use {
             "demo/example/**".intoKeyExpr().onSuccess { keyExpr ->
-                println("Declaring Subscriber on '$keyExpr'...")
-                session.declareSubscriber(keyExpr)
-                    .bestEffort()
-                    .reliability(Reliability.RELIABLE)
-                    .res()
-                    .onSuccess { subscriber ->
+                keyExpr.use {
+                    println("Declaring Subscriber on '$keyExpr'...")
+                    session.declareSubscriber(keyExpr).bestEffort().res().onSuccess { subscriber ->
                         subscriber.use {
                             runBlocking {
                                 val receiver = subscriber.receiver!!
@@ -38,9 +34,11 @@ fun main() {
                                     println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}')")
                                 }
                             }
+                        }
                     }
-               }
+                }
             }
         }
     }
 }
+

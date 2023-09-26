@@ -14,8 +14,11 @@
 
 package io.zenoh
 
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.queryable.Query
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -23,29 +26,34 @@ fun main() {
     Session.open().onSuccess { session ->
         session.use {
             "demo/example/zenoh-kotlin-queryable".intoKeyExpr().onSuccess { keyExpr ->
-                println("Declaring Queryable")
-                session.declareQueryable(keyExpr).res().onSuccess { queryable ->
-                    queryable.use {
-                        it.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
-                            runBlocking {
-                                val iterator = receiverChannel.iterator()
-                                while (iterator.hasNext()) {
-                                    iterator.next().use { query ->
-                                        val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-                                        println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                                        query.reply(keyExpr)
-                                            .success("Queryable from Kotlin!")
-                                            .withKind(SampleKind.PUT)
-                                            .withTimeStamp(TimeStamp.getCurrentTime())
-                                            .res()
-                                            .onFailure { println(">> [Queryable ] Error sending reply: $it") }
-                                    }
+                keyExpr.use {
+                    println("Declaring Queryable")
+                    session.declareQueryable(keyExpr).res().onSuccess { queryable ->
+                        queryable.use {
+                            queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
+                                runBlocking {
+                                    handleRequests(receiverChannel, keyExpr)
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+private suspend fun handleRequests(
+    receiverChannel: Channel<Query>, keyExpr: KeyExpr
+) {
+    val iterator = receiverChannel.iterator()
+    while (iterator.hasNext()) {
+        iterator.next().use { query ->
+            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+            query.reply(keyExpr).success("Queryable from Kotlin!").withKind(SampleKind.PUT)
+                .withTimeStamp(TimeStamp.getCurrentTime()).res()
+                .onFailure { println(">> [Queryable ] Error sending reply: $it") }
         }
     }
 }
