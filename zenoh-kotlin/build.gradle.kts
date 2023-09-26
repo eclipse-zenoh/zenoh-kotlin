@@ -1,6 +1,3 @@
-import com.android.build.gradle.internal.scope.ProjectInfo.Companion.getBaseName
-import org.gradle.internal.classpath.ClassPath
-
 //
 // Copyright (c) 2023 ZettaScale Technology
 //
@@ -20,10 +17,11 @@ version = "0.10.0-rc"
 
 
 plugins {
+    id("com.android.library")
     kotlin("multiplatform")
     id("com.adarshr.test-logger") version "3.2.0"
-    id("com.android.library")
     id("org.mozilla.rust-android-gradle.rust-android")
+    `maven-publish`
 }
 
 android {
@@ -39,18 +37,29 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
+        }
+    }
     sourceSets {
         getByName("main") {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
         }
     }
-}
 
-cargo {
-    pythonCommand = "python3"
-    module  = "../zenoh-jni"
-    libname = "zenoh-jni"
-    targets = arrayListOf("arm64")
+    cargo {
+        pythonCommand = "python3"
+        module  = "../zenoh-jni"
+        libname = "zenoh-jni"
+        targetIncludes = arrayOf("libzenoh_jni.so")
+        targetDirectory = "../zenoh-jni/target/"
+        profile = "release"
+        targets = arrayListOf("arm", "arm64", "x86", "x86_64")
+    }
 }
 
 kotlin {
@@ -65,7 +74,10 @@ kotlin {
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
-    androidTarget()
+
+    androidTarget {
+        publishLibraryVariants("release")
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -85,6 +97,10 @@ kotlin {
     }
 }
 
-tasks.withType<com.android.build.gradle.tasks.PackageApplication> {
-    dependsOn("cargoBuild")
+tasks.whenObjectAdded {
+    if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
+        this.dependsOn("cargoBuild")
+        // fix mergeDebugJniLibFolders  UP-TO-DATE
+        this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
+    }
 }
