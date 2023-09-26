@@ -15,7 +15,6 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.subscriber.Reliability
 
 const val NANOS_TO_SEC = 1_000_000_000L
 var n = 50000L
@@ -53,21 +52,19 @@ fun report() {
 }
 
 fun main() {
-    val keyExpr = "test/thr".intoKeyExpr().getOrThrow()
-    println("Opening Session")
-    Session.open().onSuccess { session ->
-        session.use {
-            session.declareSubscriber(keyExpr)
-                .reliability(Reliability.RELIABLE)
-                .with {
-                    listener()
-                }
-                .res()
-                .onSuccess {
-                    while (readlnOrNull() != "q") {
-                        // Do nothing
+    "test/thr".intoKeyExpr().onSuccess {
+        it.use { keyExpr ->
+            println("Opening Session")
+            Session.open().onSuccess { it.use {
+                session -> session.declareSubscriber(keyExpr)
+                    .reliable()
+                    .with { listener() }
+                    .res()
+                    .onSuccess {
+                        while (readlnOrNull() != "q") { /* Do nothing */ }
                     }
                 }
+            }
         }
     }
     report()

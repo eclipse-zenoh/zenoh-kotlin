@@ -21,8 +21,10 @@ fun main() {
     Session.open().onSuccess { session ->
         session.use {
             "demo/example/zenoh-kotlin-put".intoKeyExpr().onSuccess { keyExpr ->
-                println("Deleting resources matching '$keyExpr'...")
-                session.delete(keyExpr).res()
+                keyExpr.use {
+                    println("Deleting resources matching '$keyExpr'...")
+                    session.delete(keyExpr).res()
+                }
             }
         }
     }

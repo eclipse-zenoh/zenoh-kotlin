@@ -22,10 +22,9 @@ fun main() {
     val timeout = Duration.ofMillis(1000)
     Session.open().onSuccess { session ->
         session.use {
-            val selectorResult = "demo/example/**".intoSelector()
-            selectorResult.onSuccess { selector ->
+            "demo/example/**".intoSelector().onSuccess { selector ->
                 selector.use {
-                    val request = session.get(selector)
+                    session.get(selector)
                         .with { reply ->
                             if (reply is Reply.Success) {
                                 println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
@@ -36,11 +35,10 @@ fun main() {
                         }
                         .timeout(timeout)
                         .res()
-
-                    request.onSuccess {
-                        // Keep the session alive for the duration of the timeout.
-                        Thread.sleep(timeout.toMillis())
-                    }
+                        .onSuccess {
+                            // Keep the session alive for the duration of the timeout.
+                            Thread.sleep(timeout.toMillis())
+                        }
                 }
             }
         }
