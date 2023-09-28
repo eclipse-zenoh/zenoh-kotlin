@@ -55,16 +55,16 @@ android {
             withJavadocJar()
         }
     }
+}
 
-    cargo {
-        pythonCommand = "python3"
-        module  = "../zenoh-jni"
-        libname = "zenoh-jni"
-        targetIncludes = arrayOf("libzenoh_jni.so")
-        targetDirectory = "../zenoh-jni/target/"
-        profile = "release"
-        targets = arrayListOf("arm", "arm64", "x86", "x86_64")
-    }
+cargo {
+    pythonCommand = "python3"
+    module  = "../zenoh-jni"
+    libname = "zenoh-jni"
+    targetIncludes = arrayOf("libzenoh_jni.so")
+    targetDirectory = "../zenoh-jni/target/"
+    profile = "release"
+    targets = arrayListOf("arm", "arm64", "x86", "x86_64")
 }
 
 kotlin {
@@ -74,7 +74,6 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
             val zenohPaths = "/usr/local/lib:../zenoh-jni/target/release:../zenoh-jni/target/debug"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
@@ -91,21 +90,26 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
-        val jvmTest by getting {
+        val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val androidMain by getting {
-            kotlin.srcDir("src/commonMain/kotlin")
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
+            }
         }
     }
+}
+
+tasks.withType<Test> {
+    systemProperty("java.library.path", "../zenoh-jni/target/debug")
 }
 
 tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
-        // fix mergeDebugJniLibFolders  UP-TO-DATE
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
     }
 }

@@ -27,11 +27,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class GetTest {
 
@@ -60,12 +60,11 @@ class GetTest {
         val sessionB = Session.open().getOrThrow()
 
         sessionB.get(keyExpr).with { reply: Reply ->
-            Assertions.assertTrue(reply is Reply.Success)
-            val receivedSample = (reply as Reply.Success).sample
-            Assertions.assertEquals(value, receivedSample.value)
-            Assertions.assertEquals(kind, receivedSample.kind)
-            Assertions.assertEquals(keyExpr, receivedSample.keyExpr)
-            Assertions.assertEquals(timeStamp, receivedSample.timestamp)
+            assertTrue(reply is Reply.Success)
+            assertEquals(value, reply.sample.value)
+            assertEquals(kind, reply.sample.kind)
+            assertEquals(keyExpr, reply.sample.keyExpr)
+            assertEquals(timeStamp, reply.sample.timestamp)
         }.timeout(Duration.ofMillis(1000)).res()
 
         Thread.sleep(1000)

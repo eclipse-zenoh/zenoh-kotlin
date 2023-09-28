@@ -23,14 +23,14 @@ import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import org.apache.commons.net.ntp.TimeStamp
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class QueryableTest {
 
@@ -55,8 +55,7 @@ class QueryableTest {
 
         sessionB.get(TEST_KEY_EXP).with { reply: Reply ->
             assertTrue(reply is Reply.Success)
-            val receivedSample = (reply as Reply.Success).sample
-            assertEquals(receivedSample, sample)
+            assertEquals(reply.sample, sample)
         }.timeout(Duration.ofMillis(1000)).res()
 
         Thread.sleep(1000)
