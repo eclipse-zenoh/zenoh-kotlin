@@ -15,11 +15,10 @@
 group = "io.zenoh"
 version = "0.10.0-rc"
 
-
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
-    id("com.adarshr.test-logger") version "3.2.0"
+    id("com.adarshr.test-logger")
     id("org.mozilla.rust-android-gradle.rust-android")
     `maven-publish`
 }
@@ -48,6 +47,12 @@ android {
     sourceSets {
         getByName("main") {
             manifest.srcFile("src/androidMain/AndroidManifest.xml")
+        }
+    }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
         }
     }
 

@@ -16,7 +16,7 @@ group = "io.zenoh"
 version = "0.10.0-rc"
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm")
 }
 
 kotlin {

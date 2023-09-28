@@ -18,16 +18,19 @@ buildscript {
         google()
     }
     dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0")
         classpath("org.mozilla.rust-android-gradle:plugin:0.9.3")
         classpath("com.android.tools.build:gradle:7.4.2")
     }
 }
 
 plugins {
-    id("org.jetbrains.dokka") version "1.8.20"
     id("com.android.library") version "7.4.2" apply false
     id("org.jetbrains.kotlin.android") version "1.9.10" apply false
+    id("org.jetbrains.kotlin.multiplatform") version "1.9.0" apply false
     id("org.mozilla.rust-android-gradle.rust-android") version "0.9.3"
+    id("org.jetbrains.dokka") version "1.8.20"
+    id("com.adarshr.test-logger") version "3.2.0"
 }
 
 subprojects {
