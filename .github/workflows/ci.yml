@@ -59,3 +59,6 @@ jobs:
       
       - name: Gradle Build
         run: gradle build --scan
+
+      - name: Gradle Test
+        run: gradle jvmTest

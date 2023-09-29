@@ -55,6 +55,9 @@ jobs:
       - name: Gradle Build
         run: gradle build --scan
 
+      - name: Gradle Test
+        run: gradle jvmTest
+
   build_doc_and_deploy:
     name: Build and Deploy Documentation
     runs-on: ubuntu-latest
@@ -65,9 +68,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build doc
-        run: |
-          cd zenoh-kotlin
-          gradle dokkaHtml
+        run: gradle dokkaHtml
 
       - name: Deploy doc
         uses: peaceiris/actions-gh-pages@v3
