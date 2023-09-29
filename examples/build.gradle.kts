@@ -46,7 +46,8 @@ tasks {
             description = "Run the $example example"
             mainClass.set("io.zenoh.${example}Kt")
             classpath(sourceSets["main"].runtimeClasspath)
-            val zenohPaths = "/usr/local/lib:../zenoh-jni/target/release"
+            dependsOn(":zenoh-kotlin:buildZenohJNIRelease")
+            val zenohPaths = "../zenoh-jni/target/release"
             val defaultJvmArgs = arrayListOf("-Djava.library.path=$zenohPaths")
             val loggerLvl = project.findProperty("zenoh.logger")?.toString()
             if (loggerLvl != null) {
