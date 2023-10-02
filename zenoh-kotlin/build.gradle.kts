@@ -105,6 +105,9 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
+        val jvmMain by getting {
+            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+        }
     }
 }
 
@@ -126,18 +129,14 @@ tasks.whenObjectAdded {
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
     }
 }
-//
-//tasks.register("buildZenohJNIDebug") {
-//    buildZenohJNI(BuildMode.DEBUG)
-//}
-//
-//tasks.register("buildZenohJNIRelease") {
-//    buildZenohJNI(BuildMode.RELEASE)
-//}
+
+tasks.named("compileKotlinJvm") {
+    doFirst {
+        buildZenohJNI(BuildMode.RELEASE)
+    }
+}
 
 tasks.create("cleanZenohJNI") {
-    finalizedBy("clean")
-
     val result = project.exec {
         commandLine("cargo", "clean", "--manifest-path", "../zenoh-jni/Cargo.toml")
     }
@@ -146,16 +145,6 @@ tasks.create("cleanZenohJNI") {
     }
 }
 
-tasks.register("addAndroidRustTargets") {
-    val rustTargets = listOf(
-        "armv7-linux-androideabi",
-        "i686-linux-android",
-        "aarch64-linux-android",
-        "x86_64-linux-android",
-    )
-
-    rustTargets.forEach { target -> addRustTarget(target) }
-}
 //
 //tasks.create("addDesktopRustTargets") {
 //    doLast {

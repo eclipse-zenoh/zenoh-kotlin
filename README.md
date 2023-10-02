@@ -89,9 +89,19 @@ zenoh-kotlin-android-0.10.0-rc.module
 zenoh-kotlin-android-0.10.0-rc.pom
 ```
 
-Now the library is published, let's now see how to import it into an Android project.
+Now the library is published on maven local, let's now see how to import it into an Android project.
 
-In your app's build.gradle.kts filen add the dependency:
+First, we need to indicate we want to look into mavenLocal for our library, so in your top level `build.gradle.kts` you need to specify
+the `mavenLocal` repository:
+```agsl
+repositories {
+    mavenCentral()
+    ...
+    mavenLocal() // We add this line
+}
+```
+
+Then in your app's `build.gradle.kts` filen add the dependency:
 ```
 implementation("io.zenoh:zenoh-kotlin-android:0.10.0-rc")
 ```
