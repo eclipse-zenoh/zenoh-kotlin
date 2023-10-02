@@ -23,6 +23,7 @@ rootProject.name = "zenoh-kotlin"
 
 include(":zenoh-kotlin")
 include(":examples")
+include(":zenoh-jni")
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")

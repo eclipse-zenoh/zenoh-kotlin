@@ -80,7 +80,7 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            val zenohPaths = "/usr/local/lib:../zenoh-jni/target/release:../zenoh-jni/target/debug"
+            val zenohPaths = "../zenoh-jni/target/release:../zenoh-jni/target/debug"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
@@ -88,8 +88,7 @@ kotlin {
         publishLibraryVariants("release")
     }
 
-    @Suppress("Unused")
-    sourceSets {
+    @Suppress("Unused") sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation("commons-net:commons-net:3.9.0")
@@ -110,8 +109,15 @@ kotlin {
 }
 
 tasks.withType<Test> {
-    buildZenohJNI()
-    systemProperty("java.library.path", "../zenoh-jni/target/debug")
+    // The Android tests. They run locally and therefore running this task is
+    // equivalent to running the jvmTest tasks. The difference is that we need
+    // to specify the path to the native library as a system property and not as
+    // a jvmArg.
+
+    doFirst {
+        buildZenohJNI(BuildMode.DEBUG)
+        systemProperty("java.library.path", "../zenoh-jni/target/debug")
+    }
 }
 
 tasks.whenObjectAdded {
@@ -120,39 +126,50 @@ tasks.whenObjectAdded {
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
     }
 }
+//
+//tasks.register("buildZenohJNIDebug") {
+//    buildZenohJNI(BuildMode.DEBUG)
+//}
+//
+//tasks.register("buildZenohJNIRelease") {
+//    buildZenohJNI(BuildMode.RELEASE)
+//}
 
-tasks.register("buildZenohJNIRelease") {
-    doLast {
-        buildZenohJNI(BuildMode.RELEASE)
+tasks.create("cleanZenohJNI") {
+    finalizedBy("clean")
+
+    val result = project.exec {
+        commandLine("cargo", "clean", "--manifest-path", "../zenoh-jni/Cargo.toml")
+    }
+    if (result.exitValue != 0) {
+        throw GradleException("Failed to clean zenoh-jni.")
     }
 }
 
 tasks.register("addAndroidRustTargets") {
-    doLast {
-        val rustTargets = listOf(
-            "armv7-linux-androideabi",
-            "i686-linux-android",
-            "aarch64-linux-android",
-            "x86_64-linux-android",
-        )
+    val rustTargets = listOf(
+        "armv7-linux-androideabi",
+        "i686-linux-android",
+        "aarch64-linux-android",
+        "x86_64-linux-android",
+    )
 
-        rustTargets.forEach { target -> addRustTarget(target) }
-    }
+    rustTargets.forEach { target -> addRustTarget(target) }
 }
-
-tasks.register("addDesktopRustTargets") {
-    doLast {
-        val rustTargets = listOf(
-            "x86_64-unknown-linux-gnu",
-            "aarch64-apple-darwin",
-            "x86_64-apple-darwin",
-            "x86_64-pc-windows-gnu",
-            "x86_64-pc-windows-msvc"
-        )
-
-        rustTargets.forEach { target -> addRustTarget(target) }
-    }
-}
+//
+//tasks.create("addDesktopRustTargets") {
+//    doLast {
+//        val rustTargets = listOf(
+//            "x86_64-unknown-linux-gnu",
+//            "aarch64-apple-darwin",
+//            "x86_64-apple-darwin",
+//            "x86_64-pc-windows-gnu",
+//            "x86_64-pc-windows-msvc"
+//        )
+//
+//        rustTargets.forEach { target -> addRustTarget(target) }
+//    }
+//}
 
 fun addRustTarget(target: String) {
     val result = project.exec {

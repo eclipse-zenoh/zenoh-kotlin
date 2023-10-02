@@ -56,9 +56,6 @@ jobs:
       - name: Cargo Test
         working-directory: zenoh-jni
         run: cargo test --verbose -- --nocapture
-      
-      - name: Gradle Build
-        run: gradle build --scan
 
       - name: Gradle Test
         run: gradle jvmTest
