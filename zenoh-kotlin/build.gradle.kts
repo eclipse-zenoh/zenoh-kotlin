@@ -108,17 +108,18 @@ kotlin {
         val jvmMain by getting {
             resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
+        val jvmTest by getting {
+            resources.srcDir("../zenoh-jni/target/debug").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+        }
     }
 }
 
 tasks.withType<Test> {
-    // The Android tests. They run locally and therefore running this task is
-    // equivalent to running the jvmTest tasks. The difference is that we need
-    // to specify the path to the native library as a system property and not as
-    // a jvmArg.
-
     doFirst {
         buildZenohJNI(BuildMode.DEBUG)
+
+        // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
+        // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
         systemProperty("java.library.path", "../zenoh-jni/target/debug")
     }
 }
@@ -136,49 +137,11 @@ tasks.named("compileKotlinJvm") {
     }
 }
 
-tasks.create("cleanZenohJNI") {
-    val result = project.exec {
-        commandLine("cargo", "clean", "--manifest-path", "../zenoh-jni/Cargo.toml")
-    }
-    if (result.exitValue != 0) {
-        throw GradleException("Failed to clean zenoh-jni.")
-    }
-}
-
-//
-//tasks.create("addDesktopRustTargets") {
-//    doLast {
-//        val rustTargets = listOf(
-//            "x86_64-unknown-linux-gnu",
-//            "aarch64-apple-darwin",
-//            "x86_64-apple-darwin",
-//            "x86_64-pc-windows-gnu",
-//            "x86_64-pc-windows-msvc"
-//        )
-//
-//        rustTargets.forEach { target -> addRustTarget(target) }
-//    }
-//}
-
-fun addRustTarget(target: String) {
-    val result = project.exec {
-        commandLine("rustup", "target", "add", target)
-    }
-
-    if (result.exitValue != 0) {
-        throw GradleException("Failed to add Rust target: $target")
-    }
-}
-
-fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG, target: Target? = null) {
+fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
     val cargoCommand = mutableListOf("cargo", "build")
 
     if (mode == BuildMode.RELEASE) {
         cargoCommand.add("--release")
-    }
-
-    target?.let {
-        cargoCommand.addAll(listOf("--target", it.toString()))
     }
 
     val result = project.exec {
@@ -186,40 +149,7 @@ fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG, target: Target? = null) {
     }
 
     if (result.exitValue != 0) {
-        throw GradleException("Failed to build Zenoh-JNI with Rust target: $target")
-    }
-}
-
-enum class Target {
-    WINDOWS_X86_64_GNU {
-        override fun toString(): String {
-            return "x86_64-pc-windows-gnu"
-        }
-    },
-    WINDOWS_X86_64_MSVC {
-        override fun toString(): String {
-            return "x86_64-pc-windows-msvc"
-        }
-    },
-    LINUX_AARCH64_GNU {
-        override fun toString(): String {
-            return "aarch64-unknown-linux-gnu"
-        }
-    },
-    LINUX_X86_64_GNU {
-        override fun toString(): String {
-            return "x86_64-unknown-linux-gnu"
-        }
-    },
-    APPLE_AARCH64_DARWIN {
-        override fun toString(): String {
-            return "x86_64-apple-darwin"
-        }
-    },
-    APPLE_X86_64_DARWIN {
-        override fun toString(): String {
-            return "aarch64-apple-darwin"
-        }
+        throw GradleException("Failed to build Zenoh-JNI.")
     }
 }
 
@@ -234,40 +164,4 @@ enum class BuildMode {
             return "release"
         }
     }
-}
-
-fun findSystemTarget(): Target {
-    val osName = System.getProperty("os.name").lowercase()
-    val osArch = System.getProperty("os.arch").lowercase()
-
-    val target = when {
-        osName.contains("win") && osArch.contains("64") && osArch.contains("gnu") -> {
-            Target.WINDOWS_X86_64_GNU
-        }
-
-        osName.contains("win") && osArch.contains("64") && osArch.contains("msvc") -> {
-            Target.WINDOWS_X86_64_MSVC
-        }
-
-        osName.contains("linux") && osArch.contains("aarch64") -> {
-            Target.LINUX_AARCH64_GNU
-        }
-
-        osName.contains("linux") && osArch.contains("x86") -> {
-            Target.LINUX_X86_64_GNU
-        }
-
-        osName.contains("mac os x") && osArch.contains("x86") -> {
-            Target.APPLE_X86_64_DARWIN
-        }
-
-        osName.contains("mac os x") && osArch.contains("aarch64") -> {
-            Target.APPLE_AARCH64_DARWIN
-        }
-
-        else -> {
-            throw GradleException("Couldn't find target for $osName $osArch")
-        }
-    }
-    return target
 }

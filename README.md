@@ -117,7 +117,35 @@ And that was it! You can now import the code from the `io.zenoh` package and use
 
 ## JVM
 
+To publish a library for a JVM project into Maven local, run
 
+```bash
+gradle publishJvmPublicationToMavenLocal
+```
+
+This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
+as a resource that will be loaded during runtime. 
+
+:warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
+for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
+This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while 
+for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.  
+
+Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.0-rc`.
+
+Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
+
+```
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+    implementation("io.zenoh:zenoh-kotlin-jvm:0.10.0-rc")
+}
+```
 
 ## Building the documentation
 
@@ -128,6 +156,31 @@ In order to build it, run:
 gradle zenoh-kotlin:dokkaHtml
 ```
 
+## Running the tests
+
+To run the tests, run:
+
+```bash
+gradle jvmTest
+```
+
+This will compile the native library on debug mode (if not already available) and run the tests afterward against the JVM target.
+Running the tests against the Android target (by using `gradle testDebugUnitTest`) is equivalent to running them against the JVM one, since they are common
+tests executed locally as Unit tests.
+
+## Logging
+
+Rust logs are propagated when setting the property `zenoh.logger=debug` (using RUST_LOG=debug will result in nothing)
+
+For instance running the ZPub test as follows:
+
+```bash
+gradle -Pzenoh.logger=debug ZPub
+```
+
+causes the logs to appear in standard output. 
+
+The log levels are the ones from Rust: `trace`, `info`, `debug`, `error` and `warn`. 
 
 ---
 
@@ -143,6 +196,10 @@ For instance in order to run the [ZPub](examples/src/main/kotlin/io.zenoh/ZPub.k
 ```
 
 You can find more info about these examples on the [examples README file](/examples/README.md).
+
+
+
+
 
 ----
 

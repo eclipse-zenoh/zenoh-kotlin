@@ -16,6 +16,8 @@ package io.zenoh
 
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.lang.Exception
 
 /**
  * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
@@ -32,24 +34,26 @@ internal actual class Zenoh private actual constructor() {
         fun load() {
             instance ?: Zenoh().also { instance = it }
         }
-    }
 
-    init {
-        val libZenoh = "libzenoh_jni.dylib"
-        val inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(libZenoh)
+        fun loadZenohJNI(inputStream: InputStream) {
+            val tempLib = File.createTempFile("tempLib", "")
+            tempLib.deleteOnExit()
 
-        if (inputStream != null) {
-            val tempFile = File.createTempFile("tempLib", ".dylib")
-            tempFile.deleteOnExit()
-
-            FileOutputStream(tempFile).use { output ->
+            FileOutputStream(tempLib).use { output ->
                 inputStream.copyTo(output)
             }
 
-            System.load(tempFile.absolutePath)
-            println("Native library loaded successfully.")
+            System.load(tempLib.absolutePath)
+        }
+    }
+
+    init {
+        val lib = ClassLoader.getSystemClassLoader().findLibraryStream(ZENOH_LIB_NAME)
+
+        if (lib != null) {
+            loadZenohJNI(lib)
         } else {
-            println("Native library not found in resources.")
+            throw Exception("Unable to load ZenohJNI.")
         }
 
         val logLevel = System.getProperty(ZENOH_LOGS_PROPERTY)
@@ -57,4 +61,17 @@ internal actual class Zenoh private actual constructor() {
             Logger.start(logLevel)
         }
     }
+}
+
+private fun ClassLoader.findLibraryStream(libraryName: String): InputStream? {
+    // TODO: look after targets of multiple architectures
+    val libraryExtensions = listOf(".dylib", ".so", ".dll")
+    for (extension in libraryExtensions) {
+        val resourcePath = "lib$libraryName$extension"
+        val inputStream = getResourceAsStream(resourcePath)
+        if (inputStream != null) {
+            return inputStream
+        }
+    }
+    return null
 }
