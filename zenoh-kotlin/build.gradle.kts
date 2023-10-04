@@ -13,7 +13,7 @@
 //
 
 group = "io.zenoh"
-version = "0.10.0-rc"
+version = "0.11.0-dev"
 
 plugins {
     id("com.adarshr.test-logger") version "3.2.0"

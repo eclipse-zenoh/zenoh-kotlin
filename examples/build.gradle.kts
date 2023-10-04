@@ -13,7 +13,7 @@
 //
 
 group = "io.zenoh"
-version = "0.10.0-rc"
+version = "0.11.0-dev"
 
 dependencies {
     implementation(project(":zenoh-kotlin"))
