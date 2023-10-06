@@ -590,6 +590,28 @@ fn on_get_query(
     consolidation: jint,
     value_params: Option<(JByteArray, jint)>,
 ) -> Result<()> {
+    /// A type that calls a function when dropped
+    struct CallOnDrop<F: FnOnce()>(core::mem::MaybeUninit<F>);
+    impl<F: FnOnce()> CallOnDrop<F> {
+        /// Constructs a value that calls `f` when dropped.
+        pub fn new(f: F) -> Self {
+            Self(core::mem::MaybeUninit::new(f))
+        }
+        /// Does nothing, but tricks closures into moving the value inside,
+        /// so that the closure's destructor will call `drop(self)`.
+        pub fn noop(&self) {}
+    }
+    impl<F: FnOnce()> Drop for CallOnDrop<F> {
+        fn drop(&mut self) {
+            // Take ownership of the closure that is always initialized,
+            // since the only constructor uses `MaybeUninit::new`
+            let f = (unsafe { self.0.assume_init_read() });
+            // Call the now owned function
+            f();
+        }
+    }
+    let on_close = CallOnDrop::new(move || todo!("wrap kotlin callback"));
+
     let java_vm = get_java_vm(env)?;
     let callback_global_ref = get_callback_global_ref(env, callback)?;
     let query_target = decode_query_target(target)?;
@@ -602,6 +624,7 @@ fn on_get_query(
     let mut get_builder = session
         .get(selector)
         .callback(move |reply| {
+            on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
             log::debug!("Receiving reply through JNI: {:?}", reply);
             let env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
