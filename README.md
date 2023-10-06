@@ -42,6 +42,7 @@ Basically:
 * Rust ([Installation guide](https://doc.rust-lang.org/cargo/getting-started/installation.html))
 * Kotlin ([Installation guide](https://kotlinlang.org/docs/getting-started.html#backend))
 * Gradle ([Installation guide](https://gradle.org/install/))
+* Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
 
 ## <img src="android-robot.png" alt="Android" height="50"> Android
 
@@ -115,7 +116,7 @@ And finally, do not forget to add the required internet permissions on your mani
 
 And that was it! You can now import the code from the `io.zenoh` package and use it at your will.
 
-## JVM
+## <img src="jvm.png" alt="JVM" height="50"> JVM
 
 To publish a library for a JVM project into Maven local, run
 
