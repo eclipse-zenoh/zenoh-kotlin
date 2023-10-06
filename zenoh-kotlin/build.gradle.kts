@@ -28,6 +28,8 @@ android {
     namespace = "io.zenoh"
     compileSdk = 30
 
+    ndkVersion = "26.0.10792818"
+
     defaultConfig {
         minSdk = 30
     }
