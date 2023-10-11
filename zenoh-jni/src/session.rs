@@ -255,7 +255,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
 /// - `key_expr`: The key expression for the subscriber.
 /// - `ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the subscriber won't receive any more samples anymore.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the subscriber won't receive any more samples.
 /// - `reliability`: The [Reliability] value as an ordinal.
 ///
 /// Returns:
@@ -313,7 +313,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 /// - `session_ptr`: A raw pointer to the Zenoh [Session] to be used to declare the queryable.
 /// - `callback`: The callback function as an instance of the `JNIQueryableCallback` interface in Java/Kotlin.
 /// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the queryable won't receive
-///     any more queries anymore.
+///     any more queries.
 /// - `complete`: The completeness of the queryable.
 ///
 /// Returns:
