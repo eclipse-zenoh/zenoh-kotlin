@@ -17,9 +17,7 @@ package io.zenoh
 import io.zenoh.exceptions.SessionException
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.Sample
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
-import kotlin.test.assertFailsWith
+import kotlin.test.*
 
 class SessionTest {
 

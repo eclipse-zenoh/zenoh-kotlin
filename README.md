@@ -16,14 +16,15 @@ Zenoh (pronounce _/zeno/_) unifies data in motion, data at rest and computations
 
 Check the website [zenoh.io](http://zenoh.io) and the [roadmap](https://github.com/eclipse-zenoh/roadmap) for more detailed information.
 
+
 ----
 
-# Kotlin API
+# <img src="kotlin-logo.png" alt="Kotlin" height="50">  Kotlin API
 
 
 This repository provides a Kotlin binding based on the main [Zenoh implementation written in Rust](https://github.com/eclipse-zenoh/zenoh).
 
-The code relies on native code written in Rust and communicates with it via the Java Native Interface (JNI).
+The code relies on the Zenoh JNI native library, which written in Rust and communicates with the Kotlin layer via the Java Native Interface (JNI).
 
 ## Documentation
 
@@ -41,61 +42,113 @@ Basically:
 * Rust ([Installation guide](https://doc.rust-lang.org/cargo/getting-started/installation.html))
 * Kotlin ([Installation guide](https://kotlinlang.org/docs/getting-started.html#backend))
 * Gradle ([Installation guide](https://gradle.org/install/))
+* Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
 
-## Step by step
+## <img src="android-robot.png" alt="Android" height="50"> Android
 
-### Building zenoh-jni
+In order to use these bindings in a native Android project, what we will do is to build them as an Android NDK Library,
+publishing it into Maven local for us to be able to easily import it in our project.
 
-Since Zenoh-Kotlin relies on a native rust interface that communicates with Zenoh, first you need to build it.
+It is required to have the [NDK (native development kit)](https://developer.android.com/ndk) installed, since we are going to compile Zenoh JNI for multiple
+android native targets. 
+It can be set up by using Android Studio (go to `Preferences > Appearance & Behavior > System settings > Android SDK > SDK Tools` and tick the NDK box),
+or alternatively it can be found [here](https://developer.android.com/ndk/downloads).
 
-Find the code in this repository on [here](/zenoh-jni):
-
-```bash
-cd zenoh-jni
+The native platforms we are going to target are the following ones:
+```
+- x86
+- x86_64
+- arm
+- arm64
 ```
 
-The let's build it with Cargo:
-
+Therefore, if they are not yet already added to the Rust toolchain, run:
 ```bash
-cargo build --release
+rustup target add armv7-linux-androideabi; \ 
+rustup target add i686-linux-android; \
+rustup target add aarch64-linux-android; \
+rustup target add x86_64-linux-android
 ```
 
-This will generate a library under `/target/release` named:
-* MacOS: `libzenoh_jni.dylib`
-* Linux: `libzenoh_jni.so`
-* Windows: `libzenoh_jni.dll`
+to install them.
 
-This file needs to be discoverable by the JVM. Therefore, `zenoh_jni` library should also be on the `java.library.path`. Thus depending on your
-system make sure to install it at the proper place.
 
-For MacOS and Unix-like operating systems, the library is expected to be found under `/usr/local/lib`.
-For Windows users you may want to add the location of the library to your `$PATH` environment variable.
-
-:warning: Note that failure to make `zenoh_jni` discoverable will cause the kotlin tests fail during the kotlin build process and
-any further intent to use this library will result in an error during runtime, due to an `UnsatisfiedLinkError`.
-
-### Building Kotlin!
-
-Now let's go to the [zenoh-kotlin subdirectory](zenoh-kotlin) of this repository.
-
+So, in order to publish the library onto Maven Local, run:
 ```bash
-cd zenoh-kotlin
+gradle publishAndroidReleasePublicationToMavenLocal
 ```
 
+This will first trigger the compilation of the Zenoh-JNI for the previously mentioned targets, and secondly will
+publish the library, containing the native binaries.
 
-It is best to build and run using the `gradle` wrapper, thus type:
+You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.10.0-rc`
+with the following files:
+```
+zenoh-kotlin-android-0.10.0-rc-sources.jar
+zenoh-kotlin-android-0.10.0-rc.aar              
+zenoh-kotlin-android-0.10.0-rc.module           
+zenoh-kotlin-android-0.10.0-rc.pom
+```
 
-    $ gradle wrapper
+Now the library is published on maven local, let's now see how to import it into an Android project.
 
-Then you can build by simply:
+First, we need to indicate we want to look into mavenLocal for our library, so in your top level `build.gradle.kts` you need to specify
+the `mavenLocal` repository:
+```agsl
+repositories {
+    mavenCentral()
+    ...
+    mavenLocal() // We add this line
+}
+```
 
-    $ ./gradlew build
+Then in your app's `build.gradle.kts` filen add the dependency:
+```
+implementation("io.zenoh:zenoh-kotlin-android:0.10.0-rc")
+```
 
+And finally, do not forget to add the required internet permissions on your manifest!
 
+```
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
 
-That was it! We now can build our first Kotlin app using Zenoh!
+And that was it! You can now import the code from the `io.zenoh` package and use it at your will.
 
-### Building the documentation
+## <img src="jvm.png" alt="JVM" height="50"> JVM
+
+To publish a library for a JVM project into Maven local, run
+
+```bash
+gradle publishJvmPublicationToMavenLocal
+```
+
+This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
+as a resource that will be loaded during runtime. 
+
+:warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
+for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
+This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while 
+for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.  
+
+Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.0-rc`.
+
+Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
+
+```
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+    implementation("io.zenoh:zenoh-kotlin-jvm:0.10.0-rc")
+}
+```
+
+## Building the documentation
 
 Because it's a Kotlin project, we use [Dokka](https://kotlinlang.org/docs/dokka-introduction.html) to generate the documentation.
 
@@ -104,6 +157,31 @@ In order to build it, run:
 gradle zenoh-kotlin:dokkaHtml
 ```
 
+## Running the tests
+
+To run the tests, run:
+
+```bash
+gradle jvmTest
+```
+
+This will compile the native library on debug mode (if not already available) and run the tests afterward against the JVM target.
+Running the tests against the Android target (by using `gradle testDebugUnitTest`) is equivalent to running them against the JVM one, since they are common
+tests executed locally as Unit tests.
+
+## Logging
+
+Rust logs are propagated when setting the property `zenoh.logger=debug` (using RUST_LOG=debug will result in nothing)
+
+For instance running the ZPub test as follows:
+
+```bash
+gradle -Pzenoh.logger=debug ZPub
+```
+
+causes the logs to appear in standard output. 
+
+The log levels are the ones from Rust: `trace`, `info`, `debug`, `error` and `warn`. 
 
 ---
 
@@ -119,6 +197,10 @@ For instance in order to run the [ZPub](examples/src/main/kotlin/io.zenoh/ZPub.k
 ```
 
 You can find more info about these examples on the [examples README file](/examples/README.md).
+
+
+
+
 
 ----
 

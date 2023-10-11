@@ -14,28 +14,32 @@
 
 package io.zenoh
 
+import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
-import org.junit.jupiter.api.Test
+import io.zenoh.value.Value
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class DeleteTest {
+class PutTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        const val TEST_KEY_EXP = "example/testing/keyexpr"
+        const val TEST_PAYLOAD = "Hello"
     }
 
     @Test
-    fun subscriber_receivesDelete() {
+    fun subscriber_receivesPutValue() {
         val session = Session.open().getOrThrow()
         var receivedSample: Sample? = null
-        session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res()
-        session.delete(TEST_KEY_EXP).res()
+        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res()
+        val value = Value(TEST_PAYLOAD.toByteArray(), Encoding(KnownEncoding.TEXT_PLAIN))
+        session.put(keyExpr, value).res()
         session.close()
-
         assertNotNull(receivedSample)
-        assertEquals(receivedSample!!.kind, SampleKind.DELETE)
+        assertEquals(value, receivedSample!!.value)
     }
 }

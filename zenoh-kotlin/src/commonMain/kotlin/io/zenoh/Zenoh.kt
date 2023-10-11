@@ -12,19 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh
 
-include(":zenoh-kotlin")
-include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
-}
+/**
+ * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
+ * log level configuration.
+ */
+internal expect class Zenoh private constructor()

@@ -3,7 +3,7 @@ package io.zenoh
 import io.zenoh.exceptions.KeyExprException
 import io.zenoh.selector.Selector
 import io.zenoh.selector.intoSelector
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 

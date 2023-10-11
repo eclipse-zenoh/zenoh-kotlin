@@ -15,6 +15,14 @@
 group = "io.zenoh"
 version = "0.11.0-dev"
 
+plugins {
+    kotlin("jvm")
+}
+
+kotlin {
+    jvmToolchain(11)
+}
+
 dependencies {
     implementation(project(":zenoh-kotlin"))
     implementation("commons-net:commons-net:3.9.0")
@@ -35,10 +43,11 @@ tasks {
 
     examples.forEach { example ->
         register(example, JavaExec::class) {
+            dependsOn("CompileZenohJNI")
             description = "Run the $example example"
             mainClass.set("io.zenoh.${example}Kt")
             classpath(sourceSets["main"].runtimeClasspath)
-            val zenohPaths = "/usr/local/lib:../zenoh-jni/target/release"
+            val zenohPaths = "../zenoh-jni/target/release"
             val defaultJvmArgs = arrayListOf("-Djava.library.path=$zenohPaths")
             val loggerLvl = project.findProperty("zenoh.logger")?.toString()
             if (loggerLvl != null) {
@@ -47,5 +56,11 @@ tasks {
                 jvmArgs(defaultJvmArgs)
             }
         }
+    }
+}
+
+tasks.register("CompileZenohJNI") {
+    project.exec {
+        commandLine("cargo", "build", "--release", "--manifest-path", "../zenoh-jni/Cargo.toml")
     }
 }

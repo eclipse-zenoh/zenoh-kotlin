@@ -21,9 +21,10 @@ import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import kotlin.collections.ArrayList
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class SubscriberTest {
 

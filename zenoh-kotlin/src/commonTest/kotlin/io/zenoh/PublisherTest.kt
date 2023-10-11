@@ -20,8 +20,8 @@ import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class PublisherTest {
 
