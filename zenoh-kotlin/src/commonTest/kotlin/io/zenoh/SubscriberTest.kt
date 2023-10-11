@@ -20,6 +20,7 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
@@ -76,6 +77,18 @@ class SubscriberTest {
         assertTrue(subscriber.receiver is Channel<Sample>)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
+    @Test
+    fun onFinishTest() {
+        val session = Session.open().getOrThrow()
+        var onFinishWasCalled = false
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onFinish { onFinishWasCalled = true }.res().getOrThrow()
+        subscriber.undeclare()
+        assertTrue(onFinishWasCalled)
+        assertTrue(subscriber.receiver!!.isClosedForReceive)
+        session.close()
+    }
+
     private fun publishTestValues(session: Session): ArrayList<Value> {
         val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
         testValues.forEach { value -> publisher.put(value).res() }
@@ -93,4 +106,6 @@ private class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
     override fun receiver(): ArrayDeque<T> {
         return queue
     }
+
+    override fun onFinish() {}
 }

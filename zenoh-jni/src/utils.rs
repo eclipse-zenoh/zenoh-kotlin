@@ -12,6 +12,8 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use std::sync::Arc;
+
 use jni::{
     objects::{JObject, JString},
     JNIEnv, JavaVM,
@@ -44,5 +46,55 @@ pub(crate) fn get_callback_global_ref(
             "Unable to get reference to the provided callback: {}",
             err
         ))
+    })
+}
+
+/// A type that calls a function when dropped
+pub(crate) struct CallOnDrop<F: FnOnce()>(core::mem::MaybeUninit<F>);
+impl<F: FnOnce()> CallOnDrop<F> {
+    /// Constructs a value that calls `f` when dropped.
+    pub fn new(f: F) -> Self {
+        Self(core::mem::MaybeUninit::new(f))
+    }
+    /// Does nothing, but tricks closures into moving the value inside,
+    /// so that the closure's destructor will call `drop(self)`.
+    pub fn noop(&self) {}
+}
+impl<F: FnOnce()> Drop for CallOnDrop<F> {
+    fn drop(&mut self) {
+        // Take ownership of the closure that is always initialized,
+        // since the only constructor uses `MaybeUninit::new`
+        let f = unsafe { self.0.assume_init_read() };
+        // Call the now owned function
+        f();
+    }
+}
+
+pub(crate) fn load_on_finish(
+    java_vm: &Arc<jni::JavaVM>,
+    on_finish_global_ref: jni::objects::GlobalRef,
+) -> CallOnDrop<impl FnOnce()> {
+    CallOnDrop::new({
+        let java_vm = java_vm.clone();
+        move || {
+            let mut env = match java_vm.attach_current_thread_as_daemon() {
+                Ok(env) => env,
+                Err(err) => {
+                    log::error!("Unable to attach thread for 'onFinish' callback: {}", err);
+                    return;
+                }
+            };
+            match env.call_method(on_finish_global_ref, "run", "()V", &[]) {
+                Ok(_) => (),
+                Err(err) => {
+                    _ = env.exception_describe();
+                    _ = Error::Jni(format!("Error while running 'onFinish' callback: {}", err))
+                        .throw_on_jvm(&mut env)
+                        .map_err(|err| {
+                            log::error!("Unable to throw exception upon 'onFinish' failure: {}", err)
+                        });
+                }
+            }
+        }
     })
 }

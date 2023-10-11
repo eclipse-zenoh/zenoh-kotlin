@@ -34,6 +34,10 @@ import io.zenoh.ZenohType
  *     override fun receiver(): ArrayDeque<T> {
  *         return queue
  *     }
+ *
+ *     override fun onFinish() {
+ *         println("Received in total ${queue.size} elements."}
+ *     }
  * }
  * ```
  *
@@ -62,4 +66,10 @@ interface Handler<T: ZenohType, R> {
      * Return the receiver of the handler.
      */
     fun receiver(): R
+
+
+    /**
+     * Callback invoked when no more [T] elements are expected to be received.
+     */
+    fun onFinish()
 }

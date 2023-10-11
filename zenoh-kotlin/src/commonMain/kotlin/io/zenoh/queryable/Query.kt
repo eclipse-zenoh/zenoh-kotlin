@@ -61,7 +61,6 @@ class Query internal constructor(
         }
     }
 
-    @Suppress("removal")
     protected fun finalize() {
         close()
     }

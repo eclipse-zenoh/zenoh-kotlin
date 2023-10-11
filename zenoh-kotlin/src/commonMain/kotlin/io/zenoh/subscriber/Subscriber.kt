@@ -80,7 +80,6 @@ class Subscriber<R> internal constructor(
         undeclare()
     }
 
-    @Suppress("removal")
     protected fun finalize() {
         jniSubscriber?.close()
     }
@@ -120,6 +119,7 @@ class Subscriber<R> internal constructor(
     ): Resolvable<Subscriber<R>> {
 
         private var reliability: Reliability = Reliability.BEST_EFFORT
+        private var onFinish: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Sample, R>?): this(other.session, other.keyExpr) {
             this.handler = handler
@@ -133,6 +133,7 @@ class Subscriber<R> internal constructor(
 
         private fun copyParams(other: Builder<*>) {
             this.reliability = other.reliability
+            this.onFinish = other.onFinish
         }
 
         /** Sets the [Reliability]. */
@@ -148,6 +149,12 @@ class Subscriber<R> internal constructor(
         /** Sets the reliability to [Reliability.BEST_EFFORT]. */
         fun bestEffort(): Builder<R> = apply {
             this.reliability = Reliability.BEST_EFFORT
+        }
+
+        /** Specify an action to be invoked when the [Subscriber] is undeclared. */
+        fun onFinish(action: () -> Unit): Builder<R> {
+            this.onFinish = action
+            return this
         }
 
         /** Specify a [Callback]. Overrides any previously specified callback or handler. */
@@ -167,7 +174,11 @@ class Subscriber<R> internal constructor(
         override fun res(): Result<Subscriber<R>> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Sample -> handler?.handle(t) }
-            return session.run { resolveSubscriber(keyExpr, resolvedCallback, handler?.receiver(), reliability) }
+            val resolvedOnFinish = fun() {
+                handler?.onFinish()
+                onFinish?.invoke()
+            }
+            return session.run { resolveSubscriber(keyExpr, resolvedCallback, resolvedOnFinish, handler?.receiver(), reliability) }
         }
     }
 }

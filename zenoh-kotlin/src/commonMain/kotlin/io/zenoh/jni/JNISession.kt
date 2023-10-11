@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.handlers.Callback
+import io.zenoh.jni.callbacks.JNIOnFinishCallback
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.jni.callbacks.JNIGetCallback
 import io.zenoh.jni.callbacks.JNIQueryableCallback
@@ -67,61 +68,77 @@ internal class JNISession {
     }
 
     fun <R> declareSubscriber(
-        keyExpr: KeyExpr, callback: Callback<Sample>, receiver: R?, reliability: Reliability
+        keyExpr: KeyExpr, callback: Callback<Sample>, onFinish: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
-        val subCallback = JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid ->
-            val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-            val sample = Sample(KeyExpr(JNIKeyExpr(keyExprPtr)), Value(payload, Encoding(KnownEncoding.fromInt(encoding))), SampleKind.fromInt(kind), timestamp)
-            callback.run(sample)
-        }
+        val subCallback =
+            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid ->
+                val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                val sample = Sample(
+                    KeyExpr(JNIKeyExpr(keyExprPtr)),
+                    Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
+                    SampleKind.fromInt(kind),
+                    timestamp
+                )
+                callback.run(sample)
+            }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, reliability.ordinal
+            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onFinish, reliability.ordinal
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
 
     fun <R> declareQueryable(
-        keyExpr: KeyExpr, callback: Callback<Query>, receiver: R?, complete: Boolean
+        keyExpr: KeyExpr, callback: Callback<Query>, onFinish: () -> Unit, receiver: R?, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
             JNIQueryableCallback { keyExprPtr: Long, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
                 val keyExpression = KeyExpr(JNIKeyExpr(keyExprPtr))
                 val selector = Selector(keyExpression, selectorParams)
-                val value: Value? = if (withValue) Value(payload!!,Encoding(KnownEncoding.fromInt(encoding))) else null
+                val value: Value? = if (withValue) Value(payload!!, Encoding(KnownEncoding.fromInt(encoding))) else null
                 val query = Query(keyExpression, selector, value, jniQuery)
                 callback.run(query)
             }
-        val queryableRawPtr = declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, complete)
+        val queryableRawPtr =
+            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onFinish, complete)
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
     fun <R> performGet(
         selector: Selector,
         callback: Callback<Reply>,
+        onFinish: () -> Unit,
         receiver: R?,
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
         value: Value?
     ): Result<R?> = runCatching {
-        val getCallback = JNIGetCallback {replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean ->
-            if (success) {
-                val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                val sample = Sample(KeyExpr(JNIKeyExpr(keyExprPtr)), Value(payload, Encoding(KnownEncoding.fromInt(encoding))), SampleKind.fromInt(kind), timestamp)
-                val reply = Reply.Success(replierId, sample)
-                callback.run(reply)
-            } else {
-                val reply = Reply.Error(replierId, Value(payload, Encoding(KnownEncoding.fromInt(encoding))))
-                callback.run(reply)
+        val getCallback =
+            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean ->
+                if (success) {
+                    val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                    val sample = Sample(
+                        KeyExpr(JNIKeyExpr(keyExprPtr)),
+                        Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
+                        SampleKind.fromInt(kind),
+                        timestamp
+                    )
+                    val reply = Reply.Success(replierId, sample)
+                    callback.run(reply)
+                } else {
+                    val reply = Reply.Error(replierId, Value(payload, Encoding(KnownEncoding.fromInt(encoding))))
+                    callback.run(reply)
+                }
             }
-        }
+
         if (value == null) {
             getViaJNI(
                 selector.keyExpr.jniKeyExpr!!.ptr,
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
+                onFinish,
                 timeout.toMillis(),
                 target.ordinal,
                 consolidation.ordinal,
@@ -132,6 +149,7 @@ internal class JNISession {
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
+                onFinish,
                 timeout.toMillis(),
                 target.ordinal,
                 consolidation.ordinal,
@@ -180,12 +198,20 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declareSubscriberViaJNI(
-        keyExpr: Long, sessionPtr: Long, callback: JNISubscriberCallback, reliability: Int
+        keyExpr: Long,
+        sessionPtr: Long,
+        callback: JNISubscriberCallback,
+        onFinish: JNIOnFinishCallback,
+        reliability: Int
     ): Long
 
     @Throws(Exception::class)
     private external fun declareQueryableViaJNI(
-        keyExpr: Long, sessionPtr: Long, callback: JNIQueryableCallback, complete: Boolean
+        keyExpr: Long,
+        sessionPtr: Long,
+        callback: JNIQueryableCallback,
+        onFinish: JNIOnFinishCallback,
+        complete: Boolean
     ): Long
 
     @Throws(Exception::class)
@@ -200,6 +226,7 @@ internal class JNISession {
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
+        onFinish: JNIOnFinishCallback,
         timeoutMs: Long,
         target: Int,
         consolidation: Int,
@@ -211,6 +238,7 @@ internal class JNISession {
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
+        onFinish: JNIOnFinishCallback,
         timeoutMs: Long,
         target: Int,
         consolidation: Int,

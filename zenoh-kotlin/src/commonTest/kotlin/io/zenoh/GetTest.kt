@@ -215,4 +215,6 @@ private class GetHandler : Handler<Reply, ArrayList<Reply>> {
     override fun receiver(): ArrayList<Reply> {
         return performedReplies
     }
+
+    override fun onFinish() {}
 }

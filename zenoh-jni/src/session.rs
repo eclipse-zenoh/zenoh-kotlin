@@ -19,7 +19,7 @@ use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
 use crate::subscriber::declare_subscriber;
-use crate::utils::{decode_string, get_callback_global_ref, get_java_vm};
+use crate::utils::{decode_string, get_callback_global_ref, get_java_vm, load_on_finish};
 use crate::value::decode_value;
 
 use jni::objects::{JByteArray, JClass, JObject, JString};
@@ -255,6 +255,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
 /// - `key_expr`: The key expression for the subscriber.
 /// - `ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the subscriber won't receive any more samples anymore.
 /// - `reliability`: The [Reliability] value as an ordinal.
 ///
 /// Returns:
@@ -277,9 +278,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     key_expr_ptr: *const KeyExpr<'static>,
     ptr: *const zenoh::Session,
     callback: JObject,
+    on_finish: JObject,
     reliability: jint,
 ) -> *const zenoh::subscriber::Subscriber<'static, ()> {
-    match declare_subscriber(&mut env, key_expr_ptr, ptr, callback, reliability) {
+    match declare_subscriber(
+        &mut env,
+        key_expr_ptr,
+        ptr,
+        callback,
+        on_finish,
+        reliability,
+    ) {
         Ok(subscriber_ptr) => subscriber_ptr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
@@ -303,6 +312,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 /// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the queryable.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session] to be used to declare the queryable.
 /// - `callback`: The callback function as an instance of the `JNIQueryableCallback` interface in Java/Kotlin.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the queryable won't receive
+///     any more queries anymore.
 /// - `complete`: The completeness of the queryable.
 ///
 /// Returns:
@@ -325,9 +336,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     key_expr_ptr: *const KeyExpr<'static>,
     session_ptr: *const zenoh::Session,
     callback: JObject,
+    on_finish: JObject,
     complete: jboolean,
 ) -> *const zenoh::queryable::Queryable<'static, ()> {
-    match declare_queryable(&mut env, key_expr_ptr, session_ptr, callback, complete) {
+    match declare_queryable(
+        &mut env,
+        key_expr_ptr,
+        session_ptr,
+        callback,
+        on_finish,
+        complete,
+    ) {
         Ok(queryable) => Arc::into_raw(Arc::new(queryable)),
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
@@ -439,6 +458,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `selector_params`: Parameters of the selector.
 /// - `session_ptr`: A raw pointer to the Zenoh session.
 /// - `callback`: An instance of the Java/Kotlin `JNIGetCallback` function interface to be called upon receiving a reply.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the get operation won't receive
+///     any more replies.
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
@@ -462,6 +483,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     selector_params: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
+    on_finish: JObject,
     timeout_ms: jlong,
     target: jint,
     consolidation: jint,
@@ -474,6 +496,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         selector_params,
         &session,
         callback,
+        on_finish,
         timeout_ms,
         target,
         consolidation,
@@ -504,6 +527,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 /// - `selector_params`: Parameters of the selector.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session].
 /// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when no more replies will be received.
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
@@ -529,6 +553,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
     selector_params: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
+    on_finish: JObject,
     timeout_ms: jlong,
     target: jint,
     consolidation: jint,
@@ -543,6 +568,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
         selector_params,
         &session,
         callback,
+        on_finish,
         timeout_ms,
         target,
         consolidation,
@@ -568,7 +594,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
 /// - `env`: A mutable reference to the JNI environment.
 /// - `key_expr`: The key expression for the `get` operation.
 /// - `session`: An `Arc<Session>` representing the Zenoh session.
-/// - `callback`: A Java/Kotlin `JNIGetCallback` interface callback to be called upon receiving a reply.
+/// - `callback`: A Java/Kotlin `JNIGetCallback` function interface to be called upon receiving a reply.
+/// - `on_finish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when Zenoh notifies
+///     that no more replies will be received.
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
@@ -585,39 +613,20 @@ fn on_get_query(
     selector_params: JString,
     session: &Arc<Session>,
     callback: JObject,
+    on_finish: JObject,
     timeout_ms: jlong,
     target: jint,
     consolidation: jint,
     value_params: Option<(JByteArray, jint)>,
 ) -> Result<()> {
-    /// A type that calls a function when dropped
-    struct CallOnDrop<F: FnOnce()>(core::mem::MaybeUninit<F>);
-    impl<F: FnOnce()> CallOnDrop<F> {
-        /// Constructs a value that calls `f` when dropped.
-        pub fn new(f: F) -> Self {
-            Self(core::mem::MaybeUninit::new(f))
-        }
-        /// Does nothing, but tricks closures into moving the value inside,
-        /// so that the closure's destructor will call `drop(self)`.
-        pub fn noop(&self) {}
-    }
-    impl<F: FnOnce()> Drop for CallOnDrop<F> {
-        fn drop(&mut self) {
-            // Take ownership of the closure that is always initialized,
-            // since the only constructor uses `MaybeUninit::new`
-            let f = (unsafe { self.0.assume_init_read() });
-            // Call the now owned function
-            f();
-        }
-    }
-    let on_close = CallOnDrop::new(move || todo!("wrap kotlin callback"));
-
-    let java_vm = get_java_vm(env)?;
+    let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
+    let on_finish_global_ref = get_callback_global_ref(env, on_finish)?;
     let query_target = decode_query_target(target)?;
     let consolidation = decode_consolidation(consolidation)?;
     let selector_params = decode_string(env, selector_params)?;
     let timeout = Duration::from_millis(timeout_ms as u64);
+    let on_close = load_on_finish(&java_vm, on_finish_global_ref);
 
     let key_expr_clone = key_expr.deref().clone();
     let selector = Selector::from(key_expr_clone).with_parameters(&selector_params);
@@ -629,7 +638,7 @@ fn on_get_query(
             let env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for queryable callback: {}", err);
+                    log::error!("Unable to attach thread for GET query callback: {}", err);
                     return;
                 }
             };
