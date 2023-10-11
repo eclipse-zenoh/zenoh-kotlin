@@ -91,7 +91,10 @@ pub(crate) fn load_on_finish(
                     _ = Error::Jni(format!("Error while running 'onFinish' callback: {}", err))
                         .throw_on_jvm(&mut env)
                         .map_err(|err| {
-                            log::error!("Unable to throw exception upon 'onFinish' failure: {}", err)
+                            log::error!(
+                                "Unable to throw exception upon 'onFinish' failure: {}",
+                                err
+                            )
                         });
                 }
             }
