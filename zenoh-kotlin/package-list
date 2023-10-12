@@ -146,7 +146,7 @@ $dokka.location:io.zenoh.query/Get.Builder///PointingToDeclaration/zenoh-kotlin
 $dokka.location:io.zenoh.query/Get.Builder/consolidation/#io.zenoh.query.ConsolidationMode/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/consolidation.html
 $dokka.location:io.zenoh.query/Get.Builder/res/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/res.html
 $dokka.location:io.zenoh.query/Get.Builder/target/#io.zenoh.query.QueryTarget/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/target.html
-$dokka.location:io.zenoh.query/Get.Builder/timeout/#java.time.Duration/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/timeout.html
+$dokka.location:io.zenoh.query/Get.Builder/timeout/#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/timeout.html
 $dokka.location:io.zenoh.query/Get.Builder/with/#io.zenoh.handlers.Callback[io.zenoh.query.Reply]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/with.html
 $dokka.location:io.zenoh.query/Get.Builder/with/#io.zenoh.handlers.Handler[io.zenoh.query.Reply,TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/with.html
 $dokka.location:io.zenoh.query/Get.Builder/with/#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/with.html
@@ -181,7 +181,7 @@ $dokka.location:io.zenoh.query/Reply.Success.Builder/query/#/PointingToDeclarati
 $dokka.location:io.zenoh.query/Reply.Success.Builder/res/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/-builder/res.html
 $dokka.location:io.zenoh.query/Reply.Success.Builder/value/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/-builder/value.html
 $dokka.location:io.zenoh.query/Reply.Success.Builder/withKind/#io.zenoh.prelude.SampleKind/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/-builder/with-kind.html
-$dokka.location:io.zenoh.query/Reply.Success.Builder/withTimeStamp/#org.apache.commons.net.ntp.TimeStamp/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/-builder/with-time-stamp.html
+$dokka.location:io.zenoh.query/Reply.Success.Builder/withTimeStamp/#[Error type: Unresolved type for TimeStamp]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/-builder/with-time-stamp.html
 $dokka.location:io.zenoh.query/Reply.Success///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/index.html
 $dokka.location:io.zenoh.query/Reply.Success/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/equals.html
 $dokka.location:io.zenoh.query/Reply.Success/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/hash-code.html
@@ -213,7 +213,7 @@ $dokka.location:io.zenoh.queryable/Queryable/receiver/#/PointingToDeclaration/z
 $dokka.location:io.zenoh.queryable/Queryable/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/undeclare.html
 $dokka.location:io.zenoh.sample////PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/index.html
 $dokka.location:io.zenoh.sample/Sample///PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/index.html
-$dokka.location:io.zenoh.sample/Sample/Sample/#io.zenoh.keyexpr.KeyExpr#io.zenoh.value.Value#io.zenoh.prelude.SampleKind#org.apache.commons.net.ntp.TimeStamp?/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/-sample.html
+$dokka.location:io.zenoh.sample/Sample/Sample/#io.zenoh.keyexpr.KeyExpr#io.zenoh.value.Value#io.zenoh.prelude.SampleKind#[Error type: Unresolved type for TimeStamp]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/-sample.html
 $dokka.location:io.zenoh.sample/Sample/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/equals.html
 $dokka.location:io.zenoh.sample/Sample/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/hash-code.html
 $dokka.location:io.zenoh.sample/Sample/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/key-expr.html
@@ -266,8 +266,8 @@ $dokka.location:io.zenoh.value/Value/toString/#/PointingToDeclaration/zenoh-kot
 $dokka.location:io.zenoh////PointingToDeclaration/zenoh-kotlin/io.zenoh/index.html
 $dokka.location:io.zenoh/Config.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/index.html
 $dokka.location:io.zenoh/Config.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/default.html
-$dokka.location:io.zenoh/Config.Companion/from/#java.io.File/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
-$dokka.location:io.zenoh/Config.Companion/from/#java.nio.file.Path/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
+$dokka.location:io.zenoh/Config.Companion/from/#[Error type: Unresolved type for File]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
+$dokka.location:io.zenoh/Config.Companion/from/#[Error type: Unresolved type for Path]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
 $dokka.location:io.zenoh/Config///PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/index.html
 $dokka.location:io.zenoh/Logger.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/-companion/index.html
 $dokka.location:io.zenoh/Logger.Companion/start/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/-companion/start.html
