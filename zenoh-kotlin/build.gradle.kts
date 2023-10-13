@@ -92,10 +92,10 @@ kotlin {
             repositories {
                 maven {
                     name = "GithubPackages"
-                    url = uri("https://maven.pkg.github.com/DariusIMP/zenoh-kotlin")
+                    url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
                     credentials {
-                        username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_USER")
-                        password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
                     }
                 }
             }
