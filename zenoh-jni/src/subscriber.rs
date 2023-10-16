@@ -23,7 +23,7 @@ use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
 use crate::errors::{Error, Result};
-use crate::utils::{get_callback_global_ref, get_java_vm, load_on_finish};
+use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
 
 /// Frees the memory associated with a Zenoh subscriber raw pointer via JNI.
 ///
@@ -57,7 +57,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNISubscriber_freePtrViaJNI(
 /// - `key_expr_ptr`: Raw pointer to the key expression to be used for the subscriber.
 /// - `session_ptr`: Raw pointer to the session to be used for the declaration..
 /// - `callback`: The callback function as an instance of the `Callback` interface in Java/Kotlin.
-/// - `onFinish`: A Java/Kotlin `JNIOnFinishCallback` function interface to be called when the subscriber is undeclared.
+/// - `onClose`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when the subscriber is undeclared.
 /// - `reliability`: The [Reliability] configuration as an ordinal.
 ///
 /// Returns:
@@ -72,14 +72,14 @@ pub(crate) unsafe fn declare_subscriber(
     key_expr_ptr: *const KeyExpr<'static>,
     session_ptr: *const zenoh::Session,
     callback: JObject,
-    on_finish: JObject,
+    on_close: JObject,
     reliability: jint,
 ) -> Result<*const Subscriber<'static, ()>> {
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
-    let on_finish_global_ref = get_callback_global_ref(env, on_finish)?;
+    let on_close_global_ref = get_callback_global_ref(env, on_close)?;
     let reliability = decode_reliability(reliability)?;
-    let on_close = load_on_finish(&java_vm, on_finish_global_ref);
+    let on_close = load_on_close(&java_vm, on_close_global_ref);
 
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);

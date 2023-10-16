@@ -216,5 +216,5 @@ private class GetHandler : Handler<Reply, ArrayList<Reply>> {
         return performedReplies
     }
 
-    override fun onFinish() {}
+    override fun onClose() {}
 }

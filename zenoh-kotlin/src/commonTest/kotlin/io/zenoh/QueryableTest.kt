@@ -128,12 +128,12 @@ class QueryableTest {
 
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun onFinishTest() {
+    fun onCloseTest() {
         val session = Session.open().getOrThrow()
-        var onFinishWasCalled = false
-        val queryable = session.declareQueryable(TEST_KEY_EXP).onFinish { onFinishWasCalled = true }.res().getOrThrow()
+        var onCloseWasCalled = false
+        val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
         queryable.undeclare()
-        assertTrue(onFinishWasCalled)
+        assertTrue(onCloseWasCalled)
         assertTrue(queryable.receiver!!.isClosedForReceive)
         session.close()
     }
@@ -154,7 +154,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
         return this
     }
 
-    override fun onFinish() {}
+    override fun onClose() {}
 
     fun reply(query: Query) {
         val payload = "Hello queryable $counter!"

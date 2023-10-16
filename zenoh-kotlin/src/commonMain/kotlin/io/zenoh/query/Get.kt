@@ -85,7 +85,7 @@ class Get<R> private constructor() {
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
         private var value: Value? = null
-        private var onFinish: (() -> Unit)? = null
+        private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
             this.handler = handler
@@ -102,7 +102,7 @@ class Get<R> private constructor() {
             this.target = other.target
             this.consolidation = other.consolidation
             this.value = other.value
-            this.onFinish = other.onFinish
+            this.onClose = other.onClose
         }
 
         /** Specify the [QueryTarget]. */
@@ -143,8 +143,8 @@ class Get<R> private constructor() {
          *
          * Zenoh will trigger ths specified action once no more replies are to be expected.
          */
-        fun onFinish(action: () -> Unit): Builder<R> {
-            this.onFinish = action
+        fun onClose(action: () -> Unit): Builder<R> {
+            this.onClose = action
             return this
         }
 
@@ -165,15 +165,15 @@ class Get<R> private constructor() {
         fun res(): Result<R?> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
-            val resolvedOnFinish = fun() {
-                onFinish?.invoke()
-                handler?.onFinish()
+            val resolvedOnClose = fun() {
+                onClose?.invoke()
+                handler?.onClose()
             }
             return session.run {
                 resolveGet(
                     selector,
                     resolvedCallback,
-                    resolvedOnFinish,
+                    resolvedOnClose,
                     handler?.receiver(),
                     timeout,
                     target,

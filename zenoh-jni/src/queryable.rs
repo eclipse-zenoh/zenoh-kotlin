@@ -26,7 +26,7 @@ use crate::{
     errors::Error,
     errors::Result,
     query::on_query,
-    utils::{get_callback_global_ref, get_java_vm, load_on_finish},
+    utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
 
 /// Frees the memory associated with a Zenoh queryable raw pointer via JNI.
@@ -61,7 +61,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQueryable_freePtrViaJNI(
 /// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the queryable.
 /// - `session_ptr`: Raw pointer to the [Session] from which to declare the queryable..
 /// - `callback`: The callback function as an instance of the `Callback` interface in Java/Kotlin.
-/// - `on_finish`: The `on_finish` callback function as an instance of the `JNIOnFinishCallback` interface in
+/// - `on_close`: The `on_close` callback function as an instance of the `JNIOnCloseCallback` interface in
 ///     Java/Kotlin, to be called when Zenoh notfies that no more queries will be received.
 /// - `complete`: The completeness of the queryable.
 ///
@@ -77,14 +77,14 @@ pub(crate) unsafe fn declare_queryable(
     key_expr_ptr: *const KeyExpr<'static>,
     session_ptr: *const zenoh::Session,
     callback: JObject,
-    on_finish: JObject,
+    on_close: JObject,
     complete: jboolean,
 ) -> Result<Queryable<'static, ()>> {
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
-    let on_finish_global_ref = get_callback_global_ref(env, on_finish)?;
+    let on_close_global_ref = get_callback_global_ref(env, on_close)?;
     let complete = complete != 0;
-    let on_close = load_on_finish(&java_vm, on_finish_global_ref);
+    let on_close = load_on_close(&java_vm, on_close_global_ref);
 
     let session: Arc<Session> = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);

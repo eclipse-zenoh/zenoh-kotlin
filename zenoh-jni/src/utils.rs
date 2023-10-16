@@ -70,9 +70,9 @@ impl<F: FnOnce()> Drop for CallOnDrop<F> {
     }
 }
 
-pub(crate) fn load_on_finish(
+pub(crate) fn load_on_close(
     java_vm: &Arc<jni::JavaVM>,
-    on_finish_global_ref: jni::objects::GlobalRef,
+    on_close_global_ref: jni::objects::GlobalRef,
 ) -> CallOnDrop<impl FnOnce()> {
     CallOnDrop::new({
         let java_vm = java_vm.clone();
@@ -80,19 +80,19 @@ pub(crate) fn load_on_finish(
             let mut env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for 'onFinish' callback: {}", err);
+                    log::error!("Unable to attach thread for 'onClose' callback: {}", err);
                     return;
                 }
             };
-            match env.call_method(on_finish_global_ref, "run", "()V", &[]) {
+            match env.call_method(on_close_global_ref, "run", "()V", &[]) {
                 Ok(_) => (),
                 Err(err) => {
                     _ = env.exception_describe();
-                    _ = Error::Jni(format!("Error while running 'onFinish' callback: {}", err))
+                    _ = Error::Jni(format!("Error while running 'onClose' callback: {}", err))
                         .throw_on_jvm(&mut env)
                         .map_err(|err| {
                             log::error!(
-                                "Unable to throw exception upon 'onFinish' failure: {}",
+                                "Unable to throw exception upon 'onClose' failure: {}",
                                 err
                             )
                         });

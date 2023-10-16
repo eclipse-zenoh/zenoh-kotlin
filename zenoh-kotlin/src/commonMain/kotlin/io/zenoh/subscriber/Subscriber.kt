@@ -119,7 +119,7 @@ class Subscriber<R> internal constructor(
     ): Resolvable<Subscriber<R>> {
 
         private var reliability: Reliability = Reliability.BEST_EFFORT
-        private var onFinish: (() -> Unit)? = null
+        private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Sample, R>?): this(other.session, other.keyExpr) {
             this.handler = handler
@@ -133,7 +133,7 @@ class Subscriber<R> internal constructor(
 
         private fun copyParams(other: Builder<*>) {
             this.reliability = other.reliability
-            this.onFinish = other.onFinish
+            this.onClose = other.onClose
         }
 
         /** Sets the [Reliability]. */
@@ -152,8 +152,8 @@ class Subscriber<R> internal constructor(
         }
 
         /** Specify an action to be invoked when the [Subscriber] is undeclared. */
-        fun onFinish(action: () -> Unit): Builder<R> {
-            this.onFinish = action
+        fun onClose(action: () -> Unit): Builder<R> {
+            this.onClose = action
             return this
         }
 
@@ -174,11 +174,11 @@ class Subscriber<R> internal constructor(
         override fun res(): Result<Subscriber<R>> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Sample -> handler?.handle(t) }
-            val resolvedOnFinish = fun() {
-                handler?.onFinish()
-                onFinish?.invoke()
+            val resolvedOnClose = fun() {
+                handler?.onClose()
+                onClose?.invoke()
             }
-            return session.run { resolveSubscriber(keyExpr, resolvedCallback, resolvedOnFinish, handler?.receiver(), reliability) }
+            return session.run { resolveSubscriber(keyExpr, resolvedCallback, resolvedOnClose, handler?.receiver(), reliability) }
         }
     }
 }

@@ -391,31 +391,31 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     internal fun <R> resolveSubscriber(
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
-        onFinish: () -> Unit,
+        onClose: () -> Unit,
         receiver: R?,
         reliability: Reliability
     ): Result<Subscriber<R>> {
         return jniSession?.run {
-            declareSubscriber(keyExpr, callback, onFinish, receiver, reliability)
+            declareSubscriber(keyExpr, callback, onClose, receiver, reliability)
         } ?: Result.failure(sessionClosedException)
     }
 
     internal fun <R> resolveQueryable(
         keyExpr: KeyExpr,
         callback: Callback<Query>,
-        onFinish: () -> Unit,
+        onClose: () -> Unit,
         receiver: R?,
         complete: Boolean
     ): Result<Queryable<R>> {
         return jniSession?.run {
-            declareQueryable(keyExpr, callback, onFinish, receiver, complete)
+            declareQueryable(keyExpr, callback, onClose, receiver, complete)
         } ?: Result.failure(sessionClosedException)
     }
 
     internal fun <R> resolveGet(
         selector: Selector,
         callback: Callback<Reply>,
-        onFinish: () -> Unit,
+        onClose: () -> Unit,
         receiver: R?,
         timeout: Duration,
         target: QueryTarget,
@@ -423,7 +423,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         value: Value?
     ): Result<R?> {
         return jniSession?.run {
-            performGet(selector, callback, onFinish, receiver, timeout, target, consolidation, value)
+            performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value)
         } ?: Result.failure(sessionClosedException)
     }
 

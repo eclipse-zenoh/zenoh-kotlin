@@ -39,7 +39,7 @@ class ChannelHandler<T: ZenohType>(private val channel: Channel<T>) : Handler<T,
         return channel
     }
 
-    override fun onFinish() {
+    override fun onClose() {
         channel.close()
     }
 }

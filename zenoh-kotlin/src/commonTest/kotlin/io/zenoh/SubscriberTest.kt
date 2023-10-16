@@ -79,12 +79,12 @@ class SubscriberTest {
 
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun onFinishTest() {
+    fun onCloseTest() {
         val session = Session.open().getOrThrow()
-        var onFinishWasCalled = false
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onFinish { onFinishWasCalled = true }.res().getOrThrow()
+        var onCloseWasCalled = false
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
         subscriber.undeclare()
-        assertTrue(onFinishWasCalled)
+        assertTrue(onCloseWasCalled)
         assertTrue(subscriber.receiver!!.isClosedForReceive)
         session.close()
     }
@@ -107,5 +107,5 @@ private class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
         return queue
     }
 
-    override fun onFinish() {}
+    override fun onClose() {}
 }

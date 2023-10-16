@@ -121,26 +121,26 @@ class Queryable<R> internal constructor(
         private var handler: Handler<Query, R>? = null
     ): Resolvable<Queryable<R>> {
         private var complete: Boolean = false
-        private var onFinish: (() -> Unit)? = null
+        private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Query, R>?) : this(other.session, other.keyExpr) {
             this.handler = handler
             this.complete = other.complete
-            this.onFinish = other.onFinish
+            this.onClose = other.onClose
         }
 
         private constructor(other: Builder<*>, callback: Callback<Query>?) : this(other.session, other.keyExpr) {
             this.callback = callback
             this.complete = other.complete
-            this.onFinish = other.onFinish
+            this.onClose = other.onClose
         }
 
         /** Change queryable completeness. */
         fun complete(complete: Boolean) = apply { this.complete = complete }
 
         /** Specify an action to be invoked when the [Queryable] is undeclared. */
-        fun onFinish(action: () -> Unit): Builder<R> {
-            this.onFinish = action
+        fun onClose(action: () -> Unit): Builder<R> {
+            this.onClose = action
             return this
         }
 
@@ -161,11 +161,11 @@ class Queryable<R> internal constructor(
         override fun res(): Result<Queryable<R>> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Query -> handler?.handle(t) }
-            val resolvedOnFinish = fun() {
-                handler?.onFinish()
-                onFinish?.invoke()
+            val resolvedOnClose = fun() {
+                handler?.onClose()
+                onClose?.invoke()
             }
-            return session.run { resolveQueryable(keyExpr, resolvedCallback, resolvedOnFinish, handler?.receiver(), complete) }
+            return session.run { resolveQueryable(keyExpr, resolvedCallback, resolvedOnClose, handler?.receiver(), complete) }
         }
     }
 }

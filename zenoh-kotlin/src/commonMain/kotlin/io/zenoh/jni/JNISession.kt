@@ -16,7 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.handlers.Callback
-import io.zenoh.jni.callbacks.JNIOnFinishCallback
+import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.jni.callbacks.JNIGetCallback
 import io.zenoh.jni.callbacks.JNIQueryableCallback
@@ -68,7 +68,7 @@ internal class JNISession {
     }
 
     fun <R> declareSubscriber(
-        keyExpr: KeyExpr, callback: Callback<Sample>, onFinish: () -> Unit, receiver: R?, reliability: Reliability
+        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
             JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid ->
@@ -82,13 +82,13 @@ internal class JNISession {
                 callback.run(sample)
             }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onFinish, reliability.ordinal
+            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
 
     fun <R> declareQueryable(
-        keyExpr: KeyExpr, callback: Callback<Query>, onFinish: () -> Unit, receiver: R?, complete: Boolean
+        keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
             JNIQueryableCallback { keyExprPtr: Long, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, queryPtr: Long ->
@@ -100,14 +100,14 @@ internal class JNISession {
                 callback.run(query)
             }
         val queryableRawPtr =
-            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onFinish, complete)
+            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onClose, complete)
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
     fun <R> performGet(
         selector: Selector,
         callback: Callback<Reply>,
-        onFinish: () -> Unit,
+        onClose: () -> Unit,
         receiver: R?,
         timeout: Duration,
         target: QueryTarget,
@@ -138,7 +138,7 @@ internal class JNISession {
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
-                onFinish,
+                onClose,
                 timeout.toMillis(),
                 target.ordinal,
                 consolidation.ordinal,
@@ -149,7 +149,7 @@ internal class JNISession {
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
-                onFinish,
+                onClose,
                 timeout.toMillis(),
                 target.ordinal,
                 consolidation.ordinal,
@@ -201,7 +201,7 @@ internal class JNISession {
         keyExpr: Long,
         sessionPtr: Long,
         callback: JNISubscriberCallback,
-        onFinish: JNIOnFinishCallback,
+        onClose: JNIOnCloseCallback,
         reliability: Int
     ): Long
 
@@ -210,7 +210,7 @@ internal class JNISession {
         keyExpr: Long,
         sessionPtr: Long,
         callback: JNIQueryableCallback,
-        onFinish: JNIOnFinishCallback,
+        onClose: JNIOnCloseCallback,
         complete: Boolean
     ): Long
 
@@ -226,7 +226,7 @@ internal class JNISession {
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
-        onFinish: JNIOnFinishCallback,
+        onClose: JNIOnCloseCallback,
         timeoutMs: Long,
         target: Int,
         consolidation: Int,
@@ -238,7 +238,7 @@ internal class JNISession {
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
-        onFinish: JNIOnFinishCallback,
+        onClose: JNIOnCloseCallback,
         timeoutMs: Long,
         target: Int,
         consolidation: Int,

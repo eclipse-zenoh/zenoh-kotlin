@@ -35,7 +35,7 @@ import io.zenoh.ZenohType
  *         return queue
  *     }
  *
- *     override fun onFinish() {
+ *     override fun onClose() {
  *         println("Received in total ${queue.size} elements."}
  *     }
  * }
@@ -67,9 +67,13 @@ interface Handler<T: ZenohType, R> {
      */
     fun receiver(): R
 
-
     /**
-     * Callback invoked when no more [T] elements are expected to be received.
+     * This callback is invoked by Zenoh at the conclusion of the handler's lifecycle.
+     *
+     * For instances of [io.zenoh.queryable.Queryable] and [io.zenoh.subscriber.Subscriber],
+     * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
+     * (see [io.zenoh.query.Get]), it is invoked when no more elements of type [T] are expected
+     * to be received.
      */
-    fun onFinish()
+    fun onClose()
 }
