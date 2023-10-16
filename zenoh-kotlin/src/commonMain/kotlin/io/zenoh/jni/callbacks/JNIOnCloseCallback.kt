@@ -12,14 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh
+package io.zenoh.jni.callbacks
 
-/**
- * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
- * log level configuration.
- */
-internal expect class Zenoh private constructor() {
-    companion object {
-        fun load()
-    }
+internal fun interface JNIOnCloseCallback {
+
+    fun run()
+
 }

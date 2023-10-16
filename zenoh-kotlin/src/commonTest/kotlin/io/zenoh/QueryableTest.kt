@@ -21,6 +21,7 @@ import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
@@ -124,6 +125,18 @@ class QueryableTest {
         assertEquals(Value("Test value"), receivedQuery!!.value)
 
     }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    @Test
+    fun onCloseTest() {
+        val session = Session.open().getOrThrow()
+        var onCloseWasCalled = false
+        val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        queryable.undeclare()
+        assertTrue(onCloseWasCalled)
+        assertTrue(queryable.receiver!!.isClosedForReceive)
+        session.close()
+    }
 }
 
 /** A dummy handler that replies "Hello queryable" followed by the count of replies performed. */
@@ -140,6 +153,8 @@ private class QueryHandler : Handler<Query, QueryHandler> {
     override fun receiver(): QueryHandler {
         return this
     }
+
+    override fun onClose() {}
 
     fun reply(query: Query) {
         val payload = "Hello queryable $counter!"

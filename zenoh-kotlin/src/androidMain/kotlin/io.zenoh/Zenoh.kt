@@ -20,13 +20,13 @@ package io.zenoh
  */
 internal actual class Zenoh private actual constructor() {
 
-    companion object {
+    actual companion object {
         private const val ZENOH_LIB_NAME = "zenoh_jni"
         private const val ZENOH_LOGS_PROPERTY = "zenoh.logger"
 
         private var instance: Zenoh? = null
 
-        fun load() {
+        actual fun load() {
             instance ?: Zenoh().also { instance = it }
         }
     }

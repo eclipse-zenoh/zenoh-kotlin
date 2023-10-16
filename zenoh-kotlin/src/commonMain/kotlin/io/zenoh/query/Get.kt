@@ -18,7 +18,6 @@ import io.zenoh.handlers.Callback
 import io.zenoh.Session
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
@@ -86,6 +85,7 @@ class Get<R> private constructor() {
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
         private var value: Value? = null
+        private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
             this.handler = handler
@@ -102,6 +102,7 @@ class Get<R> private constructor() {
             this.target = other.target
             this.consolidation = other.consolidation
             this.value = other.value
+            this.onClose = other.onClose
         }
 
         /** Specify the [QueryTarget]. */
@@ -137,6 +138,16 @@ class Get<R> private constructor() {
             return this
         }
 
+        /**
+         * Specify an action to be invoked when the Get operation is over.
+         *
+         * Zenoh will trigger ths specified action once no more replies are to be expected.
+         */
+        fun onClose(action: () -> Unit): Builder<R> {
+            this.onClose = action
+            return this
+        }
+
         /** Specify a [Callback]. Overrides any previously specified callback or handler. */
         fun with(callback: Callback<Reply>): Builder<Unit> = Builder(this, callback)
 
@@ -149,15 +160,20 @@ class Get<R> private constructor() {
         /**
          * Resolve the builder triggering the query.
          *
-         * @return A [Result] with the [receiver] from the specified [Handler] (if specified).
+         * @return A [Result] with the receiver [R] from the specified [Handler] (if specified).
          */
         fun res(): Result<R?> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
+            val resolvedOnClose = fun() {
+                onClose?.invoke()
+                handler?.onClose()
+            }
             return session.run {
                 resolveGet(
                     selector,
                     resolvedCallback,
+                    resolvedOnClose,
                     handler?.receiver(),
                     timeout,
                     target,

@@ -56,9 +56,5 @@ jobs:
         working-directory: zenoh-jni
         run: cargo fmt --all --check
 
-      - name: Cargo Build
-        working-directory: zenoh-jni
-        run: cargo build --verbose
-
       - name: Gradle Test
         run: gradle jvmTest --info

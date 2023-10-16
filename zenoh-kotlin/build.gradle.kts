@@ -82,7 +82,7 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            val zenohPaths = "../zenoh-jni/target/release:../zenoh-jni/target/debug"
+            val zenohPaths = "../zenoh-jni/target/release"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
@@ -111,18 +111,18 @@ kotlin {
             resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
         val jvmTest by getting {
-            resources.srcDir("../zenoh-jni/target/debug").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
     }
 }
 
 tasks.withType<Test> {
     doFirst {
-        buildZenohJNI(BuildMode.DEBUG)
+        buildZenohJNI(BuildMode.RELEASE)
 
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
-        systemProperty("java.library.path", "../zenoh-jni/target/debug")
+        systemProperty("java.library.path", "../zenoh-jni/target/release")
     }
 }
 

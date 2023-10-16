@@ -16,6 +16,7 @@ package io.zenoh
 
 import io.zenoh.query.Reply
 import io.zenoh.selector.intoSelector
+import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
 fun main() {
@@ -24,23 +25,23 @@ fun main() {
         session.use {
             "demo/example/**".intoSelector().onSuccess { selector ->
                 selector.use {
-                    session.get(selector)
-                        .with { reply ->
-                            if (reply is Reply.Success) {
-                                println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
-                            } else {
-                                reply as Reply.Error
-                                println("Received (ERROR: '${reply.error}')")
+                    session.get(selector).timeout(timeout).res().onSuccess {
+                        runBlocking {
+                            val iterator = it!!.iterator()
+                            while (iterator.hasNext()) {
+                                val reply = iterator.next()
+                                if (reply is Reply.Success) {
+                                    println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
+                                } else {
+                                    reply as Reply.Error
+                                    println("Received (ERROR: '${reply.error}')")
+                                }
                             }
                         }
-                        .timeout(timeout)
-                        .res()
-                        .onSuccess {
-                            // Keep the session alive for the duration of the timeout.
-                            Thread.sleep(timeout.toMillis())
-                        }
+                    }
                 }
             }
         }
     }
 }
+
