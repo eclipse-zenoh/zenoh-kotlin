@@ -281,14 +281,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     on_close: JObject,
     reliability: jint,
 ) -> *const zenoh::subscriber::Subscriber<'static, ()> {
-    match declare_subscriber(
-        &mut env,
-        key_expr_ptr,
-        ptr,
-        callback,
-        on_close,
-        reliability,
-    ) {
+    match declare_subscriber(&mut env, key_expr_ptr, ptr, callback, on_close, reliability) {
         Ok(subscriber_ptr) => subscriber_ptr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {

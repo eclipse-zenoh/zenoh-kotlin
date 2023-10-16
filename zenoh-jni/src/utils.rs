@@ -91,10 +91,7 @@ pub(crate) fn load_on_close(
                     _ = Error::Jni(format!("Error while running 'onClose' callback: {}", err))
                         .throw_on_jvm(&mut env)
                         .map_err(|err| {
-                            log::error!(
-                                "Unable to throw exception upon 'onClose' failure: {}",
-                                err
-                            )
+                            log::error!("Unable to throw exception upon 'onClose' failure: {}", err)
                         });
                 }
             }
