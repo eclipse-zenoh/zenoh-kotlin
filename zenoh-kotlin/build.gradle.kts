@@ -88,9 +88,22 @@ kotlin {
     }
     androidTarget {
         publishLibraryVariants("release")
+        publishing {
+            repositories {
+                maven {
+                    name = "GithubPackages"
+                    url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
+                    credentials {
+                        username = System.getenv("GITHUB_ACTOR")
+                        password = System.getenv("GITHUB_TOKEN")
+                    }
+                }
+            }
+        }
     }
 
-    @Suppress("Unused") sourceSets {
+    @Suppress("Unused")
+    sourceSets {
         val commonMain by getting {
             dependencies {
                 implementation("commons-net:commons-net:3.9.0")
