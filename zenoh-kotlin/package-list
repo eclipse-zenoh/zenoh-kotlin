@@ -14,9 +14,11 @@ $dokka.location:io.zenoh.handlers/Callback/run/#TypeParam(bounds=[io.zenoh.Zenoh
 $dokka.location:io.zenoh.handlers/ChannelHandler///PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-channel-handler/index.html
 $dokka.location:io.zenoh.handlers/ChannelHandler/ChannelHandler/#kotlinx.coroutines.channels.Channel[TypeParam(bounds=[io.zenoh.ZenohType])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-channel-handler/-channel-handler.html
 $dokka.location:io.zenoh.handlers/ChannelHandler/handle/#TypeParam(bounds=[io.zenoh.ZenohType])/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-channel-handler/handle.html
+$dokka.location:io.zenoh.handlers/ChannelHandler/onClose/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-channel-handler/on-close.html
 $dokka.location:io.zenoh.handlers/ChannelHandler/receiver/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-channel-handler/receiver.html
 $dokka.location:io.zenoh.handlers/Handler///PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/index.html
 $dokka.location:io.zenoh.handlers/Handler/handle/#TypeParam(bounds=[io.zenoh.ZenohType])/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/handle.html
+$dokka.location:io.zenoh.handlers/Handler/onClose/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/on-close.html
 $dokka.location:io.zenoh.handlers/Handler/receiver/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/receiver.html
 $dokka.location:io.zenoh.keyexpr////PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/index.html
 $dokka.location:io.zenoh.keyexpr//intoKeyExpr/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/into-key-expr.html
@@ -144,6 +146,7 @@ $dokka.location:io.zenoh.query/ConsolidationMode/valueOf/#kotlin.String/Pointing
 $dokka.location:io.zenoh.query/ConsolidationMode/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-consolidation-mode/values.html
 $dokka.location:io.zenoh.query/Get.Builder///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/index.html
 $dokka.location:io.zenoh.query/Get.Builder/consolidation/#io.zenoh.query.ConsolidationMode/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/consolidation.html
+$dokka.location:io.zenoh.query/Get.Builder/onClose/#kotlin.Function0[kotlin.Unit]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/on-close.html
 $dokka.location:io.zenoh.query/Get.Builder/res/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/res.html
 $dokka.location:io.zenoh.query/Get.Builder/target/#io.zenoh.query.QueryTarget/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/target.html
 $dokka.location:io.zenoh.query/Get.Builder/timeout/#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-get/-builder/timeout.html
@@ -199,6 +202,7 @@ $dokka.location:io.zenoh.queryable/Query/selector/#/PointingToDeclaration/zenoh
 $dokka.location:io.zenoh.queryable/Query/value/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/value.html
 $dokka.location:io.zenoh.queryable/Queryable.Builder///PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/index.html
 $dokka.location:io.zenoh.queryable/Queryable.Builder/complete/#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/complete.html
+$dokka.location:io.zenoh.queryable/Queryable.Builder/onClose/#kotlin.Function0[kotlin.Unit]/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/on-close.html
 $dokka.location:io.zenoh.queryable/Queryable.Builder/res/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/res.html
 $dokka.location:io.zenoh.queryable/Queryable.Builder/with/#io.zenoh.handlers.Callback[io.zenoh.queryable.Query]/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/with.html
 $dokka.location:io.zenoh.queryable/Queryable.Builder/with/#io.zenoh.handlers.Handler[io.zenoh.queryable.Query,TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/-builder/with.html
@@ -237,6 +241,7 @@ $dokka.location:io.zenoh.subscriber/Reliability/valueOf/#kotlin.String/PointingT
 $dokka.location:io.zenoh.subscriber/Reliability/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-reliability/values.html
 $dokka.location:io.zenoh.subscriber/Subscriber.Builder///PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/index.html
 $dokka.location:io.zenoh.subscriber/Subscriber.Builder/bestEffort/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/best-effort.html
+$dokka.location:io.zenoh.subscriber/Subscriber.Builder/onClose/#kotlin.Function0[kotlin.Unit]/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/on-close.html
 $dokka.location:io.zenoh.subscriber/Subscriber.Builder/reliability/#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/reliability.html
 $dokka.location:io.zenoh.subscriber/Subscriber.Builder/reliable/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/reliable.html
 $dokka.location:io.zenoh.subscriber/Subscriber.Builder/res/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/-subscriber/-builder/res.html
