@@ -33,6 +33,65 @@ The documentation of the API is published at https://eclipse-zenoh.github.io/zen
 Alternatively, you can build it locally as [explained below](#building-the-documentation).
 
 ----
+# How to import
+
+## <img src="android-robot.png" alt="Android" height="50"> Android
+
+For this first version we have published a [Github package](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034) with the library which can be imported on your projects.
+
+Checkout the [Zenoh demo app](https://github.com/eclipse-zenoh/zenoh-demos/tree/master/zenoh-android/ZenohApp) for an example on how to use the library.
+
+First add the Github packages repository to your `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    // ...
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
+            credentials {
+                username = providers.gradleProperty("user").get()
+                password = providers.gradleProperty("token").get()
+            }
+        }
+    }
+}
+```
+
+where the username and token are your github username and a personal access token you need to generate on github with package read permissions (see the [Github documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
+This is required by Github in order to import the package, even if it's from a public repository.
+
+After that add to the dependencies in the app's `build.gradle.kts`:
+
+```kotlin
+implementation("io.zenoh:zenoh-kotlin-android:0.11.0-dev")
+```
+
+### Platforms 
+
+The library targets the following platforms:
+- x86
+- x86_64
+- arm
+- arm64
+
+### SDK
+
+The minimum SDK is 30.
+
+### Permissions
+
+Zenoh is a communications protocol, therefore the permissions required are:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+```
+
+---
 
 # How to build it
 
@@ -94,7 +153,7 @@ Now the library is published on maven local, let's now see how to import it into
 
 First, we need to indicate we want to look into mavenLocal for our library, so in your top level `build.gradle.kts` you need to specify
 the `mavenLocal` repository:
-```agsl
+```
 repositories {
     mavenCentral()
     ...
