@@ -12,20 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.handlers
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
+import io.zenoh.ZenohType
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+/**
+ * Runnable callback.
+ *
+ * @param T Type of the parameter, which is a [ZenohType].
+ * @constructor Create empty Callback
+ */
+fun interface Callback<T: ZenohType> {
+
+    /** Callback to be run. */
+    fun run(t: T)
+
 }

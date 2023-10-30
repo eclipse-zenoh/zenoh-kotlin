@@ -12,20 +12,20 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
+package io.zenoh.jni
+
+/**
+ * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.subscriber.Subscriber]
+ *
+ * @property ptr: raw pointer to the underlying native Subscriber.
+ */
+internal class JNISubscriber(private val ptr: Long) {
+
+    fun close() {
+        freePtrViaJNI(ptr)
     }
-}
-rootProject.name = "zenoh-kotlin"
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
+    /** Frees the underlying native Subscriber. */
+    private external fun freePtrViaJNI(ptr: Long)
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
 }

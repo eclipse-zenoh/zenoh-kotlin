@@ -12,20 +12,16 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
+package io.zenoh
+
+/** Logger class to redirect the Rust logs from Zenoh to the kotlin environment. */
+class Logger {
+
+    companion object {
+        /**
+         * Redirects the rust logs either to logcat for Android systems or to the standard output (for non-android
+         * systems). @param logLevel must be either "info", "debug", "warn", "trace" or "error".
+         */
+        external fun start(logLevel: String)
     }
-}
-rootProject.name = "zenoh-kotlin"
-
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
 }

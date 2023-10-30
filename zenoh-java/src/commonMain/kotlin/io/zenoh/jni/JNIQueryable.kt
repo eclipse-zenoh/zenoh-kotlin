@@ -12,20 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
+package io.zenoh.jni
+
+/**
+ * Adapter class to handle the interactions with Zenoh through JNI for a [Queryable]
+ *
+ * @property ptr: raw pointer to the underlying native Queryable.
+ */
+internal class JNIQueryable(val ptr: Long) {
+
+    fun close() {
+        freePtrViaJNI(ptr)
     }
-}
-rootProject.name = "zenoh-kotlin"
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+    /** Frees the underlying native Queryable. */
+    private external fun freePtrViaJNI(ptr: Long)
 }

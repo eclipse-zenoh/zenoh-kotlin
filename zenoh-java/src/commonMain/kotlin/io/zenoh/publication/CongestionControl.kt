@@ -12,20 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.publication
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
+/** The congestion control to be applied when routing the data. */
+enum class CongestionControl {
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+    /**
+     * Prevents the message from being dropped at all cost.
+     * In the face of heavy congestion on a part of the network, this could result in your publisher node blocking.
+     */
+    BLOCK,
+
+    /**
+     * Allows the message to be dropped if all buffers are full.
+     */
+    DROP;
 }

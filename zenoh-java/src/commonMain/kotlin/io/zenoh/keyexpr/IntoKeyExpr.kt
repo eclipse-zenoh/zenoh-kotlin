@@ -12,20 +12,14 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
+package io.zenoh.keyexpr
+
+import io.zenoh.exceptions.KeyExprException
+
+fun String.intoKeyExpr(): Result<KeyExpr> = runCatching {
+    if (this.isEmpty()) {
+        return Result.failure(KeyExprException("Attempting to create a KeyExpr from an empty string."))
     }
+    return KeyExpr.autocanonize(this)
 }
-rootProject.name = "zenoh-kotlin"
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
-}

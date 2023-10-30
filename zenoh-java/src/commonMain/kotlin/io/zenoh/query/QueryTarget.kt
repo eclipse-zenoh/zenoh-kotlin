@@ -12,20 +12,24 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.query
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
+/** The Queryables that should be targeted by a GET operation. */
+enum class QueryTarget {
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+    /**
+     * Best Matching: the nearest complete queryable if any else all matching queryables.
+     */
+    BEST_MATCHING,
+
+    /**
+     * All matching queryables.
+     */
+    ALL,
+
+    /**
+     * All Complete queryables.
+     */
+    ALL_COMPLETE;
 }
+

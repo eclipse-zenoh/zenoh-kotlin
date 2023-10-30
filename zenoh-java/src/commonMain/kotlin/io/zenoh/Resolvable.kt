@@ -12,20 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
+/**
+ * A resolvable function interface meant to be used by Zenoh builders.
+ */
+fun interface Resolvable<R> {
 
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+    fun res(): R
 }

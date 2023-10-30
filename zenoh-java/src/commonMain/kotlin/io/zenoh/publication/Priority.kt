@@ -12,20 +12,23 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.publication
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+/**
+ * The Priority of Zenoh messages.
+ *
+ * A Priority is identified by a numeric value. Lower the value, higher the priority. Higher the value, lower the priority.
+ *
+ * - Highest priority: 1 ([REALTIME])
+ * - Lowest priority: 7 ([BACKGROUND])
+ */
+enum class Priority(val value: Int) {
+    REALTIME(1),
+    INTERACTIVE_HIGH(2),
+    INTERACTIVE_LOW(3),
+    DATA_HIGH(4),
+    DATA(5),
+    DATA_LOW(6),
+    BACKGROUND(7);
 }
+

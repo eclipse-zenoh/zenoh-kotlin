@@ -12,20 +12,14 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
+package io.zenoh.prelude
+
+/** The kind of sample. */
+enum class SampleKind {
+    PUT,
+    DELETE;
+
+    companion object {
+        fun fromInt(value: Int) = entries.first { it.ordinal == value }
     }
-}
-rootProject.name = "zenoh-kotlin"
-
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
 }

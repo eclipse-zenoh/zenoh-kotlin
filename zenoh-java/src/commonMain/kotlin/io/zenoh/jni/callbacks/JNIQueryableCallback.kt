@@ -12,20 +12,13 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.jni.callbacks
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+internal fun interface JNIQueryableCallback {
+    fun run(keyExprPtr: Long,
+            selectorParams: String,
+            withValue: Boolean,
+            payload: ByteArray?,
+            encoding: Int,
+            queryPtr: Long)
 }

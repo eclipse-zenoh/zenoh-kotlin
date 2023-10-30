@@ -12,20 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-    }
-}
-rootProject.name = "zenoh-kotlin"
+package io.zenoh.exceptions
 
-//include(":zenoh-kotlin")
-include(":zenoh-java")
-//include(":examples")
-include(":zenoh-jni")
-
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
-}
+/**
+ * JNI (Java native interface) exception.
+ *
+ * This type of exception is thrown from the native code when something goes wrong regarding the
+ * communication between the Java/Kotlin layer and the native layer through the JNI.
+ */
+class JNIException : Exception()
