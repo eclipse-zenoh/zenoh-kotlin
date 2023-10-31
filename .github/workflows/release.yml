@@ -53,21 +53,3 @@ jobs:
 
       - name: Gradle Test
         run: gradle jvmTest --info
-
-  build_doc_and_deploy:
-    name: Build and Deploy Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      - name: Build doc
-        run: gradle dokkaHtml
-
-      - name: Deploy doc
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./zenoh-kotlin/build/dokka/html
