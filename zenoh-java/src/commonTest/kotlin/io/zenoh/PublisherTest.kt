@@ -26,16 +26,16 @@ import kotlin.test.assertEquals
 class PublisherTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr()
     }
 
     @Test
     fun putTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
 
         val receivedSamples = ArrayList<Sample>()
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(TEST_KEY_EXP).res()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample ->
             receivedSamples.add(sample)
         }.res()
 
@@ -46,6 +46,8 @@ class PublisherTest {
         )
 
         testValues.forEach() { value -> publisher.put(value).res() }
+        subscriber.undeclare()
+        publisher.undeclare()
         session.close()
 
         assertEquals(receivedSamples.size, testValues.size)
@@ -56,9 +58,9 @@ class PublisherTest {
 
     @Test
     fun writeTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample ->
             receivedSamples.add(sample)
         }.res()
 
@@ -67,13 +69,12 @@ class PublisherTest {
             Sample(TEST_KEY_EXP, Value("Test DELETE"), SampleKind.DELETE, null),
         )
 
-        session.declarePublisher(TEST_KEY_EXP).res().onSuccess {
-            it.use { publisher ->
-                publisher.write(testSamples[0].kind, testSamples[0].value).res()
-                publisher.write(testSamples[1].kind, testSamples[1].value).res()
-            }
-        }
+        val publisher = session.declarePublisher(TEST_KEY_EXP).res()
+            publisher.write(testSamples[0].kind, testSamples[0].value).res()
+            publisher.write(testSamples[1].kind, testSamples[1].value).res()
 
+        subscriber.undeclare()
+        publisher.undeclare()
         session.close()
         assertEquals(testSamples.size, receivedSamples.size)
         for ((index, sample) in receivedSamples.withIndex()) {
@@ -83,18 +84,18 @@ class PublisherTest {
 
     @Test
     fun deleteTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
 
         val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample ->
             receivedSamples.add(sample)
         }.res()
 
-        session.declarePublisher(TEST_KEY_EXP).res().onSuccess {
-            it.use { publisher ->
-                publisher.delete().res()
-            }
-        }
+        val publisher = session.declarePublisher(TEST_KEY_EXP).res()
+        publisher.delete().res()
+
+        publisher.undeclare()
+        subscriber.undeclare()
         session.close()
 
         assertEquals(1, receivedSamples.size)

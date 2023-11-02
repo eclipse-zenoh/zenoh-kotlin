@@ -22,12 +22,12 @@ import kotlin.test.*
 class SessionTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr()
     }
 
     @Test
     fun sessionStartCloseTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         assertTrue(session.isOpen())
         session.close()
         assertFalse(session.isOpen())
@@ -35,27 +35,27 @@ class SessionTest {
 
     @Test
     fun sessionStop_stopUnopenedSessionIsNoOp() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         session.close()
     }
 
     @Test
     fun sessionClose_doesNotThrowExceptionWhenStoppingSessionWithActiveDeclarations() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         session.declarePublisher(TEST_KEY_EXP)
         session.close()
     }
 
     @Test
     fun sessionDeclare_sessionIsOpenFromInitialization() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         assertTrue(session.isOpen())
         session.close()
     }
 
     @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         session.declareQueryable(TEST_KEY_EXP).with {}.res()
         session.declareSubscriber(TEST_KEY_EXP).with {}.res()
         session.declarePublisher(TEST_KEY_EXP).res()
@@ -64,11 +64,11 @@ class SessionTest {
 
     @Test
     fun sessionClose_declarationsAreAliveAfterClosingSessionTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var receivedSample: Sample? = null
 
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val publisher = session.declarePublisher(TEST_KEY_EXP).res()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res()
         session.close()
 
         assertTrue(publisher.isValid())
@@ -85,11 +85,11 @@ class SessionTest {
 
     @Test
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         session.close()
-        assertFailsWith<SessionException> { session.declarePublisher(TEST_KEY_EXP).res().getOrThrow() }
-        assertFailsWith<SessionException> { session.declareSubscriber(TEST_KEY_EXP).with {}.res().getOrThrow() }
-        assertFailsWith<SessionException> { session.declareQueryable(TEST_KEY_EXP).with {}.res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declarePublisher(TEST_KEY_EXP).res() }
+        assertFailsWith<SessionException> { session.declareSubscriber(TEST_KEY_EXP).with {}.res() }
+        assertFailsWith<SessionException> { session.declareQueryable(TEST_KEY_EXP).with {}.res() }
     }
 
 }

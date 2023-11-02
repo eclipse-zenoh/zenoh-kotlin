@@ -15,16 +15,16 @@ class SelectorTest {
 
     @Test
     fun selectorFromStringTest() {
-        "a/b/c?arg1=val1".intoSelector().getOrThrow().use { selector: Selector ->
+        "a/b/c?arg1=val1".intoSelector().use { selector: Selector ->
             assertEquals("a/b/c", selector.keyExpr.toString())
             assertEquals("arg1=val1", selector.parameters)
         }
 
-        "a/b/c".intoSelector().getOrThrow().use { selector: Selector ->
+        "a/b/c".intoSelector().use { selector: Selector ->
             assertEquals("a/b/c", selector.keyExpr.toString())
             assertEquals("", selector.parameters)
         }
 
-        assertFailsWith<KeyExprException> { "".intoSelector().getOrThrow() }
+        assertFailsWith<KeyExprException> { "".intoSelector() }
     }
 }

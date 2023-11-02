@@ -122,7 +122,8 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             /**
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
-            override fun res(): Result<Unit> {
+            @Throws(Exception::class)
+            override fun res() {
                 val sample = Sample(keyExpr, value, kind, timeStamp)
                 return query.reply(Success("", sample)).res()
             }
@@ -165,7 +166,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             /**
              * Triggers the error reply.
              */
-            override fun res(): Result<Unit> {
+            override fun res() {
                 return query.reply(Error("", value)).res()
             }
         }

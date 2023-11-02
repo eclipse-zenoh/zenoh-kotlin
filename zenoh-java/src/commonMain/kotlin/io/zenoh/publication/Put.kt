@@ -107,8 +107,9 @@ open class Put protected constructor(
         /** Change the [SampleKind] of the sample. If set to [SampleKind.DELETE], performs a delete operation. */
         fun kind(kind: SampleKind) = apply { this.kind = kind }
 
-        /** Resolves the put operation, returning a [Result]. */
-        override fun res(): Result<Unit> = runCatching {
+        /** Resolves the put operation. */
+        @Throws(Exception::class)
+        override fun res() {
             val put = Put(keyExpr, value, congestionControl, priority, kind)
             session.run { resolvePut(keyExpr, put) }
         }

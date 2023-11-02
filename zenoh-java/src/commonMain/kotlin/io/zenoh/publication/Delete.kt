@@ -18,6 +18,7 @@ import io.zenoh.prelude.SampleKind
 import io.zenoh.Session
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
+import kotlin.jvm.Throws
 
 /**
  * Delete operation to perform on Zenoh on a key expression.
@@ -88,10 +89,11 @@ class Delete private constructor(
         /**
          * Performs a DELETE operation on the specified [keyExpr].
          *
-         * A successful [Result] only states the Delete request was properly sent through the network, it doesn't mean it
+         * A successful resolution only states the Delete request was properly sent through the network, it doesn't mean it
          * was properly executed remotely.
          */
-        fun res(): Result<Unit> = runCatching {
+        @Throws(Exception::class)
+        fun res() {
             val delete = Delete(
                 this.keyExpr, Value.empty(), this.congestionControl, this.priority, SampleKind.DELETE
             )

@@ -43,21 +43,21 @@ class GetTest {
 
     @Test
     fun get_runsWithCallback() {
-        val sessionA = Session.open().getOrThrow()
+        val sessionA = Session.open()
 
         val value = Value(TEST_PAYLOAD)
         val timeStamp = TimeStamp.getCurrentTime()
         val kind = SampleKind.PUT
-        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
+        val keyExpr = TEST_KEY_EXP.intoKeyExpr()
         val queryable = sessionA.declareQueryable(keyExpr).with { query ->
             query.reply(keyExpr)
                 .success(value)
                 .withTimeStamp(timeStamp)
                 .withKind(kind)
                 .res()
-        }.res().getOrThrow()
+        }.res()
 
-        val sessionB = Session.open().getOrThrow()
+        val sessionB = Session.open()
 
         sessionB.get(keyExpr).with { reply: Reply ->
             assertTrue(reply is Reply.Success)
@@ -76,13 +76,13 @@ class GetTest {
 
     @Test
     fun getWithSelectorParamsTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
 
         var receivedParams = ""
-        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
+        val keyExpr = TEST_KEY_EXP.intoKeyExpr()
         val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
             receivedParams = query.parameters
-        }}.res().getOrThrow()
+        }}.res()
 
         val params = "arg1=val1,arg2=val2"
         val selector = Selector(keyExpr, params)
@@ -96,7 +96,7 @@ class GetTest {
 
     @Test
     fun get_runsWithHandler() {
-        val sessionA = Session.open().getOrThrow()
+        val sessionA = Session.open()
         val repliedSamples: ArrayList<Sample> = ArrayList()
         val queryablesAmount = 3
         val declaredQueryables: ArrayList<Queryable<Unit>> = ArrayList()
@@ -106,7 +106,7 @@ class GetTest {
         val kind = SampleKind.PUT
 
         for (i in 1..queryablesAmount) {
-            val keyExpr = KeyExpr.tryFrom(TEST_KEY_EXP + i.toString()).getOrThrow()
+            val keyExpr = KeyExpr.tryFrom(TEST_KEY_EXP + i.toString())
             val queryable = sessionA.declareQueryable(keyExpr).with { it.use { query ->
                     query.reply(keyExpr)
                         .success(value)
@@ -116,18 +116,17 @@ class GetTest {
                     }
                 }
                 .res()
-                .getOrThrow()
+
             declaredQueryables.add(queryable)
             repliedSamples.add(Sample(keyExpr, value, kind, timestamp))
         }
 
-        val sessionB = Session.open().getOrThrow()
+        val sessionB = Session.open()
         val receiver: ArrayList<Reply> =
-            sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr().getOrThrow())
+            sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr())
                 .with(GetHandler())
                 .timeout(Duration.ofMillis(1000))
-                .res()
-                .getOrThrow()!!
+                .res()!!
 
         Thread.sleep(1000)
         declaredQueryables.forEach { queryable -> queryable.undeclare() }
@@ -146,7 +145,7 @@ class GetTest {
 
     @Test
     fun get_runsWithChannel() {
-        val sessionA = Session.open().getOrThrow()
+        val sessionA = Session.open()
 
         val queryablesAmount = 3
         val declaredQueryables: ArrayList<Queryable<Unit>> = ArrayList()
@@ -156,7 +155,7 @@ class GetTest {
         val kind = SampleKind.PUT
 
         for (i in 1..queryablesAmount) {
-            val keyExpr = (TEST_KEY_EXP + i.toString()).intoKeyExpr().getOrThrow()
+            val keyExpr = (TEST_KEY_EXP + i.toString()).intoKeyExpr()
             val queryable = sessionA.declareQueryable(keyExpr).with { it.use { query ->
                     query.reply(keyExpr)
                         .success(value)
@@ -166,15 +165,15 @@ class GetTest {
                     }
                 }
                 .res()
-                .getOrThrow()
+
             declaredQueryables.add(queryable)
         }
 
         val receivedReplies = ArrayList<Reply>(0)
 
         runBlocking {
-            val sessionB = Session.open().getOrThrow()
-            val receiver = sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr().getOrThrow()).res().getOrThrow()!!
+            val sessionB = Session.open()
+            val receiver = sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr()).res()!!
 
             launch {
                 delay(1000)

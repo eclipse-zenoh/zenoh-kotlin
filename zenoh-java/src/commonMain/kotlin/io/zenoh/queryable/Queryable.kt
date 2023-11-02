@@ -156,9 +156,10 @@ class Queryable<R> internal constructor(
         /**
          * Resolve the builder, creating a [Queryable] with the provided parameters.
          *
-         * @return A [Result] with the newly created [Queryable].
+         * @return The newly created [Queryable].
          */
-        override fun res(): Result<Queryable<R>> = runCatching {
+        @Throws(Exception::class)
+        override fun res(): Queryable<R> {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Query -> handler?.handle(t) }
             val resolvedOnClose = fun() {

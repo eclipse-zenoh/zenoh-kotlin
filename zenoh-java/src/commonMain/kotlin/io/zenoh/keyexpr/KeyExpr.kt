@@ -16,7 +16,9 @@ package io.zenoh.keyexpr
 
 import io.zenoh.Resolvable
 import io.zenoh.Session
+import io.zenoh.exceptions.KeyExprException
 import io.zenoh.jni.JNIKeyExpr
+import kotlin.jvm.Throws
 
 /**
  * # Address space
@@ -71,9 +73,11 @@ class KeyExpr internal constructor(internal var jniKeyExpr: JNIKeyExpr? = null):
          * You may use [autocanonize] instead if you are unsure if the expression you will use for construction will be canon.
          *
          * @param keyExpr The intended key expression as a string.
-         * @return a [Result] with the [KeyExpr] in case of success.
+         * @return The [KeyExpr] in case of success.
+         * @throws KeyExprException in the case of failure.
          */
-        fun tryFrom(keyExpr: String) : Result<KeyExpr> {
+        @Throws(KeyExprException::class)
+        fun tryFrom(keyExpr: String): KeyExpr {
             return JNIKeyExpr.tryFrom(keyExpr)
         }
 
@@ -84,9 +88,11 @@ class KeyExpr internal constructor(internal var jniKeyExpr: JNIKeyExpr? = null):
          * expression before checking if it is valid.
          *
          * @param keyExpr The intended key expression as a string.
-         * @return a [Result] with the canonized [KeyExpr] in case of success.
+         * @return The canonized [KeyExpr].
+         * @throws KeyExprException in the case of failure.
          */
-        fun autocanonize(keyExpr: String): Result<KeyExpr> {
+        @Throws(KeyExprException::class)
+        fun autocanonize(keyExpr: String): KeyExpr {
             return JNIKeyExpr.autocanonize(keyExpr)
         }
     }

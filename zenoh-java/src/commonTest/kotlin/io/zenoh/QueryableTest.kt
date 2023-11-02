@@ -36,23 +36,23 @@ import kotlin.test.assertTrue
 class QueryableTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr()
         const val TEST_PAYLOAD = "Hello queryable"
     }
 
     /** Test validating both Queryable and get operations. */
     @Test
     fun queryable_runsWithCallback() {
-        val sessionA = Session.open().getOrThrow()
+        val sessionA = Session.open()
 
         val sample = Sample(
             TEST_KEY_EXP, Value(TEST_PAYLOAD), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
         )
         val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with { query ->
             query.reply(TEST_KEY_EXP).success(sample.value).withTimeStamp(sample.timestamp!!).res()
-        }.res().getOrThrow()
+        }.res()
 
-        val sessionB = Session.open().getOrThrow()
+        val sessionB = Session.open()
 
         sessionB.get(TEST_KEY_EXP).with { reply: Reply ->
             assertTrue(reply is Reply.Success)
@@ -68,11 +68,11 @@ class QueryableTest {
 
     @Test
     fun queryable_runsWithHandler() {
-        val sessionA = Session.open().getOrThrow()
+        val sessionA = Session.open()
         val handler = QueryHandler()
-        val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with(handler).res().getOrThrow()
+        val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with(handler).res()
 
-        val sessionB = Session.open().getOrThrow()
+        val sessionB = Session.open()
         val receivedReplies = ArrayList<Reply>()
         sessionB.get(TEST_KEY_EXP).with { reply: Reply ->
             receivedReplies.add(reply)
@@ -92,18 +92,20 @@ class QueryableTest {
 
     @Test
     fun queryableBuilder_channelHandlerIsTheDefaultHandler() {
-        val session = Session.open().getOrThrow()
-        val queryable = session.declareQueryable(TEST_KEY_EXP).res().getOrThrow()
+        val session = Session.open()
+        val queryable = session.declareQueryable(TEST_KEY_EXP).res()
         assertTrue(queryable.receiver is Channel<Query>)
     }
 
     @Test
     fun queryTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var receivedQuery: Query? = null
-        session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res().getOrThrow()
+        val queryable = session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res()
 
         session.get(TEST_KEY_EXP).res()
+
+        queryable.undeclare()
         session.close()
 
         Thread.sleep(1000)
@@ -113,13 +115,16 @@ class QueryableTest {
 
     @Test
     fun queryWithValueTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var receivedQuery: Query? = null
-        session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res().getOrThrow()
+        val queryable = session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res()
 
         session.get(TEST_KEY_EXP).withValue("Test value").res()
-        session.close()
+
         Thread.sleep(1000)
+
+        queryable.undeclare()
+        session.close()
 
         assertNotNull(receivedQuery)
         assertEquals(Value("Test value"), receivedQuery!!.value)
@@ -129,9 +134,9 @@ class QueryableTest {
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var onCloseWasCalled = false
-        val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res()
         queryable.undeclare()
         assertTrue(onCloseWasCalled)
         assertTrue(queryable.receiver!!.isClosedForReceive)

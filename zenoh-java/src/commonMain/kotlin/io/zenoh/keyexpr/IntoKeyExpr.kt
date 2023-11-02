@@ -16,9 +16,10 @@ package io.zenoh.keyexpr
 
 import io.zenoh.exceptions.KeyExprException
 
-fun String.intoKeyExpr(): Result<KeyExpr> = runCatching {
+@Throws(KeyExprException::class)
+fun String.intoKeyExpr(): KeyExpr {
     if (this.isEmpty()) {
-        return Result.failure(KeyExprException("Attempting to create a KeyExpr from an empty string."))
+        throw(KeyExprException("Attempting to create a KeyExpr from an empty string."))
     }
     return KeyExpr.autocanonize(this)
 }

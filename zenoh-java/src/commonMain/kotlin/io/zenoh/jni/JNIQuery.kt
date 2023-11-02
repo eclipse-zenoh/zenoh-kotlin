@@ -26,7 +26,8 @@ import io.zenoh.value.Value
  */
 internal class JNIQuery(private val ptr: Long) {
 
-    fun replySuccess(sample: Sample): Result<Unit> = runCatching {
+    @Throws(Exception::class)
+    fun replySuccess(sample: Sample) {
         val timestampEnabled = sample.timestamp != null
         replySuccessViaJNI(
             ptr,
@@ -39,7 +40,8 @@ internal class JNIQuery(private val ptr: Long) {
         )
     }
 
-    fun replyError(errorValue: Value): Result<Unit> = runCatching {
+    @Throws(Exception::class)
+    fun replyError(errorValue: Value) {
         replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.knownEncoding.ordinal)
     }
 

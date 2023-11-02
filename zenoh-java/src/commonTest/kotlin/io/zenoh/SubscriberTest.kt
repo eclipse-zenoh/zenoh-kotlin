@@ -30,7 +30,7 @@ import kotlin.test.Test
 class SubscriberTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr()
 
         val testValues = arrayListOf(
             Value("Test 1".encodeToByteArray(), Encoding(KnownEncoding.TEXT_PLAIN)),
@@ -41,11 +41,13 @@ class SubscriberTest {
 
     @Test
     fun subscriber_runsWithCallback() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSamples.add(sample) }.res()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSamples.add(sample) }.res()
 
         publishTestValues(session)
+
+        subscriber.undeclare()
         session.close()
 
         assertEquals(receivedSamples.size, testValues.size)
@@ -58,9 +60,10 @@ class SubscriberTest {
     @Test
     fun subscriber_runsWithHandler() {
         val handler = QueueHandler<Sample>()
-        val session = Session.open().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with(handler).res().getOrThrow()
+        val session = Session.open()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with(handler).res()
         publishTestValues(session)
+        subscriber.undeclare()
         session.close()
 
         val queue = subscriber.receiver!!
@@ -72,17 +75,17 @@ class SubscriberTest {
 
     @Test
     fun subscriberBuilder_channelHandlerIsTheDefaultHandler() {
-        val session = Session.open().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).res().getOrThrow()
+        val session = Session.open()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).res()
         assertTrue(subscriber.receiver is Channel<Sample>)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var onCloseWasCalled = false
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res()
         subscriber.undeclare()
         assertTrue(onCloseWasCalled)
         assertTrue(subscriber.receiver!!.isClosedForReceive)
@@ -90,8 +93,9 @@ class SubscriberTest {
     }
 
     private fun publishTestValues(session: Session): ArrayList<Value> {
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
+        val publisher = session.declarePublisher(TEST_KEY_EXP).res()
         testValues.forEach { value -> publisher.put(value).res() }
+        publisher.undeclare()
         return testValues
     }
 }

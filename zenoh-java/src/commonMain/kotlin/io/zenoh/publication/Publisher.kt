@@ -20,6 +20,7 @@ import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.SampleKind
 import io.zenoh.value.Value
+import kotlin.Throws
 
 /**
  * A Zenoh Publisher.
@@ -70,17 +71,19 @@ class Publisher internal constructor(
 ) : SessionDeclaration, AutoCloseable {
 
     companion object {
-        private val InvalidPublisherResult = Result.failure<Unit>(SessionException("Publisher is not valid."))
+        private val sessionException = SessionException("Publisher is not valid.")
     }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
+    @Throws(Exception::class)
     fun put(value: Value): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.put(value) ?: InvalidPublisherResult
+        return@Resolvable jniPublisher?.put(value) ?: throw(sessionException)
     }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
+    @Throws(Exception::class)
     fun put(value: String): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.put(Value(value)) ?: InvalidPublisherResult
+        return@Resolvable jniPublisher?.put(Value(value)) ?: throw(sessionException)
     }
 
     /**
@@ -90,8 +93,9 @@ class Publisher internal constructor(
      * @param value The [Value] to send.
      * @return A [Resolvable] operation.
      */
+    @Throws(Exception::class)
     fun write(kind: SampleKind, value: Value): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.write(kind, value) ?: InvalidPublisherResult
+        return@Resolvable jniPublisher?.write(kind, value) ?: throw(sessionException)
     }
 
     /**
@@ -99,8 +103,9 @@ class Publisher internal constructor(
      *
      * @return A [Resolvable] operation.
      */
+    @Throws(Exception::class)
     fun delete(): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.delete() ?: InvalidPublisherResult
+        return@Resolvable jniPublisher?.delete() ?: throw(sessionException)
     }
 
     /** Get congestion control policy. */
@@ -115,8 +120,10 @@ class Publisher internal constructor(
      *
      * @param congestionControl: The [CongestionControl] policy.
      */
+    @Throws(Exception::class)
     fun setCongestionControl(congestionControl: CongestionControl) {
-         jniPublisher?.setCongestionControl(congestionControl)?.onSuccess { this.congestionControl = congestionControl }
+         jniPublisher?.setCongestionControl(congestionControl)
+        this.congestionControl = congestionControl
     }
 
     /** Get priority policy. */
@@ -131,8 +138,10 @@ class Publisher internal constructor(
      *
      * @param priority: The [Priority] policy.
      */
+    @Throws(Exception::class)
     fun setPriority(priority: Priority) {
-         jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
+         jniPublisher?.setPriority(priority)
+        this.priority = priority
     }
 
     override fun isValid(): Boolean {
@@ -148,7 +157,6 @@ class Publisher internal constructor(
         jniPublisher = null
     }
 
-    @Suppress("removal")
     protected fun finalize() {
         jniPublisher?.close()
     }
@@ -176,7 +184,7 @@ class Publisher internal constructor(
         /** Change the priority of the written data. */
         fun priority(priority: Priority) = apply { this.priority = priority }
 
-        fun res(): Result<Publisher> {
+        fun res(): Publisher {
             return session.run { resolvePublisher(this@Builder) }
         }
     }

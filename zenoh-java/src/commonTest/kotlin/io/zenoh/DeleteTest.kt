@@ -24,15 +24,16 @@ import kotlin.test.assertNotNull
 class DeleteTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr()
     }
 
     @Test
     fun subscriber_receivesDelete() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var receivedSample: Sample? = null
-        session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res()
+        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res()
         session.delete(TEST_KEY_EXP).res()
+        subscriber.undeclare()
         session.close()
 
         assertNotNull(receivedSample)

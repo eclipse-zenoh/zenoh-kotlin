@@ -69,8 +69,9 @@ class Query internal constructor(
      * Perform a reply operation to the remote [Query].
      *
      * @param reply The [Reply] to the Query.
-     * @return A [Resolvable] that returns a [Result] with the status of the reply operation.
+     * @return A [Resolvable] that either performs the reply operation or throws an [Exception] if the query is invalid.
      */
+    @Throws(Exception::class)
     internal fun reply(reply: Reply): Resolvable<Unit> = Resolvable {
         jniQuery?.apply {
             reply as Reply.Success // Since error replies are not yet supported, we assume a reply is a Success reply.
@@ -79,6 +80,6 @@ class Query internal constructor(
             jniQuery = null
             return@Resolvable result
         }
-        return@Resolvable Result.failure(SessionException("Query is invalid"))
+        throw(SessionException("Query is invalid"))
     }
 }

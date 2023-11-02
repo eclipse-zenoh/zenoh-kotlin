@@ -50,7 +50,7 @@ internal class JNISession {
         sessionPtr.set(openSessionViaJNI(config.path?.toString().orEmpty()))
     }
 
-    fun close(): Result<Unit> = runCatching {
+    fun close() {
         closeSessionViaJNI(sessionPtr.get())
     }
 
@@ -196,7 +196,6 @@ internal class JNISession {
     @Throws(Exception::class)
     private external fun openSessionViaJNI(configFilePath: String): Long
 
-    @Throws(Exception::class)
     private external fun closeSessionViaJNI(ptr: Long)
 
     @Throws(Exception::class)

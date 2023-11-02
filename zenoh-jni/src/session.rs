@@ -115,22 +115,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
     _class: JClass,
     ptr: *const zenoh::Session,
 ) {
+    log::info!("Closing session...");
     let ptr = Arc::try_unwrap(Arc::from_raw(ptr));
     match ptr {
         Ok(session) => {
             // Do nothing, the pointer will be freed.
         }
         Err(arc_session) => {
+            // In case of error (meaning a reference to the session is still alive) the session
+            // will be closed and thus be no more valid, but the declarations (publishers, subscribers...)
+            // will still be alive.
             let ref_count = Arc::strong_count(&arc_session);
-            log::error!("Unable to close the session.");
-            _ = Error::Session(format!(
-                "Attempted to close the session, but at least one strong reference to it is still alive
-                (ref count: {}). All the declared publishers, subscribers, and queryables need to be
-                dropped first.",
-                ref_count
-            ))
-            .throw_on_jvm(&mut env)
-            .map_err(|err| log::error!("Unable to throw exception on session failure: {}", err));
+            log::warn!("Closed the session but there are still {} declarations (i.e. publishers,
+                 subscribers, queryables or key expressions) that are still alive and bound to the session!", ref_count - 1 );
         }
     };
 }

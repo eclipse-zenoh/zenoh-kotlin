@@ -32,12 +32,13 @@ class PutTest {
 
     @Test
     fun subscriber_receivesPutValue() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open()
         var receivedSample: Sample? = null
-        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
-        session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res()
+        val keyExpr = TEST_KEY_EXP.intoKeyExpr()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res()
         val value = Value(TEST_PAYLOAD.toByteArray(), Encoding(KnownEncoding.TEXT_PLAIN))
         session.put(keyExpr, value).res()
+        subscriber.undeclare()
         session.close()
         assertNotNull(receivedSample)
         assertEquals(value, receivedSample!!.value)

@@ -74,9 +74,9 @@ internal class JNIPublisher(private val ptr: Long) {
      * This function is not thread safe.
      *
      * @param priority: The [Priority] policy.
-     * @return A [Result] with the status of the operation.
      */
-    fun setPriority(priority: Priority): Result<Unit> = runCatching {
+    @Throws(Exception::class)
+    fun setPriority(priority: Priority) {
         setPriorityViaJNI(priority.value, ptr)
     }
 

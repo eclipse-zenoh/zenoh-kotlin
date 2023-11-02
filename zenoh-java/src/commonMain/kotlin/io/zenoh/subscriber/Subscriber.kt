@@ -169,9 +169,10 @@ class Subscriber<R> internal constructor(
         /**
          * Resolve the builder, creating a [Subscriber] with the provided parameters.
          *
-         * @return A [Result] with the newly created [Subscriber].
+         * @return The newly created [Subscriber].
          */
-        override fun res(): Result<Subscriber<R>> = runCatching {
+        @Throws(Exception::class)
+        override fun res(): Subscriber<R> {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Sample -> handler?.handle(t) }
             val resolvedOnClose = fun() {

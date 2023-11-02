@@ -85,13 +85,19 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         Zenoh.load()
     }
 
-    /** Close the session. */
+    /**
+     * Close the session.
+     *
+     * Closing the session invalidates any attempt to perform a declaration or to perform an operation such as Put or Delete.
+     * Attempting to do so will result in a failure.
+     *
+     * However, any session declaration that was still alive and bound to the session previous to closing it, will still be alive.
+     */
     override fun close() {
         jniSession?.close()
         jniSession = null
     }
 
-    @Suppress("removal")
     protected fun finalize() {
         jniSession?.close()
     }
@@ -251,7 +257,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun undeclare(keyExpr: KeyExpr): Resolvable<Unit> = Resolvable {
         return@Resolvable jniSession?.run {
             undeclareKeyExpr(keyExpr)
-        } ?: throw(sessionClosedException)
+        } ?: throw (sessionClosedException)
     }
 
     /**
@@ -390,35 +396,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     internal fun resolvePublisher(builder: Publisher.Builder): Publisher {
         return jniSession?.run {
             declarePublisher(builder)
-        } ?: throw(sessionClosedException)
+        } ?: throw (sessionClosedException)
     }
 
     @Throws(Exception::class)
     internal fun <R> resolveSubscriber(
-        keyExpr: KeyExpr,
-        callback: Callback<Sample>,
-        onClose: () -> Unit,
-        receiver: R?,
-        reliability: Reliability
+        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Subscriber<R> {
         return jniSession?.run {
             declareSubscriber(keyExpr, callback, onClose, receiver, reliability)
-        } ?: throw(sessionClosedException)
+        } ?: throw (sessionClosedException)
     }
 
     @Throws(Exception::class)
     internal fun <R> resolveQueryable(
-        keyExpr: KeyExpr,
-        callback: Callback<Query>,
-        onClose: () -> Unit,
-        receiver: R?,
-        complete: Boolean
+        keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Queryable<R> {
         return jniSession?.run {
             declareQueryable(keyExpr, callback, onClose, receiver, complete)
-        } ?: throw(sessionClosedException)
+        } ?: throw (sessionClosedException)
     }
 
+    @Throws(Exception::class)
     internal fun <R> resolveGet(
         selector: Selector,
         callback: Callback<Reply>,
@@ -429,9 +428,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         consolidation: ConsolidationMode,
         value: Value?
     ): R? {
-        return jniSession?.run {
-            performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value)
-        } ?: throw(sessionClosedException)
+        if (jniSession == null) {
+            throw sessionClosedException
+        }
+        return jniSession?.performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value)
     }
 
     @Throws(Exception::class)
@@ -440,7 +440,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     @Throws(Exception::class)
-    internal fun resolveDelete(keyExpr:KeyExpr, delete: Delete) {
+    internal fun resolveDelete(keyExpr: KeyExpr, delete: Delete) {
         jniSession?.run { performPut(keyExpr, delete) }
     }
 

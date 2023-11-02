@@ -160,9 +160,10 @@ class Get<R> private constructor() {
         /**
          * Resolve the builder triggering the query.
          *
-         * @return A [Result] with the receiver [R] from the specified [Handler] (if specified).
+         * @return The receiver [R] from the specified [Handler] (if specified).
          */
-        fun res(): Result<R?> = runCatching {
+        @Throws(Exception::class)
+        fun res(): R? {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
             val resolvedOnClose = fun() {
