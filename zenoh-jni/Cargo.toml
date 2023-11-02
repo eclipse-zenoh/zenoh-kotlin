@@ -33,8 +33,8 @@ clap = "3.2.23"
 jni = "0.21.1"
 flume = "0.10.14"
 uhlc = "0.6.0"
-zenoh = { git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "master" }
-zenoh-ext = { git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "master" }
+zenoh = { git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "feat/inline-certificate-data" }
+zenoh-ext = { git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "feat/inline-certificate-data" }
 
 [lib]
 name = "zenoh_jni"
