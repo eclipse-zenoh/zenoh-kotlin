@@ -16,12 +16,13 @@ package io.zenoh.query
 
 import io.zenoh.handlers.Callback
 import io.zenoh.Session
-import io.zenoh.handlers.ChannelHandler
+import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
+import java.util.concurrent.BlockingQueue
 
 /**
  * Get to query data from the matching queryables in the system.
@@ -54,10 +55,10 @@ class Get<R> private constructor() {
          *
          * @param session The [Session] from which the query will be triggered.
          * @param selector The [Selector] with which the query will be performed.
-         * @return A [Builder] with a default [ChannelHandler] to handle any incoming [Reply].
+         * @return A [Builder] with a default [QueueHandler] to handle any incoming [Reply].
          */
-        fun newBuilder(session: Session, selector: Selector): Builder<Channel<Reply>> {
-            return Builder(session, selector, handler = ChannelHandler(Channel()))
+        fun newBuilder(session: Session, selector: Selector): Builder<BlockingQueue<Reply>> {
+            return Builder(session, selector, handler = QueueHandler())
         }
     }
 
@@ -155,7 +156,7 @@ class Get<R> private constructor() {
         fun <R2> with(handler: Handler<Reply, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [Channel]. Overrides any previously specified callback or handler. */
-        fun with(channel: Channel<Reply>): Builder<Channel<Reply>> = Builder(this, ChannelHandler(channel))
+        fun with(channel: Channel<Reply>): Builder<Channel<Reply>> = Builder(this, QueueHandler(channel))
 
         /**
          * Resolve the builder triggering the query.

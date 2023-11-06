@@ -16,10 +16,12 @@ package io.zenoh.handlers
 
 import io.zenoh.ZenohType
 import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.runBlocking
+import java.util.Optional
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
 
 /**
- * Channel handler
+ * Queue handler
  *
  * Implementation of a [Handler] with a [Channel] receiver. This handler is intended to be used
  * as the default handler by the [io.zenoh.queryable.Queryable], [io.zenoh.subscriber.Subscriber] and [io.zenoh.query.Get],
@@ -29,17 +31,17 @@ import kotlinx.coroutines.runBlocking
  * @property channel
  * @constructor Create empty Channel handler
  */
-class ChannelHandler<T: ZenohType>(private val channel: Channel<T>) : Handler<T, Channel<T>> {
+class QueueHandler<T: ZenohType>(private val channel: ArrayBlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
 
     override fun handle(t: T) {
-        runBlocking { channel.send(t) }
+        channel.put(Optional.of(t))
     }
 
-    override fun receiver(): Channel<T> {
+    override fun receiver(): BlockingQueue<Optional<T>> {
         return channel
     }
 
     override fun onClose() {
-        channel.close()
+        channel.put(Optional.empty())
     }
 }

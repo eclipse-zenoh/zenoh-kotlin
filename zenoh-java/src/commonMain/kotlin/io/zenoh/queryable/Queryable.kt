@@ -16,7 +16,7 @@ package io.zenoh.queryable
 
 import io.zenoh.*
 import io.zenoh.handlers.Callback
-import io.zenoh.handlers.ChannelHandler
+import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQueryable
 import io.zenoh.keyexpr.KeyExpr
@@ -92,10 +92,10 @@ class Queryable<R> internal constructor(
          *
          * @param session The [Session] from which the queryable will be declared.
          * @param keyExpr The [KeyExpr] associated to the queryable.
-         * @return An empty [Builder] with a default [ChannelHandler] to handle the incoming samples.
+         * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
          */
         fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<Channel<Query>> {
-            return Builder(session, keyExpr, handler = ChannelHandler(Channel()))
+            return Builder(session, keyExpr, handler = QueueHandler(Channel()))
         }
     }
 
@@ -151,7 +151,7 @@ class Queryable<R> internal constructor(
         fun <R2> with(handler: Handler<Query, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [Channel]. Overrides any previously specified callback or handler. */
-        fun with(channel: Channel<Query>): Builder<Channel<Query>> = Builder(this, ChannelHandler(channel))
+        fun with(channel: Channel<Query>): Builder<Channel<Query>> = Builder(this, QueueHandler(channel))
 
         /**
          * Resolve the builder, creating a [Queryable] with the provided parameters.

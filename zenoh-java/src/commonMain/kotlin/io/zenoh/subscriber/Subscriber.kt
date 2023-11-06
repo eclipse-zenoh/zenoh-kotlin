@@ -16,13 +16,15 @@ package io.zenoh.subscriber
 
 import io.zenoh.*
 import io.zenoh.handlers.Callback
-import io.zenoh.handlers.ChannelHandler
+import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.subscriber.Subscriber.Builder
 import io.zenoh.jni.JNISubscriber
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.sample.Sample
 import kotlinx.coroutines.channels.Channel
+import java.util.*
+import java.util.concurrent.BlockingQueue
 
 /**
  * A subscriber that allows listening to updates on a key expression and reacting to changes.
@@ -91,10 +93,10 @@ class Subscriber<R> internal constructor(
          *
          * @param session The [Session] from which the subscriber will be declared.
          * @param keyExpr The [KeyExpr] associated to the subscriber.
-         * @return An empty [Builder] with a default [ChannelHandler] to handle the incoming samples.
+         * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
          */
-        fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<Channel<Sample>> {
-            return Builder(session, keyExpr, handler = ChannelHandler(Channel()))
+        fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<BlockingQueue<Optional<Sample>>> {
+            return Builder(session, keyExpr, handler = QueueHandler())
         }
     }
 
@@ -164,7 +166,7 @@ class Subscriber<R> internal constructor(
         fun <R2> with(handler: Handler<Sample, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [Channel]. Overrides any previously specified callback or handler. */
-        fun with(channel: Channel<Sample>): Builder<Channel<Sample>> = Builder(this, ChannelHandler(channel))
+        fun with(channel: Channel<Sample>): Builder<Channel<Sample>> = Builder(this, QueueHandler(channel))
 
         /**
          * Resolve the builder, creating a [Subscriber] with the provided parameters.
