@@ -21,12 +21,11 @@ import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.BlockingQueue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -91,10 +90,10 @@ class QueryableTest {
     }
 
     @Test
-    fun queryableBuilder_channelHandlerIsTheDefaultHandler() {
+    fun queryableBuilder_queueHandlerIsTheDefaultHandler() {
         val session = Session.open()
         val queryable = session.declareQueryable(TEST_KEY_EXP).res()
-        assertTrue(queryable.receiver is Channel<Query>)
+        assertTrue(queryable.receiver is BlockingQueue<Optional<Query>>)
     }
 
     @Test
@@ -131,7 +130,6 @@ class QueryableTest {
 
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() {
         val session = Session.open()
@@ -139,7 +137,6 @@ class QueryableTest {
         val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res()
         queryable.undeclare()
         assertTrue(onCloseWasCalled)
-        assertTrue(queryable.receiver!!.isClosedForReceive)
         session.close()
     }
 }

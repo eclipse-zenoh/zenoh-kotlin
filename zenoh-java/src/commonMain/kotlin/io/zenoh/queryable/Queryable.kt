@@ -21,6 +21,9 @@ import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQueryable
 import io.zenoh.keyexpr.KeyExpr
 import kotlinx.coroutines.channels.Channel
+import java.util.*
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingDeque
 
 /**
  * A queryable that allows to perform multiple queries on the specified [KeyExpr].
@@ -94,8 +97,8 @@ class Queryable<R> internal constructor(
          * @param keyExpr The [KeyExpr] associated to the queryable.
          * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
          */
-        fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<Channel<Query>> {
-            return Builder(session, keyExpr, handler = QueueHandler(Channel()))
+        fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<BlockingQueue<Optional<Query>>> {
+            return Builder(session, keyExpr, handler = QueueHandler(queue = LinkedBlockingDeque()))
         }
     }
 
@@ -150,8 +153,8 @@ class Queryable<R> internal constructor(
         /** Specify a [Handler]. Overrides any previously specified callback or handler. */
         fun <R2> with(handler: Handler<Query, R2>): Builder<R2> = Builder(this, handler)
 
-        /** Specify a [Channel]. Overrides any previously specified callback or handler. */
-        fun with(channel: Channel<Query>): Builder<Channel<Query>> = Builder(this, QueueHandler(channel))
+        /** Specify a [BlockingQueue]. Overrides any previously specified callback or handler. */
+        fun with(blockingQueue: BlockingQueue<Optional<Query>>): Builder<BlockingQueue<Optional<Query>>> = Builder(this, QueueHandler(blockingQueue))
 
         /**
          * Resolve the builder, creating a [Queryable] with the provided parameters.

@@ -31,6 +31,8 @@ import io.zenoh.subscriber.Subscriber
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
+import java.util.*
+import java.util.concurrent.BlockingQueue
 
 /**
  * A Zenoh Session, the core interaction point with a Zenoh network.
@@ -171,7 +173,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
      * @return A [Subscriber.Builder] with a [Channel] receiver.
      */
-    fun declareSubscriber(keyExpr: KeyExpr): Subscriber.Builder<Channel<Sample>> = Subscriber.newBuilder(this, keyExpr)
+    fun declareSubscriber(keyExpr: KeyExpr): Subscriber.Builder<BlockingQueue<Optional<Sample>>> = Subscriber.newBuilder(this, keyExpr)
 
     /**
      * Declare a [Queryable] on the session.
@@ -212,7 +214,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
      * @return A [Queryable.Builder] with a [Channel] receiver.
      */
-    fun declareQueryable(keyExpr: KeyExpr): Queryable.Builder<Channel<Query>> = Queryable.newBuilder(this, keyExpr)
+    fun declareQueryable(keyExpr: KeyExpr): Queryable.Builder<BlockingQueue<Optional<Query>>> = Queryable.newBuilder(this, keyExpr)
 
     /**
      * Declare a [KeyExpr].
@@ -286,7 +288,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param selector The [KeyExpr] to be used for the get operation.
      * @return a resolvable [Get.Builder] with a [Channel] receiver.
      */
-    fun get(selector: Selector): Get.Builder<Channel<Reply>> = Get.newBuilder(this, selector)
+    fun get(selector: Selector): Get.Builder<BlockingQueue<Optional<Reply>>> = Get.newBuilder(this, selector)
 
     /**
      * Declare a [Get] with a [Channel] receiver.
@@ -314,7 +316,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] to be used for the get operation.
      * @return a resolvable [Get.Builder] with a [Channel] receiver.
      */
-    fun get(keyExpr: KeyExpr): Get.Builder<Channel<Reply>> = Get.newBuilder(this, Selector(keyExpr))
+    fun get(keyExpr: KeyExpr): Get.Builder<BlockingQueue<Optional<Reply>>> = Get.newBuilder(this, Selector(keyExpr))
 
     /**
      * Declare a [Put] with the provided value on the specified key expression.

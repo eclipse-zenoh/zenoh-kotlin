@@ -20,8 +20,9 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.channels.Channel
+import java.util.*
+import java.util.concurrent.BlockingQueue
+import kotlin.collections.ArrayDeque
 import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -74,13 +75,12 @@ class SubscriberTest {
     }
 
     @Test
-    fun subscriberBuilder_channelHandlerIsTheDefaultHandler() {
+    fun subscriberBuilder_queueHandlerIsTheDefaultHandler() {
         val session = Session.open()
         val subscriber = session.declareSubscriber(TEST_KEY_EXP).res()
-        assertTrue(subscriber.receiver is Channel<Sample>)
+        assertTrue(subscriber.receiver is BlockingQueue<Optional<Sample>>)
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() {
         val session = Session.open()
@@ -88,7 +88,6 @@ class SubscriberTest {
         val subscriber = session.declareSubscriber(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res()
         subscriber.undeclare()
         assertTrue(onCloseWasCalled)
-        assertTrue(subscriber.receiver!!.isClosedForReceive)
         session.close()
     }
 

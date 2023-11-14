@@ -25,6 +25,7 @@ import io.zenoh.sample.Sample
 import kotlinx.coroutines.channels.Channel
 import java.util.*
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingDeque
 
 /**
  * A subscriber that allows listening to updates on a key expression and reacting to changes.
@@ -96,7 +97,7 @@ class Subscriber<R> internal constructor(
          * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
          */
         fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<BlockingQueue<Optional<Sample>>> {
-            return Builder(session, keyExpr, handler = QueueHandler())
+            return Builder(session, keyExpr, handler = QueueHandler(queue = LinkedBlockingDeque()))
         }
     }
 
@@ -165,8 +166,8 @@ class Subscriber<R> internal constructor(
         /** Specify a [Handler]. Overrides any previously specified callback or handler. */
         fun <R2> with(handler: Handler<Sample, R2>): Builder<R2> = Builder(this, handler)
 
-        /** Specify a [Channel]. Overrides any previously specified callback or handler. */
-        fun with(channel: Channel<Sample>): Builder<Channel<Sample>> = Builder(this, QueueHandler(channel))
+        /** Specify a [BlockingQueue]. Overrides any previously specified callback or handler. */
+        fun with(blockingQueue: BlockingQueue<Optional<Sample>>): Builder<BlockingQueue<Optional<Sample>>> = Builder(this, QueueHandler(blockingQueue))
 
         /**
          * Resolve the builder, creating a [Subscriber] with the provided parameters.

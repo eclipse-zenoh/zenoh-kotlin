@@ -23,9 +23,6 @@ import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.*
@@ -144,7 +141,7 @@ class GetTest {
     }
 
     @Test
-    fun get_runsWithChannel() {
+    fun get_runsWithBlockingQueue() {
         val sessionA = Session.open()
 
         val queryablesAmount = 3
@@ -171,22 +168,22 @@ class GetTest {
 
         val receivedReplies = ArrayList<Reply>(0)
 
-        runBlocking {
-            val sessionB = Session.open()
-            val receiver = sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr()).res()!!
+        val sessionB = Session.open()
+        val receiver = sessionB.get(TEST_KEY_EXP_WILD.intoKeyExpr()).res()!!
 
-            launch {
-                delay(1000)
-                receiver.close(null)
+        Thread.sleep(1000)
+
+        val iterator = receiver.iterator()
+        while (iterator.hasNext()) {
+            val next = iterator.next()
+            if (next.isEmpty) {
+                break
             }
-
-            val iterator = receiver.iterator()
-            while (iterator.hasNext()) {
-                receivedReplies.add(iterator.next())
-            }
-
-            sessionB.close()
+            val reply = next.get()
+            receivedReplies.add(reply)
         }
+
+        sessionB.close()
 
         declaredQueryables.forEach { queryable -> queryable.undeclare() }
         sessionA.close()

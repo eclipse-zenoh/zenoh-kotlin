@@ -17,7 +17,6 @@ package io.zenoh.handlers
 import io.zenoh.ZenohType
 import kotlinx.coroutines.channels.*
 import java.util.Optional
-import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
 /**
@@ -28,20 +27,20 @@ import java.util.concurrent.BlockingQueue
  * allowing us to send the incoming elements through a [Channel] within the context of a Kotlin coroutine.
  *
  * @param T
- * @property channel
+ * @property queue
  * @constructor Create empty Channel handler
  */
-class QueueHandler<T: ZenohType>(private val channel: ArrayBlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
+class QueueHandler<T: ZenohType>(private val queue: BlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
 
     override fun handle(t: T) {
-        channel.put(Optional.of(t))
+        queue.put(Optional.of(t))
     }
 
     override fun receiver(): BlockingQueue<Optional<T>> {
-        return channel
+        return queue
     }
 
     override fun onClose() {
-        channel.put(Optional.empty())
+        queue.put(Optional.empty())
     }
 }
