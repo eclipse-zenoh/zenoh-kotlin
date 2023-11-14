@@ -20,7 +20,6 @@ import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQueryable
 import io.zenoh.keyexpr.KeyExpr
-import kotlinx.coroutines.channels.Channel
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingDeque
@@ -30,34 +29,9 @@ import java.util.concurrent.LinkedBlockingDeque
  *
  * Its main purpose is to keep the queryable active as long as it exists.
  *
- * Example using the default [Channel] handler:
- * ```kotlin
- * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
- *         println("Declaring Queryable")
- *         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
- *             queryable.use {
- *                 it.receiver?.let { receiverChannel ->
- *                     runBlocking {
- *                         val iterator = receiverChannel.iterator()
- *                         while (iterator.hasNext()) {
- *                             iterator.next().use { query ->
- *                                 println("Received query at ${query.keyExpr}")
- *                                 query.reply(keyExpr)
- *                                      .success("Hello!")
- *                                      .withKind(SampleKind.PUT)
- *                                      .withTimeStamp(TimeStamp.getCurrentTime())
- *                                      .res()
- *                                      .onSuccess { println("Replied hello.") }
- *                                      .onFailure { println(it) }
- *                             }
- *                         }
- *                     }
- *                 }
- *             }
- *         }
- *     }
- * }}
+ * Example using the default [QueueHandler] handler:
+ * ```java
+ * //TODO(Fill documentation)
  * ```
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, [R] will be [Unit].

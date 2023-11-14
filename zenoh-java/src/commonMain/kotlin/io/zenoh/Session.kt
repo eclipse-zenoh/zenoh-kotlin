@@ -29,7 +29,6 @@ import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import io.zenoh.value.Value
-import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.BlockingQueue
@@ -108,29 +107,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Publisher] on the session.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess {
-     *     it.use { session ->
-     *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.declarePublisher(keyExpr)
-     *                 .priority(Priority.REALTIME)
-     *                 .congestionControl(CongestionControl.DROP)
-     *                 .res().onSuccess { pub ->
-     *                     pub.use {
-     *                         println("Publisher declared on $keyExpr.")
-     *                         var i = 0
-     *                         while (true) {
-     *                             val payload = "Hello for the ${i}th time!"
-     *                             println(payload)
-     *                             pub.put(payload).res()
-     *                             Thread.sleep(1000)
-     *                             i++
-     *                         }
-     *                     }
-     *                 }
-     *         }
-     *     }
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
@@ -141,78 +119,32 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     /**
      * Declare a [Subscriber] on the session.
      *
-     * The default receiver is a [Channel], but can be changed with the [Subscriber.Builder.with] functions.
+     * The default receiver is a [BlockingQueue], but can be changed with the [Subscriber.Builder.with] functions.
      *
      * Example:
      *
-     * ```kotlin
-     * Session.open().onSuccess { session ->
-     *     session.use {
-     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.declareSubscriber(keyExpr)
-     *                 .bestEffort()
-     *                 .res()
-     *                 .onSuccess { subscriber ->
-     *                     subscriber.use {
-     *                         println("Declared subscriber on $keyExpr.")
-     *                         runBlocking {
-     *                             val receiver = subscriber.receiver!!
-     *                             val iterator = receiver.iterator()
-     *                             while (iterator.hasNext()) {
-     *                                 val sample = iterator.next()
-     *                                 println(sample)
-     *                             }
-     *                         }
-     *                 }
-     *            }
-     *         }
-     *     }
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
-     * @return A [Subscriber.Builder] with a [Channel] receiver.
+     * @return A [Subscriber.Builder] with a [BlockingQueue] receiver.
      */
     fun declareSubscriber(keyExpr: KeyExpr): Subscriber.Builder<BlockingQueue<Optional<Sample>>> = Subscriber.newBuilder(this, keyExpr)
 
     /**
      * Declare a [Queryable] on the session.
      *
-     * The default receiver is a [Channel], but can be changed with the [Queryable.Builder.with] functions.
+     * The default receiver is a [BlockingQueue], but can be changed with the [Queryable.Builder.with] functions.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *         println("Declaring Queryable")
-     *         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
-     *             queryable.use {
-     *                 it.receiver?.let { receiverChannel ->
-     *                     runBlocking {
-     *                         val iterator = receiverChannel.iterator()
-     *                         while (iterator.hasNext()) {
-     *                             iterator.next().use { query ->
-     *                                 println("Received query at ${query.keyExpr}")
-     *                                 query.reply(keyExpr)
-     *                                      .success("Hello!")
-     *                                      .withKind(SampleKind.PUT)
-     *                                      .withTimeStamp(TimeStamp.getCurrentTime())
-     *                                      .res()
-     *                                      .onSuccess { println("Replied hello.") }
-     *                                      .onFailure { println(it) }
-     *                             }
-     *                         }
-     *                     }
-     *                 }
-     *             }
-     *         }
-     *     }
-     * }}
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      *
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
-     * @return A [Queryable.Builder] with a [Channel] receiver.
+     * @return A [Queryable.Builder] with a [BlockingQueue] receiver.
      */
     fun declareQueryable(keyExpr: KeyExpr): Queryable.Builder<BlockingQueue<Optional<Query>>> = Queryable.newBuilder(this, keyExpr)
 
@@ -226,16 +158,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * key expressions repeatedly.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     session.declareKeyExpr("demo/kotlin/example").res().onSuccess { keyExpr ->
-     *         keyExpr.use {
-     *             session.declarePublisher(it).res().onSuccess { publisher ->
-     *                 // ...
-     *             }
-     *         }
-     *     }
-     * }}
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The intended Key expression.
@@ -263,58 +187,24 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Get] with a [Channel] receiver.
+     * Declare a [Get] with a [BlockingQueue] receiver.
      *
-     * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.get(keyExpr)
-     *             .consolidation(ConsolidationMode.NONE)
-     *             .target(QueryTarget.BEST_MATCHING)
-     *             .withValue("Get value example")
-     *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
-     *             .res()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
-     *         }
-     *     }
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      * @param selector The [KeyExpr] to be used for the get operation.
-     * @return a resolvable [Get.Builder] with a [Channel] receiver.
+     * @return a resolvable [Get.Builder] with a [BlockingQueue] receiver.
      */
     fun get(selector: Selector): Get.Builder<BlockingQueue<Optional<Reply>>> = Get.newBuilder(this, selector)
 
     /**
-     * Declare a [Get] with a [Channel] receiver.
+     * Declare a [Get] with a [BlockingQueue] receiver.
      *
-     * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.get(keyExpr)
-     *             .consolidation(ConsolidationMode.NONE)
-     *             .target(QueryTarget.BEST_MATCHING)
-     *             .withValue("Get value example")
-     *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
-     *             .res()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
-     *         }
-     *     }
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      * @param keyExpr The [KeyExpr] to be used for the get operation.
-     * @return a resolvable [Get.Builder] with a [Channel] receiver.
+     * @return a resolvable [Get.Builder] with a [BlockingQueue] receiver.
      */
     fun get(keyExpr: KeyExpr): Get.Builder<BlockingQueue<Optional<Reply>>> = Get.newBuilder(this, Selector(keyExpr))
 
@@ -322,17 +212,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Put] with the provided value on the specified key expression.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *     session.put(keyExpr, Value("Hello"))
-     *         .congestionControl(CongestionControl.BLOCK)
-     *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
-     *         .res()
-     *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
-     *     }}
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
@@ -345,17 +226,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Put] with the provided value on the specified key expression.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *     session.put(keyExpr, "Hello")
-     *         .congestionControl(CongestionControl.BLOCK)
-     *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
-     *         .res()
-     *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
-     *     }}
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
@@ -369,19 +241,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      *
-     * ```kotlin
-     * println("Opening Session")
-     * Session.open().onSuccess { session ->
-     *     session.use {
-     *         "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.delete(keyExpr)
-     *             .res()
-     *             .onSuccess {
-     *                 println("Performed a delete on $keyExpr.")
-     *             }
-     *         }
-     *     }
-     * }
+     * ```java
+     * TODO: fill documentation
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the delete operation.

@@ -22,7 +22,6 @@ import io.zenoh.subscriber.Subscriber.Builder
 import io.zenoh.jni.JNISubscriber
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.sample.Sample
-import kotlinx.coroutines.channels.Channel
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingDeque
@@ -32,31 +31,10 @@ import java.util.concurrent.LinkedBlockingDeque
  *
  * Its main purpose is to keep the subscription active as long as it exists.
  *
- * Example using the default [Channel] handler:
+ * Example using the default [QueueHandler] handler:
  *
- * ```kotlin
- * Session.open().onSuccess { session ->
- *     session.use {
- *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
- *             session.declareSubscriber(keyExpr)
- *                 .bestEffort()
- *                 .res()
- *                 .onSuccess { subscriber ->
- *                     subscriber.use {
- *                         println("Declared subscriber on $keyExpr.")
- *                         runBlocking {
- *                             val receiver = subscriber.receiver!!
- *                             val iterator = receiver.iterator()
- *                             while (iterator.hasNext()) {
- *                                 val sample = iterator.next()
- *                                 println(sample)
- *                             }
- *                         }
- *                 }
- *             }
- *         }
- *     }
- * }
+ * ```java
+ * //TODO: fill documentation
  * ```
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, R will be [Unit].

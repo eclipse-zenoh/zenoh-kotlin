@@ -15,20 +15,21 @@
 package io.zenoh.handlers
 
 import io.zenoh.ZenohType
-import kotlinx.coroutines.channels.*
 import java.util.Optional
 import java.util.concurrent.BlockingQueue
 
 /**
  * Queue handler
  *
- * Implementation of a [Handler] with a [Channel] receiver. This handler is intended to be used
+ * Implementation of a [Handler] with a [BlockingQueue] receiver. This handler is intended to be used
  * as the default handler by the [io.zenoh.queryable.Queryable], [io.zenoh.subscriber.Subscriber] and [io.zenoh.query.Get],
- * allowing us to send the incoming elements through a [Channel] within the context of a Kotlin coroutine.
+ * allowing us to send the incoming elements through a [BlockingQueue].
  *
- * @param T
+ * The way to tell no more elements of type [T] will be received is when an empty element is put (see [onClose]).
+ *
+ * @param T a [ZenohType]
  * @property queue
- * @constructor Create empty Channel handler
+ * @constructor Create empty Queue handler
  */
 class QueueHandler<T: ZenohType>(private val queue: BlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
 
