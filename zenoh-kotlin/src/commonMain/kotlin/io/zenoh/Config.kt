@@ -18,6 +18,9 @@ import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.encodeToJsonElement
 
 
 /**
@@ -26,7 +29,7 @@ import kotlinx.serialization.SerialName
  * @property path The path to the configuration file.
  * @constructor Create empty Config
  */
-class Config private constructor(internal val path: Path? = null) {
+class Config private constructor(internal val path: Path? = null, internal val jsonConfig: JsonElement? = null) {
 
     companion object {
 
@@ -54,31 +57,38 @@ class Config private constructor(internal val path: Path? = null) {
         fun from(path: Path): Config {
             return Config(path)
         }
+
+        fun from(configData: ConfigData): Config {
+            val jsonConfig = Json.encodeToJsonElement(configData)
+            return Config(jsonConfig)
+        }
     }
+
+    constructor(jsonConfig: JsonElement) : this(null, jsonConfig = jsonConfig)
 }
 
 @Serializable
 data class ConfigData(
     @SerialName("adminspace")
-    var adminspace: Adminspace?,
+    var adminspace: Adminspace? = null,
     @SerialName("connect")
-    var connect: Connect?,
+    var connect: Connect? = null,
     @SerialName("listen")
-    var listen: Listen?,
+    var listen: Listen? = null,
     @SerialName("metadata")
-    var metadata: Metadata?,
+    var metadata: Metadata? = null,
     @SerialName("mode")
-    var mode: String?,
+    var mode: String? = null,
     @SerialName("queries_default_timeout")
-    var queriesDefaultTimeout: Int?,
+    var queriesDefaultTimeout: Int? = null,
     @SerialName("routing")
-    var routing: Routing?,
+    var routing: Routing? = null,
     @SerialName("scouting")
-    var scouting: Scouting?,
+    var scouting: Scouting? = null,
     @SerialName("timestamping")
-    var timestamping: Timestamping?,
+    var timestamping: Timestamping? = null,
     @SerialName("transport")
-    var transport: Transport?
+    var transport: Transport? = null,
 )
 
 @Serializable
@@ -138,15 +148,15 @@ data class Timestamping(
 @Serializable
 data class Transport(
     @SerialName("auth")
-    var auth: Auth,
+    var auth: Auth? = null,
     @SerialName("link")
-    var link: Link,
+    var link: Link? = null,
     @SerialName("qos")
-    var qos: Qos,
+    var qos: Qos? = null,
     @SerialName("shared_memory")
-    var sharedMemory: SharedMemory,
+    var sharedMemory: SharedMemory? = null,
     @SerialName("unicast")
-    var unicast: Unicast
+    var unicast: Unicast? = null
 )
 
 @Serializable
@@ -221,14 +231,12 @@ data class Auth(
 
 @Serializable
 data class Link(
-    @SerialName("compression")
-    var compression: Compression,
     @SerialName("rx")
-    var rx: Rx,
+    var rx: Rx? = null,
     @SerialName("tls")
-    var tls: Tls,
+    var tls: Tls? = null,
     @SerialName("tx")
-    var tx: Tx
+    var tx: Tx? = null
 )
 
 @Serializable
@@ -246,13 +254,13 @@ data class SharedMemory(
 @Serializable
 data class Unicast(
     @SerialName("accept_pending")
-    var acceptPending: Int?,
+    var acceptPending: Int? = null,
     @SerialName("accept_timeout")
-    var acceptTimeout: Int?,
+    var acceptTimeout: Int? = null,
     @SerialName("lowlatency")
-    var lowlatency: Boolean?,
+    var lowlatency: Boolean? = null,
     @SerialName("max_links")
-    var maxLinks: Int?,
+    var maxLinks: Int? = null,
     @SerialName("max_sessions")
     var maxSessions: Int?
 )
@@ -260,15 +268,15 @@ data class Unicast(
 @Serializable
 data class Pubkey(
     @SerialName("key_size")
-    var keySize: Int?,
+    var keySize: Int? = null,
     @SerialName("known_keys_file")
-    var knownKeysFile: String?,
+    var knownKeysFile: String? = null,
     @SerialName("private_key_file")
-    var privateKeyFile: String?,
+    var privateKeyFile: String? = null,
     @SerialName("private_key_pem")
-    var privateKeyPem: String?,
+    var privateKeyPem: String? = null,
     @SerialName("public_key_file")
-    var publicKeyFile: String?,
+    var publicKeyFile: String? = null,
     @SerialName("public_key_pem")
     var publicKeyPem: String?
 )
@@ -276,17 +284,11 @@ data class Pubkey(
 @Serializable
 data class Usrpwd(
     @SerialName("dictionary_file")
-    var dictionaryFile: String?,
+    var dictionaryFile: String? = null,
     @SerialName("password")
-    var password: String?,
+    var password: String? = null,
     @SerialName("user")
-    var user: String?
-)
-
-@Serializable
-data class Compression(
-    @SerialName("enabled")
-    var enabled: Boolean
+    var user: String? = null
 )
 
 @Serializable
@@ -302,17 +304,17 @@ data class Tls(
     @SerialName("client_auth")
     var clientAuth: Boolean,
     @SerialName("client_certificate")
-    var clientCertificate: String?,
+    var clientCertificate: String? = null,
     @SerialName("client_private_key")
-    var clientPrivateKey: String?,
+    var clientPrivateKey: String? = null,
     @SerialName("root_ca_certificate")
-    var rootCaCertificate: String?,
+    var rootCaCertificate: String? = null,
     @SerialName("server_certificate")
-    var serverCertificate: String?,
+    var serverCertificate: String? = null,
     @SerialName("server_name_verification")
-    var serverNameVerification: String?,
+    var serverNameVerification: String? = null,
     @SerialName("server_private_key")
-    var serverPrivateKey: String?
+    var serverPrivateKey: String? = null,
 )
 
 @Serializable

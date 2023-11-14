@@ -3251,6 +3251,7 @@ dependencies = [
  "env_logger",
  "flume 0.10.14",
  "jni",
+ "json5",
  "log",
  "rustc_version",
  "uhlc",
