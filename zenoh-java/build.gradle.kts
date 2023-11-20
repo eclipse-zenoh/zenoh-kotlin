@@ -113,7 +113,7 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("junit:junit:4.13.1")
+                implementation("junit:junit:4.13.2")
             }
         }
         val androidUnitTest by getting {

@@ -76,6 +76,7 @@ class KeyExpr internal constructor(internal var jniKeyExpr: JNIKeyExpr? = null):
          * @return The [KeyExpr] in case of success.
          * @throws KeyExprException in the case of failure.
          */
+        @JvmStatic
         @Throws(KeyExprException::class)
         fun tryFrom(keyExpr: String): KeyExpr {
             return JNIKeyExpr.tryFrom(keyExpr)
@@ -91,6 +92,7 @@ class KeyExpr internal constructor(internal var jniKeyExpr: JNIKeyExpr? = null):
          * @return The canonized [KeyExpr].
          * @throws KeyExprException in the case of failure.
          */
+        @JvmStatic
         @Throws(KeyExprException::class)
         fun autocanonize(keyExpr: String): KeyExpr {
             return JNIKeyExpr.autocanonize(keyExpr)

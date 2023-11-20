@@ -14,6 +14,7 @@
 
 package io.zenoh.selector
 
+import io.zenoh.exceptions.KeyExprException
 import io.zenoh.keyexpr.KeyExpr
 
 /**
@@ -28,6 +29,30 @@ import io.zenoh.keyexpr.KeyExpr
  * @property parameters The parameters of the selector.
  */
 class Selector(val keyExpr: KeyExpr, val parameters: String = ""): AutoCloseable {
+
+    companion object {
+
+        /**
+         * Try from.
+         *
+         * Equivalent constructor to [String.intoSelector], generates a selector from a string.
+         *
+         * @param expression A string with the form "<keyExpr>?<parameters>".
+         * @return A [Selector] in case of success.
+         * @throws KeyExprException in case of failure generating the key expression.
+         */
+        @JvmStatic
+        @Throws(KeyExprException::class)
+        fun tryFrom(expression: String): Selector {
+            if (expression.isEmpty()) {
+                throw(KeyExprException("Attempting to create a KeyExpr from an empty string."))
+            }
+            val result = expression.split('?', limit = 2)
+            val keyExpr = KeyExpr.autocanonize(result[0])
+            val params = if (result.size == 2) result[1] else ""
+            return Selector(keyExpr, params)
+        }
+    }
 
     override fun toString(): String {
         return if (parameters.isEmpty()) "$keyExpr" else "$keyExpr?$parameters"

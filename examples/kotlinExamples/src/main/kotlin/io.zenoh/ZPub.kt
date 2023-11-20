@@ -25,10 +25,10 @@ fun main() {
                     println("Declaring publisher on '$keyExpr'...")
                     session.declarePublisher(keyExpr).res().onSuccess { pub ->
                         pub.use {
+                            val payload = "Pub from Kotlin!"
                             var idx = 0
                             while (true) {
                                 Thread.sleep(1000)
-                                val payload = "Pub from Kotlin!"
                                 println(
                                     "Putting Data ('$keyExpr': '[${
                                         idx.toString().padStart(4, ' ')

@@ -24,9 +24,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":zenoh-kotlin"))
+    implementation(project(":zenoh-java"))
     implementation("commons-net:commons-net:3.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }
 
 tasks {
@@ -61,6 +60,6 @@ tasks {
 
 tasks.register("CompileZenohJNI") {
     project.exec {
-        commandLine("cargo", "build", "--release", "--manifest-path", "../zenoh-jni/Cargo.toml")
+        commandLine("cargo", "build", "--release", "--manifest-path", "../../zenoh-jni/Cargo.toml")
     }
 }

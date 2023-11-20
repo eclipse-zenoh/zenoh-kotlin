@@ -249,7 +249,7 @@ The log levels are the ones from Rust: `trace`, `info`, `debug`, `error` and `wa
 You can find some examples located under the [`/examples` folder](examples).
 Once we've built the project, to run them, simply run `./gradlew <EXAMPLE_NAME>`.
 
-For instance in order to run the [ZPub](examples/src/main/kotlin/io.zenoh/ZPub.kt) example, type:
+For instance in order to run the [ZPub](examples/kotlinExamples/src/main/kotlin/io.zenoh/ZPub.kt) example, type:
 
 ```bash
 ./gradlew ZPub

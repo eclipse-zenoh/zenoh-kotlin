@@ -26,6 +26,8 @@ package io.zenoh.prelude
  */
 class Encoding(val knownEncoding: KnownEncoding, val suffix: String = "") {
 
+    constructor(knownEncoding: KnownEncoding) : this(knownEncoding, "")
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

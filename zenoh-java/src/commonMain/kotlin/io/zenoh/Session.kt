@@ -62,6 +62,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
          * @return The opened [Session].
          * @throws [SessionException] in the case of a failure.
          */
+        @JvmStatic
         @Throws(SessionException::class)
         fun open(): Session {
             val session = Session(Config.default())
@@ -75,6 +76,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
          * @return The opened [Session].
          * @throws [SessionException] in the case of a failure.
          */
+        @JvmStatic
         @Throws(SessionException::class)
         fun open(config: Config): Session {
             val session = Session(config)
