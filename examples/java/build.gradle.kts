@@ -44,7 +44,7 @@ tasks {
         register(example, JavaExec::class) {
             dependsOn("CompileZenohJNI")
             description = "Run the $example example"
-            mainClass.set("io.zenoh.${example}Kt")
+            mainClass.set("io.zenoh.${example}")
             classpath(sourceSets["main"].runtimeClasspath)
             val zenohPaths = "../zenoh-jni/target/release"
             val defaultJvmArgs = arrayListOf("-Djava.library.path=$zenohPaths")

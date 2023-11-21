@@ -175,12 +175,12 @@ class GetTest {
 
         val iterator = receiver.iterator()
         while (iterator.hasNext()) {
-            val next = iterator.next()
-            if (next.isEmpty) {
+            try {
+                val reply = iterator.next().get()
+                receivedReplies.add(reply)
+            } catch (e: Exception) {
                 break
             }
-            val reply = next.get()
-            receivedReplies.add(reply)
         }
 
         sessionB.close()

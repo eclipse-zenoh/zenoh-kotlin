@@ -23,7 +23,9 @@ rootProject.name = "zenoh-kotlin"
 
 //include(":zenoh-kotlin")
 include(":zenoh-java")
-include(":examples:javaExamples")
+include(":zenoh-kotlin")
+include(":examples:java")
+include(":examples:kotlin")
 include(":zenoh-jni")
 
 plugins {
