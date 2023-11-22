@@ -19,7 +19,7 @@ import java.util.Optional
 import java.util.concurrent.BlockingQueue
 
 /**
- * Queue handler
+ * Blocking queue handler
  *
  * Implementation of a [Handler] with a [BlockingQueue] receiver. This handler is intended to be used
  * as the default handler by the [io.zenoh.queryable.Queryable], [io.zenoh.subscriber.Subscriber] and [io.zenoh.query.Get],
@@ -31,7 +31,7 @@ import java.util.concurrent.BlockingQueue
  * @property queue
  * @constructor Create empty Queue handler
  */
-class QueueHandler<T: ZenohType>(private val queue: BlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
+class BlockingQueueHandler<T: ZenohType>(private val queue: BlockingQueue<Optional<T>>) : Handler<T, BlockingQueue<Optional<T>>> {
 
     override fun handle(t: T) {
         queue.put(Optional.of(t))

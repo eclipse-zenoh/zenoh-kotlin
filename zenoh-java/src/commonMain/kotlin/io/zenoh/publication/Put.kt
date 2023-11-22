@@ -28,16 +28,17 @@ import io.zenoh.value.Value
  * A put puts a [io.zenoh.sample.Sample] into the specified key expression.
  *
  * Example:
- * ```kotlin
- * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
- *     session.put(keyExpr, "Hello")
- *         .congestionControl(CongestionControl.BLOCK)
- *         .priority(Priority.REALTIME)
- *         .kind(SampleKind.PUT)
- *         .res()
- *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
- *     }}
+ * ```java
+ * try (Session session = Session.open()) {
+ *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/zenoh-java-put")) {
+ *         String value = "Put from Java!";
+ *         session.put(keyExpr, value)
+ *             .congestionControl(CongestionControl.BLOCK)
+ *             .priority(Priority.REALTIME)
+ *             .kind(SampleKind.PUT)
+ *             .res();
+ *         System.out.println("Putting Data ('" + keyExpr + "': '" + value + "')...");
+ *     }
  * }
  * ```
  *

@@ -38,7 +38,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * be accessible from [Query.reply].
  *
  * Example:
- * ```kotlin
+ * ```java
  * session.declareQueryable(keyExpr).with { query ->
  *     query.reply(keyExpr)
  *          .success(Value("Hello"))

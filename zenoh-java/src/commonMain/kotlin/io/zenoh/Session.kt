@@ -111,7 +111,22 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/greeting")) {
+     *         try (Publisher publisher = session.declarePublisher(keyExpr)
+     *             .priority(Priority.REALTIME)
+     *             .congestionControl(CongestionControl.DROP)
+     *             .res()) {
+     *                 int idx = 0;
+     *                 while (true) {
+     *                     String payload = "Hello for the " + idx + "th time!";
+     *                     publisher.put(payload).res();
+     *                     Thread.sleep(1000);
+     *                     idx++;
+     *             }
+     *         }
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
@@ -127,7 +142,21 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Example:
      *
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/sub")) {
+     *         try (Subscriber<BlockingQueue<Optional<Sample>>> subscriber = session.declareSubscriber(keyExpr).res()) {
+     *             BlockingQueue<Optional<Sample>> receiver = subscriber.getReceiver();
+     *             assert receiver != null;
+     *             while (true) {
+     *                 Optional<Sample> sample = receiver.take();
+     *                 if (sample.isEmpty()) {
+     *                     break;
+     *                 }
+     *                 System.out.println(sample.get());
+     *             }
+     *         }
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
@@ -142,9 +171,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/greeting")) {
+     *         System.out.println("Declaring Queryable");
+     *         try (Queryable<BlockingQueue<Optional<Query>>> queryable = session.declareQueryable(keyExpr).res()) {
+     *             BlockingQueue<Optional<Query>> receiver = queryable.getReceiver();
+     *             while (true) {
+     *                 Optional<Query> wrapper = receiver.take();
+     *                 if (wrapper.isEmpty()) {
+     *                     break;
+     *                 }
+     *                 Query query = wrapper.get();
+     *                 System.out.println("Received query at " + query.getSelector());
+     *                 query.reply(keyExpr)
+     *                     .success("Hello!")
+     *                     .withKind(SampleKind.PUT)
+     *                     .withTimeStamp(TimeStamp.getCurrentTime())
+     *                     .res();
+     *             }
+     *         }
+     *     }
+     * }
      * ```
-     *
      *
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
      * @return A [Queryable.Builder] with a [BlockingQueue] receiver.
@@ -162,7 +210,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```java
-     * TODO: fill documentation
+     * try (Session session = session.open()) {
+     *     try (KeyExpr keyExpr = session.declareKeyExpr("demo/java/example").res()) {
+     *          Publisher publisher = session.declarePublisher(keyExpr).res();
+     *          // ...
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The intended Key expression.
@@ -193,19 +246,37 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Get] with a [BlockingQueue] receiver.
      *
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (Selector selector = Selector.tryFrom("demo/java/example")) {
+     *          session.get(selector)
+     *              .consolidation(ConsolidationMode.NONE)
+     *              .withValue("Get value example")
+     *              .with(reply -> System.out.println("Received reply " + reply))
+     *              .res()
+     *     }
+     * }
      * ```
+     *
      * @param selector The [KeyExpr] to be used for the get operation.
      * @return a resolvable [Get.Builder] with a [BlockingQueue] receiver.
      */
     fun get(selector: Selector): Get.Builder<BlockingQueue<Optional<Reply>>> = Get.newBuilder(this, selector)
 
     /**
-     * Declare a [Get] with a [BlockingQueue] receiver.
+     * Declare a [Get] with a [BlockingQueue] receiver as default.
      *
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/java/example")) {
+     *          session.get(keyExpr)
+     *              .consolidation(ConsolidationMode.NONE)
+     *              .withValue("Get value example")
+     *              .with(reply -> System.out.println("Received reply " + reply))
+     *              .res()
+     *     }
+     * }
      * ```
+     *
      * @param keyExpr The [KeyExpr] to be used for the get operation.
      * @return a resolvable [Get.Builder] with a [BlockingQueue] receiver.
      */
@@ -216,7 +287,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/greeting")) {
+     *         session.put(keyExpr, Value("Hello!"))
+     *             .congestionControl(CongestionControl.BLOCK)
+     *             .priority(Priority.REALTIME)
+     *             .kind(SampleKind.PUT)
+     *             .res();
+     *         System.out.println("Put 'Hello' on " + keyExpr + ".");
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
@@ -230,7 +310,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/greeting")) {
+     *         session.put(keyExpr, "Hello!")
+     *             .congestionControl(CongestionControl.BLOCK)
+     *             .priority(Priority.REALTIME)
+     *             .kind(SampleKind.PUT)
+     *             .res();
+     *         System.out.println("Put 'Hello' on " + keyExpr + ".");
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
@@ -245,7 +334,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Example:
      *
      * ```java
-     * TODO: fill documentation
+     * try (Session session = Session.open()) {
+     *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example")) {
+     *         session.delete(keyExpr).res();
+     *         System.out.println("Performed delete on " + keyExpr + ".");
+     *     }
+     * }
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the delete operation.

@@ -17,7 +17,7 @@ package io.zenoh.query
 import io.zenoh.handlers.Callback
 import io.zenoh.Session
 import io.zenoh.exceptions.ZenohException
-import io.zenoh.handlers.QueueHandler
+import io.zenoh.handlers.BlockingQueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
@@ -30,19 +30,14 @@ import java.util.concurrent.LinkedBlockingDeque
  * Get to query data from the matching queryables in the system.
  *
  * Example with a [Callback]:
- * ```
- * println("Opening Session")
- * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/example".intoSelector().onSuccess { selector ->
- *         session.get(selector)
- *             .consolidation(ConsolidationMode.NONE)
- *             .target(QueryTarget.BEST_MATCHING)
- *             .withValue("Get value example")
- *             .with { reply -> println("Received reply $reply") }
- *             .timeout(Duration.ofMillis(1000))
- *             .res()
- *             .onSuccess {...}
- *         }
+ * ```java
+ * try (Session session = Session.open()) {
+ *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/java/example")) {
+ *          session.get(keyExpr)
+ *              .consolidation(ConsolidationMode.NONE)
+ *              .withValue("Get value example")
+ *              .with(reply -> System.out.println("Received reply " + reply))
+ *              .res()
  *     }
  * }
  * ```
@@ -57,10 +52,10 @@ class Get<R> private constructor() {
          *
          * @param session The [Session] from which the query will be triggered.
          * @param selector The [Selector] with which the query will be performed.
-         * @return A [Builder] with a default [QueueHandler] to handle any incoming [Reply].
+         * @return A [Builder] with a default [BlockingQueueHandler] to handle any incoming [Reply].
          */
         fun newBuilder(session: Session, selector: Selector): Builder<BlockingQueue<Optional<Reply>>> {
-            return Builder(session, selector, handler = QueueHandler(LinkedBlockingDeque()))
+            return Builder(session, selector, handler = BlockingQueueHandler(LinkedBlockingDeque()))
         }
     }
 
@@ -158,7 +153,7 @@ class Get<R> private constructor() {
         fun <R2> with(handler: Handler<Reply, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [BlockingQueue]. Overrides any previously specified callback or handler. */
-        fun with(blockingQueue: BlockingQueue<Optional<Reply>>): Builder<BlockingQueue<Optional<Reply>>> = Builder(this, QueueHandler(blockingQueue))
+        fun with(blockingQueue: BlockingQueue<Optional<Reply>>): Builder<BlockingQueue<Optional<Reply>>> = Builder(this, BlockingQueueHandler(blockingQueue))
 
         /**
          * Resolve the builder triggering the query.

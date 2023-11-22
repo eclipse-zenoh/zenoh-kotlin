@@ -17,7 +17,7 @@ package io.zenoh.queryable
 import io.zenoh.*
 import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
-import io.zenoh.handlers.QueueHandler
+import io.zenoh.handlers.BlockingQueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQueryable
 import io.zenoh.keyexpr.KeyExpr
@@ -30,9 +30,34 @@ import java.util.concurrent.LinkedBlockingDeque
  *
  * Its main purpose is to keep the queryable active as long as it exists.
  *
- * Example using the default [QueueHandler] handler:
+ * Example using the default [BlockingQueueHandler] handler:
  * ```java
- * //TODO(Fill documentation)
+ * try (Session session = Session.open()) {
+ *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/zenoh-java-queryable")) {
+ *         System.out.println("Declaring Queryable");
+ *         try (Queryable<BlockingQueue<Optional<Query>>> queryable = session.declareQueryable(keyExpr).res()) {
+ *             BlockingQueue<Optional<Query>> receiver = queryable.getReceiver();
+ *             while (true) {
+ *                 Optional<Query> wrapper = receiver.take();
+ *                 if (wrapper.isEmpty()) {
+ *                     break;
+ *                 }
+ *                 Query query = wrapper.get();
+ *                 String valueInfo = query.getValue() != null ? " with value '" + query.getValue() + "'" : "";
+ *                 System.out.println(">> [Queryable] Received Query '" + query.getSelector() + "'" + valueInfo);
+ *                 try {
+ *                     query.reply(keyExpr)
+ *                         .success("Queryable from Java!")
+ *                         .withKind(SampleKind.PUT)
+ *                         .withTimeStamp(TimeStamp.getCurrentTime())
+ *                         .res();
+ *                 } catch (Exception e) {
+ *                     System.out.println(">> [Queryable] Error sending reply: " + e);
+ *                 }
+ *             }
+ *         }
+ *     }
+ * }
  * ```
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, [R] will be [Unit].
@@ -70,10 +95,10 @@ class Queryable<R> internal constructor(
          *
          * @param session The [Session] from which the queryable will be declared.
          * @param keyExpr The [KeyExpr] associated to the queryable.
-         * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
+         * @return An empty [Builder] with a default [BlockingQueueHandler] to handle the incoming samples.
          */
         fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<BlockingQueue<Optional<Query>>> {
-            return Builder(session, keyExpr, handler = QueueHandler(queue = LinkedBlockingDeque()))
+            return Builder(session, keyExpr, handler = BlockingQueueHandler(queue = LinkedBlockingDeque()))
         }
     }
 
@@ -129,7 +154,7 @@ class Queryable<R> internal constructor(
         fun <R2> with(handler: Handler<Query, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [BlockingQueue]. Overrides any previously specified callback or handler. */
-        fun with(blockingQueue: BlockingQueue<Optional<Query>>): Builder<BlockingQueue<Optional<Query>>> = Builder(this, QueueHandler(blockingQueue))
+        fun with(blockingQueue: BlockingQueue<Optional<Query>>): Builder<BlockingQueue<Optional<Query>>> = Builder(this, BlockingQueueHandler(blockingQueue))
 
         /**
          * Resolve the builder, creating a [Queryable] with the provided parameters.

@@ -21,33 +21,34 @@ import io.zenoh.ZenohType
  * incoming [T] elements.
  *
  * **Example**:
- * ```kotlin
- * class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
+ * ```java
+ * public class QueueHandler<T extends ZenohType> implements Handler<T, ArrayDeque<T>> {
  *
- *     private val queue: ArrayDeque<T> = ArrayDeque()
+ *     private final ArrayDeque<T> queue = new ArrayDeque<>();
  *
- *     override fun handle(t: T) {
- *         println("Received $t, enqueuing...")
- *         queue.add(t)
+ *     @Override
+ *     public void handle(T t) {
+ *         System.out.println("Received " + t + ", enqueuing...");
+ *         queue.add(t);
  *     }
  *
- *     override fun receiver(): ArrayDeque<T> {
- *         return queue
+ *     @Override
+ *     public ArrayDeque<T> receiver() {
+ *         return queue;
  *     }
  *
- *     override fun onClose() {
- *         println("Received in total ${queue.size} elements."}
+ *     @Override
+ *     public void onClose() {
+ *         System.out.println("Received in total " + queue.size() + " elements.");
  *     }
  * }
  * ```
  *
  * That `QueueHandler` could then be used as follows, for instance for a subscriber:
- * ```kotlin
- * val handler = QueueHandler<Sample>()
- * val receiver = session.declareSubscriber(keyExpr)
- *         .with(handler)
- *         .res()
- *         .onSuccess { ... }
+ * ```java
+ * QueueHandler<Sample> handler = new QueueHandler<Sample>();
+ * session.declareSubscriber(keyExpr).with(handler).res();
+ * ...
  * ```
  *
  * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.queryable.Query].

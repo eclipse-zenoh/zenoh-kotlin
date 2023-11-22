@@ -17,7 +17,7 @@ package io.zenoh.subscriber
 import io.zenoh.*
 import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
-import io.zenoh.handlers.QueueHandler
+import io.zenoh.handlers.BlockingQueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.subscriber.Subscriber.Builder
 import io.zenoh.jni.JNISubscriber
@@ -32,10 +32,27 @@ import java.util.concurrent.LinkedBlockingDeque
  *
  * Its main purpose is to keep the subscription active as long as it exists.
  *
- * Example using the default [QueueHandler] handler:
+ * Example using the default [BlockingQueueHandler] handler:
  *
  * ```java
- * //TODO: fill documentation
+ * System.out.println("Opening session...");
+ * try (Session session = Session.open()) {
+ *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example")) {
+ *         System.out.println("Declaring Subscriber on '" + keyExpr + "'...");
+ *         try (Subscriber<BlockingQueue<Optional<Sample>>> subscriber = session.declareSubscriber(keyExpr).res()) {
+ *             BlockingQueue<Optional<Sample>> receiver = subscriber.getReceiver();
+ *             assert receiver != null;
+ *             while (true) {
+ *                 Optional<Sample> wrapper = receiver.take();
+ *                 if (wrapper.isEmpty()) {
+ *                     break;
+ *                 }
+ *                 Sample sample = wrapper.get();
+ *                 System.out.println(">> [Subscriber] Received " + sample.getKind() + " ('" + sample.getKeyExpr() + "': '" + sample.getValue() + "')");
+ *             }
+ *         }
+ *     }
+ * }
  * ```
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, R will be [Unit].
@@ -73,10 +90,10 @@ class Subscriber<R> internal constructor(
          *
          * @param session The [Session] from which the subscriber will be declared.
          * @param keyExpr The [KeyExpr] associated to the subscriber.
-         * @return An empty [Builder] with a default [QueueHandler] to handle the incoming samples.
+         * @return An empty [Builder] with a default [BlockingQueueHandler] to handle the incoming samples.
          */
         fun newBuilder(session: Session, keyExpr: KeyExpr): Builder<BlockingQueue<Optional<Sample>>> {
-            return Builder(session, keyExpr, handler = QueueHandler(queue = LinkedBlockingDeque()))
+            return Builder(session, keyExpr, handler = BlockingQueueHandler(queue = LinkedBlockingDeque()))
         }
     }
 
@@ -146,7 +163,7 @@ class Subscriber<R> internal constructor(
         fun <R2> with(handler: Handler<Sample, R2>): Builder<R2> = Builder(this, handler)
 
         /** Specify a [BlockingQueue]. Overrides any previously specified callback or handler. */
-        fun with(blockingQueue: BlockingQueue<Optional<Sample>>): Builder<BlockingQueue<Optional<Sample>>> = Builder(this, QueueHandler(blockingQueue))
+        fun with(blockingQueue: BlockingQueue<Optional<Sample>>): Builder<BlockingQueue<Optional<Sample>>> = Builder(this, BlockingQueueHandler(blockingQueue))
 
         /**
          * Resolve the builder, creating a [Subscriber] with the provided parameters.

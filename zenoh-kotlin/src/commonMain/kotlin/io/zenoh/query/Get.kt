@@ -27,19 +27,17 @@ import java.time.Duration
  * Get to query data from the matching queryables in the system.
  *
  * Example with a [Callback]:
- * ```
- * println("Opening Session")
- * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/example".intoSelector().onSuccess { selector ->
+ * ```java
+ * System.out.println("Opening session...");
+ * try (Session session = Session.open()) {
+ *     try (Selector selector = Selector.tryFrom("demo/kotlin/example")) {
  *         session.get(selector)
+ *             .with(System.out::println)
  *             .consolidation(ConsolidationMode.NONE)
  *             .target(QueryTarget.BEST_MATCHING)
  *             .withValue("Get value example")
- *             .with { reply -> println("Received reply $reply") }
- *             .timeout(Duration.ofMillis(1000))
- *             .res()
- *             .onSuccess {...}
- *         }
+ *             .res();
+*           // ...
  *     }
  * }
  * ```

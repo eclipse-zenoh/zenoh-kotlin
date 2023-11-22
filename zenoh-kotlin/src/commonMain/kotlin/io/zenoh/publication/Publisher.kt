@@ -31,10 +31,10 @@ import io.zenoh.value.Value
  * which we can specify the [Priority], and the [CongestionControl].
  *
  * Example:
- * ```
- * val keyExpr = "demo/kotlin/greeting"
+ * ```kotlin
  * Session.open().onSuccess {
  *     it.use { session ->
+ *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
  *         session
  *             .declarePublisher(keyExpr)
  *             .priority(Priority.REALTIME)
@@ -50,6 +50,7 @@ import io.zenoh.value.Value
  *                     }
  *                 }
  *             }
+ *         }
  *     }
  * }
  * ```

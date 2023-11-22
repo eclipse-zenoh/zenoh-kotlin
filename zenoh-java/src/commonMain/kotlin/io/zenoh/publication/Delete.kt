@@ -25,18 +25,16 @@ import kotlin.jvm.Throws
  * Delete operation to perform on Zenoh on a key expression.
  *
  * Example:
- * ```kotlin
- * Session.open().onSuccess { session ->
- *         session.use {
- *             "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
- *             session.delete(keyExpr)
- *                 .res()
- *                 .onSuccess {
- *                     println("Performed a delete on $keyExpr")
- *                 }
- *             }
+ * ```java
+ * public void deleteExample() throws ZenohException {
+ *     System.out.println("Opening session...");
+ *     try (Session session = Session.open()) {
+ *         try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/java/example")) {
+ *             session.delete(keyExpr).res();
+ *             System.out.println("Performed a delete on '" + keyExpr);
  *         }
  *     }
+ * }
  * ```
  *
  * A delete operation is a special case of a Put operation, it is analogous to perform a Put with an empty value and

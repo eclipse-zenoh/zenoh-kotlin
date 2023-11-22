@@ -33,26 +33,21 @@ import kotlin.Throws
  * which we can specify the [Priority], and the [CongestionControl].
  *
  * Example:
- * ```
- * val keyExpr = "demo/kotlin/greeting"
- * Session.open().onSuccess {
- *     it.use { session ->
- *         session
- *             .declarePublisher(keyExpr)
- *             .priority(Priority.REALTIME)
- *             .congestionControl(CongestionControl.DROP)
- *             .res()
- *             .onSuccess { pub ->
- *                 pub.use {
- *                     var i = 0
- *                     while (true) {
- *                         pub.put("Hello for the ${i}th time!").res()
- *                         Thread.sleep(1000)
- *                         i++
- *                     }
- *                 }
+ * ```java
+ * try (Session session = Session.open()) {
+ *     try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/java/greeting")) {
+ *         System.out.println("Declaring publisher on '" + keyExpr + "'...");
+ *         try (Publisher publisher = session.declarePublisher(keyExpr).res()) {
+ *             int i = 0;
+ *             while (true) {
+ *                 publisher.put("Hello for the " + i + "th time!").res();
+ *                 Thread.sleep(1000);
+ *                 i++;
  *             }
+ *         }
  *     }
+ * } catch (ZenohException | InterruptedException e) {
+ *     System.out.println("Error: " + e);
  * }
  * ```
  *

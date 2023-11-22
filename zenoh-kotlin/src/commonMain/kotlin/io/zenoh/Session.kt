@@ -254,21 +254,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Get] with a [Channel] receiver.
      *
      * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
      * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.get(keyExpr)
+     *     "demo/kotlin/example".intoSelector().onSuccess { selector ->
+     *         session.get(selector)
      *             .consolidation(ConsolidationMode.NONE)
      *             .target(QueryTarget.BEST_MATCHING)
      *             .withValue("Get value example")
      *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
+     *             .timeout(Duration.ofMillis(10000))
      *             .res()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
      *         }
      *     }
      * }
@@ -282,8 +276,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Get] with a [Channel] receiver.
      *
      * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
      * Session.open().onSuccess { session -> session.use {
      *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
      *         session.get(keyExpr)
@@ -291,12 +283,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             .target(QueryTarget.BEST_MATCHING)
      *             .withValue("Get value example")
      *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
+     *             .timeout(Duration.ofMillis(10000))
      *             .res()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
      *         }
      *     }
      * }
