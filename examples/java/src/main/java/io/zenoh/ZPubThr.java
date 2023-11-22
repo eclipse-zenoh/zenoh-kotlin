@@ -14,6 +14,7 @@
 
 package io.zenoh;
 
+import io.zenoh.exceptions.ZenohException;
 import io.zenoh.keyexpr.KeyExpr;
 import io.zenoh.prelude.Encoding;
 import io.zenoh.prelude.KnownEncoding;
@@ -23,7 +24,7 @@ import io.zenoh.value.Value;
 
 public class ZPubThr {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ZenohException {
         int size = 8;
         byte[] data = new byte[size];
         for (int i = 0; i < size; i++) {

@@ -14,6 +14,7 @@
 
 package io.zenoh;
 
+import io.zenoh.exceptions.ZenohException;
 import io.zenoh.query.Reply;
 import io.zenoh.selector.Selector;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class ZGet {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ZenohException, InterruptedException {
         System.out.println("Opening session...");
         try (Session session = Session.open()) {
             try (Selector selector = Selector.tryFrom("demo/example/**")) {

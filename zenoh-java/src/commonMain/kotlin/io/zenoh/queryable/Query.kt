@@ -19,6 +19,7 @@ import io.zenoh.ZenohType
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.query.Reply
@@ -71,7 +72,7 @@ class Query internal constructor(
      * @param reply The [Reply] to the Query.
      * @return A [Resolvable] that either performs the reply operation or throws an [Exception] if the query is invalid.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun reply(reply: Reply): Resolvable<Unit> = Resolvable {
         jniQuery?.apply {
             reply as Reply.Success // Since error replies are not yet supported, we assume a reply is a Success reply.

@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.prelude.SampleKind
 import io.zenoh.publication.CongestionControl
 import io.zenoh.publication.Priority
@@ -32,17 +33,17 @@ internal class JNIPublisher(private val ptr: Long) {
      *
      * @param value The [Value] to be put.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun put(value: Value) {
         putViaJNI(value.payload, value.encoding.knownEncoding.ordinal, ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun write(kind: SampleKind, value: Value) {
         writeViaJNI(value.payload, value.encoding.knownEncoding.ordinal, kind.ordinal, ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun delete() {
         deleteViaJNI(ptr)
     }
@@ -63,7 +64,7 @@ internal class JNIPublisher(private val ptr: Long) {
      *
      * @param congestionControl: The [CongestionControl] policy.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun setCongestionControl(congestionControl: CongestionControl) {
         setCongestionControlViaJNI(congestionControl.ordinal, ptr)
     }
@@ -75,7 +76,7 @@ internal class JNIPublisher(private val ptr: Long) {
      *
      * @param priority: The [Priority] policy.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun setPriority(priority: Priority) {
         setPriorityViaJNI(priority.value, ptr)
     }
@@ -88,7 +89,7 @@ internal class JNIPublisher(private val ptr: Long) {
      * @param congestionControl The congestion control policy.
      * @param ptr Pointer to the publisher.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun setCongestionControlViaJNI(congestionControl: Int, ptr: Long)
 
     /**
@@ -99,18 +100,18 @@ internal class JNIPublisher(private val ptr: Long) {
      * @param priority The priority policy.
      * @param ptr Pointer to the publisher.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun setPriorityViaJNI(priority: Int, ptr: Long)
 
 
     /** Puts through the native Publisher. */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun putViaJNI(valuePayload: ByteArray, valueEncoding: Int, ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun writeViaJNI(payload: ByteArray, encoding: Int, sampleKind: Int, ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun deleteViaJNI(ptr: Long)
 
     /** Frees the underlying native Publisher. */

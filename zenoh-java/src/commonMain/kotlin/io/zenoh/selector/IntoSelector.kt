@@ -17,7 +17,7 @@ package io.zenoh.selector
 import io.zenoh.exceptions.KeyExprException
 import io.zenoh.keyexpr.KeyExpr
 
-@Throws(Exception::class)
+@Throws(KeyExprException::class)
 fun String.intoSelector(): Selector {
     if (this.isEmpty()) {
         throw(KeyExprException("Attempting to create a KeyExpr from an empty string."))

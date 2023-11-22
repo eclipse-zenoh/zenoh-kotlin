@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
@@ -257,14 +258,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
-    @Throws(Exception::class)
+    @Throws(SessionException::class)
     internal fun resolvePublisher(builder: Publisher.Builder): Publisher {
         return jniSession?.run {
             declarePublisher(builder)
         } ?: throw (sessionClosedException)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun <R> resolveSubscriber(
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Subscriber<R> {
@@ -273,7 +274,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: throw (sessionClosedException)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun <R> resolveQueryable(
         keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Queryable<R> {
@@ -282,7 +283,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: throw (sessionClosedException)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun <R> resolveGet(
         selector: Selector,
         callback: Callback<Reply>,
@@ -299,12 +300,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession?.performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun resolvePut(keyExpr: KeyExpr, put: Put) {
         jniSession?.run { performPut(keyExpr, put) }
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     internal fun resolveDelete(keyExpr: KeyExpr, delete: Delete) {
         jniSession?.run { performPut(keyExpr, delete) }
     }

@@ -21,4 +21,4 @@ package io.zenoh.exceptions
  * for instance when attempting to create a [io.zenoh.keyexpr.KeyExpr] from a string that does not respect the
  * key expression conventions.
  */
-class KeyExprException(val msg: String) : Exception()
+class KeyExprException(msg: String) : ZenohException(msg)

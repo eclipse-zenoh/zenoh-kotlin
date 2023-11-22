@@ -16,6 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.Resolvable
 import io.zenoh.ZenohType
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.sample.Sample
 import io.zenoh.prelude.SampleKind
 import io.zenoh.value.Value
@@ -122,7 +123,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             /**
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
-            @Throws(Exception::class)
+            @Throws(ZenohException::class)
             override fun res() {
                 val sample = Sample(keyExpr, value, kind, timeStamp)
                 return query.reply(Success("", sample)).res()

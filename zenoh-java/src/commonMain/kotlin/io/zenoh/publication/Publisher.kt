@@ -16,6 +16,7 @@ package io.zenoh.publication
 
 import io.zenoh.*
 import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.SampleKind
@@ -75,13 +76,13 @@ class Publisher internal constructor(
     }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun put(value: Value): Resolvable<Unit> = Resolvable {
         return@Resolvable jniPublisher?.put(value) ?: throw(sessionException)
     }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun put(value: String): Resolvable<Unit> = Resolvable {
         return@Resolvable jniPublisher?.put(Value(value)) ?: throw(sessionException)
     }
@@ -93,7 +94,7 @@ class Publisher internal constructor(
      * @param value The [Value] to send.
      * @return A [Resolvable] operation.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun write(kind: SampleKind, value: Value): Resolvable<Unit> = Resolvable {
         return@Resolvable jniPublisher?.write(kind, value) ?: throw(sessionException)
     }
@@ -103,7 +104,7 @@ class Publisher internal constructor(
      *
      * @return A [Resolvable] operation.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun delete(): Resolvable<Unit> = Resolvable {
         return@Resolvable jniPublisher?.delete() ?: throw(sessionException)
     }
@@ -120,7 +121,7 @@ class Publisher internal constructor(
      *
      * @param congestionControl: The [CongestionControl] policy.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun setCongestionControl(congestionControl: CongestionControl) {
          jniPublisher?.setCongestionControl(congestionControl)
         this.congestionControl = congestionControl
@@ -138,7 +139,7 @@ class Publisher internal constructor(
      *
      * @param priority: The [Priority] policy.
      */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun setPriority(priority: Priority) {
          jniPublisher?.setPriority(priority)
         this.priority = priority

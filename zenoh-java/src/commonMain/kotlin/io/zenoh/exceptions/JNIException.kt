@@ -20,4 +20,4 @@ package io.zenoh.exceptions
  * This type of exception is thrown from the native code when something goes wrong regarding the
  * communication between the Java/Kotlin layer and the native layer through the JNI.
  */
-class JNIException : Exception()
+class JNIException : ZenohException()

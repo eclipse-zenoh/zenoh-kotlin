@@ -16,6 +16,7 @@ package io.zenoh.publication
 
 import io.zenoh.prelude.SampleKind
 import io.zenoh.Session
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
 import kotlin.jvm.Throws
@@ -92,7 +93,7 @@ class Delete private constructor(
          * A successful resolution only states the Delete request was properly sent through the network, it doesn't mean it
          * was properly executed remotely.
          */
-        @Throws(Exception::class)
+        @Throws(ZenohException::class)
         fun res() {
             val delete = Delete(
                 this.keyExpr, Value.empty(), this.congestionControl, this.priority, SampleKind.DELETE

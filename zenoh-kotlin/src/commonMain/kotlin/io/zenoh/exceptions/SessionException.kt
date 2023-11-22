@@ -19,4 +19,4 @@ package io.zenoh.exceptions
  *
  * This kind of exceptions are thrown from the native code when something goes wrong with a Zenoh session.
  */
-class SessionException(message: String?) : Exception(message)
+class SessionException(message: String?) : ZenohException(message)

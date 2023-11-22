@@ -14,6 +14,7 @@
 
 package io.zenoh.jni
 
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 
@@ -47,7 +48,7 @@ internal class JNIQuery(private val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun replySuccessViaJNI(
         queryPtr: Long,
         keyExpr: Long,
@@ -58,7 +59,7 @@ internal class JNIQuery(private val ptr: Long) {
         timestampNtp64: Long
     )
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun replyErrorViaJNI(
         queryPtr: Long,
         errorValuePayload: ByteArray,

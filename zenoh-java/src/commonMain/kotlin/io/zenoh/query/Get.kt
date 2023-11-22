@@ -16,6 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.handlers.Callback
 import io.zenoh.Session
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.selector.Selector
@@ -164,7 +165,7 @@ class Get<R> private constructor() {
          *
          * @return The receiver [R] from the specified [Handler] (if specified).
          */
-        @Throws(Exception::class)
+        @Throws(ZenohException::class)
         fun res(): R? {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }

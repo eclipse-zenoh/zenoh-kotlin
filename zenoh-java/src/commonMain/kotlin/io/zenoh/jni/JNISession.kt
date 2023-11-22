@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.prelude.KnownEncoding
@@ -54,7 +55,7 @@ internal class JNISession {
         closeSessionViaJNI(sessionPtr.get())
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun declarePublisher(builder: Publisher.Builder): Publisher {
         val publisherRawPtr = declarePublisherViaJNI(
             builder.keyExpr.jniKeyExpr!!.ptr,
@@ -70,7 +71,7 @@ internal class JNISession {
         )
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun <R> declareSubscriber(
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Subscriber<R> {
@@ -91,7 +92,7 @@ internal class JNISession {
         return Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun <R> declareQueryable(
         keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Queryable<R> {
@@ -109,7 +110,7 @@ internal class JNISession {
         return Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun <R> performGet(
         selector: Selector,
         callback: Callback<Reply>,
@@ -166,18 +167,18 @@ internal class JNISession {
         return receiver
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun declareKeyExpr(keyExpr: String): KeyExpr {
         val ptr = declareKeyExprViaJNI(sessionPtr.get(), keyExpr)
         return KeyExpr(JNIKeyExpr(ptr))
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun undeclareKeyExpr(keyExpr: KeyExpr) {
         undeclareKeyExprViaJNI(sessionPtr.get(), keyExpr.jniKeyExpr!!.ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun performPut(
         keyExpr: KeyExpr,
         put: Put,
@@ -193,17 +194,17 @@ internal class JNISession {
         )
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun openSessionViaJNI(configFilePath: String): Long
 
     private external fun closeSessionViaJNI(ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declarePublisherViaJNI(
         keyExpr: Long, ptr: Long, congestionControl: Int, priority: Int
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareSubscriberViaJNI(
         keyExpr: Long,
         sessionPtr: Long,
@@ -212,7 +213,7 @@ internal class JNISession {
         reliability: Int
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareQueryableViaJNI(
         keyExpr: Long,
         sessionPtr: Long,
@@ -221,13 +222,13 @@ internal class JNISession {
         complete: Boolean
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareKeyExprViaJNI(sessionPtr: Long, keyExpr: String): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun undeclareKeyExprViaJNI(sessionPtr: Long, keyExprPtr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun getViaJNI(
         keyExpr: Long,
         selectorParams: String,
@@ -239,7 +240,7 @@ internal class JNISession {
         consolidation: Int,
     )
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun getWithValueViaJNI(
         keyExpr: Long,
         selectorParams: String,
@@ -253,7 +254,7 @@ internal class JNISession {
         encoding: Int
     )
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun putViaJNI(
         keyExpr: Long,
         sessionPtr: Long,

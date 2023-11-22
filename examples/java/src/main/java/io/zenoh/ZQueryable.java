@@ -14,6 +14,7 @@
 
 package io.zenoh;
 
+import io.zenoh.exceptions.ZenohException;
 import io.zenoh.keyexpr.KeyExpr;
 import io.zenoh.prelude.SampleKind;
 import io.zenoh.queryable.Query;
@@ -25,7 +26,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class ZQueryable {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ZenohException, InterruptedException {
         try (Session session = Session.open()) {
             try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/zenoh-java-queryable")) {
                 System.out.println("Declaring Queryable");

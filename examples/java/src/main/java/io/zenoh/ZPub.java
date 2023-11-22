@@ -14,11 +14,12 @@
 
 package io.zenoh;
 
+import io.zenoh.exceptions.ZenohException;
 import io.zenoh.keyexpr.KeyExpr;
 import io.zenoh.publication.Publisher;
 
 public class ZPub {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ZenohException, InterruptedException {
         System.out.println("Opening session...");
         try (Session session = Session.open()) {
             try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/zenoh-java-pub")) {

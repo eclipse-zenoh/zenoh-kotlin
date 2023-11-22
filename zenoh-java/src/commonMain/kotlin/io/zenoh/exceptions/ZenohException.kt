@@ -15,8 +15,6 @@
 package io.zenoh.exceptions
 
 /**
- * Session exception.
- *
- * This kind of exceptions are thrown from the native code when something goes wrong with a Zenoh session.
+ * A Zenoh exception.
  */
-class SessionException(message: String?) : ZenohException(message)
+abstract class ZenohException(override val message: String? = null) : Exception()

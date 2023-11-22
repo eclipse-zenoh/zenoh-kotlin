@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.prelude.KnownEncoding
@@ -169,7 +170,7 @@ internal class JNISession {
         undeclareKeyExprViaJNI(sessionPtr.get(), keyExpr.jniKeyExpr!!.ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     fun performPut(
         keyExpr: KeyExpr,
         put: Put,
@@ -185,18 +186,18 @@ internal class JNISession {
         )
     }
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun openSessionViaJNI(configFilePath: String): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun closeSessionViaJNI(ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declarePublisherViaJNI(
         keyExpr: Long, ptr: Long, congestionControl: Int, priority: Int
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareSubscriberViaJNI(
         keyExpr: Long,
         sessionPtr: Long,
@@ -205,7 +206,7 @@ internal class JNISession {
         reliability: Int
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareQueryableViaJNI(
         keyExpr: Long,
         sessionPtr: Long,
@@ -214,13 +215,13 @@ internal class JNISession {
         complete: Boolean
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun declareKeyExprViaJNI(sessionPtr: Long, keyExpr: String): Long
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun undeclareKeyExprViaJNI(sessionPtr: Long, keyExprPtr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun getViaJNI(
         keyExpr: Long,
         selectorParams: String,
@@ -232,7 +233,7 @@ internal class JNISession {
         consolidation: Int,
     )
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun getWithValueViaJNI(
         keyExpr: Long,
         selectorParams: String,
@@ -246,7 +247,7 @@ internal class JNISession {
         encoding: Int
     )
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun putViaJNI(
         keyExpr: Long,
         sessionPtr: Long,

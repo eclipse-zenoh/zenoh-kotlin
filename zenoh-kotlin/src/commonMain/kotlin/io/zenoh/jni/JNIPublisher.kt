@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.prelude.SampleKind
 import io.zenoh.publication.CongestionControl
 import io.zenoh.publication.Priority
@@ -99,13 +100,13 @@ internal class JNIPublisher(private val ptr: Long) {
 
 
     /** Puts through the native Publisher. */
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun putViaJNI(valuePayload: ByteArray, valueEncoding: Int, ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun writeViaJNI(payload: ByteArray, encoding: Int, sampleKind: Int, ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZenohException::class)
     private external fun deleteViaJNI(ptr: Long)
 
     /** Frees the underlying native Publisher. */

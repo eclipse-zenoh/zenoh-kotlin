@@ -14,6 +14,7 @@
 
 package io.zenoh;
 
+import io.zenoh.exceptions.ZenohException;
 import io.zenoh.keyexpr.KeyExpr;
 import io.zenoh.sample.Sample;
 import io.zenoh.subscriber.Subscriber;
@@ -23,7 +24,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class ZSub {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws ZenohException, InterruptedException {
         System.out.println("Opening session...");
         try (Session session = Session.open()) {
             try (KeyExpr keyExpr = KeyExpr.tryFrom("demo/example/**")) {

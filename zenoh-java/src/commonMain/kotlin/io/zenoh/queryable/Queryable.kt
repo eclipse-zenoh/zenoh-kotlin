@@ -15,6 +15,7 @@
 package io.zenoh.queryable
 
 import io.zenoh.*
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.QueueHandler
 import io.zenoh.handlers.Handler
@@ -135,7 +136,7 @@ class Queryable<R> internal constructor(
          *
          * @return The newly created [Queryable].
          */
-        @Throws(Exception::class)
+        @Throws(ZenohException::class)
         override fun res(): Queryable<R> {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Query -> handler?.handle(t) }

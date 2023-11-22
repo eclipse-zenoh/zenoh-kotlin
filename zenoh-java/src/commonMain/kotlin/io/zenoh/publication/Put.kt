@@ -16,6 +16,7 @@ package io.zenoh.publication
 
 import io.zenoh.Resolvable
 import io.zenoh.Session
+import io.zenoh.exceptions.ZenohException
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
@@ -108,7 +109,7 @@ open class Put protected constructor(
         fun kind(kind: SampleKind) = apply { this.kind = kind }
 
         /** Resolves the put operation. */
-        @Throws(Exception::class)
+        @Throws(ZenohException::class)
         override fun res() {
             val put = Put(keyExpr, value, congestionControl, priority, kind)
             session.run { resolvePut(keyExpr, put) }
