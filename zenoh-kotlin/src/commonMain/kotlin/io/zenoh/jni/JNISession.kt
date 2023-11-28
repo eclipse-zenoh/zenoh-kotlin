@@ -45,9 +45,9 @@ internal class JNISession {
     private var sessionPtr: AtomicLong = AtomicLong(0)
 
     fun open(config: Config): Result<Unit> = runCatching {
-        config.jsonConfig?.apply {
-            sessionPtr.set(openSessionWithJsonConfigViaJNI(this.toString()))
-        } ?: {
+        config.jsonConfig?.let { jsonConfig ->
+            sessionPtr.set(openSessionWithJsonConfigViaJNI(jsonConfig.toString()))
+        } ?: run {
             sessionPtr.set(openSessionViaJNI(config.path?.toString().orEmpty()))
         }
     }
