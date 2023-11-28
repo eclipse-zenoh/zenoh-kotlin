@@ -25,7 +25,6 @@ use crate::value::decode_value;
 use jni::objects::{JByteArray, JClass, JObject, JString};
 use jni::sys::{jboolean, jint, jlong};
 use jni::JNIEnv;
-use json5;
 use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
