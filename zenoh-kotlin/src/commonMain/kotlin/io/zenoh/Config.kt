@@ -315,6 +315,18 @@ data class Tls(
     var serverNameVerification: String? = null,
     @SerialName("server_private_key")
     var serverPrivateKey: String? = null,
+
+    // For embedding certificates:
+    @SerialName("client_certificate_base64")
+    var clientCertificateBase64: String? = null,
+    @SerialName("client_private_key_base64")
+    var clientPrivateKeyBase64: String? = null,
+    @SerialName("server_certificate_base64")
+    var serverCertificateBase64: String? = null,
+    @SerialName("server_private_key_base64")
+    var serverPrivateKeyBase64: String? = null,
+    @SerialName("root_ca_certificate_base64")
+    var rootCaCertificateBase64: String? = null,
 )
 
 @Serializable
@@ -346,7 +358,7 @@ data class Size(
     @SerialName("control")
     var control: Int,
     @SerialName("data")
-    var `data`: Int,
+    var data: Int,
     @SerialName("data_high")
     var dataHigh: Int,
     @SerialName("data_low")
