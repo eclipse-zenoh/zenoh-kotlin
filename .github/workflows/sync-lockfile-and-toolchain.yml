@@ -13,4 +13,3 @@ jobs:
         with:
           manifest-path: zenoh-jni/Cargo.toml
           token: ${{ secrets.PAT }}
-          toolchain-path: rust-toolchain

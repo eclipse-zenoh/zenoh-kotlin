@@ -35,10 +35,8 @@ jobs:
           link-to-sdk: true
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          override: true
-          components: rustfmt, clippy
+        run: |
+          rustup component add rustfmt clippy
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
