@@ -54,10 +54,8 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Check for feature leaks
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features
+        working-directory: zenoh-jni
+        run: cargo test --no-default-features
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
