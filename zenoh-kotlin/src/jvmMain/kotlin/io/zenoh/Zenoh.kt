@@ -26,7 +26,7 @@ import java.lang.Exception
 internal actual class Zenoh private actual constructor() {
 
     actual companion object {
-        private const val ZENOH_LIB_NAME = "zenoh_jni"
+        private const val ZENOH_LIB_NAME = "libzenoh_jni"
         private const val ZENOH_LOGS_PROPERTY = "zenoh.logger"
 
         private var instance: Zenoh? = null
@@ -45,10 +45,57 @@ internal actual class Zenoh private actual constructor() {
 
             System.load(tempLib.absolutePath)
         }
+
+        fun determineLibrary(): String {
+            val osName = System.getProperty("os.name").lowercase()
+            val osArch = System.getProperty("os.arch")
+
+            val libraryPath = when {
+                osName.contains("win") -> when {
+                    osArch.contains("x86_64") -> "${Target.WINDOWS_X86_64_MSVC}/release/$ZENOH_LIB_NAME.dll"
+                    else -> throw UnsupportedOperationException("Unsupported architecture: $osArch for $osName.")
+                }
+                osName.contains("mac") -> when {
+                    osArch.contains("x86_64") -> "${Target.APPLE_X86_64}/release/$ZENOH_LIB_NAME.dylib"
+                    osArch.contains("aarch64") -> "${Target.APPLE_AARCH64}/release/$ZENOH_LIB_NAME.dylib"
+                    else -> throw UnsupportedOperationException("Unsupported architecture: $osArch for $osName.")
+                }
+                osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> when {
+                    osArch.contains("x86_64") -> "${Target.LINUX_X86_64}/release/$ZENOH_LIB_NAME.so"
+                    osArch.contains("aarch64") -> "${Target.LINUX_AARCH64}/release/$ZENOH_LIB_NAME.so"
+                    else -> throw UnsupportedOperationException("Unsupported architecture: $osArch for $osName.")
+                }
+                else -> throw UnsupportedOperationException("Unsupported platform: $osName")
+            }
+            return libraryPath
+        }
+
+        fun loadLibrary(path: String): InputStream? {
+            return ClassLoader.getSystemClassLoader().getResourceAsStream(path)
+        }
+
+        fun loadDefaultLibrary(): InputStream? {
+            val libraryExtensions = listOf(".dylib", ".so", ".dll")
+            for (extension in libraryExtensions) {
+                val resourcePath = "$ZENOH_LIB_NAME$extension"
+                val inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream(resourcePath)
+                if (inputStream != null) {
+                    return inputStream
+                }
+            }
+            return null
+        }
     }
 
     init {
-        val lib = ClassLoader.getSystemClassLoader().findLibraryStream(ZENOH_LIB_NAME)
+        val lib: InputStream? = try {
+            val libraryPath = determineLibrary()
+            println("Loading $libraryPath...")
+            loadLibrary(libraryPath)
+        } catch (e: UnsupportedOperationException) {
+            println("Attempting to load default library...")
+            loadDefaultLibrary()
+        }
 
         if (lib != null) {
             loadZenohJNI(lib)
@@ -61,17 +108,4 @@ internal actual class Zenoh private actual constructor() {
             Logger.start(logLevel)
         }
     }
-}
-
-private fun ClassLoader.findLibraryStream(libraryName: String): InputStream? {
-    // TODO: look after targets of multiple architectures
-    val libraryExtensions = listOf(".dylib", ".so", ".dll")
-    for (extension in libraryExtensions) {
-        val resourcePath = "lib$libraryName$extension"
-        val inputStream = getResourceAsStream(resourcePath)
-        if (inputStream != null) {
-            return inputStream
-        }
-    }
-    return null
 }

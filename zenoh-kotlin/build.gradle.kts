@@ -88,18 +88,6 @@ kotlin {
     }
     androidTarget {
         publishLibraryVariants("release")
-        publishing {
-            repositories {
-                maven {
-                    name = "GithubPackages"
-                    url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
-                    credentials {
-                        username = System.getenv("GITHUB_ACTOR")
-                        password = System.getenv("GITHUB_TOKEN")
-                    }
-                }
-            }
-        }
     }
 
     @Suppress("Unused")
@@ -122,9 +110,26 @@ kotlin {
         }
         val jvmMain by getting {
             resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target")
+            for (target in Target.values()) {
+                resources.include(arrayListOf("/$target/release/*.dylib", "/$target/release/*.so", "/$target/release/*.dll"))
+            }
         }
         val jvmTest by getting {
             resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+        }
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GithubPackages"
+                url = uri("https://maven.pkg.github.com/DariusIMP/zenoh-kotlin")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
         }
     }
 }
@@ -146,9 +151,25 @@ tasks.whenObjectAdded {
     }
 }
 
-tasks.named("compileKotlinJvm") {
+//tasks.named("compileKotlinJvm") {
+//    doFirst {
+//        buildZenohJNI(BuildMode.RELEASE)
+//    }
+//}
+
+tasks.named("publishJvmPublicationToMavenLocal") {
     doFirst {
-        buildZenohJNI(BuildMode.RELEASE)
+        for (target in Target.values()) {
+            crossCompileZenohJNI(BuildMode.RELEASE, target)
+        }
+    }
+}
+
+tasks.named("publishJvmPublicationToGithubPackagesRepository") {
+    doFirst {
+        for (target in Target.values()) {
+            crossCompileZenohJNI(BuildMode.RELEASE, target)
+        }
     }
 }
 
@@ -168,6 +189,33 @@ fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
     }
 }
 
+fun crossCompileZenohJNI(mode: BuildMode = BuildMode.DEBUG, target: Target) {
+
+    val cargoCommand = when (target) {
+        Target.WINDOWS_X86_64_MSVC -> {
+            mutableListOf("cargo", "xwin", "build")
+        }
+        else -> {
+            mutableListOf("cargo", "zigbuild")
+        }
+    }
+
+    if (mode == BuildMode.RELEASE) {
+        cargoCommand.add("--release")
+    }
+
+    val result = project.exec {
+//        if (target == Target.LINUX_AARCH64_MUSL || target == Target.LINUX_X86_64_MUSL) {
+//            environment("RUSTFLAGS", "-Ctarget-feature=-crt-static")
+//        }
+        commandLine(*(cargoCommand.toTypedArray()),"--target", target.toString(), "--manifest-path", "../zenoh-jni/Cargo.toml")
+    }
+
+    if (result.exitValue != 0) {
+        throw GradleException("Failed to build Zenoh-JNI.")
+    }
+}
+
 enum class BuildMode {
     DEBUG {
         override fun toString(): String {
@@ -177,6 +225,30 @@ enum class BuildMode {
     RELEASE {
         override fun toString(): String {
             return "release"
+        }
+    }
+}
+
+enum class Target {
+//    WINDOWS_X86_64_GNU,
+//    LINUX_AARCH64_MUSL,
+//    LINUX_X86_64_MUSL,
+    WINDOWS_X86_64_MSVC,
+    LINUX_X86_64,
+    LINUX_AARCH64,
+    APPLE_AARCH64,
+    APPLE_X86_64;
+
+    override fun toString(): String {
+        return when (this) {
+//            WINDOWS_X86_64_GNU -> "x86_64-pc-windows-gnu"
+//            LINUX_AARCH64_MUSL -> "aarch64-unknown-linux-musl"
+//            LINUX_X86_64_MUSL -> "x86_64-unknown-linux-musl"
+            WINDOWS_X86_64_MSVC -> "x86_64-pc-windows-msvc"
+            LINUX_X86_64 -> "x86_64-unknown-linux-gnu"
+            LINUX_AARCH64 -> "aarch64-unknown-linux-gnu"
+            APPLE_AARCH64 -> "aarch64-apple-darwin"
+            APPLE_X86_64 -> "x86_64-apple-darwin"
         }
     }
 }
