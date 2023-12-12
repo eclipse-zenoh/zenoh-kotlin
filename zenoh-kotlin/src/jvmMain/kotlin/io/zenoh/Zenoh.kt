@@ -17,7 +17,6 @@ package io.zenoh
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.lang.Exception
 import java.io.FileInputStream
 import java.util.zip.ZipInputStream
 
@@ -36,11 +35,11 @@ internal actual class Zenoh private actual constructor() {
             instance ?: Zenoh().also { instance = it }
         }
 
-        fun determineTarget(): Target {
+        private fun determineTarget(): Result<Target> = runCatching {
             val osName = System.getProperty("os.name").lowercase()
             val osArch = System.getProperty("os.arch")
 
-            return when {
+            val target = when {
                 osName.contains("win") -> when {
                     osArch.contains("x86_64") -> Target.WINDOWS_X86_64_MSVC
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
@@ -57,45 +56,54 @@ internal actual class Zenoh private actual constructor() {
                 }
                 else -> throw UnsupportedOperationException("Unsupported platform: $osName")
             }
+            return Result.success(target)
         }
 
-        private fun unzipLibrary(compressedLibPath: String, uncompressedLibPath: String) {
-            val zipInputStream = ZipInputStream(FileInputStream(compressedLibPath))
-            val destDir = File(uncompressedLibPath)
-            if (!destDir.exists()) {
-                destDir.mkdirs()
-            }
-
+        /**
+         * Unzip library.
+         *
+         * The Zenoh libraries are stored within the JAR as compressed ZIP files.
+         * The location of the zipped files is expected to be under target/target.zip.
+         * It is expected that the zip file only contains the compressed library.
+         *
+         * The uncompressed library will be stored temporarily and deleted on exit.
+         *
+         * @param compressedLib Input stream pointing to the compressed library.
+         * @return A result with the uncompressed library file.
+         */
+        private fun unzipLibrary(compressedLib: InputStream): Result<File> = runCatching {
+            val zipInputStream = ZipInputStream(compressedLib)
             val buffer = ByteArray(1024)
-            var zipEntry = zipInputStream.nextEntry
-            while (zipEntry != null) {
-                val newFile = File(destDir, zipEntry.name)
+            val zipEntry = zipInputStream.nextEntry
 
-                val parent = newFile.parentFile
-                if (!parent.exists()) {
-                    parent.mkdirs()
-                }
+            val library = File.createTempFile(zipEntry!!.name, ".tmp")
+            library.deleteOnExit()
 
-                val fileOutputStream = FileOutputStream(newFile)
-                var len: Int
-                while (zipInputStream.read(buffer).also { len = it } > 0) {
-                    fileOutputStream.write(buffer, 0, len)
-                }
-                fileOutputStream.close()
-                zipEntry = zipInputStream.nextEntry
+            val parent = library.parentFile
+            if (!parent.exists()) {
+                parent.mkdirs()
             }
+
+            val fileOutputStream = FileOutputStream(library)
+            var len: Int
+            while (zipInputStream.read(buffer).also { len = it } > 0) {
+                fileOutputStream.write(buffer, 0, len)
+            }
+            fileOutputStream.close()
 
             zipInputStream.closeEntry()
             zipInputStream.close()
+            return Result.success(library)
         }
 
-        fun loadLibraryAsInputStream(target: Target): InputStream? {
-            unzipLibrary("$target/$target.zip", target.toString())
-            return ClassLoader.getSystemClassLoader().getResourceAsStream(target.toString())
+        private fun loadLibraryAsInputStream(target: Target): Result<InputStream> = runCatching {
+            val libUrl = ClassLoader.getSystemClassLoader().getResourceAsStream("$target/$target.zip")!!
+            val uncompressedLibFile = unzipLibrary(libUrl)
+            return Result.success(FileInputStream(uncompressedLibFile.getOrThrow()))
         }
 
         @Suppress("UnsafeDynamicallyLoadedCode")
-        fun loadZenohJNI(inputStream: InputStream) {
+        private fun loadZenohJNI(inputStream: InputStream) {
             val tempLib = File.createTempFile("tempLib", "")
             tempLib.deleteOnExit()
 
@@ -108,14 +116,9 @@ internal actual class Zenoh private actual constructor() {
     }
 
     init {
-        val target = determineTarget()
-        val lib: InputStream? = loadLibraryAsInputStream(target)
-
-        if (lib != null) {
-            loadZenohJNI(lib)
-        } else {
-            throw Exception("Unable to load ZenohJNI.")
-        }
+        val target = determineTarget().getOrThrow()
+        val lib: Result<InputStream> = loadLibraryAsInputStream(target)
+        lib.onSuccess { loadZenohJNI(it) }.onFailure { throw Exception("Unable to load Zenoh JNI: $it") }
 
         val logLevel = System.getProperty(ZENOH_LOGS_PROPERTY)
         if (logLevel != null) {

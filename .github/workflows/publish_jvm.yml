@@ -7,6 +7,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  JNI_LIB_PATHS: jni-libs  # Edit on the inner build.gradle.kts file as well.
 
 jobs:
   builds:
@@ -17,6 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         job:
+          # In order to load any added target at runtime, editing the Zenoh class under jvmMain is required.
           - { target: x86_64-unknown-linux-gnu,
               arch: amd64,
               os: ubuntu-20.04
@@ -119,18 +121,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create resources destination
-        run: mkdir jni-libs
+        run: mkdir ${{env.JNI_LIB_PATHS}}
 
       - name: Download result of previous builds
         uses: actions/download-artifact@v3
         with:
-          path: jni-libs
-
-      - name: Display structure of downloaded files
-        run: |
-          pwd 
-          ls -l
-          ls jni-libs -R
+          path: ${{env.JNI_LIB_PATHS}}
 
       - uses: actions/setup-java@v3
         with:
