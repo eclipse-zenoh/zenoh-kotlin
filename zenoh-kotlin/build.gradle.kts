@@ -123,7 +123,7 @@ kotlin {
         repositories {
             maven {
                 name = "GithubPackages"
-                url = uri("https://maven.pkg.github.com/DariusIMP/zenoh-kotlin")
+                url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
                 credentials {
                     username = System.getenv("GITHUB_ACTOR")
                     password = System.getenv("GITHUB_TOKEN")
