@@ -109,9 +109,9 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            // resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
 
-            // The line below is intended to load the native libraries that are crosscompiled on github actions when publishing a JVM package.
+            // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
             resources.srcDir("../jni-libs").include("*/**")
         }
         val jvmTest by getting {

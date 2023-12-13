@@ -27,6 +27,7 @@ import java.util.zip.ZipInputStream
 internal actual class Zenoh private actual constructor() {
 
     actual companion object {
+        private const val ZENOH_LIB_NAME = "zenoh_jni"
         private const val ZENOH_LOGS_PROPERTY = "zenoh.logger"
 
         private var instance: Zenoh? = null
@@ -35,6 +36,13 @@ internal actual class Zenoh private actual constructor() {
             instance ?: Zenoh().also { instance = it }
         }
 
+        /**
+         * Determine target
+         *
+         * Determines the [Target] corresponding to the machine on top of which the native code will run.
+         *
+         * @return A result with the target.
+         */
         private fun determineTarget(): Result<Target> = runCatching {
             val osName = System.getProperty("os.name").lowercase()
             val osArch = System.getProperty("os.arch")
@@ -44,16 +52,19 @@ internal actual class Zenoh private actual constructor() {
                     osArch.contains("x86_64") -> Target.WINDOWS_X86_64_MSVC
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
+
                 osName.contains("mac") -> when {
                     osArch.contains("x86_64") -> Target.APPLE_X86_64
                     osArch.contains("aarch64") -> Target.APPLE_AARCH64
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
+
                 osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> when {
                     osArch.contains("x86_64") -> Target.LINUX_X86_64
                     osArch.contains("aarch64") -> Target.LINUX_AARCH64
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
+
                 else -> throw UnsupportedOperationException("Unsupported platform: $osName")
             }
             return Result.success(target)
@@ -113,16 +124,58 @@ internal actual class Zenoh private actual constructor() {
 
             System.load(tempLib.absolutePath)
         }
+
+        /**
+         * Load library from jar package.
+         *
+         * Attempts to load the library corresponding to the `target` specified from the zenoh kotlin jar.
+         *
+         * @param target
+         */
+        private fun tryLoadingLibraryFromJarPackage(target: Target): Result<Unit> = runCatching {
+            val lib: Result<InputStream> = loadLibraryAsInputStream(target)
+            lib.onSuccess { loadZenohJNI(it) }.onFailure { throw Exception("Unable to load Zenoh JNI: $it") }
+        }
+
+        /**
+         * Try loading local library.
+         *
+         * This function aims to load the default library that is usually included when building the zenoh kotlin library
+         * locally.
+         */
+        private fun tryLoadingLocalLibrary(): Result<Unit> = runCatching {
+            val lib = ClassLoader.getSystemClassLoader().findLibraryStream(ZENOH_LIB_NAME)
+            if (lib != null) {
+                loadZenohJNI(lib)
+            } else {
+                throw Exception("Unable to load local Zenoh JNI.")
+            }
+        }
     }
 
     init {
-        val target = determineTarget().getOrThrow()
-        val lib: Result<InputStream> = loadLibraryAsInputStream(target)
-        lib.onSuccess { loadZenohJNI(it) }.onFailure { throw Exception("Unable to load Zenoh JNI: $it") }
+        // Try first to load the local native library for cases in which the module was built locally,
+        // otherwise try to load from the JAR.
+        if (tryLoadingLocalLibrary().isFailure) {
+            val target = determineTarget().getOrThrow()
+            tryLoadingLibraryFromJarPackage(target).getOrThrow()
+        }
 
         val logLevel = System.getProperty(ZENOH_LOGS_PROPERTY)
         if (logLevel != null) {
             Logger.start(logLevel)
         }
     }
+}
+
+private fun ClassLoader.findLibraryStream(libraryName: String): InputStream? {
+    val libraryExtensions = listOf(".dylib", ".so", ".dll")
+    for (extension in libraryExtensions) {
+        val resourcePath = "lib$libraryName$extension"
+        val inputStream = getResourceAsStream(resourcePath)
+        if (inputStream != null) {
+            return inputStream
+        }
+    }
+    return null
 }
