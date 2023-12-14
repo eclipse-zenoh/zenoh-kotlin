@@ -218,7 +218,13 @@ gradle zenoh-kotlin:dokkaHtml
 
 ## Running the tests
 
-To run the tests, run:
+To run the tests, we must first build the native library
+```bash
+cd zenoh-jni
+cargo build
+```
+
+and then run:
 
 ```bash
 gradle jvmTest
