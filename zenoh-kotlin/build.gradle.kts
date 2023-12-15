@@ -82,24 +82,12 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            val zenohPaths = "../zenoh-jni/target/release"
+            val zenohPaths = "../zenoh-jni/target/debug"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
     androidTarget {
         publishLibraryVariants("release")
-        publishing {
-            repositories {
-                maven {
-                    name = "GithubPackages"
-                    url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
-                    credentials {
-                        username = System.getenv("GITHUB_ACTOR")
-                        password = System.getenv("GITHUB_TOKEN")
-                    }
-                }
-            }
-        }
     }
 
     @Suppress("Unused")
@@ -121,21 +109,33 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
+            resources.srcDir("../jni-libs").include("*/**")
         }
         val jvmTest by getting {
-            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target/debug").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+        }
+    }
+
+    publishing {
+        repositories {
+            maven {
+                name = "GithubPackages"
+                url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
         }
     }
 }
 
 tasks.withType<Test> {
     doFirst {
-        buildZenohJNI(BuildMode.RELEASE)
-
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
-        systemProperty("java.library.path", "../zenoh-jni/target/release")
+        systemProperty("java.library.path", "../zenoh-jni/target/debug")
     }
 }
 
@@ -143,12 +143,6 @@ tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
-    }
-}
-
-tasks.named("compileKotlinJvm") {
-    doFirst {
-        buildZenohJNI(BuildMode.RELEASE)
     }
 }
 

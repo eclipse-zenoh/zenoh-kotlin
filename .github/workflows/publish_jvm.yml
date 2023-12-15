@@ -1,0 +1,155 @@
+name: Publish JVM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  JNI_LIB_PATHS: jni-libs  # Edit on the inner build.gradle.kts file as well.
+
+jobs:
+  builds:
+    name: Build for ${{ matrix.job.target }} on ${{ matrix.job.os }}
+    if: ${{ !(github.event.inputs.build == 'false') }}
+    runs-on: ${{ matrix.job.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          # In order to load any added target at runtime, editing the Zenoh class under jvmMain is required.
+          - { target: x86_64-unknown-linux-gnu,
+              arch: amd64,
+              os: ubuntu-20.04
+          }
+          - {
+            target: aarch64-unknown-linux-gnu,
+            arch: arm64,
+            os: ubuntu-20.04,
+            use-cross: true,
+          }
+          - { target: x86_64-apple-darwin,
+              arch: darwin,
+              os: macos-latest
+          }
+          - { target: aarch64-apple-darwin,
+              arch: darwin,
+              os: macos-latest
+          }
+          - { target: x86_64-pc-windows-msvc,
+              arch: win64,
+              os: windows-2019
+          }
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        shell: bash
+        run: |
+          case ${{ matrix.job.target }} in
+            *-linux-gnu*) cargo install cargo-deb ;;
+          esac
+          
+          case ${{ matrix.job.target }} in
+            aarch64-unknown-linux-gnu)
+              sudo apt-get -y update
+              sudo apt-get -y install gcc-aarch64-linux-gnu
+              ;;
+          esac
+
+      - name: Install Rust toolchain
+        run: |
+          rustup show
+          rustup target add ${{ matrix.job.target }}
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.job.use-cross }}
+          command: build
+          args: --release --bins --lib --features=${{ github.event.inputs.features}} --target=${{ matrix.job.target }} --manifest-path zenoh-jni/Cargo.toml
+
+      - name: Packaging
+        id: package
+        shell: bash
+        run: |
+          TARGET=${{ matrix.job.target }}
+          MAIN_PKG_NAME="${GITHUB_WORKSPACE}/${TARGET}.zip"
+          
+          case ${TARGET} in
+            *linux*)
+              cd "zenoh-jni/target/${TARGET}/release/"
+              echo "Packaging ${MAIN_PKG_NAME}:"
+              zip ${MAIN_PKG_NAME} libzenoh_jni.so
+              cd -
+              echo "MAIN_PKG_NAME=${MAIN_PKG_NAME}" >> $GITHUB_OUTPUT
+              ;;
+            *apple*)
+              cd "zenoh-jni/target/${TARGET}/release/"
+              echo "Packaging ${MAIN_PKG_NAME}:"
+              zip ${MAIN_PKG_NAME} libzenoh_jni.dylib
+              cd -
+              echo "MAIN_PKG_NAME=${MAIN_PKG_NAME}" >> $GITHUB_OUTPUT
+              ;;
+            *windows*)
+              cd "zenoh-jni/target/${TARGET}/release/"
+              echo "Packaging ${MAIN_PKG_NAME}:"
+              7z -y a "${MAIN_PKG_NAME}" zenoh_jni.dll
+              cd -
+              echo "MAIN_PKG_NAME=${MAIN_PKG_NAME}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: "Upload packages"
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ matrix.job.target }}
+          path: |
+            ${{ steps.package.outputs.MAIN_PKG_NAME }}
+
+  publish_jvm_package:
+    name: Publish JVM package
+    needs: builds
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create resources destination
+        run: mkdir ${{env.JNI_LIB_PATHS}}
+
+      - name: Download result of previous builds
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{env.JNI_LIB_PATHS}}
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26
+          add-to-path: false
+          link-to-sdk: true
+
+      - name: Gradle Wrapper
+        run: |
+          gradle wrapper
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Gradle Publish JVM Package
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishJvmPublicationToGithubPackagesRepository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
