@@ -16,6 +16,9 @@ package io.zenoh
 
 import java.io.File
 import java.nio.file.Path
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+
 
 /**
  * Config class to set the Zenoh configuration to be used through a [Session].
@@ -23,7 +26,7 @@ import java.nio.file.Path
  * @property path The path to the configuration file.
  * @constructor Create empty Config
  */
-class Config private constructor(internal val path: Path? = null) {
+class Config private constructor(internal val path: Path? = null, internal val jsonConfig: JsonElement? = null) {
 
     companion object {
 
@@ -51,5 +54,16 @@ class Config private constructor(internal val path: Path? = null) {
         fun from(path: Path): Config {
             return Config(path)
         }
+
+        /**
+         * Loads the configuration from the [json] specified.
+         *
+         * @param json The zenoh raw zenoh config.
+         */
+        fun from(json: String): Config {
+            return Config(jsonConfig = Json.decodeFromString(json))
+        }
     }
+
+    constructor(jsonConfig: JsonElement) : this(null, jsonConfig = jsonConfig)
 }
