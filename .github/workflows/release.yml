@@ -40,16 +40,24 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Cargo Format
+        working-directory: zenoh-jni
+        run: cargo fmt --all --check
 
       - name: Clippy Check
         working-directory: zenoh-jni
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Cargo Format
+      - name: Check for feature leaks
         working-directory: zenoh-jni
-        run: cargo fmt --all --check
+        run: cargo test --no-default-features
+
+      - name: Build Zenoh-JNI
+        working-directory: zenoh-jni
+        run: cargo build
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
       - name: Gradle Test
         run: gradle jvmTest --info

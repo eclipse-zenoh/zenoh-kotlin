@@ -111,6 +111,8 @@ kotlin {
             }
         }
         val jvmMain by getting {
+            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+
             // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
             resources.srcDir("../jni-libs").include("*/**")
         }
@@ -145,34 +147,5 @@ tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
-    }
-}
-
-fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
-    val cargoCommand = mutableListOf("cargo", "build")
-
-    if (mode == BuildMode.RELEASE) {
-        cargoCommand.add("--release")
-    }
-
-    val result = project.exec {
-        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "../zenoh-jni/Cargo.toml")
-    }
-
-    if (result.exitValue != 0) {
-        throw GradleException("Failed to build Zenoh-JNI.")
-    }
-}
-
-enum class BuildMode {
-    DEBUG {
-        override fun toString(): String {
-            return "debug"
-        }
-    },
-    RELEASE {
-        override fun toString(): String {
-            return "release"
-        }
     }
 }
