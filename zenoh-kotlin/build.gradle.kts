@@ -13,7 +13,7 @@
 //
 
 group = "io.zenoh"
-version = "0.11.0-dev"
+version = "0.10.1-rc"
 
 plugins {
     id("com.android.library")
