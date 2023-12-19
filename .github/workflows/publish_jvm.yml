@@ -19,28 +19,36 @@ jobs:
       matrix:
         job:
           # In order to load any added target at runtime, editing the Zenoh class under jvmMain is required.
-          - { target: x86_64-unknown-linux-gnu,
-              arch: amd64,
-              os: ubuntu-20.04
-          }
           - {
-            target: aarch64-unknown-linux-gnu,
-            arch: arm64,
-            os: ubuntu-20.04,
-            use-cross: true,
-          }
-          - { target: x86_64-apple-darwin,
+              target: x86_64-unknown-linux-gnu,
+              arch: amd64,
+              os: ubuntu-20.04,
+              build-cmd: "cargo",
+            }
+          - {
+              target: aarch64-unknown-linux-gnu,
+              arch: arm64,
+              os: ubuntu-20.04,
+              build-cmd: "cross",
+            }
+          - {
+              target: x86_64-apple-darwin,
               arch: darwin,
-              os: macos-latest
-          }
-          - { target: aarch64-apple-darwin,
+              os: macos-latest,
+              build-cmd: "cargo",
+            }
+          - {
+              target: aarch64-apple-darwin,
               arch: darwin,
-              os: macos-latest
-          }
-          - { target: x86_64-pc-windows-msvc,
+              os: macos-latest,
+              build-cmd: "cargo",
+            }
+          - {
+              target: x86_64-pc-windows-msvc,
               arch: win64,
-              os: windows-2019
-          }
+              os: windows-2019,
+              build-cmd: "cargo",
+            }
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -59,17 +67,15 @@ jobs:
               ;;
           esac
 
+          cargo install cross --git https://github.com/cross-rs/cross
+
       - name: Install Rust toolchain
         run: |
           rustup show
           rustup target add ${{ matrix.job.target }}
 
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.job.use-cross }}
-          command: build
-          args: --release --bins --lib --features=${{ github.event.inputs.features}} --target=${{ matrix.job.target }} --manifest-path zenoh-jni/Cargo.toml
+        run: ${{ matrix.job.build-cmd }} build --release --bins --lib --features=${{ github.event.inputs.features}} --target=${{ matrix.job.target }} --manifest-path zenoh-jni/Cargo.toml
 
       - name: Packaging
         id: package
