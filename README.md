@@ -67,7 +67,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-android:0.11.0-dev")
+implementation("io.zenoh:zenoh-kotlin-android:0.10.1-rc")
 ```
 
 ### Platforms 
@@ -90,6 +90,51 @@ Zenoh is a communications protocol, therefore the permissions required are:
 <uses-permission android:name="android.permission.INTERNET"/>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
+
+---
+# <img src="jvm.png" alt="Java" height="50">  JVM
+
+Similar to Android, we have published a Github package to import on your projects.
+
+First add the Github packages repository to your `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    // ...
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
+            credentials {
+                username = providers.gradleProperty("user").get()
+                password = providers.gradleProperty("token").get()
+            }
+        }
+    }
+}
+```
+
+where the username and token are your github username and a personal access token you need to generate on github with package read permissions (see the [Github documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)).
+This is required by Github in order to import the package, even if it's from a public repository.
+
+After that add to the dependencies in the app's `build.gradle.kts`:
+
+```kotlin
+implementation("io.zenoh:zenoh-kotlin-jvm:0.10.1-rc")
+```
+
+### Platforms
+
+For the moment, the library targets the following platforms:
+
+    - x86_64-unknown-linux-gnu 
+    - aarch64-unknown-linux-gnu
+    - x86_64-apple-darwin
+    - aarch64-apple-darwin
+    - x86_64-pc-windows-msvc
+
 
 ---
 
@@ -140,13 +185,13 @@ gradle publishAndroidReleasePublicationToMavenLocal
 This will first trigger the compilation of the Zenoh-JNI for the previously mentioned targets, and secondly will
 publish the library, containing the native binaries.
 
-You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.10.0-rc`
+You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.10.1-rc`
 with the following files:
 ```
-zenoh-kotlin-android-0.10.0-rc-sources.jar
-zenoh-kotlin-android-0.10.0-rc.aar              
-zenoh-kotlin-android-0.10.0-rc.module           
-zenoh-kotlin-android-0.10.0-rc.pom
+zenoh-kotlin-android-0.10.1-rc-sources.jar
+zenoh-kotlin-android-0.10.1-rc.aar              
+zenoh-kotlin-android-0.10.1-rc.module           
+zenoh-kotlin-android-0.10.1-rc.pom
 ```
 
 Now the library is published on maven local, let's now see how to import it into an Android project.
@@ -163,7 +208,7 @@ repositories {
 
 Then in your app's `build.gradle.kts` filen add the dependency:
 ```
-implementation("io.zenoh:zenoh-kotlin-android:0.10.0-rc")
+implementation("io.zenoh:zenoh-kotlin-android:0.10.1-rc")
 ```
 
 And finally, do not forget to add the required internet permissions on your manifest!
@@ -191,7 +236,7 @@ for you on your desktop, the generated publication may not be working on another
 This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while 
 for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.  
 
-Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.0-rc`.
+Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.1-rc`.
 
 Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
 
@@ -203,7 +248,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("io.zenoh:zenoh-kotlin-jvm:0.10.0-rc")
+    implementation("io.zenoh:zenoh-kotlin-jvm:0.10.1-rc")
 }
 ```
 
@@ -274,7 +319,7 @@ You can find more info about these examples on the [examples README file](/examp
 ### Packaging
 
 We intend to publish this code on Maven in the short term in order to ease the installation, but for the moment, until we
-add some extra functionalities and test this library a bit further, we will hold the publication.
+add some extra functionalities and test this library a bit further, we will only publish packages to Github packages.
 
 ### Potential API changes
 
@@ -293,8 +338,3 @@ Some preliminary performance evaluations done on an M2 Mac indicate around a 50%
 (compared to Rust-Rust communication), and for subscription throughput the performance is similar to that of zenoh-python, with around 500K messages per second
 for an 8 bytes payload messages.
 
-### Java compatibility
-
-This library is not Java compatible due to it relying specially on Results and on coroutine Channels, two features that are not Java compatible.
-
-However, for the short term, we aim to make some implementations in order to make this library Java compatible.
