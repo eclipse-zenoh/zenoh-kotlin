@@ -12,21 +12,13 @@ jobs:
   build_doc_and_deploy:
     name: Build and Deploy Documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r26
-          add-to-path: false
-          link-to-sdk: true
-
-      - name: Build doc
-        run: gradle dokkaHtml
 
       - name: Deploy doc
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./zenoh-kotlin/build/dokka/html
+          publish_dir: ./docs
