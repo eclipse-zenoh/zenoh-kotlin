@@ -16,7 +16,7 @@ import org.jetbrains.dokka.versioning.VersioningPlugin
 //
 
 group = "io.zenoh"
-version = "0.10.1-rc"
+version = "0.11.0-dev"
 
 plugins {
     id("com.android.library")
