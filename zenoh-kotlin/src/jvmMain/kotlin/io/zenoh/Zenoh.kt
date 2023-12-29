@@ -49,18 +49,18 @@ internal actual class Zenoh private actual constructor() {
 
             val target = when {
                 osName.contains("win") -> when {
-                    osArch.contains("x86_64") -> Target.WINDOWS_X86_64_MSVC
+                    osArch.contains("x86_64") || osArch.contains("amd64") -> Target.WINDOWS_X86_64_MSVC
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
 
                 osName.contains("mac") -> when {
-                    osArch.contains("x86_64") -> Target.APPLE_X86_64
+                    osArch.contains("x86_64") || osArch.contains("amd64") -> Target.APPLE_X86_64
                     osArch.contains("aarch64") -> Target.APPLE_AARCH64
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
 
                 osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> when {
-                    osArch.contains("x86_64") -> Target.LINUX_X86_64
+                    osArch.contains("x86_64") || osArch.contains("amd64") -> Target.LINUX_X86_64
                     osArch.contains("aarch64") -> Target.LINUX_AARCH64
                     else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
                 }
