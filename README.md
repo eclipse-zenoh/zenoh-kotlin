@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/eclipse-zenoh/zenoh/master/zenoh-dragon.png" height="150">
+<img src="https://raw.githubusercontent.com/eclipse-zenoh/zenoh/main/zenoh-dragon.png" height="150">
 
 [![CI](https://github.com/eclipse-zenoh/zenoh-kotlin/workflows/CI/badge.svg)](https://github.com/eclipse-zenoh/zenoh-kotlin/actions?query=workflow%3A%22CI%22)
 [![Release status](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml/badge.svg)](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml)
@@ -39,7 +39,7 @@ Alternatively, you can build it locally as [explained below](#building-the-docum
 
 For this first version we have published a [Github package](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034) with the library which can be imported on your projects.
 
-Checkout the [Zenoh demo app](https://github.com/eclipse-zenoh/zenoh-demos/tree/master/zenoh-android/ZenohApp) for an example on how to use the library.
+Checkout the [Zenoh demo app](https://github.com/eclipse-zenoh/zenoh-demos/tree/main/zenoh-android/ZenohApp) for an example on how to use the library.
 
 First add the Github packages repository to your `settings.gradle.kts`:
 
