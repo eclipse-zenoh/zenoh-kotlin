@@ -3,6 +3,13 @@ name: Publish Android
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+        description: 'The publication version'
+        default: '0.11.0-rc'
   workflow_dispatch:
 
 env:
@@ -52,6 +59,6 @@ jobs:
       - name: Gradle Publish Android Package
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishAndroidReleasePublicationToGithubPackagesRepository
+          arguments: publishAndroidReleasePublicationToGithubPackagesRepository -PzkVersion=${{ inputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

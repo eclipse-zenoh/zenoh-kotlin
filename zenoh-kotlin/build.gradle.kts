@@ -13,7 +13,7 @@
 //
 
 group = "io.zenoh"
-version = "0.11.0-dev"
+version = project.findProperty("zkVersion") as String? ?: "0.11.0-dev"
 
 plugins {
     id("com.android.library")

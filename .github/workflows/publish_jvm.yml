@@ -3,6 +3,13 @@ name: Publish JVM
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+        description: 'The publication version'
+        default: '0.11.0-rc'
   workflow_dispatch:
 
 env:
@@ -156,6 +163,6 @@ jobs:
       - name: Gradle Publish JVM Package
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishJvmPublicationToGithubPackagesRepository
+          arguments: publishJvmPublicationToGithubPackagesRepository -PzkVersion=${{ inputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
