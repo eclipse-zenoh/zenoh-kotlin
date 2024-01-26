@@ -90,7 +90,7 @@ jobs:
       contents: read
       packages: write
     with:
-      version: 0.11.0-rc-SNAPSHOT
+      snapshot: true
 
   publish_android_snapshot_package:
     name: Publish Android snapshot package
@@ -101,4 +101,4 @@ jobs:
       contents: read
       packages: write
     with:
-      version: 0.11.0-rc-SNAPSHOT
+      snapshot: true

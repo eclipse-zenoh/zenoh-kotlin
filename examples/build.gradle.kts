@@ -12,9 +12,6 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-group = "io.zenoh"
-version = "0.11.0-dev"
-
 plugins {
     kotlin("jvm")
 }
