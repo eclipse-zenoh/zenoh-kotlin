@@ -16,3 +16,13 @@
 
 # MacOS Related
 .DS_Store
+
+.gradle
+build/
+examples/build
+gradle.properties
+gradle/
+gradlew
+gradlew.bat
+local.properties
+zenoh-kotlin/build
