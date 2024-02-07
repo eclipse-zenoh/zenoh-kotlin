@@ -3,6 +3,13 @@ name: Publish Android
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      snapshot:
+        required: true
+        type: boolean
+        description: 'If the publication is for a snapshot version.'
+        default: false
   workflow_dispatch:
 
 env:
@@ -49,9 +56,19 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
 
+      - name: Set pub mode env var
+        # Note: This step is intended to allow publishing snapshot packages.
+        # It allows to optionally append the property -PSNAPSHOT to the gradle
+        # publication task on the next step, resulting in the package version
+        # following the convention '<version>-SNAPSHOT'.
+        run: |
+          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
+            echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
+          fi
+
       - name: Gradle Publish Android Package
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishAndroidReleasePublicationToGithubPackagesRepository
+          arguments: publishAndroidReleasePublicationToGithubPackagesRepository ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

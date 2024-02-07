@@ -12,9 +12,6 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-group = "io.zenoh"
-version = "0.11.0-dev"
-
 plugins {
     id("com.android.library")
     kotlin("multiplatform")
@@ -122,6 +119,10 @@ kotlin {
     }
 
     publishing {
+        publications.withType<MavenPublication> {
+            version = project.version.toString() + if (project.hasProperty("SNAPSHOT")) "-SNAPSHOT" else ""
+        }
+
         repositories {
             maven {
                 name = "GithubPackages"

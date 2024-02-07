@@ -12,6 +12,8 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+val zenohGroup = "io.zenoh"
+val zenohVersion = "1.0.0"
 
 buildscript {
     repositories {
@@ -35,6 +37,9 @@ plugins {
 }
 
 subprojects {
+    group = zenohGroup
+    version = zenohVersion
+
     repositories {
         google()
         mavenCentral()
