@@ -123,7 +123,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
             override fun res(): Result<Unit> {
-                val sample = Sample(keyExpr, value, kind, timeStamp)
+                val sample = Sample(keyExpr, value, kind, timeStamp, null) //TODO: add attachment
                 return query.reply(Success("", sample)).res()
             }
         }

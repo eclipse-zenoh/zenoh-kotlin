@@ -254,6 +254,7 @@ pub(crate) fn on_query(
 fn query_reply(query: &Arc<Query>, reply: core::result::Result<Sample, Value>, mut env: JNIEnv) {
     match query
         .reply(reply)
+        //TODO: .withAttachment(...)
         .res()
         .map_err(|err| Error::Session(err.to_string()))
     {

@@ -283,6 +283,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     congestion_control: jint,
     priority: jint,
     sample_kind: jint,
+    attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
@@ -295,6 +296,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         congestion_control,
         priority,
         sample_kind,
+        attachment,
     ) {
         Ok(_) => {}
         Err(err) => {

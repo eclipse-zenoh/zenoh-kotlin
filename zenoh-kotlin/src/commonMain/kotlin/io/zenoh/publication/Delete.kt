@@ -45,8 +45,8 @@ class Delete private constructor(
     value: Value,
     congestionControl: CongestionControl,
     priority: Priority,
-    kind: SampleKind
-) : Put(keyExpr, value, congestionControl, priority, kind) {
+    kind: SampleKind,
+) : Put(keyExpr, value, congestionControl, priority, kind, null) {
 
     companion object {
         /**

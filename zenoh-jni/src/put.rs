@@ -14,6 +14,7 @@
 
 use crate::errors::{Error, Result};
 use crate::sample::decode_sample_kind;
+use crate::utils::decode_byte_array;
 use crate::value::decode_value;
 
 use jni::objects::JByteArray;
@@ -48,9 +49,11 @@ pub(crate) fn on_put(
     congestion_control: jint,
     priority: jint,
     sample_kind: jint,
+    attachment: JByteArray,
 ) -> Result<()> {
     let value = decode_value(env, payload, encoding)?;
     let sample_kind = decode_sample_kind(sample_kind)?;
+    let attachment = decode_byte_array(env, attachment)?;
     let congestion_control = match decode_congestion_control(congestion_control) {
         Ok(congestion_control) => congestion_control,
         Err(err) => {
@@ -76,6 +79,12 @@ pub(crate) fn on_put(
         .kind(sample_kind)
         .congestion_control(congestion_control)
         .priority(priority)
+        .with_attachment(
+            attachment
+                .split(|&b| b == b'&')
+                .map(|pair| split_once(pair, '='))
+                .collect(),
+        )
         .res()
     {
         Ok(_) => {
@@ -83,6 +92,16 @@ pub(crate) fn on_put(
             Ok(())
         }
         Err(err) => Err(Error::Session(format!("{}", err))),
+    }
+}
+
+fn split_once(slice: &[u8], c: char) -> (&[u8], &[u8]) {
+    match slice.iter().position(|&by| by == c as u8) {
+        Some(index) => {
+            let (l, r) = slice.split_at(index);
+            (l, &r[1..])
+        }
+        None => (slice, &[]),
     }
 }
 

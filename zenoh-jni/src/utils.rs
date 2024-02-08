@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use jni::{
-    objects::{JObject, JString},
+    objects::{JByteArray, JObject, JString},
     JNIEnv, JavaVM,
 };
 
@@ -47,6 +47,19 @@ pub(crate) fn get_callback_global_ref(
             err
         ))
     })
+}
+
+/// Helper function to convert a JByteArray into a Vec<u8>.
+pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result<Vec<u8>> {
+    let payload_len = env
+        .get_array_length(&payload)
+        .map(|length| length as usize)
+        .map_err(|err| Error::Jni(err.to_string()))?;
+    let mut buff = vec![0; payload_len];
+    env.get_byte_array_region(payload, 0, &mut buff[..])
+        .map_err(|err| Error::Jni(err.to_string()))?;
+    let buff: Vec<u8> = buff.iter().map(|&x| x as u8).collect();
+    Ok(buff)
 }
 
 /// A type that calls a function when dropped

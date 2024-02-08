@@ -24,6 +24,7 @@ import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.publication.Attachment
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
 import io.zenoh.query.*
@@ -75,13 +76,15 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid ->
+            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid, attachmentBytes ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
                     KeyExpr(JNIKeyExpr(keyExprPtr)),
                     Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                     SampleKind.fromInt(kind),
-                    timestamp
+                    timestamp,
+                    attachment
                 )
                 callback.run(sample)
             }
@@ -126,7 +129,8 @@ internal class JNISession {
                         KeyExpr(JNIKeyExpr(keyExprPtr)),
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
-                        timestamp
+                        timestamp,
+                        null //TODO: add attachments to queryables
                     )
                     val reply = Reply.Success(replierId, sample)
                     callback.run(reply)
@@ -186,7 +190,19 @@ internal class JNISession {
             put.congestionControl.ordinal,
             put.priority.value,
             put.kind.ordinal,
+            put.attachment?.let { encodeAttachment(it) } ?: "".encodeToByteArray()
         )
+    }
+
+    private fun encodeAttachment(attachment: Attachment): ByteArray {
+        return attachment.values.joinToString("&") { (key, value) ->
+            "$key=${value.decodeToString()}"
+        }.encodeToByteArray()
+    }
+
+    private fun decodeAttachment(attachment: ByteArray): Attachment {
+        val pairs = attachment.decodeToString().split("&").map { it.split("=").let { (k, v) -> k to v.toByteArray() } }
+        return Attachment(pairs)
     }
 
     @Throws(Exception::class)
@@ -262,5 +278,6 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         kind: Int,
+        attachment: ByteArray
     )
 }
