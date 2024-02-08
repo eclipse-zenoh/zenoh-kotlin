@@ -115,7 +115,7 @@ internal actual class Zenoh private actual constructor() {
 
         @Suppress("UnsafeDynamicallyLoadedCode")
         private fun loadZenohJNI(inputStream: InputStream) {
-            val tempLib = File.createTempFile("tempLib", "")
+            val tempLib = File.createTempFile("tempLib", ".tmp")
             tempLib.deleteOnExit()
 
             FileOutputStream(tempLib).use { output ->
