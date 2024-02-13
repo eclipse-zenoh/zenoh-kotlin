@@ -23,14 +23,17 @@ use zenoh::{
     prelude::{sync::SyncResolve, KeyExpr, SplitBuffer},
     query::{ConsolidationMode, QueryTarget},
     queryable::Query,
-    sample::Sample,
+    sample::{Attachment, Sample},
     value::Value,
 };
 
-use crate::sample::decode_sample;
 use crate::{
     errors::{Error, Result},
     value::decode_value,
+};
+use crate::{
+    sample::decode_sample,
+    utils::{decode_byte_array, vec_to_attachment},
 };
 
 /// Replies with success to a Zenoh query via JNI.
@@ -47,6 +50,8 @@ use crate::{
 /// - `sample_kind`: The kind of sample.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
+/// - `attachment_enabled`: If the attachment is present or not (it's an optional parameter).
+/// - `attachment`: The user attachment bytes.
 ///
 /// Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -66,6 +71,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     sample_kind: jint,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
+    attachment_enabled: jboolean,
+    attachment: JByteArray,
 ) {
     let key_expr = Arc::from_raw(key_expr_ptr);
     let key_expr_clone = key_expr.deref().clone();
@@ -87,9 +94,22 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
             return;
         }
     };
+    let attachment: Option<Attachment> = if attachment_enabled != 0 {
+        match decode_byte_array(&env, attachment) {
+            Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
+            Err(err) => {
+                _ = err.throw_on_jvm(&mut env).map_err(|err| {
+                    log::error!("Unable to throw exception on query reply failure. {}", err)
+                });
+                return;
+            }
+        }
+    } else {
+        None
+    };
 
     let query = Arc::from_raw(query_ptr);
-    query_reply(&query, Ok(sample), env);
+    query_reply(env, &query, Ok(sample), attachment);
     mem::forget(query)
 }
 
@@ -109,6 +129,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 /// - `key_expr`: The key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding`: The encoding of the payload as a jint.
+/// - `attachment`: The user attachment bytes.
 ///
 /// Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -124,6 +145,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     ptr: *const zenoh::queryable::Query,
     payload: JByteArray,
     encoding: jint,
+    attachment: JByteArray,
 ) {
     let errorValue = match decode_value(&env, payload, encoding) {
         Ok(value) => value,
@@ -134,9 +156,22 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
             return;
         }
     };
+    let attachment: Option<Attachment> = if !attachment.is_null() {
+        match decode_byte_array(&env, attachment) {
+            Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
+            Err(err) => {
+                _ = err.throw_on_jvm(&mut env).map_err(|err| {
+                    log::error!("Unable to throw exception on query reply failure. {}", err)
+                });
+                return;
+            }
+        }
+    } else {
+        None
+    };
 
     let query = Arc::from_raw(ptr);
-    query_reply(&query, Err(errorValue), env);
+    query_reply(env, &query, Err(errorValue), attachment);
     mem::forget(query)
 }
 
@@ -251,13 +286,29 @@ pub(crate) fn on_query(
 }
 
 /// Helper function to perform a reply to a query.
-fn query_reply(query: &Arc<Query>, reply: core::result::Result<Sample, Value>, mut env: JNIEnv) {
-    match query
-        .reply(reply)
-        //TODO: .withAttachment(...)
-        .res()
-        .map_err(|err| Error::Session(err.to_string()))
-    {
+fn query_reply(
+    mut env: JNIEnv,
+    query: &Arc<Query>,
+    reply: core::result::Result<Sample, Value>,
+    attachment: Option<Attachment>,
+) {
+    let result = if let Some(attachment) = attachment {
+        query
+            .reply(reply)
+            .with_attachment(attachment)
+            .unwrap_or_else(|(builder, _)| {
+                log::warn!("Unable to append attachment to query reply");
+                builder
+            })
+            .res()
+            .map_err(|err| Error::Session(err.to_string()))
+    } else {
+        query
+            .reply(reply)
+            .res()
+            .map_err(|err| Error::Session(err.to_string()))
+    };
+    match result {
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {

@@ -20,6 +20,7 @@ import io.zenoh.sample.Sample
 import io.zenoh.prelude.SampleKind
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.sample.Attachment
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -108,6 +109,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
 
             private var kind = SampleKind.PUT
             private var timeStamp: TimeStamp? = null
+            private var attachment: Attachment? = null
 
             /**
              * Sets the [SampleKind] of the replied [Sample].
@@ -120,10 +122,15 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             fun withTimeStamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
 
             /**
+             * Appends an [Attachment] to the reply.
+             */
+            fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+
+            /**
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
             override fun res(): Result<Unit> {
-                val sample = Sample(keyExpr, value, kind, timeStamp, null) //TODO: add attachment
+                val sample = Sample(keyExpr, value, kind, timeStamp, attachment)
                 return query.reply(Success("", sample)).res()
             }
         }

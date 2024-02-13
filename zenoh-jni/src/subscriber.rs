@@ -22,8 +22,11 @@ use jni::{
 use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
-use crate::errors::{Error, Result};
 use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
+use crate::{
+    errors::{Error, Result},
+    utils::attachment_to_vec,
+};
 
 /// Frees the memory associated with a Zenoh subscriber raw pointer via JNI.
 ///
@@ -115,15 +118,7 @@ pub(crate) unsafe fn declare_subscriber(
 
             let attachment_bytes = match sample.attachment.map_or_else(
                 || env.byte_array_from_slice(&[]),
-                |attachment| {
-                    let x: Vec<Vec<u8>> = attachment
-                        .into_iter()
-                        .map(|(k, v)| [&k[..], &v[..]].join(&b'=').to_vec())
-                        .collect();
-
-                    let y: Vec<u8> = x.join(&b'&');
-                    env.byte_array_from_slice(y.as_slice())
-                },
+                |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
             ) {
                 Ok(byte_array) => byte_array,
                 Err(err) => {

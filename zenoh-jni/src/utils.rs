@@ -18,6 +18,7 @@ use jni::{
     objects::{JByteArray, JObject, JString},
     JNIEnv, JavaVM,
 };
+use zenoh::sample::Attachment;
 
 use crate::errors::{Error, Result};
 
@@ -110,4 +111,29 @@ pub(crate) fn load_on_close(
             }
         }
     })
+}
+
+pub(crate) fn attachment_to_vec(attachment: Attachment) -> Vec<u8> {
+    attachment
+        .into_iter()
+        .map(|(k, v)| [&k[..], &v[..]].join(&b'=').to_vec())
+        .collect::<Vec<Vec<u8>>>()
+        .join(&b'&')
+}
+
+pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
+    bytes
+        .split(|&b| b == b'&')
+        .map(|pair| split_once(pair, '='))
+        .collect()
+}
+
+fn split_once(slice: &[u8], c: char) -> (&[u8], &[u8]) {
+    match slice.iter().position(|&by| by == c as u8) {
+        Some(index) => {
+            let (l, r) = slice.split_at(index);
+            (l, &r[1..])
+        }
+        None => (slice, &[]),
+    }
 }

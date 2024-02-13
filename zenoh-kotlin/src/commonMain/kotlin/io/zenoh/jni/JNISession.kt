@@ -24,7 +24,6 @@ import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
-import io.zenoh.publication.Attachment
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
 import io.zenoh.query.*
@@ -122,15 +121,16 @@ internal class JNISession {
         value: Value?
     ): Result<R?> = runCatching {
         val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean ->
+            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, attachmentBytes: ByteArray ->
                 if (success) {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                    val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                     val sample = Sample(
                         KeyExpr(JNIKeyExpr(keyExprPtr)),
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
                         timestamp,
-                        null //TODO: add attachments to queryables
+                        attachment
                     )
                     val reply = Reply.Success(replierId, sample)
                     callback.run(reply)
@@ -193,18 +193,6 @@ internal class JNISession {
             put.attachment?.let { encodeAttachment(it) } ?: "".encodeToByteArray()
         )
     }
-
-    private fun encodeAttachment(attachment: Attachment): ByteArray {
-        return attachment.values.joinToString("&") { (key, value) ->
-            "$key=${value.decodeToString()}"
-        }.encodeToByteArray()
-    }
-
-    private fun decodeAttachment(attachment: ByteArray): Attachment {
-        val pairs = attachment.decodeToString().split("&").map { it.split("=").let { (k, v) -> k to v.toByteArray() } }
-        return Attachment(pairs)
-    }
-
     @Throws(Exception::class)
     private external fun openSessionViaJNI(configFilePath: String): Long
 

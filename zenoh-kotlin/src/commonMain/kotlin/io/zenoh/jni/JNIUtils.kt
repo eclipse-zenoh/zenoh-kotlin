@@ -12,19 +12,17 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh.jni
 
-internal fun interface JNIGetCallback {
+import io.zenoh.sample.Attachment
 
-    fun run(
-        replierId: String,
-        success: Boolean,
-        keyExpr: Long,
-        payload: ByteArray,
-        encoding: Int,
-        kind: Int,
-        timestampNTP64: Long,
-        timestampIsValid: Boolean,
-        attachment: ByteArray,
-    )
+internal fun encodeAttachment(attachment: Attachment): ByteArray {
+    return attachment.values.joinToString("&") { (key, value) ->
+        "$key=${value.decodeToString()}"
+    }.encodeToByteArray()
+}
+
+internal fun decodeAttachment(attachment: ByteArray): Attachment {
+    val pairs = attachment.decodeToString().split("&").map { it.split("=").let { (k, v) -> k to v.toByteArray() } }
+    return Attachment(pairs)
 }

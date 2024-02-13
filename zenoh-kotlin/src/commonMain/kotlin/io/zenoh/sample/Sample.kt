@@ -17,7 +17,6 @@ package io.zenoh.sample
 import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.publication.Attachment
 import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -31,6 +30,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property value The [Value] of the sample.
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
+ * @property attachment Optional [Attachment].
  */
 class Sample(
     val keyExpr: KeyExpr,

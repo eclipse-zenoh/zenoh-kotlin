@@ -12,19 +12,17 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh.sample
 
-internal fun interface JNIGetCallback {
+class Attachment(val values: MutableList<Pair<String, ByteArray>> = mutableListOf()) {
 
-    fun run(
-        replierId: String,
-        success: Boolean,
-        keyExpr: Long,
-        payload: ByteArray,
-        encoding: Int,
-        kind: Int,
-        timestampNTP64: Long,
-        timestampIsValid: Boolean,
-        attachment: ByteArray,
-    )
+    constructor(values: Iterable<Pair<String, ByteArray>>): this(values.toMutableList())
+
+    fun add(key: String, value: ByteArray) {
+        values.add(key to value)
+    }
+
+    fun add(key: String, value: String) {
+        values.add(key to value.toByteArray())
+    }
 }

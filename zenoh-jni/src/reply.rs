@@ -26,8 +26,8 @@ use zenoh::{
     value::Value,
 };
 
-use crate::errors::Error;
 use crate::errors::Result;
+use crate::{errors::Error, utils::attachment_to_vec};
 
 pub(crate) fn on_reply(
     mut env: JNIEnv,
@@ -58,11 +58,23 @@ fn on_reply_success(
         || (0, false),
         |timestamp| (timestamp.get_time().as_u64(), true),
     );
+
+    let attachment_bytes = match sample.attachment.map_or_else(
+        || env.byte_array_from_slice(&[]),
+        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+    ) {
+        Ok(byte_array) => Ok(byte_array),
+        Err(err) => Err(Error::Jni(format!(
+            "Error processing attachment of reply: {}.",
+            err
+        ))),
+    }?;
+
     let key_expr_ptr = Arc::into_raw(Arc::new(sample.key_expr));
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZJ[BIIJZ)V",
+        "(Ljava/lang/String;ZJ[BIIJZ[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
@@ -72,6 +84,7 @@ fn on_reply_success(
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
+            JValue::from(&attachment_bytes),
         ],
     ) {
         Ok(_) => Ok(()),

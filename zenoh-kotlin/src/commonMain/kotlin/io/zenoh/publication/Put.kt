@@ -19,6 +19,7 @@ import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**

@@ -14,7 +14,7 @@
 
 use crate::errors::{Error, Result};
 use crate::sample::decode_sample_kind;
-use crate::utils::decode_byte_array;
+use crate::utils::{decode_byte_array, vec_to_attachment};
 use crate::value::decode_value;
 
 use jni::objects::JByteArray;
@@ -79,12 +79,7 @@ pub(crate) fn on_put(
         .kind(sample_kind)
         .congestion_control(congestion_control)
         .priority(priority)
-        .with_attachment(
-            attachment
-                .split(|&b| b == b'&')
-                .map(|pair| split_once(pair, '='))
-                .collect(),
-        )
+        .with_attachment(vec_to_attachment(attachment))
         .res()
     {
         Ok(_) => {
@@ -92,16 +87,6 @@ pub(crate) fn on_put(
             Ok(())
         }
         Err(err) => Err(Error::Session(format!("{}", err))),
-    }
-}
-
-fn split_once(slice: &[u8], c: char) -> (&[u8], &[u8]) {
-    match slice.iter().position(|&by| by == c as u8) {
-        Some(index) => {
-            let (l, r) = slice.split_at(index);
-            (l, &r[1..])
-        }
-        None => (slice, &[]),
     }
 }
 
