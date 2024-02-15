@@ -18,30 +18,50 @@ import io.zenoh.*
 import io.zenoh.prelude.SampleKind
 import io.zenoh.publication.CongestionControl
 import io.zenoh.publication.Priority
+import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
- * Adapter class to handle the interactions with Zenoh through JNI for a [Publisher].
+ * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].
  *
  * @property ptr: raw pointer to the underlying native Publisher.
  */
 internal class JNIPublisher(private val ptr: Long) {
 
     /**
-     * Put value through the publisher.
+     * Put operation.
      *
      * @param value The [Value] to be put.
+     * @param attachment Optional [Attachment].
      */
-    fun put(value: Value): Result<Unit> = runCatching {
-        putViaJNI(value.payload, value.encoding.knownEncoding.ordinal, ptr)
+    fun put(value: Value, attachment: Attachment?): Result<Unit> = runCatching {
+        putViaJNI(value.payload, value.encoding.knownEncoding.ordinal, attachment?.let { encodeAttachment(it) }, ptr)
     }
 
-    fun write(kind: SampleKind, value: Value): Result<Unit> = runCatching {
-        writeViaJNI(value.payload, value.encoding.knownEncoding.ordinal, kind.ordinal, ptr)
+    /**
+     * Write operation.
+     *
+     * @param kind The [SampleKind].
+     * @param value The [Value]  to be written.
+     * @param attachment Optional [Attachment].
+     */
+    fun write(kind: SampleKind, value: Value, attachment: Attachment?): Result<Unit> = runCatching {
+        writeViaJNI(
+            value.payload,
+            value.encoding.knownEncoding.ordinal,
+            kind.ordinal,
+            attachment?.let { encodeAttachment(it) },
+            ptr
+        )
     }
 
-    fun delete(): Result<Unit> = runCatching {
-        deleteViaJNI(ptr)
+    /**
+     * Delete operation.
+     *
+     * @param attachment Optional [Attachment].
+     */
+    fun delete(attachment: Attachment?): Result<Unit> = runCatching {
+        deleteViaJNI(attachment?.let { encodeAttachment(it) }, ptr)
     }
 
     /**
@@ -100,13 +120,17 @@ internal class JNIPublisher(private val ptr: Long) {
 
     /** Puts through the native Publisher. */
     @Throws(Exception::class)
-    private external fun putViaJNI(valuePayload: ByteArray, valueEncoding: Int, ptr: Long)
+    private external fun putViaJNI(
+        valuePayload: ByteArray, valueEncoding: Int, encodedAttachment: ByteArray?, ptr: Long
+    )
 
     @Throws(Exception::class)
-    private external fun writeViaJNI(payload: ByteArray, encoding: Int, sampleKind: Int, ptr: Long)
+    private external fun writeViaJNI(
+        payload: ByteArray, encoding: Int, sampleKind: Int, encodedAttachment: ByteArray?, ptr: Long
+    )
 
     @Throws(Exception::class)
-    private external fun deleteViaJNI(ptr: Long)
+    private external fun deleteViaJNI(encodedAttachment: ByteArray?, ptr: Long)
 
     /** Frees the underlying native Publisher. */
     private external fun freePtrViaJNI(ptr: Long)

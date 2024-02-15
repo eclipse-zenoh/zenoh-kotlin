@@ -28,6 +28,7 @@ use zenoh::{
 use crate::{
     errors::{Error, Result},
     sample::decode_sample_kind,
+    utils::{decode_byte_array, vec_to_attachment},
 };
 use crate::{
     put::{decode_congestion_control, decode_priority},
@@ -44,6 +45,7 @@ use zenoh::SessionDeclarations;
 /// - `_class`: The JNI class.
 /// - `payload`: The payload to be published, represented as a Java byte array (`JByteArray`).
 /// - `encoding`: The encoding type of the payload.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
 ///
 /// Safety:
@@ -60,10 +62,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
     _class: JClass,
     payload: JByteArray,
     encoding: jint,
+    encoded_attachment: JByteArray,
     ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(ptr);
-    match perform_put(&env, payload, encoding, publisher.clone()) {
+    match perform_put(
+        &env,
+        payload,
+        encoding,
+        encoded_attachment,
+        publisher.clone(),
+    ) {
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
@@ -150,6 +159,7 @@ pub(crate) unsafe fn declare_publisher(
 /// - `env`: The JNI environment.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding`: The encoding of the payload.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `publisher`: The Zenoh publisher.
 ///
 /// Returns:
@@ -159,11 +169,16 @@ fn perform_put(
     env: &JNIEnv,
     payload: JByteArray,
     encoding: jint,
+    encoded_attachment: JByteArray,
     publisher: Arc<Publisher>,
 ) -> Result<()> {
     let value = decode_value(env, payload, encoding)?;
-    publisher
-        .put(value)
+    let mut publication = publisher.put(value);
+    if !encoded_attachment.is_null() {
+        let aux = decode_byte_array(env, encoded_attachment)?;
+        publication = publication.with_attachment(vec_to_attachment(aux))
+    };
+    publication
         .res_sync()
         .map_err(|err| Error::Session(err.to_string()))
 }
@@ -258,6 +273,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding`: The [zenoh::Encoding] of the payload.
 /// - `sample_kind`: The [zenoh::SampleKind] to use.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `publisher`: The Zenoh [Publisher].
 ///
 /// Returns:
@@ -268,12 +284,17 @@ fn perform_write(
     payload: JByteArray,
     encoding: jint,
     sample_kind: jint,
+    encoded_attachment: JByteArray,
     publisher: Arc<Publisher>,
 ) -> Result<()> {
     let value = decode_value(env, payload, encoding)?;
     let sample_kind = decode_sample_kind(sample_kind)?;
-    publisher
-        .write(sample_kind, value)
+    let mut publication = publisher.write(sample_kind, value);
+    if !encoded_attachment.is_null() {
+        let aux = decode_byte_array(env, encoded_attachment)?;
+        publication = publication.with_attachment(vec_to_attachment(aux))
+    };
+    publication
         .res()
         .map_err(|err| Error::Session(format!("{}", err)))
 }
@@ -288,6 +309,7 @@ fn perform_write(
 /// - `payload`: The payload to be published, represented as a [Java byte array](JByteArray).
 /// - `encoding`: The [`encoding`](zenoh::Encoding) of the payload.
 /// - `sample_kind`: The [`kind`](zenoh::SampleKind) to use.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
 ///
 /// Safety:
@@ -305,10 +327,18 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_writeViaJNI(
     payload: JByteArray,
     encoding: jint,
     sample_kind: jint,
+    encoded_attachment: JByteArray,
     ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(ptr);
-    match perform_write(&env, payload, encoding, sample_kind, publisher.clone()) {
+    match perform_write(
+        &env,
+        payload,
+        encoding,
+        sample_kind,
+        encoded_attachment,
+        publisher.clone(),
+    ) {
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
@@ -325,14 +355,24 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_writeViaJNI(
 /// Performs a DELETE operation via JNI using the specified Zenoh publisher.
 ///
 /// Parameters:
+/// - `env`: The JNI environment.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `publisher`: The Zenoh [Publisher].
 ///
 /// Returns:
 /// - A [Result] indicating the success or failure of the operation.
 ///
-fn perform_delete(publisher: Arc<Publisher>) -> Result<()> {
-    publisher
-        .delete()
+fn perform_delete(
+    env: &JNIEnv,
+    encoded_attachment: JByteArray,
+    publisher: Arc<Publisher>,
+) -> Result<()> {
+    let mut delete = publisher.delete();
+    if !encoded_attachment.is_null() {
+        let aux = decode_byte_array(env, encoded_attachment)?;
+        delete = delete.with_attachment(vec_to_attachment(aux))
+    };
+    delete
         .res()
         .map_err(|err| Error::Session(format!("{}", err)))
 }
@@ -344,6 +384,7 @@ fn perform_delete(publisher: Arc<Publisher>) -> Result<()> {
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
+/// - `encoded_attachment`: Optional encoded attachment. May be null.
 /// - `ptr`: The raw pointer to the [Zenoh publisher](Publisher).
 ///
 /// Safety:
@@ -358,10 +399,11 @@ fn perform_delete(publisher: Arc<Publisher>) -> Result<()> {
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
+    encoded_attachment: JByteArray,
     ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(ptr);
-    match perform_delete(publisher.clone()) {
+    match perform_delete(&env, encoded_attachment, publisher.clone()) {
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
