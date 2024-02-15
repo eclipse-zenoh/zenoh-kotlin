@@ -14,7 +14,6 @@
 
 package io.zenoh.jni
 
-import io.zenoh.sample.Attachment
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 
@@ -37,7 +36,6 @@ internal class JNIQuery(private val ptr: Long) {
             sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.attachment != null,
             sample.attachment?.let { encodeAttachment(it) } ?: run { byteArrayOf() },
         )
     }
@@ -59,7 +57,6 @@ internal class JNIQuery(private val ptr: Long) {
         sampleKind: Int,
         timestampEnabled: Boolean,
         timestampNtp64: Long,
-        attachmentEnabled: Boolean,
         attachment: ByteArray,
     )
 

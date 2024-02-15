@@ -50,7 +50,6 @@ use crate::{
 /// - `sample_kind`: The kind of sample.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
-/// - `attachment_enabled`: If the attachment is present or not (it's an optional parameter).
 /// - `attachment`: The user attachment bytes.
 ///
 /// Safety:
@@ -71,7 +70,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     sample_kind: jint,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
-    attachment_enabled: jboolean,
     attachment: JByteArray,
 ) {
     let key_expr = Arc::from_raw(key_expr_ptr);
@@ -94,7 +92,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
             return;
         }
     };
-    let attachment: Option<Attachment> = if attachment_enabled != 0 {
+    let attachment: Option<Attachment> = if !attachment.is_null() {
         match decode_byte_array(&env, attachment) {
             Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
             Err(err) => {
