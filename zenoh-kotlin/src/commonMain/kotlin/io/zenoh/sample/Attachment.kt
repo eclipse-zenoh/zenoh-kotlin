@@ -22,6 +22,8 @@ package io.zenoh.sample
  *
  * Attachments can be added to a message sent through Zenoh while performing puts, queries and replies.
  *
+ * Using attachments will result in performance loss.
+ *
  * @property values
  * @constructor Create empty Attachment
  */

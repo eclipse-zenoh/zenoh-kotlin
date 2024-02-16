@@ -54,6 +54,9 @@ internal fun decodeAttachment(attachmentBytes: ByteArray): Attachment {
     return Attachment(pairs)
 }
 
+/**
+ * Converts an integer into a byte array with little endian format.
+ */
 fun Int.toByteArray(): ByteArray {
     val result = ByteArray(UInt.SIZE_BYTES)
     (0 until UInt.SIZE_BYTES).forEach {
@@ -62,5 +65,10 @@ fun Int.toByteArray(): ByteArray {
     return result
 }
 
+/**
+ * To int. The byte array is expected to be in Little Endian format.
+ *
+ * @return The integer value.
+ */
 fun ByteArray.toInt(): Int =
     (((this[3].toUInt() and 0xFFu) shl 24) or ((this[2].toUInt() and 0xFFu) shl 16) or ((this[1].toUInt() and 0xFFu) shl 8) or (this[0].toUInt() and 0xFFu)).toInt()

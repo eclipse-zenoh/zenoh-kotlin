@@ -113,17 +113,32 @@ pub(crate) fn load_on_close(
     })
 }
 
+/// This function is used in conjunction with the Kotlin function
+/// `decodeAttachment(attachmentBytes: ByteArray): Attachment` which takes a byte array with the
+/// format <key size><key payload><value size><value payload>, repeating this
+/// pattern for as many pairs there are in the attachment.
+///
+/// The kotlin function expects both key size and value size to be i32 integers expressed with
+/// little endian format.
+///
 pub(crate) fn attachment_to_vec(attachment: Attachment) -> Vec<u8> {
     let mut buffer: Vec<u8> = Vec::new();
     for (key, value) in attachment.iter() {
-        buffer.extend(&i32::to_le_bytes(key.len().try_into().unwrap()));
+        buffer.extend((key.len() as i32).to_le_bytes());
         buffer.extend(&key[..]);
-        buffer.extend(&i32::to_le_bytes(value.len().try_into().unwrap()));
+        buffer.extend((value.len() as i32).to_le_bytes());
         buffer.extend(&value[..]);
     }
     buffer
 }
 
+/// This function is used in conjunction with the Kotlin function
+/// `encodeAttachment(attachment: Attachment): ByteArray` which converts the attachment into a
+/// ByteArray with the format <key size><key payload><value size><value payload>, repeating this
+/// pattern for as many pairs there are in the attachment.
+///
+/// Both key size and value size are i32 integers with little endian format.
+///
 pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
     let mut builder = AttachmentBuilder::new();
     let mut idx = 0;
@@ -134,7 +149,7 @@ pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
         slice_size = i32::from_le_bytes(
             bytes[idx..idx + i32_size]
                 .try_into()
-                .expect("Error decoding i32."),
+                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
         );
         idx += i32_size;
 
@@ -144,7 +159,7 @@ pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
         slice_size = i32::from_le_bytes(
             bytes[idx..idx + i32_size]
                 .try_into()
-                .expect("Error decoding i32."),
+                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
         );
         idx += i32_size;
 
