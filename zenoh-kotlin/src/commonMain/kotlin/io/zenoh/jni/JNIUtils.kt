@@ -16,13 +16,51 @@ package io.zenoh.jni
 
 import io.zenoh.sample.Attachment
 
+/**
+ * Encode attachment as a byte array.
+ */
 internal fun encodeAttachment(attachment: Attachment): ByteArray {
-    return attachment.values.joinToString("&") { (key, value) ->
-        "$key=${value.decodeToString()}"
-    }.encodeToByteArray()
+    return attachment.values.map {
+        val key = it.first
+        val keyLength = key.size.toByteArray()
+        val value = it.second
+        val valueLength = value.size.toByteArray()
+        keyLength + key + valueLength + value
+    }.reduce { acc, bytes -> acc + bytes }
 }
 
-internal fun decodeAttachment(attachment: ByteArray): Attachment {
-    val pairs = attachment.decodeToString().split("&").map { it.split("=").let { (k, v) -> k to v.toByteArray() } }
+/**
+ * Decode an attachment as a byte array, recreating the original [Attachment].
+ */
+internal fun decodeAttachment(attachmentBytes: ByteArray): Attachment {
+    var idx = 0
+    var sliceSize: Int
+    val pairs: MutableList<Pair<ByteArray, ByteArray>> = mutableListOf()
+    while (idx < attachmentBytes.size) {
+        sliceSize = attachmentBytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1)).toInt()
+        idx += Int.SIZE_BYTES
+
+        val key = attachmentBytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
+        idx += sliceSize
+
+        sliceSize = attachmentBytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1)).toInt()
+        idx += Int.SIZE_BYTES
+
+        val value = attachmentBytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
+        idx += sliceSize
+
+        pairs.add(key to value)
+    }
     return Attachment(pairs)
 }
+
+fun Int.toByteArray(): ByteArray {
+    val result = ByteArray(UInt.SIZE_BYTES)
+    (0 until UInt.SIZE_BYTES).forEach {
+        result[it] = this.shr(Byte.SIZE_BITS * it).toByte()
+    }
+    return result
+}
+
+fun ByteArray.toInt(): Int =
+    (((this[3].toUInt() and 0xFFu) shl 24) or ((this[2].toUInt() and 0xFFu) shl 16) or ((this[1].toUInt() and 0xFFu) shl 8) or (this[0].toUInt() and 0xFFu)).toInt()

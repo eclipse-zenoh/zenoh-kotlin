@@ -14,6 +14,10 @@
 
 package io.zenoh
 
+import io.zenoh.jni.decodeAttachment
+import io.zenoh.jni.encodeAttachment
+import io.zenoh.jni.toByteArray
+import io.zenoh.jni.toInt
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.KnownEncoding
@@ -28,30 +32,36 @@ import kotlin.test.*
 class AttachmentTest {
 
     companion object {
-        const val TEST_KEY_EXP = "example/testing/keyexpr"
         val value = Value("test", Encoding(KnownEncoding.TEXT_PLAIN))
-        val attachmentPairs =
-            arrayListOf("key1" to "value1".encodeToByteArray(), "key2" to "value2".encodeToByteArray())
-        val attachment = Attachment(attachmentPairs)
-        val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
+        val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val attachmentPairs = arrayListOf(
+            "key1" to "value1", "key2" to "value2", "key3" to "value3"
+        )
+        val attachment =
+            Attachment(attachmentPairs.map { it.first.encodeToByteArray() to it.second.encodeToByteArray() })
     }
 
     @Test
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
         val session = Session.open().getOrThrow()
+
         session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res()
         session.put(keyExpr, value).withAttachment(attachment).res()
         session.close()
 
         assertNotNull(receivedSample)
         assertEquals(value, receivedSample!!.value)
-        assertNotNull(receivedSample!!.attachment)
-        val receivedPairs = receivedSample!!.attachment!!.values
+        assertAttachmentOk(receivedSample!!.attachment)
+    }
+
+    private fun assertAttachmentOk(attachment: Attachment?) {
+        assertNotNull(attachment)
+        val receivedPairs = attachment.values
         assertEquals(attachmentPairs.size, receivedPairs.size)
         for ((index, receivedPair) in receivedPairs.withIndex()) {
-            assertEquals(attachmentPairs[index].first, receivedPair.first)
-            assertEquals(attachmentPairs[index].second.decodeToString(), receivedPair.second.decodeToString())
+            assertEquals(attachmentPairs[index].first, receivedPair.first.decodeToString())
+            assertEquals(attachmentPairs[index].second, receivedPair.second.decodeToString())
         }
     }
 
@@ -59,11 +69,12 @@ class AttachmentTest {
     fun replyWithAttachmentTest() {
         var reply: Reply? = null
         val session = Session.open().getOrThrow()
+
         val queryable = session.declareQueryable(keyExpr).with { query ->
             query.reply(keyExpr).success("message").withAttachment(attachment).res()
         }.res().getOrThrow()
 
-        session.get(QueryableTest.TEST_KEY_EXP).with { reply = it }.timeout(Duration.ofMillis(1000)).res()
+        session.get(keyExpr).with { reply = it }.timeout(Duration.ofMillis(1000)).res()
         Thread.sleep(1000)
 
         queryable.close()
@@ -71,12 +82,7 @@ class AttachmentTest {
 
         assertNotNull(reply)
         assertTrue(reply is Reply.Success)
-        val receivedPairs = (reply as Reply.Success).sample.attachment!!.values
-        assertEquals(attachmentPairs.size, receivedPairs.size)
-        for ((index, receivedPair) in receivedPairs.withIndex()) {
-            assertEquals(attachmentPairs[index].first, receivedPair.first)
-            assertEquals(attachmentPairs[index].second.decodeToString(), receivedPair.second.decodeToString())
-        }
+        assertAttachmentOk((reply as Reply.Success).sample.attachment!!)
     }
 
     @Test
@@ -111,17 +117,10 @@ class AttachmentTest {
             receivedSample = sample
         }.res()
 
-        val attachment = Attachment()
-        attachment.add("key", "value")
-
         publisher.put("test").withAttachment(attachment).res()
         session.close()
 
-        val receivedAttachment = receivedSample!!.attachment
-        assertNotNull(receivedAttachment)
-        val values = receivedAttachment.values
-        assertEquals("key", values[0].first)
-        assertEquals("value", values[0].second.decodeToString())
+        assertAttachmentOk(receivedSample!!.attachment!!)
     }
 
     @Test
@@ -150,17 +149,10 @@ class AttachmentTest {
             receivedSample = sample
         }.res()
 
-        val attachment = Attachment()
-        attachment.add("key", "value")
-
         publisher.write(SampleKind.PUT, Value("test")).withAttachment(attachment).res()
         session.close()
 
-        val receivedAttachment = receivedSample!!.attachment
-        assertNotNull(receivedAttachment)
-        val values = receivedAttachment.values
-        assertEquals("key", values[0].first)
-        assertEquals("value", values[0].second.decodeToString())
+        assertAttachmentOk(receivedSample!!.attachment!!)
     }
 
     @Test
@@ -190,17 +182,10 @@ class AttachmentTest {
             receivedSample = sample
         }.res()
 
-        val attachment = Attachment()
-        attachment.add("key", "value")
-
         publisher.delete().withAttachment(attachment).res()
         session.close()
 
-        val receivedAttachment = receivedSample!!.attachment
-        assertNotNull(receivedAttachment)
-        val values = receivedAttachment.values
-        assertEquals("key", values[0].first)
-        assertEquals("value", values[0].second.decodeToString())
+        assertAttachmentOk(receivedSample!!.attachment!!)
     }
 
     @Test
@@ -218,5 +203,24 @@ class AttachmentTest {
 
         assertNotNull(receivedSample)
         assertNull(receivedSample!!.attachment)
+    }
+
+    @Test
+    fun encodeAndDecodeNumbersTest() {
+        val numbers: List<Int> = arrayListOf(0, 1, -1, 12345, -12345, 123567, 123456789, -1232454657)
+
+        for (number in numbers) {
+            val bytes = number.toByteArray()
+            val decodedNumber: Int = bytes.toInt()
+            assertEquals(number, decodedNumber)
+        }
+    }
+
+    @Test
+    fun encodeAndDecodeAttachmentTest() {
+        val encodedAttachment = encodeAttachment(attachment)
+        val decodedAttachment = decodeAttachment(encodedAttachment)
+
+        assertAttachmentOk(decodedAttachment)
     }
 }

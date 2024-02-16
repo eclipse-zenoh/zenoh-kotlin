@@ -14,15 +14,45 @@
 
 package io.zenoh.sample
 
-class Attachment(val values: MutableList<Pair<String, ByteArray>> = mutableListOf()) {
+/**
+ * Attachment
+ *
+ * An attachment consists of a list of non-unique ordered key value pairs, where keys are UTF-8 Strings and the values are bytes.
+ * Inserting at the same key multiple times leads to both values being transmitted for that key.
+ *
+ * Attachments can be added to a message sent through Zenoh while performing puts, queries and replies.
+ *
+ * @property values
+ * @constructor Create empty Attachment
+ */
+class Attachment internal constructor(val values: List<Pair<ByteArray, ByteArray>>) {
 
-    constructor(values: Iterable<Pair<String, ByteArray>>): this(values.toMutableList())
+    class Builder {
 
-    fun add(key: String, value: ByteArray) {
-        values.add(key to value)
-    }
+        private val values: MutableList<Pair<ByteArray, ByteArray>> = mutableListOf()
 
-    fun add(key: String, value: String) {
-        values.add(key to value.toByteArray())
+        fun add(key: ByteArray, value: ByteArray) = apply {
+            values.add(key to value)
+        }
+
+        fun add(key: String, value: ByteArray) = apply {
+            values.add(key.toByteArray() to value)
+        }
+
+        fun add(key: String, value: String) = apply {
+            values.add(key.toByteArray() to value.toByteArray())
+        }
+
+        fun addAll(elements: Collection<Pair<ByteArray, ByteArray>>) {
+            values.addAll(elements)
+        }
+
+        fun addAll(elements: Iterable<Pair<ByteArray, ByteArray>>) {
+            values.addAll(elements)
+        }
+
+        fun res(): Attachment {
+            return Attachment(values)
+        }
     }
 }

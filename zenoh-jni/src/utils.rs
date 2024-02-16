@@ -18,7 +18,7 @@ use jni::{
     objects::{JByteArray, JObject, JString},
     JNIEnv, JavaVM,
 };
-use zenoh::sample::Attachment;
+use zenoh::sample::{Attachment, AttachmentBuilder};
 
 use crate::errors::{Error, Result};
 
@@ -114,26 +114,45 @@ pub(crate) fn load_on_close(
 }
 
 pub(crate) fn attachment_to_vec(attachment: Attachment) -> Vec<u8> {
-    attachment
-        .into_iter()
-        .map(|(k, v)| [&k[..], &v[..]].join(&b'=').to_vec())
-        .collect::<Vec<Vec<u8>>>()
-        .join(&b'&')
+    let mut buffer: Vec<u8> = Vec::new();
+    for (key, value) in attachment.iter() {
+        buffer.extend(&i32::to_le_bytes(key.len().try_into().unwrap()));
+        buffer.extend(&key[..]);
+        buffer.extend(&i32::to_le_bytes(value.len().try_into().unwrap()));
+        buffer.extend(&value[..]);
+    }
+    buffer
 }
 
 pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
-    bytes
-        .split(|&b| b == b'&')
-        .map(|pair| split_once(pair, '='))
-        .collect()
-}
+    let mut builder = AttachmentBuilder::new();
+    let mut idx = 0;
+    let i32_size = std::mem::size_of::<i32>();
+    let mut slice_size;
 
-fn split_once(slice: &[u8], c: char) -> (&[u8], &[u8]) {
-    match slice.iter().position(|&by| by == c as u8) {
-        Some(index) => {
-            let (l, r) = slice.split_at(index);
-            (l, &r[1..])
-        }
-        None => (slice, &[]),
+    while idx < bytes.len() {
+        slice_size = i32::from_le_bytes(
+            bytes[idx..idx + i32_size]
+                .try_into()
+                .expect("Error decoding i32."),
+        );
+        idx += i32_size;
+
+        let key = &bytes[idx..idx + slice_size as usize];
+        idx += slice_size as usize;
+
+        slice_size = i32::from_le_bytes(
+            bytes[idx..idx + i32_size]
+                .try_into()
+                .expect("Error decoding i32."),
+        );
+        idx += i32_size;
+
+        let value = &bytes[idx..idx + slice_size as usize];
+        idx += slice_size as usize;
+
+        builder.insert(key, value);
     }
+
+    builder.build()
 }
