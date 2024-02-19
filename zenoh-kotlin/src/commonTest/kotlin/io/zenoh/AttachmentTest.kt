@@ -41,6 +41,16 @@ class AttachmentTest {
             Attachment(attachmentPairs.map { it.first.encodeToByteArray() to it.second.encodeToByteArray() })
     }
 
+    private fun assertAttachmentOk(attachment: Attachment?) {
+        assertNotNull(attachment)
+        val receivedPairs = attachment.values
+        assertEquals(attachmentPairs.size, receivedPairs.size)
+        for ((index, receivedPair) in receivedPairs.withIndex()) {
+            assertEquals(attachmentPairs[index].first, receivedPair.first.decodeToString())
+            assertEquals(attachmentPairs[index].second, receivedPair.second.decodeToString())
+        }
+    }
+
     @Test
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
@@ -53,16 +63,6 @@ class AttachmentTest {
         assertNotNull(receivedSample)
         assertEquals(value, receivedSample!!.value)
         assertAttachmentOk(receivedSample!!.attachment)
-    }
-
-    private fun assertAttachmentOk(attachment: Attachment?) {
-        assertNotNull(attachment)
-        val receivedPairs = attachment.values
-        assertEquals(attachmentPairs.size, receivedPairs.size)
-        for ((index, receivedPair) in receivedPairs.withIndex()) {
-            assertEquals(attachmentPairs[index].first, receivedPair.first.decodeToString())
-            assertEquals(attachmentPairs[index].second, receivedPair.second.decodeToString())
-        }
     }
 
     @Test
@@ -206,8 +206,28 @@ class AttachmentTest {
     }
 
     @Test
+    fun queryWithAttachmentTest() {
+        val session = Session.open().getOrThrow()
+
+        var receivedAttachment: Attachment? = null
+
+        val queryable = session.declareQueryable(keyExpr).with { query ->
+            receivedAttachment = query.attachment
+            query.reply(keyExpr).success("hello").res()
+        }.res().getOrThrow()
+
+        session.get(keyExpr).with { reply -> print((reply as Reply.Success).sample.value.toString()) }
+            .withAttachment(attachment).timeout(Duration.ofMillis(1000)).res()
+        Thread.sleep(1000)
+
+        queryable.close()
+        session.close()
+        assertAttachmentOk(receivedAttachment)
+    }
+
+    @Test
     fun encodeAndDecodeNumbersTest() {
-        val numbers: List<Int> = arrayListOf(0, 1, -1, 12345, -12345, 123567, 123456789, -1232454657)
+        val numbers: List<Int> = arrayListOf(0, 1, -1, 12345, -12345, 123567, 123456789, -123456789)
 
         for (number in numbers) {
             val bytes = number.toByteArray()

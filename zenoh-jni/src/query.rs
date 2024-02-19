@@ -29,6 +29,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
+    utils::attachment_to_vec,
     value::decode_value,
 };
 use crate::{
@@ -242,6 +243,17 @@ pub(crate) fn on_query(
         None => (false, JPrimitiveArray::default(), 0),
     };
 
+    let attachment_bytes = match query.attachment().map_or_else(
+        || env.byte_array_from_slice(&[]),
+        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment.clone()).as_slice()),
+    ) {
+        Ok(byte_array) => Ok(byte_array),
+        Err(err) => Err(Error::Jni(format!(
+            "Error processing attachment of reply: {}.",
+            err
+        ))),
+    }?;
+
     let key_expr = query.key_expr().clone();
     let key_expr_ptr = Arc::into_raw(Arc::new(key_expr));
     let query_ptr = Arc::into_raw(Arc::new(query));
@@ -250,13 +262,14 @@ pub(crate) fn on_query(
         .call_method(
             callback_global_ref,
             "run",
-            "(JLjava/lang/String;Z[BIJ)V",
+            "(JLjava/lang/String;Z[BI[BJ)V",
             &[
                 JValue::from(key_expr_ptr as jlong),
                 JValue::from(&selector_params_jstr),
                 JValue::from(with_value),
                 JValue::from(&payload),
                 JValue::from(encoding),
+                JValue::from(&attachment_bytes),
                 JValue::from(query_ptr as jlong),
             ],
         )

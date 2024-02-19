@@ -19,7 +19,10 @@ use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
 use crate::subscriber::declare_subscriber;
-use crate::utils::{decode_string, get_callback_global_ref, get_java_vm, load_on_close};
+use crate::utils::{
+    decode_byte_array, decode_string, get_callback_global_ref, get_java_vm, load_on_close,
+    vec_to_attachment,
+};
 use crate::value::decode_value;
 
 use jni::objects::{JByteArray, JClass, JObject, JString};
@@ -522,6 +525,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
+/// - `attachment`: An optional attachment encoded into a byte array.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -546,6 +550,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     timeout_ms: jlong,
     target: jint,
     consolidation: jint,
+    attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr);
@@ -560,6 +565,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         target,
         consolidation,
         None,
+        attachment,
     ) {
         Ok(_) => {}
         Err(err) => {
@@ -592,6 +598,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
 /// - `payload`: The payload of the [Value]
 /// - `encoding`: The [Encoding] as the ordinal of the enum.
+/// - `attachment`: An optional attachment encoded into a byte array.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -618,6 +625,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
     consolidation: jint,
     payload: JByteArray,
     encoding: jint,
+    attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
@@ -632,6 +640,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
         target,
         consolidation,
         Some((payload, encoding)),
+        attachment,
     ) {
         Ok(_) => {}
         Err(err) => {
@@ -661,6 +670,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
 /// - `value_params`: Parameters of the value (payload as [JByteArray] and encoding as [jint]) to
 ///     be set in case the get is performed "with value".
+/// - `encoded_attachment`: An optional attachment encoded into a byte array.
 ///
 /// Returns:
 /// - A `Result` indicating the result of the `get` operation.
@@ -677,6 +687,7 @@ fn on_get_query(
     target: jint,
     consolidation: jint,
     value_params: Option<(JByteArray, jint)>,
+    encoded_attachment: JByteArray,
 ) -> Result<()> {
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
@@ -715,6 +726,12 @@ fn on_get_query(
         let value = decode_value(env, payload, encoding)?;
         get_builder = get_builder.with_value(value.to_owned());
         binding = Some(value)
+    }
+
+    if !encoded_attachment.is_null() {
+        let aux = decode_byte_array(env, encoded_attachment)?;
+        let attachment = vec_to_attachment(aux);
+        get_builder = get_builder.with_attachment(attachment);
     }
 
     get_builder
