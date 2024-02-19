@@ -36,7 +36,7 @@ internal class JNIQuery(private val ptr: Long) {
             sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.attachment?.let { encodeAttachment(it) } ?: run { byteArrayOf() },
+            sample.attachment?.let { encodeAttachment(it) },
         )
     }
 
@@ -57,7 +57,7 @@ internal class JNIQuery(private val ptr: Long) {
         sampleKind: Int,
         timestampEnabled: Boolean,
         timestampNtp64: Long,
-        attachment: ByteArray,
+        attachment: ByteArray?,
     )
 
     @Throws(Exception::class)

@@ -51,7 +51,7 @@ use crate::{
 /// - `sample_kind`: The kind of sample.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
-/// - `attachment`: The user attachment bytes.
+/// - `attachment`: Optional user attachment encoded as a byte array. May be null.
 ///
 /// Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
