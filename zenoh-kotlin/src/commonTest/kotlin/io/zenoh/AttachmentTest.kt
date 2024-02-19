@@ -66,48 +66,6 @@ class AttachmentTest {
     }
 
     @Test
-    fun replyWithAttachmentTest() {
-        var reply: Reply? = null
-        val session = Session.open().getOrThrow()
-
-        val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("message").withAttachment(attachment).res()
-        }.res().getOrThrow()
-
-        session.get(keyExpr).with { reply = it }.timeout(Duration.ofMillis(1000)).res()
-        Thread.sleep(1000)
-
-        queryable.close()
-        session.close()
-
-        assertNotNull(reply)
-        assertTrue(reply is Reply.Success)
-        assertAttachmentOk((reply as Reply.Success).sample.attachment!!)
-    }
-
-    @Test
-    fun replyWithoutAttachmentTest() {
-        var reply: Reply? = null
-        val session = Session.open().getOrThrow()
-        val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("message").res()
-        }.res().getOrThrow()
-
-        session.get(QueryableTest.TEST_KEY_EXP).with {
-            reply = it
-        }.timeout(Duration.ofMillis(1000)).res()
-
-        Thread.sleep(1000)
-
-        queryable.close()
-        session.close()
-
-        assertNotNull(reply)
-        assertTrue(reply is Reply.Success)
-        assertNull((reply as Reply.Success).sample.attachment)
-    }
-
-    @Test
     fun publisherPutWithAttachmentTest() {
         val session = Session.open().getOrThrow()
 
@@ -244,6 +202,28 @@ class AttachmentTest {
         queryable.close()
         session.close()
         assertAttachmentOk(receivedAttachment)
+    }
+
+    @Test
+    fun queryReplyWithoutAttachmentTest() {
+        var reply: Reply? = null
+        val session = Session.open().getOrThrow()
+        val queryable = session.declareQueryable(keyExpr).with { query ->
+            query.reply(keyExpr).success("test").res()
+        }.res().getOrThrow()
+
+        session.get(QueryableTest.TEST_KEY_EXP).with {
+            reply = it
+        }.timeout(Duration.ofMillis(1000)).res()
+
+        Thread.sleep(1000)
+
+        queryable.close()
+        session.close()
+
+        assertNotNull(reply)
+        assertTrue(reply is Reply.Success)
+        assertNull((reply as Reply.Success).sample.attachment)
     }
 
     @Test
