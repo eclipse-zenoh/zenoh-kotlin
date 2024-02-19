@@ -59,7 +59,7 @@ pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result
     let mut buff = vec![0; payload_len];
     env.get_byte_array_region(payload, 0, &mut buff[..])
         .map_err(|err| Error::Jni(err.to_string()))?;
-    let buff: Vec<u8> = buff.iter().map(|&x| x as u8).collect();
+    let buff: Vec<u8> = unsafe { std::mem::transmute::<Vec<i8>, Vec<u8>>(buff) };
     Ok(buff)
 }
 
