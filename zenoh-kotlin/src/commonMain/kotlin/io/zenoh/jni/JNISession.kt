@@ -195,7 +195,7 @@ internal class JNISession {
             put.congestionControl.ordinal,
             put.priority.value,
             put.kind.ordinal,
-            put.attachment?.let { encodeAttachment(it) } ?: "".encodeToByteArray()
+            put.attachment?.let { encodeAttachment(it) }
         )
     }
     @Throws(Exception::class)
@@ -273,6 +273,6 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         kind: Int,
-        attachmentBytes: ByteArray
+        attachmentBytes: ByteArray?
     )
 }

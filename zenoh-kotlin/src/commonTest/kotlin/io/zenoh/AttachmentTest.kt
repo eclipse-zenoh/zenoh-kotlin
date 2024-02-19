@@ -216,8 +216,7 @@ class AttachmentTest {
             query.reply(keyExpr).success("hello").res()
         }.res().getOrThrow()
 
-        session.get(keyExpr).with { reply -> print((reply as Reply.Success).sample.value.toString()) }
-            .withAttachment(attachment).timeout(Duration.ofMillis(1000)).res()
+        session.get(keyExpr).with {}.withAttachment(attachment).timeout(Duration.ofMillis(1000)).res()
         Thread.sleep(1000)
 
         queryable.close()
