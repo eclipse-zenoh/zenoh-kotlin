@@ -225,6 +225,28 @@ class AttachmentTest {
     }
 
     @Test
+    fun queryReplyWithAttachmentTest() {
+        val session = Session.open().getOrThrow()
+
+        var receivedAttachment: Attachment? = null
+
+        val queryable = session.declareQueryable(keyExpr).with { query ->
+            query.reply(keyExpr).success("test").withAttachment(attachment).res()
+        }.res().getOrThrow()
+
+        session.get(keyExpr).with { reply ->
+            (reply as Reply.Success)
+            receivedAttachment = reply.sample.attachment
+        }.timeout(Duration.ofMillis(1000)).res()
+
+        Thread.sleep(1000)
+
+        queryable.close()
+        session.close()
+        assertAttachmentOk(receivedAttachment)
+    }
+
+    @Test
     fun encodeAndDecodeNumbersTest() {
         val numbers: List<Int> = arrayListOf(0, 1, -1, 12345, -12345, 123567, 123456789, -123456789)
 
