@@ -35,7 +35,7 @@ class AttachmentTest {
         val value = Value("test", Encoding(KnownEncoding.TEXT_PLAIN))
         val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         val attachmentPairs = arrayListOf(
-            "key1" to "value1", "key2" to "value2", "key3" to "value3"
+            "key1" to "value1", "key2" to "value2", "key3" to "value3", "repeatedKey" to "value1", "repeatedKey" to "value2"
         )
         val attachment =
             Attachment(attachmentPairs.map { it.first.encodeToByteArray() to it.second.encodeToByteArray() })
