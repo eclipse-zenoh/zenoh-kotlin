@@ -29,11 +29,11 @@ import io.zenoh.value.Value
 import java.time.Duration
 import kotlin.test.*
 
-class AttachmentTest {
+class UserAttachmentTest {
 
     companion object {
         val value = Value("test", Encoding(KnownEncoding.TEXT_PLAIN))
-        val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val keyExpr = "example/testing/attachment".intoKeyExpr().getOrThrow()
         val attachmentPairs = arrayListOf(
             "key1" to "value1", "key2" to "value2", "key3" to "value3", "repeatedKey" to "value1", "repeatedKey" to "value2"
         )
@@ -70,8 +70,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
 
@@ -86,8 +86,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
         publisher.put("test").res()
@@ -102,8 +102,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
 
@@ -118,8 +118,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
 
@@ -135,8 +135,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
 
@@ -151,8 +151,8 @@ class AttachmentTest {
         val session = Session.open().getOrThrow()
 
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(PublisherTest.TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(PublisherTest.TEST_KEY_EXP).with { sample ->
+        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
         }.res()
 
@@ -171,7 +171,7 @@ class AttachmentTest {
 
         val queryable = session.declareQueryable(keyExpr).with { query ->
             receivedAttachment = query.attachment
-            query.reply(keyExpr).success("hello").res()
+            query.reply(keyExpr).success("test").res()
         }.res().getOrThrow()
 
         session.get(keyExpr).with {}.withAttachment(attachment).timeout(Duration.ofMillis(1000)).res()
@@ -212,7 +212,7 @@ class AttachmentTest {
             query.reply(keyExpr).success("test").res()
         }.res().getOrThrow()
 
-        session.get(QueryableTest.TEST_KEY_EXP).with {
+        session.get(keyExpr).with {
             reply = it
         }.timeout(Duration.ofMillis(1000)).res()
 
