@@ -104,8 +104,8 @@ pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {
 
 pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<CongestionControl> {
     match congestion_control {
-        0 => Ok(CongestionControl::Block),
-        1 => Ok(CongestionControl::Drop),
+        1 => Ok(CongestionControl::Block),
+        0 => Ok(CongestionControl::Drop),
         _value => Err(Error::Session(format!(
             "Unknown congestion control '{_value}'."
         ))),

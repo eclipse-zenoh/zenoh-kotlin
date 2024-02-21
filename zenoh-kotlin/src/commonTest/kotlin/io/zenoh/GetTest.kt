@@ -18,6 +18,7 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
@@ -118,7 +119,7 @@ class GetTest {
                 .res()
                 .getOrThrow()
             declaredQueryables.add(queryable)
-            repliedSamples.add(Sample(keyExpr, value, kind, timestamp))
+            repliedSamples.add(Sample(keyExpr, value, kind, timestamp, QoS.default()))
         }
 
         val sessionB = Session.open().getOrThrow()

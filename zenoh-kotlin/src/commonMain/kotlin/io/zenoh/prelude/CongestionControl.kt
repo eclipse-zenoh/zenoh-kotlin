@@ -12,19 +12,22 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.publication
+package io.zenoh.prelude
 
 /** The congestion control to be applied when routing the data. */
-enum class CongestionControl {
+enum class CongestionControl (val value: Int) {
+    /**
+     * Allows the message to be dropped if all buffers are full.
+     */
+    DROP(0),
 
     /**
      * Prevents the message from being dropped at all cost.
      * In the face of heavy congestion on a part of the network, this could result in your publisher node blocking.
      */
-    BLOCK,
+    BLOCK(1);
 
-    /**
-     * Allows the message to be dropped if all buffers are full.
-     */
-    DROP;
+    companion object {
+        fun fromInt(value: Int) = entries.first { it.value == value }
+    }
 }

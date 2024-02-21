@@ -16,7 +16,7 @@ use std::{mem, ops::Deref, sync::Arc};
 
 use jni::{
     objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JValue},
-    sys::{jboolean, jint, jlong},
+    sys::{jboolean, jbyte, jint, jlong},
     JNIEnv,
 };
 use zenoh::{
@@ -71,6 +71,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     sample_kind: jint,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
+    qos: jbyte,
     attachment: JByteArray,
 ) {
     let key_expr = Arc::from_raw(key_expr_ptr);
@@ -84,6 +85,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         sample_kind,
         timestamp_enabled,
         timestamp_ntp_64,
+        qos,
     ) {
         Ok(sample) => sample,
         Err(err) => {

@@ -16,8 +16,8 @@ package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 
 fun main() {
     println("Opening Session")

@@ -18,6 +18,7 @@ import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import kotlin.test.Test
@@ -63,8 +64,8 @@ class PublisherTest {
         }.res()
 
         val testSamples = arrayListOf(
-            Sample(TEST_KEY_EXP, Value("Test PUT"), SampleKind.PUT, null),
-            Sample(TEST_KEY_EXP, Value("Test DELETE"), SampleKind.DELETE, null),
+            Sample(TEST_KEY_EXP, Value("Test PUT"), SampleKind.PUT, null, QoS.default()),
+            Sample(TEST_KEY_EXP, Value("Test DELETE"), SampleKind.DELETE, null, QoS.default()),
         )
 
         session.declarePublisher(TEST_KEY_EXP).res().onSuccess {
