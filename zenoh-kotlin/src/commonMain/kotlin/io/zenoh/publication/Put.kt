@@ -19,6 +19,7 @@ import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
@@ -47,13 +48,15 @@ import io.zenoh.value.Value
  * @property congestionControl The [CongestionControl] to be applied when routing the data.
  * @property priority The [Priority] of zenoh messages.
  * @property kind The [SampleKind] of the sample (put or delete).
+ * @property attachment An optional user [Attachment].
  */
 open class Put protected constructor(
     val keyExpr: KeyExpr,
     val value: Value,
     val congestionControl: CongestionControl,
     val priority: Priority,
-    val kind: SampleKind
+    val kind: SampleKind,
+    val attachment: Attachment?
 ) {
 
     companion object {
@@ -81,6 +84,7 @@ open class Put protected constructor(
      *  defaults to [CongestionControl.DROP]
      * @property priority The [Priority] of zenoh messages, defaults to [Priority.DATA].
      * @property kind The [SampleKind] of the sample (put or delete), defaults to [SampleKind.PUT].
+     * @property attachment Optional user [Attachment].
      * @constructor Create a [Put] builder.
      */
     class Builder internal constructor(
@@ -89,7 +93,8 @@ open class Put protected constructor(
         private var value: Value,
         private var congestionControl: CongestionControl = CongestionControl.DROP,
         private var priority: Priority = Priority.DATA,
-        private var kind: SampleKind = SampleKind.PUT
+        private var kind: SampleKind = SampleKind.PUT,
+        private var attachment: Attachment? = null
     ): Resolvable<Unit> {
 
         /** Change the [Encoding] of the written data. */
@@ -107,9 +112,12 @@ open class Put protected constructor(
         /** Change the [SampleKind] of the sample. If set to [SampleKind.DELETE], performs a delete operation. */
         fun kind(kind: SampleKind) = apply { this.kind = kind }
 
+        /** Set an attachment to the put operation. */
+        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+
         /** Resolves the put operation, returning a [Result]. */
         override fun res(): Result<Unit> = runCatching {
-            val put = Put(keyExpr, value, congestionControl, priority, kind)
+            val put = Put(keyExpr, value, congestionControl, priority, kind, attachment)
             session.run { resolvePut(keyExpr, put) }
         }
     }

@@ -22,6 +22,7 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.query.Reply
+import io.zenoh.sample.Attachment
 
 /**
  * Represents a Zenoh Query in Kotlin.
@@ -31,6 +32,7 @@ import io.zenoh.query.Reply
  * @property keyExpr The key expression to which the query is associated.
  * @property selector The selector
  * @property value Optional value in case the received query was declared using "with query".
+ * @property attachment Optional attachment.
  * @property jniQuery Delegate object in charge of communicating with the underlying native code.
  * @constructor Instances of Query objects are only meant to be created through the JNI upon receiving
  * a query request. Therefore, the constructor is private.
@@ -39,6 +41,7 @@ class Query internal constructor(
     val keyExpr: KeyExpr,
     val selector: Selector,
     val value: Value?,
+    val attachment: Attachment?,
     private var jniQuery: JNIQuery?
 ) : AutoCloseable, ZenohType {
 

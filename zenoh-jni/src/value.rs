@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::errors::{Error, Result};
+use crate::{errors::Result, utils::decode_byte_array};
 use jni::{objects::JByteArray, JNIEnv};
 use zenoh::{
     buffers::{writer::Writer, ZBuf},
@@ -28,16 +28,7 @@ pub(crate) fn build_value(payload: &[u8], encoding: KnownEncoding) -> Value {
 }
 
 pub(crate) fn decode_value(env: &JNIEnv<'_>, payload: JByteArray, encoding: i32) -> Result<Value> {
-    let payload_len = env
-        .get_array_length(&payload)
-        .map(|length| length as usize)
-        .map_err(|err| Error::Jni(err.to_string()))?;
-
-    let mut buff = vec![0; payload_len];
-    env.get_byte_array_region(payload, 0, &mut buff[..])
-        .map_err(|err| Error::Jni(err.to_string()))?;
-
-    let buff: Vec<u8> = buff.iter().map(|&x| x as u8).collect();
+    let buff = decode_byte_array(env, payload)?;
     let encoding = match KnownEncoding::try_from(encoding as u8) {
         Ok(encoding) => encoding,
         Err(_) => {

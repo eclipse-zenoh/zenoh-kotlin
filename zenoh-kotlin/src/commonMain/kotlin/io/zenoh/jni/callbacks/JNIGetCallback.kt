@@ -24,6 +24,7 @@ internal fun interface JNIGetCallback {
         encoding: Int,
         kind: Int,
         timestampNTP64: Long,
-        timestampIsValid: Boolean
+        timestampIsValid: Boolean,
+        attachment: ByteArray,
     )
 }

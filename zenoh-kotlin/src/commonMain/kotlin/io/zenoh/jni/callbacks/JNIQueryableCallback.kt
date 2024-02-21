@@ -20,5 +20,6 @@ internal fun interface JNIQueryableCallback {
             withValue: Boolean,
             payload: ByteArray?,
             encoding: Int,
+            attachmentBytes: ByteArray,
             queryPtr: Long)
 }

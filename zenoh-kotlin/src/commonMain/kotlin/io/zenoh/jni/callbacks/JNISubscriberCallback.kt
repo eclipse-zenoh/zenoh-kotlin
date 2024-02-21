@@ -21,6 +21,7 @@ internal fun interface JNISubscriberCallback {
         encoding: Int,
         kind: Int,
         timestampNTP64: Long,
-        timestampIsValid: Boolean
+        timestampIsValid: Boolean,
+        attachment: ByteArray,
     )
 }

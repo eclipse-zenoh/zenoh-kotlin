@@ -22,8 +22,11 @@ use jni::{
 use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
-use crate::errors::{Error, Result};
 use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
+use crate::{
+    errors::{Error, Result},
+    utils::attachment_to_vec,
+};
 
 /// Frees the memory associated with a Zenoh subscriber raw pointer via JNI.
 ///
@@ -113,11 +116,25 @@ pub(crate) unsafe fn declare_subscriber(
                 |timestamp| (timestamp.get_time().as_u64(), true),
             );
 
+            let attachment_bytes = match sample.attachment.map_or_else(
+                || env.byte_array_from_slice(&[]),
+                |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+            ) {
+                Ok(byte_array) => byte_array,
+                Err(err) => {
+                    log::error!(
+                        "On subscriber callback error. Error processing attachment: {}.",
+                        err.to_string()
+                    );
+                    return;
+                }
+            };
+
             let key_expr_ptr = Arc::into_raw(Arc::new(sample.key_expr));
             match env.call_method(
                 &callback_global_ref,
                 "run",
-                "(J[BIIJZ)V",
+                "(J[BIIJZ[B)V",
                 &[
                     JValue::from(key_expr_ptr as jlong),
                     JValue::from(&byte_array),
@@ -125,6 +142,7 @@ pub(crate) unsafe fn declare_subscriber(
                     JValue::from(kind),
                     JValue::from(timestamp as i64),
                     JValue::from(is_valid),
+                    JValue::from(&attachment_bytes),
                 ],
             ) {
                 Ok(_) => {}

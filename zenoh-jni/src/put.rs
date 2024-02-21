@@ -14,6 +14,7 @@
 
 use crate::errors::{Error, Result};
 use crate::sample::decode_sample_kind;
+use crate::utils::{decode_byte_array, vec_to_attachment};
 use crate::value::decode_value;
 
 use jni::objects::JByteArray;
@@ -34,6 +35,7 @@ use zenoh::prelude::r#sync::*;
 /// - `congestion_control`: The [CongestionControl] mechanism specified.
 /// - `priority`: The [Priority] mechanism specified.
 /// - `sample_kind`: The [SampleKind] of the put operation.
+/// - `attachment`: An optional attachment, encoded into a byte array. May be null.
 ///
 /// Returns:
 /// - A `Result` indicating the result of the `get` operation, with an [Error] in case of failure.
@@ -48,6 +50,7 @@ pub(crate) fn on_put(
     congestion_control: jint,
     priority: jint,
     sample_kind: jint,
+    attachment: JByteArray,
 ) -> Result<()> {
     let value = decode_value(env, payload, encoding)?;
     let sample_kind = decode_sample_kind(sample_kind)?;
@@ -71,13 +74,19 @@ pub(crate) fn on_put(
     };
 
     let key_expr_clone = key_expr.deref().clone();
-    match session
+
+    let mut put_builder = session
         .put(key_expr_clone, value.to_owned())
         .kind(sample_kind)
         .congestion_control(congestion_control)
-        .priority(priority)
-        .res()
-    {
+        .priority(priority);
+
+    if !attachment.is_null() {
+        let attachment = decode_byte_array(env, attachment)?;
+        put_builder = put_builder.with_attachment(vec_to_attachment(attachment))
+    }
+
+    match put_builder.res() {
         Ok(_) => {
             log::trace!("Put on '{key_expr}' with value '{value}' and encoding '{}'. Kind: '{sample_kind}', Congestion control: '{congestion_control:?}', Priority: '{priority:?}'", value.encoding);
             Ok(())

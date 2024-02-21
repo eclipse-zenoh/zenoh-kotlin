@@ -19,6 +19,7 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
@@ -74,14 +75,10 @@ class Publisher internal constructor(
     }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
-    fun put(value: Value): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.put(value) ?: InvalidPublisherResult
-    }
+    fun put(value: Value) = Put(jniPublisher, value)
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
-    fun put(value: String): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.put(Value(value)) ?: InvalidPublisherResult
-    }
+    fun put(value: String) = Put(jniPublisher, Value(value))
 
     /**
      * Performs a WRITE operation on the specified [keyExpr]
@@ -90,18 +87,14 @@ class Publisher internal constructor(
      * @param value The [Value] to send.
      * @return A [Resolvable] operation.
      */
-    fun write(kind: SampleKind, value: Value): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.write(kind, value) ?: InvalidPublisherResult
-    }
+    fun write(kind: SampleKind, value: Value) = Write(jniPublisher, value, kind)
 
     /**
      * Performs a DELETE operation on the specified [keyExpr]
      *
      * @return A [Resolvable] operation.
      */
-    fun delete(): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniPublisher?.delete() ?: InvalidPublisherResult
-    }
+    fun delete() = Delete(jniPublisher)
 
     /** Get congestion control policy. */
     fun getCongestionControl(): CongestionControl {
@@ -116,7 +109,7 @@ class Publisher internal constructor(
      * @param congestionControl: The [CongestionControl] policy.
      */
     fun setCongestionControl(congestionControl: CongestionControl) {
-         jniPublisher?.setCongestionControl(congestionControl)?.onSuccess { this.congestionControl = congestionControl }
+        jniPublisher?.setCongestionControl(congestionControl)?.onSuccess { this.congestionControl = congestionControl }
     }
 
     /** Get priority policy. */
@@ -132,7 +125,7 @@ class Publisher internal constructor(
      * @param priority: The [Priority] policy.
      */
     fun setPriority(priority: Priority) {
-         jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
+        jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
     }
 
     override fun isValid(): Boolean {
@@ -148,9 +141,47 @@ class Publisher internal constructor(
         jniPublisher = null
     }
 
-    @Suppress("removal")
     protected fun finalize() {
         jniPublisher?.close()
+    }
+
+    class Put internal constructor(
+        private var jniPublisher: JNIPublisher?,
+        val value: Value,
+        var attachment: Attachment? = null
+    ) : Resolvable<Unit> {
+
+        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+
+        override fun res(): Result<Unit> = run {
+            jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
+        }
+    }
+
+    class Write internal constructor(
+        private var jniPublisher: JNIPublisher?,
+        val value: Value,
+        val sampleKind: SampleKind,
+        var attachment: Attachment? = null
+    ) : Resolvable<Unit> {
+
+        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+
+        override fun res(): Result<Unit> = run {
+            jniPublisher?.write(sampleKind, value, attachment) ?: InvalidPublisherResult
+        }
+    }
+
+    class Delete internal constructor(
+        private var jniPublisher: JNIPublisher?,
+        var attachment: Attachment? = null
+    ) : Resolvable<Unit> {
+
+        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+
+        override fun res(): Result<Unit> = run {
+            jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+        }
     }
 
     /**
