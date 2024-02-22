@@ -31,6 +31,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property value The [Value] of the sample.
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
+ * @property qos The Quality of Service settings used to deliver the sample.
  * @property attachment Optional [Attachment].
  */
 class Sample(
