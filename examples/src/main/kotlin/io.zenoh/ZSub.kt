@@ -26,6 +26,7 @@ fun main() {
                     println("Declaring Subscriber on '$keyExpr'...")
                     session.declareSubscriber(keyExpr).bestEffort().res().onSuccess { subscriber ->
                         subscriber.use {
+                            println("Press CTRL-C to quit...")
                             runBlocking {
                                 val receiver = subscriber.receiver!!
                                 val iterator = receiver.iterator()
@@ -41,4 +42,3 @@ fun main() {
         }
     }
 }
-

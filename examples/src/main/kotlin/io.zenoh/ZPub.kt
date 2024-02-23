@@ -25,7 +25,8 @@ fun main() {
                     println("Declaring publisher on '$keyExpr'...")
                     session.declarePublisher(keyExpr).res().onSuccess { pub ->
                         pub.use {
-                            var idx = 0
+                            println("Press CTRL-C to quit...")
+                            var idx = 1
                             while (true) {
                                 Thread.sleep(1000)
                                 val payload = "Pub from Kotlin!"

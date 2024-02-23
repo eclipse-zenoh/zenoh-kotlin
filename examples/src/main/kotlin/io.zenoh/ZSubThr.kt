@@ -55,13 +55,17 @@ fun main() {
     "test/thr".intoKeyExpr().onSuccess {
         it.use { keyExpr ->
             println("Opening Session")
-            Session.open().onSuccess { it.use {
-                session -> session.declareSubscriber(keyExpr)
+            Session.open().onSuccess {
+                it.use { session ->
+                    println("Press CTRL-C to quit...")
+                session.declareSubscriber(keyExpr)
                     .reliable()
                     .with { listener() }
                     .res()
                     .onSuccess {
-                        while (readlnOrNull() != "q") { /* Do nothing */ }
+                        while (true) {
+                            Thread.sleep(1000)
+                        }
                     }
                 }
             }
