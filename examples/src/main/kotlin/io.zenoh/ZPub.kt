@@ -26,14 +26,14 @@ fun main() {
                     session.declarePublisher(keyExpr).res().onSuccess { pub ->
                         pub.use {
                             println("Press CTRL-C to quit...")
-                            var idx = 1
+                            var idx = 0
                             while (true) {
                                 Thread.sleep(1000)
-                                val payload = "Pub from Kotlin!"
-                                println(
-                                    "Putting Data ('$keyExpr': '[${
+                                val payload = "[${
                                         idx.toString().padStart(4, ' ')
-                                    }] $payload')..."
+                                    }] Pub from Kotlin!"
+                                println(
+                                    "Putting Data ('$keyExpr': '$payload')..."
                                 )
                                 pub.put(payload).res()
                                 idx++
