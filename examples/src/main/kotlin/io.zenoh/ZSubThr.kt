@@ -104,9 +104,11 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
                 println("Opening Session")
                 Session.open(config).onSuccess {
                     it.use { session ->
+                        println("Press CTRL-C to quit...")
                         subscriber =
                             session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()
                         while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
+                            Thread.sleep(1000)
                         }
                     }
                 }

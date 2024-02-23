@@ -64,6 +64,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                         println("Declaring Queryable")
                         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
                             queryable.use {
+                                println("Press CTRL-C to quit...")
                                 queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
                                     runBlocking {
                                         handleRequests(receiverChannel, keyExpr)

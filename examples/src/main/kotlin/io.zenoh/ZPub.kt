@@ -62,6 +62,7 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
                         println("Declaring publisher on '$keyExpr'...")
                         session.declarePublisher(keyExpr).res().onSuccess { pub ->
                             pub.use {
+                                println("Press CTRL-C to quit...")
                                 val attachment = attachment?.let { decodeAttachment(it) }
                                 var idx = 0
                                 while (true) {
