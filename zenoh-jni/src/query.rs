@@ -293,6 +293,9 @@ pub(crate) fn on_query(
     _ = env
         .delete_local_ref(payload)
         .map_err(|err| log::error!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(attachment_bytes)
+        .map_err(|err| log::error!("Error deleting local ref: {}", err));
     result
 }
 
