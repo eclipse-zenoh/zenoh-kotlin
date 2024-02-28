@@ -61,7 +61,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
-                        println("Declaring Queryable")
+                        println("Declaring Queryable on " + key + "...")
                         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
                             queryable.use {
                                 println("Press CTRL-C to quit...")
