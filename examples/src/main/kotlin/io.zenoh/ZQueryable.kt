@@ -23,11 +23,12 @@ import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
 
 fun main() {
+    val keyExprString = "demo/example/zenoh-kotlin-queryable"
     Session.open().onSuccess { session ->
         session.use {
-            "demo/example/zenoh-kotlin-queryable".intoKeyExpr().onSuccess { keyExpr ->
+            keyExprString.intoKeyExpr().onSuccess { keyExpr ->
                 keyExpr.use {
-                    println("Declaring Queryable")
+                    println("Declaring Queryable on " + keyExprString + "...")
                     session.declareQueryable(keyExpr).res().onSuccess { queryable ->
                         queryable.use {
                             println("Press CTRL-C to quit...")
