@@ -71,7 +71,7 @@ pub fn qos_into_jbyte(qos: QoS) -> jbyte {
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_prelude_QoS_getPriorityViaJNI(
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getPriorityViaJNI(
     _env: JNIEnv,
     _class: JClass,
     qos: jbyte,
@@ -81,7 +81,7 @@ pub extern "C" fn Java_io_zenoh_prelude_QoS_getPriorityViaJNI(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_prelude_QoS_getCongestionControlViaJNI(
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getCongestionControlViaJNI(
     _env: JNIEnv,
     _class: JClass,
     qos: jbyte,
@@ -91,7 +91,7 @@ pub extern "C" fn Java_io_zenoh_prelude_QoS_getCongestionControlViaJNI(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_prelude_QoS_getExpressdViaJNI(
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getExpressdViaJNI(
     _env: JNIEnv,
     _class: JClass,
     qos: jbyte,
@@ -101,7 +101,7 @@ pub extern "C" fn Java_io_zenoh_prelude_QoS_getExpressdViaJNI(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_prelude_QoS_00024Companion_getDefaultViaJNI(
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_00024Companion_getDefaultQoSViaJNI(
     _env: JNIEnv,
     _class: JClass,
 ) -> jbyte {
