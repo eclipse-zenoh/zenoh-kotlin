@@ -103,6 +103,9 @@ fn on_reply_success(
     _ = env
         .delete_local_ref(byte_array)
         .map_err(|err| log::debug!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(attachment_bytes)
+        .map_err(|err| log::debug!("Error deleting local ref: {}", err));
     result
 }
 
