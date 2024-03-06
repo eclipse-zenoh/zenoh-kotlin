@@ -37,8 +37,8 @@ jni = "0.21.1"
 flume = "0.10.14"
 uhlc = "0.6.0"
 json5 = "0.4.1"
-zenoh = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false }
-zenoh-ext = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false }
+zenoh = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "tokio-porting", default-features = false }
+zenoh-ext = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "tokio-porting", default-features = false }
 
 [lib]
 name = "zenoh_jni"
