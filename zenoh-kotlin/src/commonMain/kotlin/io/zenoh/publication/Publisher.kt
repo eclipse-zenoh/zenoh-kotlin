@@ -19,6 +19,8 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.Priority
+import io.zenoh.prelude.CongestionControl
 import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 

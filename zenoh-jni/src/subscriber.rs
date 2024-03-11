@@ -22,10 +22,13 @@ use jni::{
 use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
-use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
 use crate::{
     errors::{Error, Result},
     utils::attachment_to_vec,
+};
+use crate::{
+    sample::qos_into_jbyte,
+    utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
 
 /// Frees the memory associated with a Zenoh subscriber raw pointer via JNI.
@@ -134,7 +137,7 @@ pub(crate) unsafe fn declare_subscriber(
             match env.call_method(
                 &callback_global_ref,
                 "run",
-                "(J[BIIJZ[B)V",
+                "(J[BIIJZB[B)V",
                 &[
                     JValue::from(key_expr_ptr as jlong),
                     JValue::from(&byte_array),
@@ -142,6 +145,7 @@ pub(crate) unsafe fn declare_subscriber(
                     JValue::from(kind),
                     JValue::from(timestamp as i64),
                     JValue::from(is_valid),
+                    JValue::from(qos_into_jbyte(sample.qos)),
                     JValue::from(&attachment_bytes),
                 ],
             ) {

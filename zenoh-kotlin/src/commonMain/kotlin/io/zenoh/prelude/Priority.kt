@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.publication
+package io.zenoh.prelude
 
 /**
  * The Priority of Zenoh messages.
@@ -30,5 +30,9 @@ enum class Priority(val value: Int) {
     DATA(5),
     DATA_LOW(6),
     BACKGROUND(7);
+
+    companion object {
+        fun fromInt(value: Int) = entries.first { it.value == value }
+    }
 }
 

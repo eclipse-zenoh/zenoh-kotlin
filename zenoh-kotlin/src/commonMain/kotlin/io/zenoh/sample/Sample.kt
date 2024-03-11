@@ -16,6 +16,7 @@ package io.zenoh.sample
 
 import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
@@ -30,6 +31,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property value The [Value] of the sample.
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
+ * @property qos The Quality of Service settings used to deliver the sample.
  * @property attachment Optional [Attachment].
  */
 class Sample(
@@ -37,6 +39,7 @@ class Sample(
     val value: Value,
     val kind: SampleKind,
     val timestamp: TimeStamp?,
+    val qos: QoS,
     val attachment: Attachment? = null
 ): ZenohType {
     override fun toString(): String {

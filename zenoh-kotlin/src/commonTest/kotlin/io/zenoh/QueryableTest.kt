@@ -17,6 +17,7 @@ package io.zenoh
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
@@ -46,7 +47,7 @@ class QueryableTest {
         val sessionA = Session.open().getOrThrow()
 
         val sample = Sample(
-            TEST_KEY_EXP, Value(TEST_PAYLOAD), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
+            TEST_KEY_EXP, Value(TEST_PAYLOAD), SampleKind.PUT, TimeStamp(Date.from(Instant.now())),  QoS.default()
         )
         val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with { query ->
             query.reply(TEST_KEY_EXP).success(sample.value).withTimeStamp(sample.timestamp!!).res()
@@ -160,7 +161,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
         val payload = "Hello queryable $counter!"
         counter++
         val sample = Sample(
-            query.keyExpr, Value(payload), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
+            query.keyExpr, Value(payload), SampleKind.PUT, TimeStamp(Date.from(Instant.now())), QoS.default()
         )
         performedReplies.add(sample)
         query.reply(query.keyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()

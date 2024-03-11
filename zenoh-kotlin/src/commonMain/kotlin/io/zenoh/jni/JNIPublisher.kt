@@ -16,8 +16,8 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.prelude.SampleKind
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
@@ -82,7 +82,7 @@ internal class JNIPublisher(private val ptr: Long) {
      * @return A [Result] with the status of the operation.
      */
     fun setCongestionControl(congestionControl: CongestionControl): Result<Unit> = runCatching {
-        setCongestionControlViaJNI(congestionControl.ordinal, ptr)
+        setCongestionControlViaJNI(congestionControl.value, ptr)
     }
 
     /**

@@ -24,6 +24,7 @@ import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
 import io.zenoh.query.*
@@ -61,7 +62,7 @@ internal class JNISession {
         val publisherRawPtr = declarePublisherViaJNI(
             builder.keyExpr.jniKeyExpr!!.ptr,
             sessionPtr.get(),
-            builder.congestionControl.ordinal,
+            builder.congestionControl.value,
             builder.priority.value,
         )
         Publisher(
@@ -76,7 +77,7 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid, attachmentBytes ->
+            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
@@ -84,6 +85,7 @@ internal class JNISession {
                     Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                     SampleKind.fromInt(kind),
                     timestamp,
+                    QoS(qos),
                     attachment
                 )
                 callback.run(sample)
@@ -124,7 +126,7 @@ internal class JNISession {
         attachment: Attachment?
     ): Result<R?> = runCatching {
         val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, attachmentBytes: ByteArray ->
+            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
                 if (success) {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                     val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
@@ -133,6 +135,7 @@ internal class JNISession {
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
                         timestamp,
+                        QoS(qos),
                         decodedAttachment
                     )
                     val reply = Reply.Success(replierId, sample)
@@ -192,7 +195,7 @@ internal class JNISession {
             sessionPtr.get(),
             put.value.payload,
             put.value.encoding.knownEncoding.ordinal,
-            put.congestionControl.ordinal,
+            put.congestionControl.value,
             put.priority.value,
             put.kind.ordinal,
             put.attachment?.let { encodeAttachment(it) }

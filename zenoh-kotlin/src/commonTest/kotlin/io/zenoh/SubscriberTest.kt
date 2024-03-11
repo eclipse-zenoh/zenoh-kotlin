@@ -20,6 +20,8 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlin.collections.ArrayList
@@ -31,6 +33,8 @@ class SubscriberTest {
 
     companion object {
         val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val TEST_PRIORITY = Priority.DATA_HIGH;
+        val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK;
 
         val testValues = arrayListOf(
             Value("Test 1".encodeToByteArray(), Encoding(KnownEncoding.TEXT_PLAIN)),
@@ -52,6 +56,8 @@ class SubscriberTest {
 
         for ((index, sample) in receivedSamples.withIndex()) {
             assertEquals(sample.value, testValues[index])
+            assertEquals(sample.qos.priority(), TEST_PRIORITY);
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL);
         }
     }
 
@@ -67,6 +73,8 @@ class SubscriberTest {
         assertEquals(queue.size, testValues.size)
         for ((index, sample) in queue.withIndex()) {
             assertEquals(sample.value, testValues[index])
+            assertEquals(sample.qos.priority(), TEST_PRIORITY);
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL);
         }
     }
 
@@ -90,7 +98,11 @@ class SubscriberTest {
     }
 
     private fun publishTestValues(session: Session): ArrayList<Value> {
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
+        val publisher = session
+            .declarePublisher(TEST_KEY_EXP)
+            .congestionControl(TEST_CONGESTION_CONTROL)
+            .priority(TEST_PRIORITY)
+            .res().getOrThrow()
         testValues.forEach { value -> publisher.put(value).res() }
         return testValues
     }
