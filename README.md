@@ -28,7 +28,7 @@ The code relies on the Zenoh JNI native library, which written in Rust and commu
 
 ## Documentation
 
-The documentation of the API is published at https://eclipse-zenoh.github.io/zenoh-kotlin/index.html. 
+The documentation of the API is published at https://eclipse-zenoh.github.io/zenoh-kotlin/index.html.
 
 Alternatively, you can build it locally as [explained below](#building-the-documentation).
 
@@ -70,7 +70,7 @@ After that add to the dependencies in the app's `build.gradle.kts`:
 implementation("io.zenoh:zenoh-kotlin-android:0.10.1-rc")
 ```
 
-### Platforms 
+### Platforms
 
 The library targets the following platforms:
 - x86
@@ -129,7 +129,7 @@ implementation("io.zenoh:zenoh-kotlin-jvm:0.10.1-rc")
 
 For the moment, the library targets the following platforms:
 
-    - x86_64-unknown-linux-gnu 
+    - x86_64-unknown-linux-gnu
     - aarch64-unknown-linux-gnu
     - x86_64-apple-darwin
     - aarch64-apple-darwin
@@ -154,8 +154,8 @@ In order to use these bindings in a native Android project, what we will do is t
 publishing it into Maven local for us to be able to easily import it in our project.
 
 It is required to have the [NDK (native development kit)](https://developer.android.com/ndk) installed, since we are going to compile Zenoh JNI for multiple
-android native targets. 
-It can be set up by using Android Studio (go to `Preferences > Appearance & Behavior > System settings > Android SDK > SDK Tools` and tick the NDK box),
+android native targets. The currently used NDK version is **26.0.10792818**.
+It can be set up by using Android Studio (go to `Preferences > Languages & Frameworks > Android SDK > SDK Tools`, tick `Show Package Details` and pick the right NDK version),
 or alternatively it can be found [here](https://developer.android.com/ndk/downloads).
 
 The native platforms we are going to target are the following ones:
@@ -168,7 +168,7 @@ The native platforms we are going to target are the following ones:
 
 Therefore, if they are not yet already added to the Rust toolchain, run:
 ```bash
-rustup target add armv7-linux-androideabi; \ 
+rustup target add armv7-linux-androideabi; \
 rustup target add i686-linux-android; \
 rustup target add aarch64-linux-android; \
 rustup target add x86_64-linux-android
@@ -189,8 +189,8 @@ You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh
 with the following files:
 ```
 zenoh-kotlin-android-0.10.1-rc-sources.jar
-zenoh-kotlin-android-0.10.1-rc.aar              
-zenoh-kotlin-android-0.10.1-rc.module           
+zenoh-kotlin-android-0.10.1-rc.aar
+zenoh-kotlin-android-0.10.1-rc.module
 zenoh-kotlin-android-0.10.1-rc.pom
 ```
 
@@ -229,12 +229,12 @@ gradle publishJvmPublicationToMavenLocal
 ```
 
 This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
-as a resource that will be loaded during runtime. 
+as a resource that will be loaded during runtime.
 
 :warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
 for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
-This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while 
-for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.  
+This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while
+for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.
 
 Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.1-rc`.
 
@@ -289,9 +289,9 @@ For instance running the ZPub test as follows:
 gradle -Pzenoh.logger=debug ZPub
 ```
 
-causes the logs to appear in standard output. 
+causes the logs to appear in standard output.
 
-The log levels are the ones from Rust: `trace`, `info`, `debug`, `error` and `warn`. 
+The log levels are the ones from Rust: `trace`, `info`, `debug`, `error` and `warn`.
 
 ---
 
@@ -337,4 +337,3 @@ The communication between the Kotlin code and the Rust code through the java nat
 Some preliminary performance evaluations done on an M2 Mac indicate around a 50% performance drop regarding the publication throughput
 (compared to Rust-Rust communication), and for subscription throughput the performance is similar to that of zenoh-python, with around 500K messages per second
 for an 8 bytes payload messages.
-
