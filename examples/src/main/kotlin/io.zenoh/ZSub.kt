@@ -47,7 +47,6 @@ class ZSub(private val defaultConfig: Boolean) : CliktCommand(
     ).flag(default = false)
 
     override fun run() {
-
         val config = loadConfig()
 
         println("Opening session...")
@@ -63,7 +62,13 @@ class ZSub(private val defaultConfig: Boolean) : CliktCommand(
                                     val iterator = receiver.iterator()
                                     while (iterator.hasNext()) {
                                         val sample = iterator.next()
-                                        println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}')")
+                                        println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
+                                            sample.attachment?.let {
+                                                ", with attachment: " + "${
+                                                    it.values.map { it.first.decodeToString() to it.second.decodeToString() }
+                                                }"
+                                            } ?: ""
+                                        })")
                                     }
                                 }
                             }
