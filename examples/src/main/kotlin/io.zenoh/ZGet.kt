@@ -21,8 +21,10 @@ import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.config.*
+import io.zenoh.query.ConsolidationMode
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
+import io.zenoh.sample.Attachment
 import io.zenoh.selector.intoSelector
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -65,6 +67,12 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     private val listen: List<String> by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
     ).multiple()
+    private val attachment by option(
+        "-a",
+        "--attach",
+        help = "The attachment to add to the get. The key-value pairs are &-separated, and = serves as the separator between key and value.",
+        metavar = "attach"
+    )
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
@@ -77,25 +85,31 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
             session.use {
                 selector.intoSelector().onSuccess { selector ->
                     selector.use {
-                        val getBuilder = session.get(selector).apply {
-                            target?.let {
-                                target(QueryTarget.valueOf(it.uppercase()))
-                            }
-                            timeout(Duration.ofMillis(timeout))
-                        }
-                        getBuilder.res().onSuccess {
-                            runBlocking {
-                                val iterator = it!!.iterator()
-                                while (iterator.hasNext()) {
-                                    val reply = iterator.next()
-                                    if (reply is Reply.Success) {
-                                        println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
-                                    } else {
-                                        reply as Reply.Error
-                                        println("Received (ERROR: '${reply.error}')")
-                                    }
+                        session.get(selector)
+                            .consolidation(ConsolidationMode.NONE)
+                            .timeout(Duration.ofMillis(timeout))
+                            .apply {
+                                target?.let {
+                                    target(QueryTarget.valueOf(it.uppercase()))
+                                }
+                                attachment?.let {
+                                    withAttachment(decodeAttachment(it))
                                 }
                             }
+                            .res()
+                            .onSuccess {
+                                runBlocking {
+                                    val iterator = it!!.iterator()
+                                    while (iterator.hasNext()) {
+                                        val reply = iterator.next()
+                                        if (reply is Reply.Success) {
+                                            println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
+                                        } else {
+                                            reply as Reply.Error
+                                            println("Received (ERROR: '${reply.error}')")
+                                        }
+                                    }
+                                }
                         }
                     }
                 }
@@ -117,6 +131,11 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
             }
         }
         return config
+    }
+
+    private fun decodeAttachment(attachment: String): Attachment {
+        val pairs = attachment.split("&").map { it.split("=").let { (k, v) -> k.toByteArray() to v.toByteArray() } }
+        return Attachment.Builder().addAll(pairs).res()
     }
 }
 
