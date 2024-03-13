@@ -26,7 +26,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlin.io.path.Path
 
-class ZPub(private val defaultConfig: Boolean) : CliktCommand(
+class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Pub example"
 ) {
 
@@ -93,7 +93,7 @@ class ZPub(private val defaultConfig: Boolean) : CliktCommand(
     }
 
     private fun loadConfig(): Config {
-        val config = if (defaultConfig) {
+        val config = if (emptyArgs) {
             Config.default()
         } else {
             configFile?.let { Config.from(Path(it)) } ?: let {
