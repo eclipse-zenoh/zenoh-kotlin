@@ -84,7 +84,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
                     }
                 }
             }
-        }
+        }.onFailure { println(it.message) }
     }
 
     private fun loadConfig(): Config {
