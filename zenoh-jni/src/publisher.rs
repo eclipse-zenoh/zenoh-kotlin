@@ -21,8 +21,9 @@ use jni::{
 };
 use zenoh::{
     prelude::{sync::SyncResolve, KeyExpr},
+    publication::HasWriteWithSampleKind,
     publication::Publisher,
-    Session,
+    Session, SessionDeclarations,
 };
 
 use crate::{
@@ -34,7 +35,6 @@ use crate::{
     put::{decode_congestion_control, decode_priority},
     value::decode_value,
 };
-use zenoh::SessionDeclarations;
 
 /// Performs a put operation on a Zenoh publisher via JNI.
 ///
