@@ -22,7 +22,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import kotlin.io.path.Path
 
-class ZSub(private val defaultConfig: Boolean) : CliktCommand(
+class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Sub example"
 ) {
 
@@ -80,7 +80,7 @@ class ZSub(private val defaultConfig: Boolean) : CliktCommand(
     }
 
     private fun loadConfig(): Config {
-        val config = if (defaultConfig) {
+        val config = if (emptyArgs) {
             Config.default()
         } else {
             configFile?.let { Config.from(Path(it)) } ?: let {
