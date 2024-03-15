@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.config
+package io.zenoh
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName

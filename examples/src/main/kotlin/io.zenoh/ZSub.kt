@@ -16,7 +16,6 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
-import io.zenoh.config.*
 import io.zenoh.keyexpr.intoKeyExpr
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
