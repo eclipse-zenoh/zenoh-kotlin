@@ -14,25 +14,66 @@
 
 package io.zenoh
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.multiple
+import com.github.ajalt.clikt.parameters.options.option
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
 import io.zenoh.queryable.Query
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 import org.apache.commons.net.ntp.TimeStamp
+import kotlin.io.path.Path
 
-fun main() {
-    Session.open().onSuccess { session ->
-        session.use {
-            "demo/example/zenoh-kotlin-queryable".intoKeyExpr().onSuccess { keyExpr ->
-                keyExpr.use {
-                    println("Declaring Queryable")
-                    session.declareQueryable(keyExpr).res().onSuccess { queryable ->
-                        queryable.use {
-                            queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
-                                runBlocking {
-                                    handleRequests(receiverChannel, keyExpr)
+class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh Queryable example"
+) {
+
+    private val key by option(
+        "-k",
+        "--key",
+        help = "The key expression to write to [default: demo/example/zenoh-kotlin-queryable]",
+        metavar = "key"
+    ).default("demo/example/zenoh-kotlin-queryable")
+    private val value by option(
+        "-v", "--value", help = "The value to reply to queries [default: \"Queryable from Kotlin!\"]", metavar = "value"
+    ).default("Queryable from Kotlin!")
+    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
+
+    override fun run() {
+        val config = loadConfig()
+
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    keyExpr.use {
+                        println("Declaring Queryable")
+                        session.declareQueryable(keyExpr).res().onSuccess { queryable ->
+                            queryable.use {
+                                queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
+                                    runBlocking {
+                                        handleRequests(receiverChannel, keyExpr)
+                                    }
                                 }
                             }
                         }
@@ -41,19 +82,36 @@ fun main() {
             }
         }
     }
-}
 
-private suspend fun handleRequests(
-    receiverChannel: Channel<Query>, keyExpr: KeyExpr
-) {
-    val iterator = receiverChannel.iterator()
-    while (iterator.hasNext()) {
-        iterator.next().use { query ->
-            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-            query.reply(keyExpr).success("Queryable from Kotlin!").withKind(SampleKind.PUT)
-                .withTimeStamp(TimeStamp.getCurrentTime()).res()
-                .onFailure { println(">> [Queryable ] Error sending reply: $it") }
+    private suspend fun handleRequests(
+        receiverChannel: Channel<Query>, keyExpr: KeyExpr
+    ) {
+        val iterator = receiverChannel.iterator()
+        while (iterator.hasNext()) {
+            iterator.next().use { query ->
+                val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+                query.reply(keyExpr).success(value).withKind(SampleKind.PUT).withTimeStamp(TimeStamp.getCurrentTime())
+                    .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+            }
         }
     }
+
+    private fun loadConfig(): Config {
+        val config = if (emptyArgs) {
+            Config.default()
+        } else {
+            configFile?.let { Config.from(Path(it)) } ?: let {
+                val connect = if (connect.isEmpty()) null else Connect(connect)
+                val listen = if (listen.isEmpty()) null else Listen(listen)
+                val scouting = Scouting(Multicast(!noMulticastScouting))
+                val configData = ConfigData(connect, listen, mode, scouting)
+                val jsonConfig = Json.encodeToJsonElement(configData)
+                Config.from(jsonConfig)
+            }
+        }
+        return config
+    }
 }
+
+fun main(args: Array<String>) = ZQueryable(args.isEmpty()).main(args)

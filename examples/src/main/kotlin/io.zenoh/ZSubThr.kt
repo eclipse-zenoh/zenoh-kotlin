@@ -20,7 +20,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.ulong
-import io.zenoh.config.*
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.subscriber.Subscriber
 import kotlinx.serialization.json.Json

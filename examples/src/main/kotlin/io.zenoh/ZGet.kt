@@ -20,7 +20,6 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.long
-import io.zenoh.config.*
 import io.zenoh.query.ConsolidationMode
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
