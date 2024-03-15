@@ -17,14 +17,11 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.varargValues
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.subscriber.Subscriber
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
@@ -40,13 +37,13 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
         help = "Number of messages in each throughput measurements [default: 100000]",
         metavar = "number"
     ).ulong().default(10000u)
-    private val connect: List<String> by option(
-        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val listen: List<String> by option(
+    private val connect: List<String>? by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).varargValues()
+    private val listen: List<String>? by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
+    ).varargValues()
     private val mode by option(
         "-m",
         "--mode",
@@ -100,9 +97,10 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
         exitProcess(0)
     }
 
-    lateinit var subscriber: Subscriber<Unit>
+    private lateinit var subscriber: Subscriber<Unit>
+
     override fun run() {
-        val config = loadConfig()
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         "test/thr".intoKeyExpr().onSuccess {
             it.use { keyExpr ->
@@ -111,29 +109,12 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
                     it.use { session ->
                         subscriber =
                             session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()
-                        while (subscriber.isValid()) {
-                            /* Keep alive the subscriber until the test is done. */
+                        while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun loadConfig(): Config {
-        val config = if (emptyArgs) {
-            Config.default()
-        } else {
-            configFile?.let { Config.from(Path(it)) } ?: let {
-                val connect = if (connect.isEmpty()) null else Connect(connect)
-                val listen = if (listen.isEmpty()) null else Listen(listen)
-                val scouting = Scouting(Multicast(!noMulticastScouting))
-                val configData = ConfigData(connect, listen, mode, scouting)
-                val jsonConfig = Json.encodeToJsonElement(configData)
-                Config.from(jsonConfig)
-            }
-        }
-        return config
     }
 }
 

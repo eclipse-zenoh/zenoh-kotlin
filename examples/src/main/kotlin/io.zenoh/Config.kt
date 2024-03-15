@@ -14,41 +14,65 @@
 
 package io.zenoh
 
+import io.zenoh.sample.Attachment
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlin.io.path.Path
 
 @Serializable
 data class ConfigData(
-    @SerialName("connect")
-    var connect: Connect? = null,
-    @SerialName("listen")
-    var listen: Listen? = null,
-    @SerialName("mode")
-    var mode: String? = null,
-    @SerialName("scouting")
-    var scouting: Scouting? = null,
+    @SerialName("connect") var connect: Connect? = null,
+    @SerialName("listen") var listen: Listen? = null,
+    @SerialName("mode") var mode: String? = null,
+    @SerialName("scouting") var scouting: Scouting? = null,
 )
 
 @Serializable
 data class Connect(
-    @SerialName("endpoints")
-    var endpoints: List<String>
+    @SerialName("endpoints") var endpoints: List<String>
 )
 
 @Serializable
 data class Listen(
-    @SerialName("endpoints")
-    var endpoints: List<String>
+    @SerialName("endpoints") var endpoints: List<String>
 )
 
 @Serializable
 data class Scouting(
-    @SerialName("multicast")
-    var multicast: Multicast,
+    @SerialName("multicast") var multicast: Multicast,
 )
 
 @Serializable
 data class Multicast(
-    @SerialName("enabled")
-    var enabled: Boolean,
+    @SerialName("enabled") var enabled: Boolean,
 )
+
+internal fun loadConfig(
+    emptyArgs: Boolean,
+    configFile: String?,
+    connectEndpoints: List<String>?,
+    listenEndpoints: List<String>?,
+    noMulticastScouting: Boolean,
+    mode: String?
+): Config {
+    val config = if (emptyArgs) {
+        Config.default()
+    } else {
+        configFile?.let { Config.from(Path(it)) } ?: run {
+            val connect = connectEndpoints?.let { Connect(it) }
+            val listen = listenEndpoints?.let { Listen(listenEndpoints) }
+            val scouting = Scouting(Multicast(!noMulticastScouting))
+            val configData = ConfigData(connect, listen, mode, scouting)
+            val jsonConfig = Json.encodeToJsonElement(configData)
+            Config.from(jsonConfig)
+        }
+    }
+    return config
+}
+
+internal fun decodeAttachment(attachment: String): Attachment {
+    val pairs = attachment.split("&").map { it.split("=").let { (k, v) -> k.toByteArray() to v.toByteArray() } }
+    return Attachment.Builder().addAll(pairs).res()
+}

@@ -19,8 +19,8 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.default
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.varargValues
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
@@ -30,9 +30,6 @@ import io.zenoh.prelude.Encoding
 import io.zenoh.publication.CongestionControl
 import io.zenoh.publication.Priority
 import io.zenoh.value.Value
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlin.io.path.Path
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"
@@ -56,14 +53,13 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         metavar = "number"
     ).ulong().default(100000u)
     private val statsPrint by option("-t", "--print", help = "Print the statistics").boolean().default(true)
-
-    private val connect: List<String> by option(
-        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val listen: List<String> by option(
+    private val connect: List<String>? by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).varargValues()
+    private val listen: List<String>? by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
+    ).varargValues()
     private val mode by option(
         "-m",
         "--mode",
@@ -81,7 +77,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         }
         val value = Value(data, Encoding(KnownEncoding.EMPTY))
 
-        val config = loadConfig()
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
 
         Session.open(config).onSuccess {
             it.use { session ->
@@ -113,22 +109,6 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                     }
             }
         }
-    }
-
-    private fun loadConfig(): Config {
-        val config = if (emptyArgs) {
-            Config.default()
-        } else {
-            configFile?.let { Config.from(Path(it)) } ?: let {
-                val connect = if (connect.isEmpty()) null else Connect(connect)
-                val listen = if (listen.isEmpty()) null else Listen(listen)
-                val scouting = Scouting(Multicast(!noMulticastScouting))
-                val configData = ConfigData(connect, listen, mode, scouting)
-                val jsonConfig = Json.encodeToJsonElement(configData)
-                Config.from(jsonConfig)
-            }
-        }
-        return config
     }
 }
 

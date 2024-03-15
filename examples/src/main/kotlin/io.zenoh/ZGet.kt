@@ -17,19 +17,15 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.varargValues
 import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.query.ConsolidationMode
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
-import io.zenoh.sample.Attachment
 import io.zenoh.selector.intoSelector
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import java.time.Duration
-import kotlin.io.path.Path
 
 class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Get example"
@@ -60,12 +56,12 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
         help = "The session mode. Default: peer. Possible values: [peer, client, router]",
         metavar = "mode"
     ).default("peer")
-    private val connect: List<String> by option(
+    private val connect: List<String>? by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
-    private val listen: List<String> by option(
+    ).varargValues()
+    private val listen: List<String>? by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
+    ).varargValues()
     private val attachment by option(
         "-a",
         "--attach",
@@ -78,7 +74,7 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
 
 
     override fun run() {
-        val config = loadConfig()
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
 
         Session.open(config).onSuccess { session ->
             session.use {
@@ -114,27 +110,6 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                 }
             }
         }
-    }
-
-    private fun loadConfig(): Config {
-        val config = if (emptyArgs) {
-            Config.default()
-        } else {
-            configFile?.let { Config.from(Path(it)) } ?: let {
-                val connect = if (connect.isEmpty()) null else Connect(connect)
-                val listen = if (listen.isEmpty()) null else Listen(listen)
-                val scouting = Scouting(Multicast(!noMulticastScouting))
-                val configData = ConfigData(connect, listen, mode, scouting)
-                val jsonConfig = Json.encodeToJsonElement(configData)
-                Config.from(jsonConfig)
-            }
-        }
-        return config
-    }
-
-    private fun decodeAttachment(attachment: String): Attachment {
-        val pairs = attachment.split("&").map { it.split("=").let { (k, v) -> k.toByteArray() to v.toByteArray() } }
-        return Attachment.Builder().addAll(pairs).res()
     }
 }
 

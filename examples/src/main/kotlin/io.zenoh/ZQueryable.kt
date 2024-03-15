@@ -17,18 +17,15 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.varargValues
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
 import io.zenoh.queryable.Query
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.encodeToJsonElement
 import org.apache.commons.net.ntp.TimeStamp
-import kotlin.io.path.Path
 
 class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Queryable example"
@@ -50,18 +47,18 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
         help = "The session mode. Default: peer. Possible values: [peer, client, router]",
         metavar = "mode"
     ).default("peer")
-    private val connect: List<String> by option(
+    private val connect: List<String>? by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
-    private val listen: List<String> by option(
+    ).varargValues()
+    private val listen: List<String>? by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
+    ).varargValues()
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
 
     override fun run() {
-        val config = loadConfig()
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
 
         Session.open(config).onSuccess { session ->
             session.use {
@@ -95,22 +92,6 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                     .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
             }
         }
-    }
-
-    private fun loadConfig(): Config {
-        val config = if (emptyArgs) {
-            Config.default()
-        } else {
-            configFile?.let { Config.from(Path(it)) } ?: let {
-                val connect = if (connect.isEmpty()) null else Connect(connect)
-                val listen = if (listen.isEmpty()) null else Listen(listen)
-                val scouting = Scouting(Multicast(!noMulticastScouting))
-                val configData = ConfigData(connect, listen, mode, scouting)
-                val jsonConfig = Json.encodeToJsonElement(configData)
-                Config.from(jsonConfig)
-            }
-        }
-        return config
     }
 }
 
