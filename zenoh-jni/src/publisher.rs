@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use zenoh::publication::HasWriteWithSampleKind;
 use std::{ops::Deref, sync::Arc};
 
 use jni::{
@@ -195,7 +196,7 @@ fn perform_put(
 /// - This function is maked as unsafe due to raw pointer manipulation.
 /// - This function is NOT thread safe; if there were to be multiple threads calling this function
 ///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///  
+///
 /// Throws:
 /// - An exception in case the congestion control fails to be decoded.
 ///
@@ -238,7 +239,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
 /// - This function is maked as unsafe due to raw pointer manipulation.
 /// - This function is NOT thread safe; if there were to be multiple threads calling this function
 ///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///  
+///
 /// Throws:
 /// - An exception in case the priority fails to be decoded.
 ///
