@@ -12,8 +12,8 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use zenoh::publication::HasWriteWithSampleKind;
 use std::{ops::Deref, sync::Arc};
+use zenoh::publication::HasWriteWithSampleKind;
 
 use jni::{
     objects::{JByteArray, JClass},
