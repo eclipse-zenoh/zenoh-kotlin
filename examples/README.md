@@ -13,7 +13,7 @@
 for instance
 
 ```bash
-  gralde ZPub --args="-h"
+  gradle ZPub --args="-h"
 ```
 
 will return
@@ -48,7 +48,7 @@ For instance:
 ```
 
 There is the possibility to provide a Zenoh config file as follows
-```bash 
+```bash
   gradle ZPub --args="-c path/to/config.json5"
 ```
 
@@ -62,7 +62,7 @@ One last comment regarding Zenoh logging for the examples, remember it can be en
 
 where `<level>` can be either `info`, `trace`, `debug`, `warn` or `error`.
 
----- 
+----
 
 ## Examples description
 
@@ -110,7 +110,7 @@ or
 ```bash
 gradle ZGet --args="-s demo/example/get"
 ```
-    
+
 ### ZPut
 
 Puts a path/value into Zenoh.
@@ -137,7 +137,7 @@ Usage:
 gradle ZDelete
 ```
 
-or 
+or
 
 ```bash
 gradle ZDelete --args="-k demo/example/delete"
