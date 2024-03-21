@@ -13,7 +13,6 @@
 //
 
 use std::{ops::Deref, sync::Arc};
-use zenoh::publication::HasWriteWithSampleKind;
 
 use jni::{
     objects::{JByteArray, JClass},
@@ -321,7 +320,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
                 log::error!(
-                    "Unable to throw exception on WRITE operation failure: {}",
+                    "Unable to throw exception on DELETE operation failure: {}",
                     err
                 )
             });
