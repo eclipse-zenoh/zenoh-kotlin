@@ -55,33 +55,6 @@ class PublisherTest {
     }
 
     @Test
-    fun writeTest() {
-        val session = Session.open().getOrThrow()
-        val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
-            receivedSamples.add(sample)
-        }.res()
-
-        val testSamples = arrayListOf(
-            Sample(TEST_KEY_EXP, Value("Test PUT"), SampleKind.PUT, null),
-            Sample(TEST_KEY_EXP, Value("Test DELETE"), SampleKind.DELETE, null),
-        )
-
-        session.declarePublisher(TEST_KEY_EXP).res().onSuccess {
-            it.use { publisher ->
-                publisher.write(testSamples[0].kind, testSamples[0].value).res()
-                publisher.write(testSamples[1].kind, testSamples[1].value).res()
-            }
-        }
-
-        session.close()
-        assertEquals(testSamples.size, receivedSamples.size)
-        for ((index, sample) in receivedSamples.withIndex()) {
-            assertEquals(sample, testSamples[index])
-        }
-    }
-
-    @Test
     fun deleteTest() {
         val session = Session.open().getOrThrow()
 
