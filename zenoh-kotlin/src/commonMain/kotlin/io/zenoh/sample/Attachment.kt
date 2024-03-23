@@ -45,11 +45,11 @@ class Attachment internal constructor(val values: List<Pair<ByteArray, ByteArray
             values.add(key.toByteArray() to value.toByteArray())
         }
 
-        fun addAll(elements: Collection<Pair<ByteArray, ByteArray>>) {
+        fun addAll(elements: Collection<Pair<ByteArray, ByteArray>>) = apply {
             values.addAll(elements)
         }
 
-        fun addAll(elements: Iterable<Pair<ByteArray, ByteArray>>) {
+        fun addAll(elements: Iterable<Pair<ByteArray, ByteArray>>) = apply {
             values.addAll(elements)
         }
 
