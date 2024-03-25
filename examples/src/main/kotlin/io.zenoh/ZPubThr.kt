@@ -36,6 +36,7 @@ fun main() {
                 .onSuccess { pub ->
                     pub.use {
                         println("Publisher declared on test/thr.")
+                        println("Press CTRL-C to quit...")
                         while (true) {
                             pub.put(value).res()
                         }
