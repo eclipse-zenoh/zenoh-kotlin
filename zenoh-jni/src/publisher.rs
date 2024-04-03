@@ -74,7 +74,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on PUT operation failure: {}",
                     err
                 )
@@ -144,7 +144,7 @@ pub(crate) unsafe fn declare_publisher(
     std::mem::forget(key_expr);
     match result {
         Ok(publisher) => {
-            log::trace!("Declared publisher ok key expr '{key_expr_clone}', with congestion control '{congestion_control:?}', priority '{priority:?}'.");
+            tracing::trace!("Declared publisher ok key expr '{key_expr_clone}', with congestion control '{congestion_control:?}', priority '{priority:?}'.");
             Ok(Arc::into_raw(Arc::new(publisher)))
         }
         Err(err) => Err(Error::Session(err.to_string())),
@@ -214,7 +214,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
             return;
         }
     };
-    log::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
+    tracing::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
     unsafe {
         let publisher = core::ptr::read(ptr);
         core::ptr::write(
@@ -257,7 +257,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
             return;
         }
     };
-    log::debug!("Setting publisher priority with '{priority:?}'.");
+    tracing::debug!("Setting publisher priority with '{priority:?}'.");
     unsafe {
         let publisher = core::ptr::read(ptr);
         core::ptr::write(ptr as *mut _, publisher.priority(priority));
@@ -319,7 +319,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on WRITE operation failure: {}",
                     err
                 )

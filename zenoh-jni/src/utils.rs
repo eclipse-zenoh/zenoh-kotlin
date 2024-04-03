@@ -94,7 +94,7 @@ pub(crate) fn load_on_close(
             let mut env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for 'onClose' callback: {}", err);
+                    tracing::error!("Unable to attach thread for 'onClose' callback: {}", err);
                     return;
                 }
             };
@@ -105,7 +105,7 @@ pub(crate) fn load_on_close(
                     _ = Error::Jni(format!("Error while running 'onClose' callback: {}", err))
                         .throw_on_jvm(&mut env)
                         .map_err(|err| {
-                            log::error!("Unable to throw exception upon 'onClose' failure: {}", err)
+                            tracing::error!("Unable to throw exception upon 'onClose' failure: {}", err)
                         });
                 }
             }

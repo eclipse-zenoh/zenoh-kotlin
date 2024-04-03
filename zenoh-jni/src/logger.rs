@@ -44,7 +44,7 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
         Ok(level) => level,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!("Error throwing exception on log start failure! {}", err)
+                tracing::error!("Error throwing exception on log start failure! {}", err)
             });
             return;
         }
