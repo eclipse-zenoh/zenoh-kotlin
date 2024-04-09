@@ -15,10 +15,7 @@
 package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.varargValues
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.query.ConsolidationMode
 import io.zenoh.query.QueryTarget
@@ -56,12 +53,12 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
         help = "The session mode. Default: peer. Possible values: [peer, client, router]",
         metavar = "mode"
     ).default("peer")
-    private val connect: List<String>? by option(
+    private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).varargValues()
-    private val listen: List<String>? by option(
+    ).multiple()
+    private val listen: List<String> by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).varargValues()
+    ).multiple()
     private val attachment by option(
         "-a",
         "--attach",

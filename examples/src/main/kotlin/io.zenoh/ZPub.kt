@@ -15,10 +15,7 @@
 package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.varargValues
+import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
 
 class ZPub(private val emptyArgs: Boolean) : CliktCommand(
@@ -29,12 +26,12 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
         "-k", "--key", help = "The key expression to write to [default: demo/example/zenoh-kotlin-pub]", metavar = "key"
     ).default("demo/example/zenoh-kotlin-pub")
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val connect: List<String>? by option(
+    private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).varargValues()
-    private val listen: List<String>? by option(
+    ).multiple()
+    private val listen: List<String> by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).varargValues()
+    ).multiple()
     private val mode by option(
         "-m",
         "--mode",

@@ -17,10 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.default
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.varargValues
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
@@ -54,12 +51,12 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     ).ulong().default(100000u)
     private val statsPrint by option("-t", "--print", help = "Print the statistics").boolean().default(true)
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val connect: List<String>? by option(
+    private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).varargValues()
-    private val listen: List<String>? by option(
+    ).multiple()
+    private val listen: List<String> by option(
         "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).varargValues()
+    ).multiple()
     private val mode by option(
         "-m",
         "--mode",

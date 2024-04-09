@@ -40,11 +40,11 @@ Options:
 
 ```
 
-The connect and listen parameters (that are common to all the examples) accept multiple inputs separated by a whitespace.
+The connect and listen parameters (that are common to all the examples) accept multiple repeated inputs.
 For instance:
 
 ```bash
-  gradle ZPub --args="-l tcp/localhost:7447 tcp/localhost:7448 tcp/localhost:7449"
+  gradle ZPub --args="-l tcp/localhost:7447 -l tcp/localhost:7448 -l tcp/localhost:7449"
 ```
 
 There is the possibility to provide a Zenoh config file as follows
