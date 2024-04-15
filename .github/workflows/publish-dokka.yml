@@ -1,8 +1,12 @@
-name: Publish Documentation
+name: Publish Dokka
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      live-run:
+        description: Live-run
+        type: boolean
+        required: true
   workflow_dispatch:
 
 env:
@@ -26,6 +30,7 @@ jobs:
         run: gradle dokkaHtml
 
       - name: Deploy doc
+        if: ${{ inputs.live-run || false }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

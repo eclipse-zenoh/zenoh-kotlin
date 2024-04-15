@@ -83,6 +83,11 @@ jobs:
       contents: read
       packages: write
 
+  publish-dokka:
+    name: Publish documentation
+    needs: tag
+    uses: ./.github/workflows/publish-dokka.yml
+
   publish-github:
     if: always()
     needs: tag
