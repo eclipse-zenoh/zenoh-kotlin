@@ -85,7 +85,7 @@ jobs:
     name: Publish JVM snapshot package
     if: github.ref == 'refs/heads/main'
     needs: ci
-    uses: ./.github/workflows/publish_jvm.yml
+    uses: ./.github/workflows/publish-jvm.yml
     permissions:
       contents: read
       packages: write
@@ -96,7 +96,7 @@ jobs:
     name: Publish Android snapshot package
     if: github.ref == 'refs/heads/main'
     needs: ci
-    uses: ./.github/workflows/publish_android.yml
+    uses: ./.github/workflows/publish-android.yml
     permissions:
       contents: read
       packages: write

@@ -69,7 +69,9 @@ jobs:
     uses: ./.github/workflows/publish-jvm.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
-    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
 
   publish-android:
     name: Publish Android package
@@ -77,7 +79,9 @@ jobs:
     uses: ./.github/workflows/publish-android.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
-    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
 
   publish-github:
     if: always()
