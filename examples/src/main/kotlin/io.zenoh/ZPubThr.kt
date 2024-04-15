@@ -14,33 +14,99 @@
 
 package io.zenoh
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.default
+import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.types.boolean
+import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.publication.CongestionControl
+import io.zenoh.publication.Priority
 import io.zenoh.value.Value
 
-fun main() {
-    val size = 8
-    val data = ByteArray(size)
-    for (i in 0..<size) {
-        data[i] = (i % 10).toByte()
-    }
-    val value = Value(data, Encoding(KnownEncoding.EMPTY))
-    Session.open().onSuccess {
-        it.use { session ->
-            session
-                .declarePublisher("test/thr".intoKeyExpr().getOrThrow())
-                .congestionControl(CongestionControl.BLOCK)
-                .res()
-                .onSuccess { pub ->
-                    pub.use {
-                        println("Publisher declared on test/thr.")
-                        while (true) {
-                            pub.put(value).res()
+class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh Throughput example"
+) {
+
+    private val payloadSize by argument(
+        "payload_size",
+        help = "Sets the size of the payload to publish [Default: 8]"
+    ).int().default(8)
+
+    private val priorityInput by option(
+        "-p",
+        "--priority",
+        help = "Priority for sending data",
+        metavar = "priority"
+    ).int()
+    private val number by option(
+        "-n",
+        "--number",
+        help = "Number of messages in each throughput measurements [default: 100000]",
+        metavar = "number"
+    ).ulong().default(100000u)
+    private val statsPrint by option("-t", "--print", help = "Print the statistics").boolean().default(true)
+    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
+
+    override fun run() {
+        val data = ByteArray(payloadSize)
+        for (i in 0..<payloadSize) {
+            data[i] = (i % 10).toByte()
+        }
+        val value = Value(data, Encoding(KnownEncoding.EMPTY))
+
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+
+        Session.open(config).onSuccess {
+            it.use { session ->
+                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow())
+                    .congestionControl(CongestionControl.BLOCK).apply {
+                        priorityInput?.let { priority(Priority.entries[it]) }
+                    }.res().onSuccess { pub ->
+                        pub.use {
+                            println("Publisher declared on test/thr.")
+                            var count: Long = 0
+                            var start = System.currentTimeMillis()
+                            val number = number.toLong()
+                            while (true) {
+                                pub.put(value).res().getOrThrow()
+
+                                if (statsPrint) {
+                                    if (count < number) {
+                                        count++
+                                    } else {
+                                        val throughput = count * 1000 / (System.currentTimeMillis() - start)
+                                        println("$throughput msgs/s")
+                                        count = 0
+                                        start = System.currentTimeMillis()
+                                    }
+                                }
+
+                            }
                         }
                     }
-                }
+            }
         }
     }
 }
+
+fun main(args: Array<String>) = ZPubThr(args.isEmpty()).main(args)
