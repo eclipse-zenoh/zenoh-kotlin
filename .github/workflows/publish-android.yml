@@ -1,14 +1,12 @@
 name: Publish Android
 
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       snapshot:
         required: true
         type: boolean
-        description: 'If the publication is for a snapshot version.'
+        description: "If the publication is for a snapshot version."
         default: false
   workflow_dispatch:
 
