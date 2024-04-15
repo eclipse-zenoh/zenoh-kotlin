@@ -39,21 +39,21 @@ git commit version.txt zenoh-jni/Cargo.toml -m "chore: Bump version to $version"
 
 # Select all package dependencies that match $bump_deps_pattern and bump them to $bump_deps_version
 if [[ "$bump_deps_pattern" != '' ]]; then
-  deps=$(toml get Cargo.toml dependencies | jq -r "keys.[] | select(test(\"$bump_deps_pattern\"))")
+  deps=$(toml get zenoh-jni/Cargo.toml dependencies | jq -r "keys.[] | select(test(\"$bump_deps_pattern\"))")
   for dep in $deps; do
     if [[ -n $bump_deps_version ]]; then
-      toml_set_in_place Cargo.toml "dependencies.$dep.version" "$bump_deps_version"
+      toml_set_in_place zenoh-jni/Cargo.toml "dependencies.$dep.version" "$bump_deps_version"
     fi
 
     if [[ -n $bump_deps_branch ]]; then
-      toml_set_in_place Cargo.toml "dependencies.$dep.branch" "$bump_deps_branch"
+      toml_set_in_place zenoh-jni/Cargo.toml "dependencies.$dep.branch" "$bump_deps_branch"
     fi
   done
   # Update lockfile
   cargo check
 
   if [[ -n $bump_deps_version || -n $bump_deps_branch ]]; then
-    git commit Cargo.toml Cargo.toml.in Cargo.lock -m "chore: Bump $bump_deps_pattern version to $bump_deps_version"
+    git commit zenoh-jni/Cargo.toml zenoh-jni/Cargo.lock -m "chore: Bump $bump_deps_pattern version to $bump_deps_version"
   else
     echo "warn: no changes have been made to any dependencies matching $bump_deps_pattern"
   fi
