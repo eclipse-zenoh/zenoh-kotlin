@@ -32,7 +32,7 @@ pub(crate) fn decode_value(env: &JNIEnv<'_>, payload: JByteArray, encoding: i32)
     let encoding = match KnownEncoding::try_from(encoding as u8) {
         Ok(encoding) => encoding,
         Err(_) => {
-            log::debug!("Unable to retrieve encoding. Setting Empty encoding.");
+            tracing::debug!("Unable to retrieve encoding. Setting Empty encoding.");
             KnownEncoding::Empty
         }
     };

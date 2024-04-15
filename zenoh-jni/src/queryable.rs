@@ -89,7 +89,7 @@ pub(crate) unsafe fn declare_queryable(
     let session: Arc<Session> = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
     let key_expr_clone = key_expr.deref().clone();
-    log::debug!("Declaring queryable through JNI on {}", key_expr);
+    tracing::debug!("Declaring queryable through JNI on {}", key_expr);
     let queryable = session
         .declare_queryable(key_expr_clone)
         .callback(move |query| {
@@ -97,15 +97,15 @@ pub(crate) unsafe fn declare_queryable(
             let env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for queryable callback: {}", err);
+                    tracing::error!("Unable to attach thread for queryable callback: {}", err);
                     return;
                 }
             };
 
-            log::debug!("Receiving query through JNI: {}", query.to_string());
+            tracing::debug!("Receiving query through JNI: {}", query.to_string());
             match on_query(env, query, &callback_global_ref) {
-                Ok(_) => log::debug!("Queryable callback called successfully."),
-                Err(err) => log::error!("Error calling queryable callback: {}", err),
+                Ok(_) => tracing::debug!("Queryable callback called successfully."),
+                Err(err) => tracing::error!("Error calling queryable callback: {}", err),
             }
         })
         .complete(complete);

@@ -62,11 +62,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
-            log::error!("Unable to open session: {}", err);
+            tracing::error!("Unable to open session: {}", err);
             _ = Error::Session(err.to_string())
                 .throw_on_jvm(&mut env)
                 .map_err(|err| {
-                    log::error!("Unable to throw exception on session failure: {}", err)
+                    tracing::error!("Unable to throw exception on session failure: {}", err)
                 });
             null()
         }
@@ -100,11 +100,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
-            log::error!("Unable to open session: {}", err);
+            tracing::error!("Unable to open session: {}", err);
             _ = Error::Session(err.to_string())
                 .throw_on_jvm(&mut env)
                 .map_err(|err| {
-                    log::error!("Unable to throw exception on session failure: {}", err)
+                    tracing::error!("Unable to throw exception on session failure: {}", err)
                 });
             null()
         }
@@ -190,7 +190,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
         }
         Err(arc_session) => {
             let ref_count = Arc::strong_count(&arc_session);
-            log::error!("Unable to close the session.");
+            tracing::error!("Unable to close the session.");
             _ = Error::Session(format!(
                 "Attempted to close the session, but at least one strong reference to it is still alive
                 (ref count: {}). All the declared publishers, subscribers, and queryables need to be
@@ -198,7 +198,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
                 ref_count
             ))
             .throw_on_jvm(&mut env)
-            .map_err(|err| log::error!("Unable to throw exception on session failure: {}", err));
+            .map_err(|err| tracing::error!("Unable to throw exception on session failure: {}", err));
         }
     };
 }
@@ -241,7 +241,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
         Ok(ptr) => ptr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on publisher declaration failure. {}",
                     err
                 )
@@ -305,7 +305,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on query declaration failure. {}",
                     err
                 )
@@ -356,7 +356,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
         Ok(subscriber_ptr) => subscriber_ptr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on subscriber declaration failure: {}",
                     err
                 )
@@ -413,7 +413,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
         Ok(queryable) => Arc::into_raw(Arc::new(queryable)),
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on query declaration failure. {}",
                     err
                 )
@@ -455,7 +455,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
         Ok(key_expr) => Arc::into_raw(Arc::new(key_expr)),
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on key expr declaration failure. {}",
                     err
                 )
@@ -571,7 +571,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on get operation failure. {}",
                     err
                 )
@@ -646,7 +646,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on get operation failure. {}",
                     err
                 )
@@ -705,17 +705,17 @@ fn on_get_query(
         .get(selector)
         .callback(move |reply| {
             on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
-            log::debug!("Receiving reply through JNI: {:?}", reply);
+            tracing::debug!("Receiving reply through JNI: {:?}", reply);
             let env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for GET query callback: {}", err);
+                    tracing::error!("Unable to attach thread for GET query callback: {}", err);
                     return;
                 }
             };
             match on_reply(env, reply, &callback_global_ref) {
                 Ok(_) => {}
-                Err(err) => log::error!("{}", err),
+                Err(err) => tracing::error!("{}", err),
             }
         })
         .target(query_target)
@@ -738,7 +738,7 @@ fn on_get_query(
     get_builder
         .res()
         .map(|_| {
-            log::trace!(
+            tracing::trace!(
                 "Performing get on {key_expr:?}, with target '{query_target:?}', with timeout '{timeout:?}', consolidation '{consolidation:?}', with value: '{binding:?}'",
             )
         })

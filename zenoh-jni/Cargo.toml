@@ -30,8 +30,6 @@ default = ["zenoh/default", "zenoh-ext/default"]
 [dependencies]
 android-logd-logger = "0.4.0"
 async-std = { version = "=1.12.0", default-features = false }
-log = "0.4.17"
-env_logger = "0.10.0"
 clap = "3.2.23"
 jni = "0.21.1"
 flume = "0.10.14"
@@ -39,7 +37,8 @@ uhlc = "0.7.0"
 json5 = "0.4.1"
 zenoh = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false }
 zenoh-ext = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", default-features = false }
-
+zenoh-util = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main" }
+tracing = "0.1"
 [lib]
 name = "zenoh_jni"
 crate_type = ["staticlib", "dylib"]
