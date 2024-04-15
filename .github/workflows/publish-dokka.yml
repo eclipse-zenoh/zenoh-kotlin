@@ -1,4 +1,4 @@
-name: Publish Dokka
+name: Publish (Dokka)
 
 on:
   workflow_call:

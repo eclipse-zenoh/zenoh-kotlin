@@ -1,4 +1,4 @@
-name: Publish JVM
+name: Publish (JVM)
 
 on:
   workflow_call:
