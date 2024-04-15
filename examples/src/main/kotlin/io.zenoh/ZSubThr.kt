@@ -14,58 +14,105 @@
 
 package io.zenoh
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.subscriber.Subscriber
+import kotlin.system.exitProcess
 
-const val NANOS_TO_SEC = 1_000_000_000L
-var n = 50000L
-var batchCount = 0
-var count = 0
-var startTimestampNs: Long = 0
-var globalStartTimestampNs: Long = 0
+class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh Subscriber Throughput test"
+) {
 
-fun listener() {
-    if (count == 0) {
-        startTimestampNs = System.nanoTime()
-        if (globalStartTimestampNs == 0L) {
-            globalStartTimestampNs = startTimestampNs
+    private val samples by option(
+        "-s", "--samples", help = "Number of throughput measurements [default: 10]", metavar = "number"
+    ).ulong().default(10u)
+    private val number by option(
+        "-n",
+        "--number",
+        help = "Number of messages in each throughput measurements [default: 100000]",
+        metavar = "number"
+    ).ulong().default(10000u)
+    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
+
+    companion object {
+        private const val NANOS_TO_SEC = 1_000_000_000L
+    }
+
+    private var batchCount = 0u
+    private var count = 0u
+    private var startTimestampNs: Long = 0
+    private var globalStartTimestampNs: Long = 0
+
+    private fun listener(number: ULong) {
+        if (batchCount > samples) {
+            subscriber.close()
+            report()
         }
-        count++
-        return
+        if (count == 0u) {
+            startTimestampNs = System.nanoTime()
+            if (globalStartTimestampNs == 0L) {
+                globalStartTimestampNs = startTimestampNs
+            }
+            count++
+            return
+        }
+        if (count < number) {
+            count++
+            return
+        }
+        val stop = System.nanoTime()
+        val elapsedTimeSecs = (stop - startTimestampNs).toDouble() / NANOS_TO_SEC
+        val messagesPerSec = number.toLong() / elapsedTimeSecs
+        println("$messagesPerSec msgs/sec")
+        batchCount++
+        count = 0u
     }
-    if (count < n) {
-        count++
-        return
+
+    private fun report() {
+        val end = System.nanoTime()
+        val total = batchCount * number + count
+        val elapsedTimeSecs = (end - globalStartTimestampNs).toDouble() / NANOS_TO_SEC
+        val globalMessagesPerSec = total.toLong() / elapsedTimeSecs
+        print("Received $total messages in $elapsedTimeSecs seconds: averaged $globalMessagesPerSec msgs/sec")
+        exitProcess(0)
     }
-    val stop = System.nanoTime()
-    val msgs = n * NANOS_TO_SEC / (stop - startTimestampNs)
-    println("$msgs msgs/sec")
-    batchCount++
-    count = 0
-}
 
-fun report() {
-    val end = System.nanoTime()
-    val total = batchCount * n + count
-    val msgs = (end - globalStartTimestampNs) / NANOS_TO_SEC
-    val avg = total * NANOS_TO_SEC / (end - globalStartTimestampNs)
-    print("Received $total messages in $msgs: averaged $avg msgs/sec")
-}
+    private lateinit var subscriber: Subscriber<Unit>
 
-fun main() {
-    "test/thr".intoKeyExpr().onSuccess {
-        it.use { keyExpr ->
-            println("Opening Session")
-            Session.open().onSuccess { it.use {
-                session -> session.declareSubscriber(keyExpr)
-                    .reliable()
-                    .with { listener() }
-                    .res()
-                    .onSuccess {
-                        while (readlnOrNull() != "q") { /* Do nothing */ }
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        "test/thr".intoKeyExpr().onSuccess {
+            it.use { keyExpr ->
+                println("Opening Session")
+                Session.open(config).onSuccess {
+                    it.use { session ->
+                        subscriber =
+                            session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()
+                        while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
+                        }
                     }
                 }
             }
         }
     }
-    report()
 }
+
+fun main(args: Array<String>) = ZSubThr(args.isEmpty()).main(args)

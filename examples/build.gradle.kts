@@ -14,6 +14,7 @@
 
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -24,6 +25,8 @@ dependencies {
     implementation(project(":zenoh-kotlin"))
     implementation("commons-net:commons-net:3.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("com.github.ajalt.clikt:clikt:4.2.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }
 
 tasks {
