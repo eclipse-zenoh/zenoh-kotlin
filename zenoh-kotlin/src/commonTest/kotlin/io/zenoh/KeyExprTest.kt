@@ -52,10 +52,10 @@ class KeyExprTest {
         assertNotEquals(keyExpr1, keyExpr3)
 
         keyExpr2.close()
-        assertNotEquals(keyExpr1, keyExpr2)
+        assertEquals(keyExpr1, keyExpr2)
 
         keyExpr1.close()
-        assertNotEquals(keyExpr1, keyExpr2)
+        assertEquals(keyExpr1, keyExpr2)
     }
 
     @Test
@@ -69,11 +69,9 @@ class KeyExprTest {
     fun toStringTest() {
         val keyExprStr = "example/test/a/b/c"
         val keyExpr = KeyExpr.tryFrom(keyExprStr).getOrThrow()
-
         assertEquals(keyExprStr, keyExpr.toString())
-
         keyExpr.close()
-        assertTrue(keyExpr.toString().isEmpty())
+        assertEquals(keyExprStr, keyExpr.toString())
     }
 
     @Test

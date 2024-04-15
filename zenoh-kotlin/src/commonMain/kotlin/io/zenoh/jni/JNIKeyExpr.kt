@@ -23,13 +23,14 @@ internal class JNIKeyExpr(internal val ptr: Long) {
         fun tryFrom(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load() // It may happen the zenoh library is not yet loaded when creating a key expression.
             val keyExprPtr = tryFromViaJNI(keyExpr)
-            KeyExpr(JNIKeyExpr(keyExprPtr))
+            KeyExpr(keyExpr, JNIKeyExpr(keyExprPtr))
         }
 
         fun autocanonize(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load()
             val keyExprPtr = autocanonizeViaJNI(keyExpr)
-            KeyExpr(JNIKeyExpr(keyExprPtr))
+            val jniKeyExpr = JNIKeyExpr(keyExprPtr)
+            KeyExpr(jniKeyExpr.toString(), jniKeyExpr)
         }
 
         @Throws(Exception::class)

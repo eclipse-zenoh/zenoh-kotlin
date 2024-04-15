@@ -81,7 +81,7 @@ internal class JNISession {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
-                    KeyExpr(JNIKeyExpr(keyExprPtr)),
+                    KeyExpr("", JNIKeyExpr(keyExprPtr)), // TODO: receive String Key Expr through JNI
                     Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                     SampleKind.fromInt(kind),
                     timestamp,
@@ -102,7 +102,7 @@ internal class JNISession {
         val queryCallback =
             JNIQueryableCallback { keyExprPtr: Long, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, attachmentBytes: ByteArray, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
-                val keyExpression = KeyExpr(JNIKeyExpr(keyExprPtr))
+                val keyExpression = KeyExpr("", JNIKeyExpr(keyExprPtr)) // TODO: receive String Key Expr through JNI
                 val selector = Selector(keyExpression, selectorParams)
                 val value: Value? = if (withValue) Value(payload!!, Encoding(KnownEncoding.fromInt(encoding))) else null
                 val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
@@ -131,7 +131,7 @@ internal class JNISession {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                     val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                     val sample = Sample(
-                        KeyExpr(JNIKeyExpr(keyExprPtr)),
+                        KeyExpr("", JNIKeyExpr(keyExprPtr)), // TODO: receive String Key Expr through JNI
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
                         timestamp,
@@ -178,7 +178,7 @@ internal class JNISession {
 
     fun declareKeyExpr(keyExpr: String): Result<KeyExpr> = runCatching {
         val ptr = declareKeyExprViaJNI(sessionPtr.get(), keyExpr)
-        return Result.success(KeyExpr(JNIKeyExpr(ptr)))
+        return Result.success(KeyExpr(keyExpr, JNIKeyExpr(ptr)))
     }
 
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
