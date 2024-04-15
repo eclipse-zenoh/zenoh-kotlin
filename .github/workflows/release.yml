@@ -1,0 +1,95 @@
+#
+# Copyright (c) 2022 ZettaScale Technology
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+#
+# Contributors:
+#   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
+#
+name: Release
+
+on:
+  schedule:
+    - cron: "0 0 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      live-run:
+        type: boolean
+        description: Live-run
+        required: false
+      version:
+        type: string
+        description: Release number
+        required: false
+      zenoh-version:
+        type: string
+        description: Release number of Zenoh
+        required: false
+
+jobs:
+  tag:
+    name: Branch, Bump & tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.create-release-branch.outputs.version }}
+      branch: ${{ steps.create-release-branch.outputs.branch }}
+    steps:
+      - id: create-release-branch
+        uses: eclipse-zenoh/ci/create-release-branch@main
+        with:
+          repo: ${{ github.repository }}
+          live-run: ${{ inputs.live-run || false }}
+          version: ${{ inputs.version }}
+          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+
+      - name: Checkout this repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.create-release-branch.outputs.branch }}
+          token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+
+      - name: Bump and tag project
+        run: bash ci/scripts/bump-and-tag.bash
+        env:
+          VERSION: ${{ steps.create-release-branch.outputs.version }}
+          BUMP_DEPS_VERSION: ${{ inputs.zenoh-version }}
+          BUMP_DEPS_PATTERN: ${{ inputs.zenoh-version && 'zenoh.*' || '' }}
+          BUMP_DEPS_BRANCH: ${{ inputs.zenoh-version && format('release/{0}', inputs.zenoh-version) || '' }}
+          GIT_USER_NAME: eclipse-zenoh-bot
+          GIT_USER_EMAIL: eclipse-zenoh-bot@users.noreply.github.com
+
+  publish-jvm:
+    name: Publish JVM package
+    needs: tag
+    uses: ./.github/workflows/publish-jvm.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+    secrets: inherit
+
+  publish-android:
+    name: Publish Android package
+    needs: tag
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+    secrets: inherit
+
+  publish-github:
+    if: always()
+    needs: tag
+    runs-on: macos-latest
+    steps:
+      - uses: eclipse-zenoh/ci/publish-crates-github@main
+        with:
+          repo: ${{ github.repository }}
+          live-run: ${{ inputs.live-run || false }}
+          version: ${{ needs.tag.outputs.version }}
+          branch: ${{ needs.tag.outputs.branch }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
