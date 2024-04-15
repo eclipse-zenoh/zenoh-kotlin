@@ -30,7 +30,7 @@ export GIT_AUTHOR_EMAIL=$git_user_email
 export GIT_COMMITTER_NAME=$git_user_name
 export GIT_COMMITTER_EMAIL=$git_user_email
 
-# Bump CMake project version
+# Bump Gradle project version
 printf '%s' "$version" > version.txt
 # Propagate version change to zenoh-jni
 toml_set_in_place zenoh-jni/Cargo.toml "package.version" "$version"
