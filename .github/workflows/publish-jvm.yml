@@ -8,6 +8,10 @@ on:
         type: boolean
         description: "If the publication is for a snapshot version."
         default: false
+      branch:
+        description: Target branch
+        type: string
+        required: true
   workflow_dispatch:
 
 env:
@@ -57,6 +61,8 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Install prerequisites
         shell: bash
@@ -130,6 +136,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Create resources destination
         run: mkdir ${{env.JNI_LIB_PATHS}}

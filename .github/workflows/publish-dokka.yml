@@ -7,6 +7,10 @@ on:
         description: Live-run
         type: boolean
         required: true
+      branch:
+        description: Target branch
+        type: string
+        required: true
   workflow_dispatch:
 
 env:
@@ -18,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - uses: nttld/setup-ndk@v1
         id: setup-ndk
