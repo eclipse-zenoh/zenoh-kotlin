@@ -10,7 +10,7 @@ on:
       branch:
         description: Target branch
         type: string
-        required: true
+        required: false
   workflow_dispatch:
 
 env:
