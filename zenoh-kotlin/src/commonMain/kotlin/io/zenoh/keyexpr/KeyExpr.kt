@@ -58,7 +58,7 @@ import io.zenoh.jni.JNIKeyExpr
  * includes, etc.) which are done natively. It keeps track of the underlying key expression instance. Once it is freed,
  * the [KeyExpr] instance is considered to not be valid anymore.
  */
-class KeyExpr internal constructor(val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable {
+class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable {
 
     companion object {
 

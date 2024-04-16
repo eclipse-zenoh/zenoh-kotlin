@@ -19,7 +19,7 @@ internal fun interface JNIGetCallback {
     fun run(
         replierId: String,
         success: Boolean,
-        keyExpr: Long,
+        keyExpr: String,
         payload: ByteArray,
         encoding: Int,
         kind: Int,

@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use jni::{
     objects::{GlobalRef, JObject, JValue},
-    sys::{jint, jlong},
+    sys::jint,
     JNIEnv,
 };
 use zenoh::{
@@ -70,15 +70,22 @@ fn on_reply_success(
         ))),
     }?;
 
-    let key_expr_ptr = Arc::into_raw(Arc::new(sample.key_expr));
+    let key_expr_str = match env.new_string(&sample.key_expr.to_string()) {
+        Ok(key_expr_str) => key_expr_str,
+        Err(err) => Err(Error::Jni(format!(
+            "Could not create a JString through JNI for the Sample key expression. {}",
+            err
+        )))?,
+    };
+
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZJ[BIIJZB[B)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZB[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
-            JValue::from(key_expr_ptr as jlong),
+            JValue::from(&key_expr_str),
             JValue::from(&byte_array),
             JValue::from(encoding),
             JValue::from(kind),
@@ -90,14 +97,14 @@ fn on_reply_success(
     ) {
         Ok(_) => Ok(()),
         Err(err) => {
-            unsafe {
-                Arc::from_raw(key_expr_ptr);
-            }
             _ = env.exception_describe();
             Err(Error::Jni(format!("On GET callback error: {}", err)))
         }
     };
 
+    _ = env
+        .delete_local_ref(key_expr_str)
+        .map_err(|err| log::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(zenoh_id)
         .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));

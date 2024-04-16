@@ -22,6 +22,7 @@ use jni::{
 use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
+use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
 use crate::{
     errors::{Error, Result},
     utils::attachment_to_vec,
@@ -133,13 +134,23 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
-            let key_expr_ptr = Arc::into_raw(Arc::new(sample.key_expr));
+            let key_expr_str = match env.new_string(sample.key_expr.to_string()) {
+                Ok(key_expr_str) => key_expr_str,
+                Err(err) => {
+                    log::error!(
+                        "Could not create a JString through JNI for the Sample key expression. {}",
+                        err
+                    );
+                    return;
+                }
+            };
+
             match env.call_method(
                 &callback_global_ref,
                 "run",
-                "(J[BIIJZB[B)V",
+                "(Ljava/lang/String;[BIIJZB[B)V",
                 &[
-                    JValue::from(key_expr_ptr as jlong),
+                    JValue::from(&key_expr_str),
                     JValue::from(&byte_array),
                     JValue::from(encoding),
                     JValue::from(kind),
@@ -152,9 +163,11 @@ pub(crate) unsafe fn declare_subscriber(
                 Ok(_) => {}
                 Err(err) => {
                     tracing::error!("On subscriber callback error: {}", err.to_string());
-                    Arc::from_raw(key_expr_ptr); // Free key expr pointer
                 }
             };
+            _ = env
+                .delete_local_ref(key_expr_str)
+                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
             _ = env
                 .delete_local_ref(byte_array)
                 .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));

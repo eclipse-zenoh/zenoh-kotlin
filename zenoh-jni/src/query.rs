@@ -256,17 +256,23 @@ pub(crate) fn on_query(
         ))),
     }?;
 
-    let key_expr = query.key_expr().clone();
-    let key_expr_ptr = Arc::into_raw(Arc::new(key_expr));
+    let key_expr_str = match env.new_string(&query.key_expr().to_string()) {
+        Ok(key_expr_str) => key_expr_str,
+        Err(err) => Err(Error::Jni(format!(
+            "Could not create a JString through JNI for the Query key expression. {}",
+            err
+        )))?,
+    };
+
     let query_ptr = Arc::into_raw(Arc::new(query));
 
     let result = env
         .call_method(
             callback_global_ref,
             "run",
-            "(JLjava/lang/String;Z[BI[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;Z[BI[BJ)V",
             &[
-                JValue::from(key_expr_ptr as jlong),
+                JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
                 JValue::from(with_value),
                 JValue::from(&payload),
@@ -283,12 +289,14 @@ pub(crate) fn on_query(
             // the raw pointers back into an `Arc` and freeing the memory.
             unsafe {
                 Arc::from_raw(query_ptr);
-                Arc::from_raw(key_expr_ptr)
             };
             _ = env.exception_describe();
             Error::Jni(format!("{}", err))
         });
 
+    _ = env
+        .delete_local_ref(key_expr_str)
+        .map_err(|err| log::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(selector_params_jstr)
         .map_err(|err| tracing::error!("Error deleting local ref: {}", err));

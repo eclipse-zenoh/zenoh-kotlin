@@ -77,11 +77,11 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
+            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
-                    KeyExpr("", JNIKeyExpr(keyExprPtr)), // TODO: receive String Key Expr through JNI
+                    KeyExpr(keyExpr, null),
                     Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                     SampleKind.fromInt(kind),
                     timestamp,
@@ -91,7 +91,7 @@ internal class JNISession {
                 callback.run(sample)
             }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
+            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onClose, reliability.ordinal //TODO: If the key expression was not declared, declare it and pass the pointer.
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
@@ -100,17 +100,17 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
-            JNIQueryableCallback { keyExprPtr: Long, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, attachmentBytes: ByteArray, queryPtr: Long ->
+            JNIQueryableCallback { keyExpr: String, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, attachmentBytes: ByteArray, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
-                val keyExpression = KeyExpr("", JNIKeyExpr(keyExprPtr)) // TODO: receive String Key Expr through JNI
-                val selector = Selector(keyExpression, selectorParams)
+                val keyExpr2 = KeyExpr(keyExpr, null)
+                val selector = Selector(keyExpr2, selectorParams)
                 val value: Value? = if (withValue) Value(payload!!, Encoding(KnownEncoding.fromInt(encoding))) else null
                 val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
-                val query = Query(keyExpression, selector, value, decodedAttachment, jniQuery)
+                val query = Query(keyExpr2, selector, value, decodedAttachment, jniQuery)
                 callback.run(query)
             }
         val queryableRawPtr =
-            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onClose, complete)
+            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onClose, complete) //TODO: If the key expression was not declared, declare it and pass the pointer.
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
@@ -126,12 +126,12 @@ internal class JNISession {
         attachment: Attachment?
     ): Result<R?> = runCatching {
         val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
+            JNIGetCallback { replierId: String, success: Boolean, keyExpr: String, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
                 if (success) {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                     val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                     val sample = Sample(
-                        KeyExpr("", JNIKeyExpr(keyExprPtr)), // TODO: receive String Key Expr through JNI
+                        KeyExpr(keyExpr, null),
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
                         timestamp,
@@ -148,7 +148,7 @@ internal class JNISession {
 
         if (value == null) {
             getViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr!!.ptr,//TODO: If the key expression was not declared, declare it and pass the pointer.
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
@@ -160,7 +160,7 @@ internal class JNISession {
             )
         } else {
             getWithValueViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr!!.ptr,//TODO: If the key expression was not declared, declare it and pass the pointer.
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
