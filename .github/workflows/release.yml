@@ -90,7 +90,6 @@ jobs:
       live-run: ${{ inputs.live-run || false }}
 
   publish-github:
-    if: always()
     needs: tag
     runs-on: macos-latest
     steps:
