@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
 
@@ -21,6 +22,7 @@ use jni::{objects::JString, JNIEnv};
 use zenoh::prelude::KeyExpr;
 
 use crate::errors::Error;
+use crate::errors::Result;
 use crate::utils::decode_string;
 
 #[no_mangle]
@@ -30,21 +32,56 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryF
     _class: JClass,
     key_expr: JString,
 ) -> *const KeyExpr<'static> {
-    let key_expr_str = match decode_string(&mut env, key_expr) {
-        Ok(key_expr) => key_expr,
+    match decode_key_expr(&mut env, &key_expr) {
+        Ok(key_expr) => Arc::into_raw(Arc::new(key_expr)),
         Err(err) => {
-            _ = err.throw_on_jvm(&mut env);
-            return null();
+            _ = Error::KeyExpr(err.to_string()).throw_on_jvm(&mut env);
+            null()
+        }
+    }
+}
+
+pub(crate) fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
+    let key_expr_str = match decode_string(env, key_expr) {
+        Ok(key_expr_str) => key_expr_str,
+        Err(err) => {
+            return Err(Error::Jni(format!(
+                "Unable to get key expression string value: {}",
+                err
+            )));
         }
     };
     let key_expr = match KeyExpr::try_from(key_expr_str) {
         Ok(key_expr) => key_expr,
         Err(err) => {
-            _ = Error::KeyExpr(err.to_string()).throw_on_jvm(&mut env);
-            return null();
+            return Err(Error::Jni(format!(
+                "Unable to create key expression from string: {}",
+                err
+            )));
         }
     };
-    Arc::into_raw(Arc::new(key_expr))
+    Ok(key_expr)
+}
+
+pub(crate) unsafe fn process_key_expr(
+    env: &mut JNIEnv,
+    key_expr_str: &JString,
+    key_expr_ptr: *const KeyExpr<'static>,
+) -> Result<KeyExpr<'static>> {
+    if key_expr_ptr.is_null() {
+        match decode_key_expr(env, key_expr_str) {
+            Ok(key_expr) => Ok(key_expr),
+            Err(err) => Err(Error::Jni(format!(
+                "Unable to process key expression: {}",
+                err
+            ))),
+        }
+    } else {
+        let key_expr = Arc::from_raw(key_expr_ptr);
+        let key_expr_clone = key_expr.deref().clone();
+        std::mem::forget(key_expr);
+        Ok(key_expr_clone)
+    }
 }
 
 #[no_mangle]
@@ -54,7 +91,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_auto
     _class: JClass,
     key_expr: JString,
 ) -> *const KeyExpr<'static> {
-    let key_expr_str = match decode_string(&mut env, key_expr) {
+    let key_expr_str = match decode_string(&mut env, &key_expr) {
         Ok(key_expr) => key_expr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env);

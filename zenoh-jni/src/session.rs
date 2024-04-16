@@ -120,7 +120,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
 /// - A [Result] with a [zenoh::Session] in case of success or an [Error::Session] in case of failure.
 ///
 fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<zenoh::Session> {
-    let config_file_path = decode_string(env, config_path)?;
+    let config_file_path = decode_string(env, &config_path)?;
     let config = if config_file_path.is_empty() {
         Config::default()
     } else {
@@ -140,7 +140,7 @@ fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<zenoh::Session
 /// - A [Result] with a [zenoh::Session] in case of success or an [Error::Session] in case of failure.
 ///
 fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Result<zenoh::Session> {
-    let json_config = decode_string(env, json_config)?;
+    let json_config = decode_string(env, &json_config)?;
     let config = if json_config.is_empty() {
         Config::default()
     } else {
@@ -695,7 +695,7 @@ fn on_get_query(
     let on_close_global_ref = get_callback_global_ref(env, on_close)?;
     let query_target = decode_query_target(target)?;
     let consolidation = decode_consolidation(consolidation)?;
-    let selector_params = decode_string(env, selector_params)?;
+    let selector_params = decode_string(env, &selector_params)?;
     let timeout = Duration::from_millis(timeout_ms as u64);
     let on_close = load_on_close(&java_vm, on_close_global_ref);
 
@@ -751,7 +751,7 @@ pub(crate) unsafe fn declare_keyexpr(
     session_ptr: *const Session,
     key_expr: JString,
 ) -> Result<KeyExpr<'static>> {
-    let key_expr = decode_string(env, key_expr)?;
+    let key_expr = decode_string(env, &key_expr)?;
     let session: Arc<Session> = Arc::from_raw(session_ptr);
     let result = session.declare_keyexpr(key_expr.to_owned()).res();
     std::mem::forget(session);

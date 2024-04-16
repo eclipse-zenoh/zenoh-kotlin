@@ -12,10 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::{mem, ops::Deref, sync::Arc};
+use std::{mem, sync::Arc};
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JValue},
+    objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JString, JValue},
     sys::{jboolean, jbyte, jint, jlong},
     JNIEnv,
 };
@@ -29,6 +29,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
+    key_expr::process_key_expr,
     utils::attachment_to_vec,
     value::decode_value,
 };
@@ -45,7 +46,10 @@ use crate::{
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `ptr`: The raw pointer to the Zenoh query.
-/// - `key_expr`: The key expression associated with the query result.
+/// - `key_expr_ptr`: The key expression pointer associated with the query result. This parameter
+///    is meant to be used with declared key expressions, which have a pointer associated to them.
+///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
+/// - `key_expr_string`: The string representation of the key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding`: The encoding of the payload.
 /// - `sample_kind`: The kind of sample.
@@ -66,6 +70,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     _class: JClass,
     query_ptr: *const zenoh::queryable::Query,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     payload: JByteArray,
     encoding: jint,
     sample_kind: jint,
@@ -74,12 +79,19 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     qos: jbyte,
     attachment: JByteArray,
 ) {
-    let key_expr = Arc::from_raw(key_expr_ptr);
-    let key_expr_clone = key_expr.deref().clone();
-    std::mem::forget(key_expr);
+    let key_expr: KeyExpr<'static> = match process_key_expr(&mut env, &key_expr_str, key_expr_ptr) {
+        Ok(key_expr) => key_expr,
+        Err(err) => {
+            _ = err
+                .throw_on_jvm(&mut env)
+                .map_err(|err| log::error!("{}", err));
+            return;
+        }
+    };
+
     let sample = match decode_sample(
         &mut env,
-        key_expr_clone,
+        key_expr,
         payload,
         encoding,
         sample_kind,
