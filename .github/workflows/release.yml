@@ -86,6 +86,8 @@ jobs:
     name: Publish documentation
     needs: tag
     uses: ./.github/workflows/publish-dokka.yml
+    with:
+      live-run: ${{ inputs.live-run || false }}
 
   publish-github:
     if: always()
