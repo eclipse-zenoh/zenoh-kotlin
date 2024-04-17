@@ -1,0 +1,60 @@
+name: Pre-Release
+
+on:
+  schedule:
+    - cron: "0 1 * * 1-5"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Build on ${{ matrix.os }}
+    runs-on: ["${{ matrix.os }}"]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r26
+          add-to-path: false
+          link-to-sdk: true
+
+      - name: Install Rust toolchain
+        run: |
+          rustup show
+          rustup component add rustfmt clippy
+
+      - name: Cargo Format
+        working-directory: zenoh-jni
+        run: cargo fmt --all --check
+
+      - name: Clippy Check
+        working-directory: zenoh-jni
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check for feature leaks
+        working-directory: zenoh-jni
+        run: cargo test --no-default-features
+
+      - name: Build Zenoh-JNI
+        working-directory: zenoh-jni
+        run: cargo build
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Gradle Test
+        run: gradle jvmTest --info

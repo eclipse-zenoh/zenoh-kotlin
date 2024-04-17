@@ -1,62 +1,102 @@
+#
+# Copyright (c) 2022 ZettaScale Technology
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+#
+# Contributors:
+#   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
+#
 name: Release
 
 on:
-  release:
-    types: [published]
   schedule:
-    - cron: "0 1 * * 1-5"
+    - cron: "0 0 * * 1-5"
   workflow_dispatch:
-
-env:
-  CARGO_TERM_COLOR: always
+    inputs:
+      live-run:
+        type: boolean
+        description: Live-run
+        required: false
+      version:
+        type: string
+        description: Release number
+        required: false
+      zenoh-version:
+        type: string
+        description: Release number of Zenoh
+        required: false
 
 jobs:
-  release:
-    name: Build on ${{ matrix.os }}
-    runs-on: [ "${{ matrix.os }}" ]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, macOS-latest ]
-
+  tag:
+    name: Branch, Bump & tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.create-release-branch.outputs.version }}
+      branch: ${{ steps.create-release-branch.outputs.branch }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v3
+      - id: create-release-branch
+        uses: eclipse-zenoh/ci/create-release-branch@main
         with:
-          distribution: temurin
-          java-version: 11
+          repo: ${{ github.repository }}
+          live-run: ${{ inputs.live-run || false }}
+          version: ${{ inputs.version }}
+          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
 
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
+      - name: Checkout this repository
+        uses: actions/checkout@v4
         with:
-          ndk-version: r26
-          add-to-path: false
-          link-to-sdk: true
+          ref: ${{ steps.create-release-branch.outputs.branch }}
 
-      - name: Install Rust toolchain
-        run: |
-          rustup show
-          rustup component add rustfmt clippy
+      - name: Bump and tag project
+        run: bash ci/scripts/bump-and-tag.bash
+        env:
+          VERSION: ${{ steps.create-release-branch.outputs.version }}
+          BUMP_DEPS_VERSION: ${{ inputs.zenoh-version }}
+          BUMP_DEPS_PATTERN: ${{ inputs.zenoh-version && 'zenoh.*' || '' }}
+          BUMP_DEPS_BRANCH: ${{ inputs.zenoh-version && format('release/{0}', inputs.zenoh-version) || '' }}
+          GIT_USER_NAME: eclipse-zenoh-bot
+          GIT_USER_EMAIL: eclipse-zenoh-bot@users.noreply.github.com
 
-      - name: Cargo Format
-        working-directory: zenoh-jni
-        run: cargo fmt --all --check
+  publish-jvm:
+    name: Publish JVM package
+    needs: tag
+    uses: ./.github/workflows/publish-jvm.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+    permissions:
+      contents: read
+      packages: write
 
-      - name: Clippy Check
-        working-directory: zenoh-jni
-        run: cargo clippy --all-targets --all-features -- -D warnings
+  publish-android:
+    name: Publish Android package
+    needs: tag
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+    permissions:
+      contents: read
+      packages: write
 
-      - name: Check for feature leaks
-        working-directory: zenoh-jni
-        run: cargo test --no-default-features
+  publish-dokka:
+    name: Publish documentation
+    needs: tag
+    uses: ./.github/workflows/publish-dokka.yml
+    with:
+      live-run: ${{ inputs.live-run || false }}
 
-      - name: Build Zenoh-JNI
-        working-directory: zenoh-jni
-        run: cargo build
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-
-      - name: Gradle Test
-        run: gradle jvmTest --info
+  publish-github:
+    needs: tag
+    runs-on: macos-latest
+    steps:
+      - uses: eclipse-zenoh/ci/publish-crates-github@main
+        with:
+          repo: ${{ github.repository }}
+          live-run: ${{ inputs.live-run || false }}
+          version: ${{ needs.tag.outputs.version }}
+          branch: ${{ needs.tag.outputs.branch }}
+          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}

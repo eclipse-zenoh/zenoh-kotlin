@@ -1,15 +1,17 @@
-name: Publish Android
+name: Publish (Android)
 
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       snapshot:
         required: true
         type: boolean
-        description: 'If the publication is for a snapshot version.'
+        description: "If the publication is for a snapshot version."
         default: false
+      branch:
+        description: Target branch
+        type: string
+        required: false
   workflow_dispatch:
 
 env:
@@ -24,6 +26,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - uses: actions/setup-java@v3
         with:

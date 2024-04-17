@@ -1,8 +1,16 @@
-name: Publish Documentation
+name: Publish (Dokka)
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      live-run:
+        description: Live-run
+        type: boolean
+        required: true
+      branch:
+        description: Target branch
+        type: string
+        required: false
   workflow_dispatch:
 
 env:
@@ -14,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - uses: nttld/setup-ndk@v1
         id: setup-ndk
@@ -26,6 +36,7 @@ jobs:
         run: gradle dokkaHtml
 
       - name: Deploy doc
+        if: ${{ inputs.live-run || false }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

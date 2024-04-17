@@ -1,20 +1,22 @@
-name: Publish JVM
+name: Publish (JVM)
 
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       snapshot:
         required: true
         type: boolean
-        description: 'If the publication is for a snapshot version.'
+        description: "If the publication is for a snapshot version."
         default: false
+      branch:
+        description: Target branch
+        type: string
+        required: false
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
-  JNI_LIB_PATHS: jni-libs  # Edit on the inner build.gradle.kts file as well.
+  JNI_LIB_PATHS: jni-libs # Edit on the inner build.gradle.kts file as well.
 
 jobs:
   builds:
@@ -59,6 +61,8 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Install prerequisites
         shell: bash
@@ -66,7 +70,7 @@ jobs:
           case ${{ matrix.job.target }} in
             *-linux-gnu*) cargo install cargo-deb ;;
           esac
-          
+
           case ${{ matrix.job.target }} in
             aarch64-unknown-linux-gnu)
               sudo apt-get -y update
@@ -90,7 +94,7 @@ jobs:
         run: |
           TARGET=${{ matrix.job.target }}
           MAIN_PKG_NAME="${GITHUB_WORKSPACE}/${TARGET}.zip"
-          
+
           case ${TARGET} in
             *linux*)
               cd "zenoh-jni/target/${TARGET}/release/"
@@ -132,6 +136,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Create resources destination
         run: mkdir ${{env.JNI_LIB_PATHS}}

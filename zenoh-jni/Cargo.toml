@@ -46,11 +46,6 @@ crate_type = ["staticlib", "dylib"]
 [build-dependencies]
 rustc_version = "0.4.0"
 
-[package.metadata.deb]
-name = "zenoh_jni"
-maintainer = "zenoh@zettascale.tech"
-copyright = "2023 ZettaScale Technology"
-
 [profile.release]
 debug = false     # If you want debug symbol in release mode, set the env variable: RUSTFLAGS=-g
 lto = "fat"
