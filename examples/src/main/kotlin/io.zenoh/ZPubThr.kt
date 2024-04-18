@@ -87,9 +87,9 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                             var count: Long = 0
                             var start = System.currentTimeMillis()
                             val number = number.toLong()
+                            println("Press CTRL-C to quit...")
                             while (true) {
                                 pub.put(value).res().getOrThrow()
-
                                 if (statsPrint) {
                                     if (count < number) {
                                         count++
@@ -100,7 +100,6 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                                         start = System.currentTimeMillis()
                                     }
                                 }
-
                             }
                         }
                     }

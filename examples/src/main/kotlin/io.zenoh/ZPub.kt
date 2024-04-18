@@ -62,18 +62,20 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
                         println("Declaring publisher on '$keyExpr'...")
                         session.declarePublisher(keyExpr).res().onSuccess { pub ->
                             pub.use {
+                                println("Press CTRL-C to quit...")
                                 val attachment = attachment?.let { decodeAttachment(it) }
                                 var idx = 0
                                 while (true) {
                                     Thread.sleep(1000)
-                                    println(
-                                        "Putting Data ('$keyExpr': '[${
+                                    val payload = "[${
                                             idx.toString().padStart(4, ' ')
-                                        }] $value')..."
+                                        }] $value"
+                                    println(
+                                        "Putting Data ('$keyExpr': '$payload')..."
                                     )
                                     attachment?.let {
-                                        pub.put(value).withAttachment(attachment).res()
-                                    } ?: let { pub.put(value).res() }
+                                        pub.put(payload).withAttachment(attachment).res()
+                                    } ?: let { pub.put(payload).res() }
                                     idx++
                                 }
                             }
