@@ -12,10 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use jni::{
-    objects::{JClass, JObject, JValue},
+    objects::{JClass, JObject, JString, JValue},
     sys::{jint, jlong},
     JNIEnv,
 };
@@ -28,6 +28,7 @@ use crate::{
     utils::attachment_to_vec,
 };
 use crate::{
+    key_expr::process_key_expr,
     sample::qos_into_jbyte,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
@@ -61,7 +62,10 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNISubscriber_freePtrViaJNI(
 ///
 /// Parameters:
 /// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr_ptr`: Raw pointer to the key expression to be used for the subscriber.
+/// - `key_expr_ptr`: Raw pointer to the key expression to be used for the subscriber. May be null, in
+///     which case the key_expr_str parameter will be used.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
+///     Not considered if the key_expr_ptr parameter is provided.
 /// - `session_ptr`: Raw pointer to the session to be used for the declaration..
 /// - `callback`: The callback function as an instance of the `Callback` interface in Java/Kotlin.
 /// - `onClose`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when the subscriber is undeclared.
@@ -77,6 +81,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNISubscriber_freePtrViaJNI(
 pub(crate) unsafe fn declare_subscriber(
     env: &mut JNIEnv,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
     on_close: JObject,
@@ -88,12 +93,11 @@ pub(crate) unsafe fn declare_subscriber(
     let reliability = decode_reliability(reliability)?;
     let on_close = load_on_close(&java_vm, on_close_global_ref);
 
-    let session = Arc::from_raw(session_ptr);
-    let key_expr = Arc::from_raw(key_expr_ptr);
-    let key_expr_clone = key_expr.deref().clone();
+    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
     tracing::debug!("Declaring subscriber on '{}'...", key_expr);
+    let session = Arc::from_raw(session_ptr);
     let result = session
-        .declare_subscriber(key_expr_clone.to_owned())
+        .declare_subscriber(key_expr.to_owned())
         .callback(move |sample| {
             on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
             let mut env = match java_vm.attach_current_thread_as_daemon() {
@@ -137,7 +141,7 @@ pub(crate) unsafe fn declare_subscriber(
             let key_expr_str = match env.new_string(sample.key_expr.to_string()) {
                 Ok(key_expr_str) => key_expr_str,
                 Err(err) => {
-                    log::error!(
+                    tracing::error!(
                         "Could not create a JString through JNI for the Sample key expression. {}",
                         err
                     );
@@ -178,14 +182,13 @@ pub(crate) unsafe fn declare_subscriber(
         .reliability(reliability)
         .res();
     std::mem::forget(session);
-    std::mem::forget(key_expr);
 
     let subscriber =
         result.map_err(|err| Error::Session(format!("Unable to declare subscriber: {}", err)))?;
 
     tracing::debug!(
         "Subscriber declared on '{}' with reliability '{:?}'.",
-        key_expr_clone,
+        key_expr,
         reliability,
     );
     Ok(Arc::into_raw(Arc::new(subscriber)))

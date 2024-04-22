@@ -91,7 +91,7 @@ internal class JNISession {
                 callback.run(sample)
             }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onClose, reliability.ordinal //TODO: If the key expression was not declared, declare it and pass the pointer.
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
@@ -182,6 +182,7 @@ internal class JNISession {
     }
 
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
+        // TODO(https://github.com/eclipse-zenoh/zenoh-kotlin/issues/75): fix key expr could be undeclared twice!
         undeclareKeyExprViaJNI(sessionPtr.get(), keyExpr.jniKeyExpr!!.ptr)
     }
 
@@ -217,7 +218,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declareSubscriberViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         callback: JNISubscriberCallback,
         onClose: JNIOnCloseCallback,

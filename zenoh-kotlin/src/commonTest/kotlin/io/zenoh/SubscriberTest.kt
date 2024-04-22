@@ -111,6 +111,24 @@ class SubscriberTest {
         subscriber.close()
     }
 
+    @Test
+    fun subscriber_isDeclaredWithNonDeclaredKeyExpression() {
+        // Declaring a subscriber with an undeclared key expression and verifying it properly receives samples.
+        val keyExpr = KeyExpr("example/**")
+        val session = Session.open().getOrThrow()
+
+        val receivedSamples = ArrayList<Sample>()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
+        publishTestValues(session)
+        subscriber.close()
+
+        assertEquals(receivedSamples.size, testValues.size)
+
+        for ((index, sample) in receivedSamples.withIndex()) {
+            assertEquals(sample.value, testValues[index])
+        }
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() = runBlocking {

@@ -323,8 +323,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr`: The key expression for the subscriber.
-/// - `ptr`: The raw pointer to the Zenoh session.
+/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `session_ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
 /// - `reliability`: The [Reliability] value as an ordinal.
@@ -347,12 +350,21 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
-    ptr: *const zenoh::Session,
+    key_expr_str: JString,
+    session_ptr: *const zenoh::Session,
     callback: JObject,
     on_close: JObject,
     reliability: jint,
 ) -> *const zenoh::subscriber::Subscriber<'static, ()> {
-    match declare_subscriber(&mut env, key_expr_ptr, ptr, callback, on_close, reliability) {
+    match declare_subscriber(
+        &mut env,
+        key_expr_ptr,
+        key_expr_str,
+        session_ptr,
+        callback,
+        on_close,
+        reliability,
+    ) {
         Ok(subscriber_ptr) => subscriber_ptr,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
