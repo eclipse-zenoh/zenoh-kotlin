@@ -55,7 +55,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     ).flag(default = false)
 
     override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         Session.open(config).onSuccess { session ->
             session.use {
@@ -81,14 +81,11 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     private suspend fun handleRequests(
         receiverChannel: Channel<Query>, keyExpr: KeyExpr
     ) {
-        val iterator = receiverChannel.iterator()
-        while (iterator.hasNext()) {
-            iterator.next().use { query ->
-                val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                query.reply(keyExpr).success(value).withKind(SampleKind.PUT).withTimeStamp(TimeStamp.getCurrentTime())
-                    .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
-            }
+        for (query in receiverChannel) {
+            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+            query.reply(keyExpr).success(value).withKind(SampleKind.PUT).withTimeStamp(TimeStamp.getCurrentTime())
+                .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
         }
     }
 }
