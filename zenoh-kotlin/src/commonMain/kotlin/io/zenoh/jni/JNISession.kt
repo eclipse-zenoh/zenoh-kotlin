@@ -148,7 +148,8 @@ internal class JNISession {
 
         if (value == null) {
             getViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,//TODO: If the key expression was not declared, declare it and pass the pointer.
+                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
+                selector.keyExpr.keyExpr,
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
@@ -160,7 +161,8 @@ internal class JNISession {
             )
         } else {
             getWithValueViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,//TODO: If the key expression was not declared, declare it and pass the pointer.
+                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
+                selector.keyExpr.keyExpr,
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
@@ -244,7 +246,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun getViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
@@ -257,7 +260,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun getWithValueViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
