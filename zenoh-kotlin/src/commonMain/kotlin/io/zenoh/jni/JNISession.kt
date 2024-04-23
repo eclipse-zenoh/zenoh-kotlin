@@ -110,7 +110,7 @@ internal class JNISession {
                 callback.run(query)
             }
         val queryableRawPtr =
-            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onClose, complete) //TODO: If the key expression was not declared, declare it and pass the pointer.
+            declareQueryableViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), queryCallback, onClose, complete)
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
@@ -228,7 +228,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declareQueryableViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         callback: JNIQueryableCallback,
         onClose: JNIOnCloseCallback,

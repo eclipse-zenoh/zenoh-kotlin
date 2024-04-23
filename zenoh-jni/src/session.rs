@@ -385,7 +385,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the queryable.
+/// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the queryable. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the queryable.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session] to be used to declare the queryable.
 /// - `callback`: The callback function as an instance of the `JNIQueryableCallback` interface in Java/Kotlin.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the queryable.
@@ -409,6 +412,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
     on_close: JObject,
@@ -417,6 +421,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     match declare_queryable(
         &mut env,
         key_expr_ptr,
+        key_expr_str,
         session_ptr,
         callback,
         on_close,

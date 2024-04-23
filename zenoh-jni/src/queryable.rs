@@ -15,7 +15,7 @@
 use std::{ops::Deref, sync::Arc};
 
 use jni::{
-    objects::{JClass, JObject},
+    objects::{JClass, JObject, JString},
     sys::jboolean,
     JNIEnv,
 };
@@ -23,8 +23,8 @@ use zenoh::prelude::r#sync::*;
 use zenoh::{queryable::Queryable, Session};
 
 use crate::{
-    errors::Error,
-    errors::Result,
+    errors::{Error, Result},
+    key_expr::process_key_expr,
     query::on_query,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
@@ -58,7 +58,9 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQueryable_freePtrViaJNI(
 ///
 /// Parameters:
 /// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the queryable.
+/// - `key_expr_ptr`: Raw pointer to a declared [KeyExpr] to be used for the queryable. May be null in case
+///     of using a non declared key expression, in which case the key_expr_str parameter will be used instead.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the queryable.
 /// - `session_ptr`: Raw pointer to the [Session] from which to declare the queryable..
 /// - `callback`: The callback function as an instance of the `Callback` interface in Java/Kotlin.
 /// - `on_close`: The `on_close` callback function as an instance of the `JNIOnCloseCallback` interface in
@@ -75,6 +77,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQueryable_freePtrViaJNI(
 pub(crate) unsafe fn declare_queryable(
     env: &mut JNIEnv,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const zenoh::Session,
     callback: JObject,
     on_close: JObject,
@@ -83,15 +86,13 @@ pub(crate) unsafe fn declare_queryable(
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
     let on_close_global_ref = get_callback_global_ref(env, on_close)?;
+    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
     let complete = complete != 0;
     let on_close = load_on_close(&java_vm, on_close_global_ref);
-
     let session: Arc<Session> = Arc::from_raw(session_ptr);
-    let key_expr = Arc::from_raw(key_expr_ptr);
-    let key_expr_clone = key_expr.deref().clone();
     tracing::debug!("Declaring queryable through JNI on {}", key_expr);
     let queryable = session
-        .declare_queryable(key_expr_clone)
+        .declare_queryable(key_expr)
         .callback(move |query| {
             on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
             let env = match java_vm.attach_current_thread_as_daemon() {
@@ -111,7 +112,6 @@ pub(crate) unsafe fn declare_queryable(
         .complete(complete);
 
     std::mem::forget(session);
-    std::mem::forget(key_expr);
     queryable
         .res()
         .map_err(|err| Error::Session(format!("Error declaring queryable: {}", err)))
