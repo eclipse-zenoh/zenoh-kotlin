@@ -13,14 +13,14 @@
 //
 
 use crate::errors::{Error, Result};
+use crate::key_expr::process_key_expr;
 use crate::sample::decode_sample_kind;
 use crate::utils::{decode_byte_array, vec_to_attachment};
 use crate::value::decode_value;
 
-use jni::objects::JByteArray;
+use jni::objects::{JByteArray, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
-use std::ops::Deref;
 use std::sync::Arc;
 use zenoh::prelude::r#sync::*;
 
@@ -28,7 +28,10 @@ use zenoh::prelude::r#sync::*;
 ///
 /// Parameters:
 /// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr`: The [KeyExpr] to use for the put operation.
+/// - `key_expr_ptr`: Raw pointer of a declared [KeyExpr] to use for the put operation. If it is null, then
+///     the key_expr_str parameter is used.
+/// - `key_expr_str`: String representation of the key expression to be used for the put operation. If the key_expr_ptr
+///     is valid, then this parameter won't be considered.
 /// - `session`: An [Session] to use for the put operation.
 /// - `payload`: The payload to send through the network.
 /// - `encoding`: The [Encoding] of the put operation.
@@ -43,7 +46,8 @@ use zenoh::prelude::r#sync::*;
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn on_put(
     env: &mut JNIEnv,
-    key_expr: &Arc<KeyExpr<'static>>,
+    key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session: &Arc<Session>,
     payload: JByteArray,
     encoding: jint,
@@ -52,6 +56,7 @@ pub(crate) fn on_put(
     sample_kind: jint,
     attachment: JByteArray,
 ) -> Result<()> {
+    let key_expr = unsafe { process_key_expr(env, &key_expr_str, key_expr_ptr) }?;
     let value = decode_value(env, payload, encoding)?;
     let sample_kind = decode_sample_kind(sample_kind)?;
     let congestion_control = match decode_congestion_control(congestion_control) {
@@ -73,10 +78,8 @@ pub(crate) fn on_put(
         }
     };
 
-    let key_expr_clone = key_expr.deref().clone();
-
     let mut put_builder = session
-        .put(key_expr_clone, value.to_owned())
+        .put(&key_expr, value.to_owned())
         .kind(sample_kind)
         .congestion_control(congestion_control)
         .priority(priority);

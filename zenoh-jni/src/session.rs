@@ -260,6 +260,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the operation.
+/// - `key_expr_str`: String representation of the [KeyExpr] to be used for the operation.
+///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
+///     receiving a key expression that was not declared.
 /// - `session_ptr`: Raw pointer to the [Session] to be used for the operation.
 /// - `payload`: The payload to send through the network.
 /// - `encoding`: The [Encoding] of the put operation.
@@ -282,6 +285,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const zenoh::Session,
     payload: JByteArray,
     encoding: jint,
@@ -291,10 +295,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
-    let key_expr = Arc::from_raw(key_expr_ptr);
     match on_put(
         &mut env,
-        &key_expr,
+        key_expr_ptr,
+        key_expr_str,
         &session,
         payload,
         encoding,
@@ -314,7 +318,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         }
     }
     std::mem::forget(session);
-    std::mem::forget(key_expr);
 }
 
 /// Declare a Zenoh subscriber via JNI.

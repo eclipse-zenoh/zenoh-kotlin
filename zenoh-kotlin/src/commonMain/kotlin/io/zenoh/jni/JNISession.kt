@@ -194,7 +194,8 @@ internal class JNISession {
         put: Put,
     ) {
         putViaJNI(
-            keyExpr.jniKeyExpr!!.ptr,
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
             sessionPtr.get(),
             put.value.payload,
             put.value.encoding.knownEncoding.ordinal,
@@ -276,7 +277,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun putViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         valuePayload: ByteArray,
         valueEncoding: Int,
