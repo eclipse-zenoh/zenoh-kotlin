@@ -35,7 +35,7 @@ printf '%s' "$version" > version.txt
 # Propagate version change to zenoh-jni
 toml_set_in_place zenoh-jni/Cargo.toml "package.version" "$version"
 
-git commit version.txt zenoh-jni/Cargo.toml -m "chore: Bump version to $version"
+git commit version.txt zenoh-jni/Cargo.toml -m "chore: Bump version to \`$version\`"
 
 # Select all package dependencies that match $bump_deps_pattern and bump them to $bump_deps_version
 if [[ "$bump_deps_pattern" != '' ]]; then
@@ -50,10 +50,10 @@ if [[ "$bump_deps_pattern" != '' ]]; then
     fi
   done
   # Update lockfile
-  cargo check
+  cargo check --manifest-path zenoh-jni/Cargo.toml
 
   if [[ -n $bump_deps_version || -n $bump_deps_branch ]]; then
-    git commit zenoh-jni/Cargo.toml zenoh-jni/Cargo.lock -m "chore: Bump $bump_deps_pattern version to $bump_deps_version"
+    git commit zenoh-jni/Cargo.toml zenoh-jni/Cargo.lock -m "chore: Bump \`$bump_deps_pattern\` dependencies to \`$bump_deps_version\`"
   else
     echo "warn: no changes have been made to any dependencies matching $bump_deps_pattern"
   fi
