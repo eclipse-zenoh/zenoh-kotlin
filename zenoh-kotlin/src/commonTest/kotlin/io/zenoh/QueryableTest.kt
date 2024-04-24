@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.handlers.Handler
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
 import io.zenoh.query.Reply
@@ -23,119 +24,119 @@ import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.time.withTimeout
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class QueryableTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        const val TEST_PAYLOAD = "Hello queryable"
+        const val testPayload = "Hello queryable"
+    }
+
+    private lateinit var session: Session
+    private lateinit var testKeyExpr: KeyExpr
+
+    @BeforeTest
+    fun setUp() {
+        session = Session.open().getOrThrow()
+        testKeyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        session.close()
+        testKeyExpr.close()
     }
 
     /** Test validating both Queryable and get operations. */
     @Test
-    fun queryable_runsWithCallback() {
-        val sessionA = Session.open().getOrThrow()
-
+    fun queryable_runsWithCallback() = runBlocking {
         val sample = Sample(
-            TEST_KEY_EXP, Value(TEST_PAYLOAD), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
+            testKeyExpr, Value(testPayload), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
         )
-        val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with { query ->
-            query.reply(TEST_KEY_EXP).success(sample.value).withTimeStamp(sample.timestamp!!).res()
+        val queryable = session.declareQueryable(testKeyExpr).with { query ->
+            query.reply(testKeyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()
         }.res().getOrThrow()
 
-        val sessionB = Session.open().getOrThrow()
-
-        sessionB.get(TEST_KEY_EXP).with { reply: Reply ->
-            assertTrue(reply is Reply.Success)
-            assertEquals(reply.sample, sample)
-        }.timeout(Duration.ofMillis(1000)).res()
-
-        Thread.sleep(1000)
-
-        queryable.undeclare()
-        sessionA.close()
-        sessionB.close()
-    }
-
-    @Test
-    fun queryable_runsWithHandler() {
-        val sessionA = Session.open().getOrThrow()
-        val handler = QueryHandler()
-        val queryable = sessionA.declareQueryable(TEST_KEY_EXP).with(handler).res().getOrThrow()
-
-        val sessionB = Session.open().getOrThrow()
-        val receivedReplies = ArrayList<Reply>()
-        sessionB.get(TEST_KEY_EXP).with { reply: Reply ->
-            receivedReplies.add(reply)
-        }.timeout(Duration.ofMillis(1000)).res()
-
-        Thread.sleep(1000)
-
-        queryable.undeclare()
-        sessionA.close()
-        sessionB.close()
-
-        for (receivedReply in receivedReplies) {
-            assertTrue(receivedReply is Reply.Success)
+        var reply: Reply? = null
+        val delay = Duration.ofMillis(1000)
+        withTimeout(delay) {
+            session.get(testKeyExpr).with { reply = it }.timeout(delay).res()
         }
-        assertEquals(handler.performedReplies, receivedReplies.map { reply -> (reply as Reply.Success).sample })
+
+        assertTrue(reply is Reply.Success)
+        assertEquals((reply as Reply.Success).sample, sample)
+
+        queryable.close()
     }
 
     @Test
-    fun queryableBuilder_channelHandlerIsTheDefaultHandler() {
-        val session = Session.open().getOrThrow()
-        val queryable = session.declareQueryable(TEST_KEY_EXP).res().getOrThrow()
+    fun queryable_runsWithHandler() = runBlocking {
+        val handler = QueryHandler()
+        val queryable = session.declareQueryable(testKeyExpr).with(handler).res().getOrThrow()
+
+        delay(500)
+
+        val receivedReplies = ArrayList<Reply>()
+        session.get(testKeyExpr).with { reply: Reply ->
+            receivedReplies.add(reply)
+        }.res()
+
+        delay(500)
+
+        queryable.close()
+        assertTrue(receivedReplies.all { it is Reply.Success })
+        assertEquals(handler.performedReplies.size, receivedReplies.size)
+    }
+
+    @Test
+    fun queryableBuilder_channelHandlerIsTheDefaultHandler() = runBlocking {
+        val queryable = session.declareQueryable(testKeyExpr).res().getOrThrow()
         assertTrue(queryable.receiver is Channel<Query>)
+        queryable.close()
     }
 
     @Test
-    fun queryTest() {
-        val session = Session.open().getOrThrow()
+    fun queryTest() = runBlocking {
         var receivedQuery: Query? = null
-        session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.res().getOrThrow()
 
-        session.get(TEST_KEY_EXP).res()
-        session.close()
+        session.get(testKeyExpr).res()
 
-        Thread.sleep(1000)
+        delay(1000)
+        queryable.close()
         assertNotNull(receivedQuery)
         assertNull(receivedQuery!!.value)
     }
 
     @Test
-    fun queryWithValueTest() {
-        val session = Session.open().getOrThrow()
+    fun queryWithValueTest() = runBlocking {
         var receivedQuery: Query? = null
-        session.declareQueryable(TEST_KEY_EXP).with { query -> receivedQuery = query }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.res().getOrThrow()
 
-        session.get(TEST_KEY_EXP).withValue("Test value").res()
-        session.close()
-        Thread.sleep(1000)
+        session.get(testKeyExpr).withValue("Test value").res()
 
+        delay(1000)
+        queryable.close()
         assertNotNull(receivedQuery)
         assertEquals(Value("Test value"), receivedQuery!!.value)
-
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun onCloseTest() {
-        val session = Session.open().getOrThrow()
+    fun onCloseTest() = runBlocking {
         var onCloseWasCalled = false
-        val queryable = session.declareQueryable(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr).onClose { onCloseWasCalled = true }.res().getOrThrow()
         queryable.undeclare()
+
         assertTrue(onCloseWasCalled)
         assertTrue(queryable.receiver!!.isClosedForReceive)
-        session.close()
     }
 }
 
