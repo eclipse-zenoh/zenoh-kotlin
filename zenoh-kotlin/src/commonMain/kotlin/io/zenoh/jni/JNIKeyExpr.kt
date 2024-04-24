@@ -22,8 +22,7 @@ internal class JNIKeyExpr(internal val ptr: Long) {
     companion object {
         fun tryFrom(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load() // It may happen the zenoh library is not yet loaded when creating a key expression.
-            val keyExprPtr = tryFromViaJNI(keyExpr)
-            KeyExpr(keyExpr, JNIKeyExpr(keyExprPtr))
+            KeyExpr(tryFromViaJNI(keyExpr))
         }
 
         fun autocanonize(keyExpr: String): Result<KeyExpr> = runCatching {
@@ -34,7 +33,7 @@ internal class JNIKeyExpr(internal val ptr: Long) {
         }
 
         @Throws(Exception::class)
-        private external fun tryFromViaJNI(keyExpr: String): Long
+        private external fun tryFromViaJNI(keyExpr: String): String
 
         @Throws(Exception::class)
         private external fun autocanonizeViaJNI(keyExpr: String): Long
@@ -82,7 +81,7 @@ internal class JNIKeyExpr(internal val ptr: Long) {
     private external fun includesViaJNI(ptrA: Long, ptrB: Long): Boolean
 
     @Throws(Exception::class)
-    private external fun getStringValueViaJNI(ptr: Long): String
+    private external fun getStringValueViaJNI(ptr: Long): String //TODO: remove
 
     /** Frees the underlying native KeyExpr. */
     private external fun freePtrViaJNI(ptr: Long)

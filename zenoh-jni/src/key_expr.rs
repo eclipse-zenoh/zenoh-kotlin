@@ -31,14 +31,18 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryF
     mut env: JNIEnv,
     _class: JClass,
     key_expr: JString,
-) -> *const KeyExpr<'static> {
-    match decode_key_expr(&mut env, &key_expr) {
-        Ok(key_expr) => Arc::into_raw(Arc::new(key_expr)),
-        Err(err) => {
-            _ = Error::KeyExpr(err.to_string()).throw_on_jvm(&mut env);
-            null()
-        }
-    }
+) -> jstring {
+    let result = decode_key_expr(&mut env, &key_expr)
+        .and_then(|key_expr| {
+            env.new_string(key_expr.to_string())
+                .map(|kexp| kexp.as_raw())
+                .map_err(|err| Error::KeyExpr(err.to_string()))
+        })
+        .unwrap_or_else(|err| {
+            let _ = err.throw_on_jvm(&mut env);
+            JString::default().as_raw()
+        });
+    result
 }
 
 pub(crate) fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
