@@ -14,30 +14,46 @@
 
 package io.zenoh
 
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.publication.Publisher
 import io.zenoh.sample.Sample
+import io.zenoh.subscriber.Subscriber
 import io.zenoh.value.Value
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 class PublisherTest {
 
-    companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+    lateinit var session: Session
+    lateinit var receivedSamples: ArrayList<Sample>
+    lateinit var publisher: Publisher
+    lateinit var subscriber: Subscriber<Unit>
+    lateinit var keyExpr: KeyExpr
+
+    @BeforeTest
+    fun setUp() {
+        session = Session.open().getOrThrow()
+        keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        subscriber = session.declareSubscriber(keyExpr).with { sample ->
+            receivedSamples.add(sample)
+        }.res().getOrThrow()
+        receivedSamples = ArrayList()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        publisher.close()
+        subscriber.close()
+        session.close()
+        keyExpr.close()
     }
 
     @Test
     fun putTest() {
-        val session = Session.open().getOrThrow()
-
-        val receivedSamples = ArrayList<Sample>()
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
-            receivedSamples.add(sample)
-        }.res()
 
         val testValues = arrayListOf(
             Value("Test 1".encodeToByteArray(), Encoding(KnownEncoding.TEXT_PLAIN)),
@@ -46,7 +62,6 @@ class PublisherTest {
         )
 
         testValues.forEach() { value -> publisher.put(value).res() }
-        session.close()
 
         assertEquals(receivedSamples.size, testValues.size)
         for ((index, sample) in receivedSamples.withIndex()) {
@@ -56,20 +71,7 @@ class PublisherTest {
 
     @Test
     fun deleteTest() {
-        val session = Session.open().getOrThrow()
-
-        val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample ->
-            receivedSamples.add(sample)
-        }.res()
-
-        session.declarePublisher(TEST_KEY_EXP).res().onSuccess {
-            it.use { publisher ->
-                publisher.delete().res()
-            }
-        }
-        session.close()
-
+        publisher.delete().res()
         assertEquals(1, receivedSamples.size)
         assertEquals(SampleKind.DELETE, receivedSamples[0].kind)
     }
