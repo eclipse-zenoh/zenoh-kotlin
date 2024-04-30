@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use jni::{
     objects::{JClass, JObject, JString},

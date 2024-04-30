@@ -22,7 +22,6 @@ use jni::{
 use zenoh::prelude::r#sync::*;
 use zenoh::subscriber::Subscriber;
 
-use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
 use crate::{
     errors::{Error, Result},
     utils::attachment_to_vec,

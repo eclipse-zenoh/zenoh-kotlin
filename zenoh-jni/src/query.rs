@@ -84,7 +84,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         Err(err) => {
             _ = err
                 .throw_on_jvm(&mut env)
-                .map_err(|err| log::error!("{}", err));
+                .map_err(|err| tracing::error!("{}", err));
             return;
         }
     };
@@ -308,7 +308,7 @@ pub(crate) fn on_query(
 
     _ = env
         .delete_local_ref(key_expr_str)
-        .map_err(|err| log::error!("Error deleting local ref: {}", err));
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(selector_params_jstr)
         .map_err(|err| tracing::error!("Error deleting local ref: {}", err));

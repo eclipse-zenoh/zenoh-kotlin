@@ -119,7 +119,7 @@ class SubscriberTest {
 
         val receivedSamples = ArrayList<Sample>()
         val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
-        publishTestValues(session)
+        testValues.forEach { value -> session.put(testKeyExpr, value).res() }
         subscriber.close()
 
         assertEquals(receivedSamples.size, testValues.size)
