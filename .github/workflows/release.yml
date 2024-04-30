@@ -68,6 +68,7 @@ jobs:
     uses: ./.github/workflows/publish-jvm.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
+      branch: ${{ needs.tag.outputs.branch }}
     permissions:
       contents: read
       packages: write
@@ -78,6 +79,7 @@ jobs:
     uses: ./.github/workflows/publish-android.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
+      branch: ${{ needs.tag.outputs.branch }}
     permissions:
       contents: read
       packages: write
@@ -88,6 +90,7 @@ jobs:
     uses: ./.github/workflows/publish-dokka.yml
     with:
       live-run: ${{ inputs.live-run || false }}
+      branch: ${{ needs.tag.outputs.branch }}
 
   publish-github:
     needs: tag
