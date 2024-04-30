@@ -60,7 +60,8 @@ internal class JNISession {
 
     fun declarePublisher(builder: Publisher.Builder): Result<Publisher> = runCatching {
         val publisherRawPtr = declarePublisherViaJNI(
-            builder.keyExpr.jniKeyExpr!!.ptr,
+            builder.keyExpr.jniKeyExpr?.ptr ?: 0,
+            builder.keyExpr.keyExpr,
             sessionPtr.get(),
             builder.congestionControl.value,
             builder.priority.value,
@@ -216,7 +217,11 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declarePublisherViaJNI(
-        keyExpr: Long, ptr: Long, congestionControl: Int, priority: Int
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        congestionControl: Int,
+        priority: Int
     ): Long
 
     @Throws(Exception::class)

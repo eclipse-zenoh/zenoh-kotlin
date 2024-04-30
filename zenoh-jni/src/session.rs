@@ -211,7 +211,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr`: Raw pointer of the [KeyExpr] to be used for the publisher.
+/// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the publisher.
+/// - `key_expr_str`: String representation of the [KeyExpr] to be used for the publisher.
+///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
+///     receiving a key expression that was not declared.
 /// - `session_ptr`: The raw pointer to the Zenoh [Session] from which to declare the publisher.
 /// - `congestion_control`: The [CongestionControl] mechanism specified as an ordinal.
 /// - `priority`: The [Priority] mechanism specified as an ordinal.
@@ -233,11 +236,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const zenoh::Session,
     congestion_control: jint,
     priority: jint,
 ) -> *const zenoh::publication::Publisher<'static> {
-    let result = declare_publisher(key_expr_ptr, session_ptr, congestion_control, priority);
+    let result = declare_publisher(
+        &mut env,
+        key_expr_ptr,
+        key_expr_str,
+        session_ptr,
+        congestion_control,
+        priority,
+    );
     match result {
         Ok(ptr) => ptr,
         Err(err) => {

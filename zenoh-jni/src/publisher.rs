@@ -12,10 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use jni::{
-    objects::{JByteArray, JClass},
+    objects::{JByteArray, JClass, JString},
     sys::jint,
     JNIEnv,
 };
@@ -27,6 +27,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
+    key_expr::process_key_expr,
     utils::{decode_byte_array, vec_to_attachment},
 };
 use crate::{
@@ -112,7 +113,11 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
 /// Declares a Zenoh publisher via JNI.
 ///
 /// Parameters:
-/// - `key_expr_ptr`: Raw pointer to the key expression to be used for the publisher.
+/// - `env`: A mutable reference to the JNI environment.
+/// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the publisher.
+/// - `key_expr_str`: String representation of the [KeyExpr] to be used for the publisher.
+///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
+///     receiving a key expression that was not declared.
 /// - `session_ptr`: Raw pointer to the Zenoh [Session] to be used for the publisher.
 /// - `congestion_control`: The [zenoh::CongestionControl] configuration as an ordinal.
 /// - `priority`: The [zenoh::Priority] configuration as an ordinal.
@@ -125,28 +130,25 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
 /// - The returned raw pointer should be stored appropriately and later freed using [Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI].
 ///
 pub(crate) unsafe fn declare_publisher(
+    env: &mut JNIEnv,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
 ) -> Result<*const Publisher<'static>> {
     let session = Arc::from_raw(session_ptr);
-    let key_expr = Arc::from_raw(key_expr_ptr);
-    let key_expr_clone = key_expr.deref().clone();
+    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
     let congestion_control = decode_congestion_control(congestion_control)?;
     let priority = decode_priority(priority)?;
     let result = session
-        .declare_publisher(key_expr_clone.to_owned())
+        .declare_publisher(key_expr)
         .congestion_control(congestion_control)
         .priority(priority)
         .res();
     std::mem::forget(session);
-    std::mem::forget(key_expr);
     match result {
-        Ok(publisher) => {
-            tracing::trace!("Declared publisher ok key expr '{key_expr_clone}', with congestion control '{congestion_control:?}', priority '{priority:?}'.");
-            Ok(Arc::into_raw(Arc::new(publisher)))
-        }
+        Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
         Err(err) => Err(Error::Session(err.to_string())),
     }
 }
