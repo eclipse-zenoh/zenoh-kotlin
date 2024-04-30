@@ -55,21 +55,6 @@ internal class JNIKeyExpr(internal val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as JNIKeyExpr
-
-        return equalsViaJNI(ptr, other.ptr)
-    }
-
-    override fun hashCode(): Int {
-        return ptr.hashCode()
-    }
-
-    private external fun equalsViaJNI(ptrA: Long, ptrB: Long): Boolean
-
     private external fun intersectsViaJNI(ptrA: Long, ptrB: Long): Boolean
 
     private external fun includesViaJNI(ptrA: Long, ptrB: Long): Boolean

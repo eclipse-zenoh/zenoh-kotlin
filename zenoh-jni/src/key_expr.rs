@@ -96,22 +96,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_includesViaJNI(
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_equalsViaJNI(
-    _env: JNIEnv,
-    _: JClass,
-    key_expr_ptr_1: *const KeyExpr<'static>,
-    key_expr_ptr_2: *const KeyExpr<'static>,
-) -> jboolean {
-    let key_expr_1 = Arc::from_raw(key_expr_ptr_1);
-    let key_expr_2 = Arc::from_raw(key_expr_ptr_2);
-    let is_equal = key_expr_1.eq(&key_expr_2);
-    std::mem::forget(key_expr_1);
-    std::mem::forget(key_expr_2);
-    is_equal as jboolean
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
