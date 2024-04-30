@@ -27,16 +27,14 @@ internal class JNIKeyExpr(internal val ptr: Long) {
 
         fun autocanonize(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load()
-            val keyExprPtr = autocanonizeViaJNI(keyExpr)
-            val jniKeyExpr = JNIKeyExpr(keyExprPtr)
-            KeyExpr(jniKeyExpr.toString(), jniKeyExpr)
+            KeyExpr(autocanonizeViaJNI(keyExpr))
         }
 
         @Throws(Exception::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
         @Throws(Exception::class)
-        private external fun autocanonizeViaJNI(keyExpr: String): Long
+        private external fun autocanonizeViaJNI(keyExpr: String): String
     }
 
     override fun toString(): String {
