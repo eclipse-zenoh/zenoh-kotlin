@@ -64,30 +64,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_auto
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_getStringValueViaJNI(
-    mut env: JNIEnv,
-    _: JClass,
-    ptr: *const KeyExpr<'static>,
-) -> jstring {
-    let key_expr = Arc::from_raw(ptr);
-    let key_expr_str = match env.new_string(key_expr.to_string()) {
-        Ok(key_expr) => key_expr,
-        Err(err) => {
-            _ = Error::Jni(format!(
-                "Unable to get key expression string value: {}",
-                err
-            ))
-            .throw_on_jvm(&mut env);
-            std::mem::forget(key_expr);
-            return JString::default().as_raw();
-        }
-    };
-    std::mem::forget(key_expr);
-    key_expr_str.as_raw()
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_intersectsViaJNI(
     _env: JNIEnv,
     _: JClass,
