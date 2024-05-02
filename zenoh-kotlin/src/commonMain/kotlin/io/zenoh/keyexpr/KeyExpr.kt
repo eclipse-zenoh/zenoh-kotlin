@@ -106,7 +106,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Will return false as well if the key expression is not valid anymore.
      */
     fun includes(other: KeyExpr): Boolean {
-        return jniKeyExpr?.includes(other) ?: false
+        return JNIKeyExpr.includes(this, other)
     }
 
     /**

@@ -37,6 +37,13 @@ internal class JNIKeyExpr(internal val ptr: Long) {
             keyExprB.keyExpr
         )
 
+        fun includes(keyExprA: KeyExpr, keyExprB: KeyExpr): Boolean = includesViaJNI(
+            keyExprA.jniKeyExpr?.ptr ?: 0,
+            keyExprA.keyExpr,
+            keyExprB.jniKeyExpr?.ptr ?: 0,
+            keyExprB.keyExpr
+        )
+
         @Throws(Exception::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
@@ -45,20 +52,14 @@ internal class JNIKeyExpr(internal val ptr: Long) {
 
         @Throws(Exception::class)
         private external fun intersectsViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
-    }
 
-    fun includes(other: KeyExpr): Boolean {
-        if (other.jniKeyExpr == null) {
-            return false
-        }
-        return includesViaJNI(ptr, other.jniKeyExpr!!.ptr)
+        @Throws(Exception::class)
+        private external fun includesViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
     }
 
     fun close() {
         freePtrViaJNI(ptr)
     }
-
-    private external fun includesViaJNI(ptrA: Long, ptrB: Long): Boolean
 
     /** Frees the underlying native KeyExpr. */
     private external fun freePtrViaJNI(ptr: Long)

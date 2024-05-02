@@ -86,17 +86,23 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_inte
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_includesViaJNI(
-    _env: JNIEnv,
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesViaJNI(
+    mut env: JNIEnv,
     _: JClass,
     key_expr_ptr_1: *const KeyExpr<'static>,
+    key_expr_str_1: JString,
     key_expr_ptr_2: *const KeyExpr<'static>,
+    key_expr_str_2: JString,
 ) -> jboolean {
-    let key_expr_1 = Arc::from_raw(key_expr_ptr_1);
-    let key_expr_2 = Arc::from_raw(key_expr_ptr_2);
+    let key_expr_1 = match process_key_expr_or_throw(&mut env, &key_expr_str_1, key_expr_ptr_1) {
+        Ok(key_expr) => key_expr,
+        Err(_) => return false as jboolean,
+    };
+    let key_expr_2 = match process_key_expr_or_throw(&mut env, &key_expr_str_2, key_expr_ptr_2) {
+        Ok(key_expr) => key_expr,
+        Err(_) => return false as jboolean,
+    };
     let includes = key_expr_1.includes(&key_expr_2);
-    std::mem::forget(key_expr_1);
-    std::mem::forget(key_expr_2);
     includes as jboolean
 }
 
