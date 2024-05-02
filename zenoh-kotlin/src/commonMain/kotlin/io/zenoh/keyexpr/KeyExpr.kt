@@ -44,19 +44,20 @@ import io.zenoh.jni.JNIKeyExpr
  *
  * A KeyExpr is a string that has been validated to be a valid Key Expression.
  *
- * # Memory
+ * # Declaring a key expression from a session.
  *
- * Valid KeyExpr instances have associated an underlying native key expression, therefore we must be careful to properly
- * call [close] before the KeyExpr loses any of its references and becomes a phantom reference. As a precautionary measure,
- * this class overrides the [finalize] method which invokes [close] when the garbage collector attempts to remove the
- * instance. However, we should not fully rely on the [finalize] method, as per to the JVM specification we don't know
- * when the GC is going to be triggered, and even worse there is no guarantee it will be called at all.
- * Alternatively, we can use the key expression using a try with resources statement (`use` in Kotlin), since it will
- * automatically invoke the [close] function after using it.
+ * A [KeyExpr] acts as a container for the string representation of a key expression. Operations like `intersects`,
+ * `includes`, and `equals` are processed at the native layer using this string representation. For improved performance,
+ * consider initializing a [KeyExpr] through [Session.declareKeyExpr]. This method associates the [KeyExpr] with a native
+ * instance, thereby optimizing operation execution. However, it is crucial to manually invoke [close] on each [KeyExpr]
+ * instance before it is garbage collected to prevent memory leaks.
  *
- * @param jniKeyExpr A [JNIKeyExpr] instance which delegates all the operations associated to this [KeyExpr] (intersects,
- * includes, etc.) which are done natively. It keeps track of the underlying key expression instance. Once it is freed,
- * the [KeyExpr] instance is considered to not be valid anymore.
+ * As an alternative, employing a try-with-resources pattern using Kotlin's `use` block is recommended. This approach
+ * ensures that [close] is automatically called, safely managing the lifecycle of the [KeyExpr] instance.
+ *
+ * @param keyExpr The string representation of the key expression.
+ * @param jniKeyExpr An optional [JNIKeyExpr] instance, present when the key expression was declared through [Session.declareKeyExpr],
+ *  it represents the native instance of the key expression.
  */
 class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable {
 
@@ -136,11 +137,6 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
     override fun close() {
         jniKeyExpr?.close()
         jniKeyExpr = null
-    }
-
-    @Suppress("removal")
-    protected fun finalize() {
-        jniKeyExpr?.close()
     }
 
     override fun equals(other: Any?): Boolean {
