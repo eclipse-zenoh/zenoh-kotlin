@@ -97,7 +97,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Will return false as well if the key expression is not valid anymore.
      */
     fun intersects(other: KeyExpr): Boolean {
-        return jniKeyExpr?.intersects(other) ?: false
+         return JNIKeyExpr.intersects(this, other)
     }
 
     /**

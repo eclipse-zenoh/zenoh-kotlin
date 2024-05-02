@@ -64,17 +64,23 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_auto
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_intersectsViaJNI(
-    _env: JNIEnv,
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsViaJNI(
+    mut env: JNIEnv,
     _: JClass,
     key_expr_ptr_1: *const KeyExpr<'static>,
+    key_expr_str_1: JString,
     key_expr_ptr_2: *const KeyExpr<'static>,
+    key_expr_str_2: JString,
 ) -> jboolean {
-    let key_expr_1 = Arc::from_raw(key_expr_ptr_1);
-    let key_expr_2 = Arc::from_raw(key_expr_ptr_2);
+    let key_expr_1 = match process_key_expr_or_throw(&mut env, &key_expr_str_1, key_expr_ptr_1) {
+        Ok(key_expr) => key_expr,
+        Err(_) => return false as jboolean,
+    };
+    let key_expr_2 = match process_key_expr_or_throw(&mut env, &key_expr_str_2, key_expr_ptr_2) {
+        Ok(key_expr) => key_expr,
+        Err(_) => return false as jboolean,
+    };
     let intersects = key_expr_1.intersects(&key_expr_2);
-    std::mem::forget(key_expr_1);
-    std::mem::forget(key_expr_2);
     intersects as jboolean
 }
 
@@ -158,4 +164,19 @@ pub(crate) unsafe fn process_key_expr(
         std::mem::forget(key_expr);
         Ok(key_expr_clone)
     }
+}
+
+unsafe fn process_key_expr_or_throw(
+    env: &mut JNIEnv,
+    key_expr_str: &JString,
+    key_expr_ptr: *const KeyExpr<'static>,
+) -> core::result::Result<KeyExpr<'static>, ()> {
+    process_key_expr(env, key_expr_str, key_expr_ptr).map_err(|err| {
+        let _ = err.throw_on_jvm(env).map_err(|err| {
+            tracing::error!(
+                "Unable to throw exception while processing key expression: '{}'.",
+                err
+            )
+        });
+    })
 }
