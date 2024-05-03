@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
+import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.prelude.KnownEncoding
@@ -185,8 +186,10 @@ internal class JNISession {
     }
 
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
-        // TODO(https://github.com/eclipse-zenoh/zenoh-kotlin/issues/75): fix key expr could be undeclared twice!
-        undeclareKeyExprViaJNI(sessionPtr.get(), keyExpr.jniKeyExpr!!.ptr)
+        keyExpr.jniKeyExpr?.run {
+            undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
+            keyExpr.close()
+        } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
     }
 
     @Throws(Exception::class)
