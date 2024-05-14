@@ -28,6 +28,7 @@ use zenoh::{
 };
 
 /// Attempts to reconstruct a Zenoh [Sample] from the Java/Kotlin fields specified.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn decode_sample(
     env: &mut JNIEnv,
     key_expr: KeyExpr<'static>,
