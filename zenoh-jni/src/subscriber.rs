@@ -90,7 +90,7 @@ pub(crate) unsafe fn declare_subscriber(
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
     let key_expr_clone = key_expr.deref().clone();
-    log::debug!("Declaring subscriber on '{}'...", key_expr);
+    tracing::debug!("Declaring subscriber on '{}'...", key_expr);
     let result = session
         .declare_subscriber(key_expr_clone.to_owned())
         .callback(move |sample| {
@@ -98,7 +98,7 @@ pub(crate) unsafe fn declare_subscriber(
             let mut env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
-                    log::error!("Unable to attach thread for subscriber: {}", err);
+                    tracing::error!("Unable to attach thread for subscriber: {}", err);
                     return;
                 }
             };
@@ -107,7 +107,7 @@ pub(crate) unsafe fn declare_subscriber(
                 match env.byte_array_from_slice(sample.value.payload.contiguous().as_ref()) {
                     Ok(byte_array) => byte_array,
                     Err(err) => {
-                        log::error!("On subscriber callback error: {}", err.to_string());
+                        tracing::error!("On subscriber callback error: {}", err.to_string());
                         return;
                     }
                 };
@@ -125,7 +125,7 @@ pub(crate) unsafe fn declare_subscriber(
             ) {
                 Ok(byte_array) => byte_array,
                 Err(err) => {
-                    log::error!(
+                    tracing::error!(
                         "On subscriber callback error. Error processing attachment: {}.",
                         err.to_string()
                     );
@@ -151,13 +151,16 @@ pub(crate) unsafe fn declare_subscriber(
             ) {
                 Ok(_) => {}
                 Err(err) => {
-                    log::error!("On subscriber callback error: {}", err.to_string());
+                    tracing::error!("On subscriber callback error: {}", err.to_string());
                     Arc::from_raw(key_expr_ptr); // Free key expr pointer
                 }
             };
             _ = env
                 .delete_local_ref(byte_array)
-                .map_err(|err| log::debug!("Error deleting local ref: {}", err));
+                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+            _ = env
+                .delete_local_ref(attachment_bytes)
+                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
         })
         .reliability(reliability)
         .res();
@@ -167,7 +170,7 @@ pub(crate) unsafe fn declare_subscriber(
     let subscriber =
         result.map_err(|err| Error::Session(format!("Unable to declare subscriber: {}", err)))?;
 
-    log::debug!(
+    tracing::debug!(
         "Subscriber declared on '{}' with reliability '{:?}'.",
         key_expr_clone,
         reliability,

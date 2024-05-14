@@ -15,7 +15,6 @@
 package io.zenoh.jni
 
 import io.zenoh.*
-import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import io.zenoh.sample.Attachment
@@ -36,23 +35,6 @@ internal class JNIPublisher(private val ptr: Long) {
      */
     fun put(value: Value, attachment: Attachment?): Result<Unit> = runCatching {
         putViaJNI(value.payload, value.encoding.knownEncoding.ordinal, attachment?.let { encodeAttachment(it) }, ptr)
-    }
-
-    /**
-     * Write operation.
-     *
-     * @param kind The [SampleKind].
-     * @param value The [Value]  to be written.
-     * @param attachment Optional [Attachment].
-     */
-    fun write(kind: SampleKind, value: Value, attachment: Attachment?): Result<Unit> = runCatching {
-        writeViaJNI(
-            value.payload,
-            value.encoding.knownEncoding.ordinal,
-            kind.ordinal,
-            attachment?.let { encodeAttachment(it) },
-            ptr
-        )
     }
 
     /**
@@ -122,11 +104,6 @@ internal class JNIPublisher(private val ptr: Long) {
     @Throws(Exception::class)
     private external fun putViaJNI(
         valuePayload: ByteArray, valueEncoding: Int, encodedAttachment: ByteArray?, ptr: Long
-    )
-
-    @Throws(Exception::class)
-    private external fun writeViaJNI(
-        payload: ByteArray, encoding: Int, sampleKind: Int, encodedAttachment: ByteArray?, ptr: Long
     )
 
     @Throws(Exception::class)

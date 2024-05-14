@@ -22,19 +22,17 @@ use jni::{
 use zenoh::{
     prelude::{sync::SyncResolve, KeyExpr},
     publication::Publisher,
-    Session,
+    Session, SessionDeclarations,
 };
 
 use crate::{
     errors::{Error, Result},
-    sample::decode_sample_kind,
     utils::{decode_byte_array, vec_to_attachment},
 };
 use crate::{
     put::{decode_congestion_control, decode_priority},
     value::decode_value,
 };
-use zenoh::SessionDeclarations;
 
 /// Performs a put operation on a Zenoh publisher via JNI.
 ///
@@ -76,7 +74,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on PUT operation failure: {}",
                     err
                 )
@@ -146,7 +144,7 @@ pub(crate) unsafe fn declare_publisher(
     std::mem::forget(key_expr);
     match result {
         Ok(publisher) => {
-            log::trace!("Declared publisher ok key expr '{key_expr_clone}', with congestion control '{congestion_control:?}', priority '{priority:?}'.");
+            tracing::trace!("Declared publisher ok key expr '{key_expr_clone}', with congestion control '{congestion_control:?}', priority '{priority:?}'.");
             Ok(Arc::into_raw(Arc::new(publisher)))
         }
         Err(err) => Err(Error::Session(err.to_string())),
@@ -197,7 +195,7 @@ fn perform_put(
 /// - This function is maked as unsafe due to raw pointer manipulation.
 /// - This function is NOT thread safe; if there were to be multiple threads calling this function
 ///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///  
+///
 /// Throws:
 /// - An exception in case the congestion control fails to be decoded.
 ///
@@ -216,7 +214,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
             return;
         }
     };
-    log::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
+    tracing::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
     unsafe {
         let publisher = core::ptr::read(ptr);
         core::ptr::write(
@@ -240,7 +238,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
 /// - This function is maked as unsafe due to raw pointer manipulation.
 /// - This function is NOT thread safe; if there were to be multiple threads calling this function
 ///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///  
+///
 /// Throws:
 /// - An exception in case the priority fails to be decoded.
 ///
@@ -259,97 +257,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
             return;
         }
     };
-    log::debug!("Setting publisher priority with '{priority:?}'.");
+    tracing::debug!("Setting publisher priority with '{priority:?}'.");
     unsafe {
         let publisher = core::ptr::read(ptr);
         core::ptr::write(ptr as *mut _, publisher.priority(priority));
     }
-}
-
-/// Performs a WRITE operation via JNI using the specified Zenoh publisher.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `payload`: The payload as a `JByteArray`.
-/// - `encoding`: The [zenoh::Encoding] of the payload.
-/// - `sample_kind`: The [zenoh::SampleKind] to use.
-/// - `encoded_attachment`: Optional encoded attachment. May be null.
-/// - `publisher`: The Zenoh [Publisher].
-///
-/// Returns:
-/// - A [Result] indicating the success or failure of the operation.
-///
-fn perform_write(
-    env: &JNIEnv,
-    payload: JByteArray,
-    encoding: jint,
-    sample_kind: jint,
-    encoded_attachment: JByteArray,
-    publisher: Arc<Publisher>,
-) -> Result<()> {
-    let value = decode_value(env, payload, encoding)?;
-    let sample_kind = decode_sample_kind(sample_kind)?;
-    let mut publication = publisher.write(sample_kind, value);
-    if !encoded_attachment.is_null() {
-        let aux = decode_byte_array(env, encoded_attachment)?;
-        publication = publication.with_attachment(vec_to_attachment(aux))
-    };
-    publication
-        .res()
-        .map_err(|err| Error::Session(format!("{}", err)))
-}
-
-/// Performs a WRITE operation on a Zenoh publisher via JNI.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `_class`: The JNI class.
-/// - `payload`: The payload to be published, represented as a [Java byte array](JByteArray).
-/// - `encoding`: The [`encoding`](zenoh::Encoding) of the payload.
-/// - `sample_kind`: The [`kind`](zenoh::SampleKind) to use.
-/// - `encoded_attachment`: Optional encoded attachment. May be null.
-/// - `ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
-///
-/// Safety:
-/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided publisher pointer is valid and has not been modified or freed.
-/// - The ownership of the publisher is not transferred, and it is safe to continue using the publisher
-///   after this function call.
-/// - The function may throw an exception in case of failure, which should be handled by the caller.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_writeViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    payload: JByteArray,
-    encoding: jint,
-    sample_kind: jint,
-    encoded_attachment: JByteArray,
-    ptr: *const Publisher<'static>,
-) {
-    let publisher = Arc::from_raw(ptr);
-    match perform_write(
-        &env,
-        payload,
-        encoding,
-        sample_kind,
-        encoded_attachment,
-        publisher.clone(),
-    ) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
-                    "Unable to throw exception on WRITE operation failure: {}",
-                    err
-                )
-            });
-        }
-    };
-    std::mem::forget(publisher)
 }
 
 /// Performs a DELETE operation via JNI using the specified Zenoh publisher.
@@ -407,7 +319,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!(
+                tracing::error!(
                     "Unable to throw exception on WRITE operation failure: {}",
                     err
                 )

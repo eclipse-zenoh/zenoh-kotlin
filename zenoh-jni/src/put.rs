@@ -57,7 +57,7 @@ pub(crate) fn on_put(
     let congestion_control = match decode_congestion_control(congestion_control) {
         Ok(congestion_control) => congestion_control,
         Err(err) => {
-            log::warn!(
+            tracing::warn!(
                 "Error decoding congestion control: '{}'. Using default...",
                 err
             );
@@ -68,7 +68,7 @@ pub(crate) fn on_put(
     let priority = match decode_priority(priority) {
         Ok(priority) => priority,
         Err(err) => {
-            log::warn!("Error decoding priority: '{}'. Using default...", err);
+            tracing::warn!("Error decoding priority: '{}'. Using default...", err);
             Priority::default()
         }
     };
@@ -88,7 +88,7 @@ pub(crate) fn on_put(
 
     match put_builder.res() {
         Ok(_) => {
-            log::trace!("Put on '{key_expr}' with value '{value}' and encoding '{}'. Kind: '{sample_kind}', Congestion control: '{congestion_control:?}', Priority: '{priority:?}'", value.encoding);
+            tracing::trace!("Put on '{key_expr}' with value '{value}' and encoding '{}'. Kind: '{sample_kind}', Congestion control: '{congestion_control:?}', Priority: '{priority:?}'", value.encoding);
             Ok(())
         }
         Err(err) => Err(Error::Session(format!("{}", err))),

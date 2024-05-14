@@ -13,7 +13,7 @@
 //
 
 val zenohGroup = "io.zenoh"
-val zenohVersion = "1.0.0"
+val zenohVersion = file("version.txt").readText()
 
 buildscript {
     repositories {

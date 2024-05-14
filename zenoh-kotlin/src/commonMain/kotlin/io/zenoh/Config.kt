@@ -58,12 +58,19 @@ class Config private constructor(internal val path: Path? = null, internal val j
         /**
          * Loads the configuration from the [json] specified.
          *
-         * @param json The zenoh raw zenoh config.
+         * @param json The raw zenoh config.
          */
         fun from(json: String): Config {
             return Config(jsonConfig = Json.decodeFromString(json))
         }
+
+        /**
+         * Loads the configuration from the [jsonElement] specified.
+         *
+         * @param jsonElement The zenoh config as a [JsonElement].
+         */
+        fun from(jsonElement: JsonElement) = Config(jsonElement)
     }
 
-    constructor(jsonConfig: JsonElement) : this(null, jsonConfig = jsonConfig)
+    private constructor(jsonConfig: JsonElement) : this(null, jsonConfig = jsonConfig)
 }

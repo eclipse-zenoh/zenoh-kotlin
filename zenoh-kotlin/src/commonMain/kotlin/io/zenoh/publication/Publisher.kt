@@ -83,15 +83,6 @@ class Publisher internal constructor(
     fun put(value: String) = Put(jniPublisher, Value(value))
 
     /**
-     * Performs a WRITE operation on the specified [keyExpr]
-     *
-     * @param kind The [SampleKind] of the data.
-     * @param value The [Value] to send.
-     * @return A [Resolvable] operation.
-     */
-    fun write(kind: SampleKind, value: Value) = Write(jniPublisher, value, kind)
-
-    /**
      * Performs a DELETE operation on the specified [keyExpr]
      *
      * @return A [Resolvable] operation.
@@ -157,20 +148,6 @@ class Publisher internal constructor(
 
         override fun res(): Result<Unit> = run {
             jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
-        }
-    }
-
-    class Write internal constructor(
-        private var jniPublisher: JNIPublisher?,
-        val value: Value,
-        val sampleKind: SampleKind,
-        var attachment: Attachment? = null
-    ) : Resolvable<Unit> {
-
-        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
-
-        override fun res(): Result<Unit> = run {
-            jniPublisher?.write(sampleKind, value, attachment) ?: InvalidPublisherResult
         }
     }
 

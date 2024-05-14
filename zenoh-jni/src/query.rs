@@ -90,7 +90,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         Ok(sample) => sample,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!("Unable to throw exception on query reply failure. {}", err)
+                tracing::error!("Unable to throw exception on query reply failure. {}", err)
             });
             return;
         }
@@ -100,7 +100,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
             Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
             Err(err) => {
                 _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                    log::error!("Unable to throw exception on query reply failure. {}", err)
+                    tracing::error!("Unable to throw exception on query reply failure. {}", err)
                 });
                 return;
             }
@@ -152,7 +152,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
         Ok(value) => value,
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!("Unable to throw exception on query reply failure. {}", err)
+                tracing::error!("Unable to throw exception on query reply failure. {}", err)
             });
             return;
         }
@@ -162,7 +162,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
             Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
             Err(err) => {
                 _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                    log::error!("Unable to throw exception on query reply failure. {}", err)
+                    tracing::error!("Unable to throw exception on query reply failure. {}", err)
                 });
                 return;
             }
@@ -291,10 +291,13 @@ pub(crate) fn on_query(
 
     _ = env
         .delete_local_ref(selector_params_jstr)
-        .map_err(|err| log::error!("Error deleting local ref: {}", err));
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(payload)
-        .map_err(|err| log::error!("Error deleting local ref: {}", err));
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(attachment_bytes)
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     result
 }
 
@@ -310,7 +313,7 @@ fn query_reply(
             .reply(reply)
             .with_attachment(attachment)
             .unwrap_or_else(|(builder, _)| {
-                log::warn!("Unable to append attachment to query reply");
+                tracing::warn!("Unable to append attachment to query reply");
                 builder
             })
             .res()
@@ -325,7 +328,7 @@ fn query_reply(
         Ok(_) => {}
         Err(err) => {
             _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                log::error!("Unable to throw exception on query reply failure. {}", err)
+                tracing::error!("Unable to throw exception on query reply failure. {}", err)
             });
         }
     }

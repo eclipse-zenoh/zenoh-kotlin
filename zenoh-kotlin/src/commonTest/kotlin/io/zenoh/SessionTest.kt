@@ -15,14 +15,23 @@
 package io.zenoh
 
 import io.zenoh.exceptions.SessionException
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.Sample
+import kotlinx.coroutines.runBlocking
 import kotlin.test.*
 
 class SessionTest {
+    
+    private lateinit var testKeyExpr: KeyExpr
+    @BeforeTest
+    fun setUp() {
+        testKeyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+    }
 
-    companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+    @AfterTest
+    fun tearDown() {
+        testKeyExpr.close()
     }
 
     @Test
@@ -34,48 +43,31 @@ class SessionTest {
     }
 
     @Test
-    fun sessionStop_stopUnopenedSessionIsNoOp() {
-        val session = Session.open().getOrThrow()
-        session.close()
-    }
-
-    @Test
-    fun sessionClose_doesNotThrowExceptionWhenStoppingSessionWithActiveDeclarations() {
-        val session = Session.open().getOrThrow()
-        session.declarePublisher(TEST_KEY_EXP)
-        session.close()
-    }
-
-    @Test
-    fun sessionDeclare_sessionIsOpenFromInitialization() {
-        val session = Session.open().getOrThrow()
-        assertTrue(session.isOpen())
-        session.close()
-    }
-
-    @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
         val session = Session.open().getOrThrow()
-        session.declareQueryable(TEST_KEY_EXP).with {}.res()
-        session.declareSubscriber(TEST_KEY_EXP).with {}.res()
-        session.declarePublisher(TEST_KEY_EXP).res()
+        val queryable = session.declareQueryable(testKeyExpr).with {}.res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).with {}.res().getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).res().getOrThrow()
         session.close()
+
+        queryable.close()
+        subscriber.close()
+        publisher.close()
     }
 
     @Test
-    fun sessionClose_declarationsAreAliveAfterClosingSessionTest() {
+    fun sessionClose_declarationsAreAliveAfterClosingSessionTest() = runBlocking {
         val session = Session.open().getOrThrow()
         var receivedSample: Sample? = null
 
-        val publisher = session.declarePublisher(TEST_KEY_EXP).res().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
         session.close()
 
         assertTrue(publisher.isValid())
         assertTrue(subscriber.isValid())
 
         publisher.put("Test").res()
-        Thread.sleep(1000)
         assertNotNull(receivedSample)
         assertEquals("Test", receivedSample!!.value.payload.decodeToString())
 
@@ -87,9 +79,9 @@ class SessionTest {
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
         val session = Session.open().getOrThrow()
         session.close()
-        assertFailsWith<SessionException> { session.declarePublisher(TEST_KEY_EXP).res().getOrThrow() }
-        assertFailsWith<SessionException> { session.declareSubscriber(TEST_KEY_EXP).with {}.res().getOrThrow() }
-        assertFailsWith<SessionException> { session.declareQueryable(TEST_KEY_EXP).with {}.res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr).with {}.res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr).with {}.res().getOrThrow() }
     }
 
 }

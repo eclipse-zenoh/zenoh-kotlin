@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.handlers.Handler
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
@@ -24,15 +25,15 @@ import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.runBlocking
 import kotlin.collections.ArrayList
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.Test
+import kotlin.test.*
 
 class SubscriberTest {
 
     companion object {
-        val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         val TEST_PRIORITY = Priority.DATA_HIGH;
         val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK;
 
@@ -43,72 +44,86 @@ class SubscriberTest {
         )
     }
 
+    private lateinit var session: Session
+    private lateinit var testKeyExpr: KeyExpr
+
+    @BeforeTest
+    fun setUp() {
+        session = Session.open().getOrThrow()
+        testKeyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+    }
+
+    @AfterTest
+    fun tearDown() {
+        session.close()
+        testKeyExpr.close()
+    }
+
     @Test
     fun subscriber_runsWithCallback() {
-        val session = Session.open().getOrThrow()
         val receivedSamples = ArrayList<Sample>()
-        session.declareSubscriber(TEST_KEY_EXP).with { sample -> receivedSamples.add(sample) }.res()
+        val subscriber =
+            session.declareSubscriber(testKeyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
 
-        publishTestValues(session)
-        session.close()
-
+        testValues.forEach { value ->
+            session.put(testKeyExpr, value)
+                .priority(TEST_PRIORITY)
+                .congestionControl(TEST_CONGESTION_CONTROL) 
+                .res() 
+        }
         assertEquals(receivedSamples.size, testValues.size)
 
-        for ((index, sample) in receivedSamples.withIndex()) {
-            assertEquals(sample.value, testValues[index])
-            assertEquals(sample.qos.priority(), TEST_PRIORITY);
-            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL);
+        receivedSamples.zip(testValues).forEach { (sample, value) ->
+            assertEquals(sample.value, value)
+            assertEquals(sample.qos.priority(), TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
         }
+
+        subscriber.close()
     }
 
     @Test
     fun subscriber_runsWithHandler() {
         val handler = QueueHandler<Sample>()
-        val session = Session.open().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).with(handler).res().getOrThrow()
-        publishTestValues(session)
-        session.close()
+        val subscriber = session.declareSubscriber(testKeyExpr).with(handler).res().getOrThrow()
 
-        val queue = subscriber.receiver!!
-        assertEquals(queue.size, testValues.size)
-        for ((index, sample) in queue.withIndex()) {
-            assertEquals(sample.value, testValues[index])
-            assertEquals(sample.qos.priority(), TEST_PRIORITY);
-            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL);
+        testValues.forEach { value -> 
+            session.put(testKeyExpr, value)
+                .priority(TEST_PRIORITY)
+                .congestionControl(TEST_CONGESTION_CONTROL) 
+                .res() 
         }
+        assertEquals(handler.queue.size, testValues.size)
+
+        handler.queue.zip(testValues).forEach { (sample, value) ->
+            assertEquals(sample.value, value)
+            assertEquals(sample.qos.priority(), TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
+        }
+
+        subscriber.close()
     }
 
     @Test
     fun subscriberBuilder_channelHandlerIsTheDefaultHandler() {
-        val session = Session.open().getOrThrow()
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).res().getOrThrow()
         assertTrue(subscriber.receiver is Channel<Sample>)
+        subscriber.close()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
     @Test
-    fun onCloseTest() {
-        val session = Session.open().getOrThrow()
+    fun onCloseTest() = runBlocking {
         var onCloseWasCalled = false
-        val subscriber = session.declareSubscriber(TEST_KEY_EXP).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).onClose { onCloseWasCalled = true }.res().getOrThrow()
         subscriber.undeclare()
+
         assertTrue(onCloseWasCalled)
         assertTrue(subscriber.receiver!!.isClosedForReceive)
-        session.close()
-    }
-
-    private fun publishTestValues(session: Session): ArrayList<Value> {
-        val publisher = session
-            .declarePublisher(TEST_KEY_EXP)
-            .congestionControl(TEST_CONGESTION_CONTROL)
-            .priority(TEST_PRIORITY)
-            .res().getOrThrow()
-        testValues.forEach { value -> publisher.put(value).res() }
-        return testValues
     }
 }
 
-private class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
+private class QueueHandler<T : ZenohType> : Handler<T, ArrayDeque<T>> {
 
     val queue: ArrayDeque<T> = ArrayDeque()
     override fun handle(t: T) {
