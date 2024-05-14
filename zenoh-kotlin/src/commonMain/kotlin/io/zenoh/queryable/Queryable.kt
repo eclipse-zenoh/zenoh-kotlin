@@ -23,6 +23,8 @@ import io.zenoh.keyexpr.KeyExpr
 import kotlinx.coroutines.channels.Channel
 
 /**
+ * # Queryable
+ *
  * A queryable that allows to perform multiple queries on the specified [KeyExpr].
  *
  * Its main purpose is to keep the queryable active as long as it exists.
@@ -56,6 +58,11 @@ import kotlinx.coroutines.channels.Channel
  *     }
  * }}
  * ```
+ * ## Lifespan
+ *
+ * Internally, the [Session] from which the [Queryable] was declared keeps a reference to it, therefore keeping it alive
+ * until the session is closed. For the cases where we want to stop the queryable earlier, it's necessary
+ * to keep a reference to it in order to undeclare it later.
  *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, [R] will be [Unit].
  * @property keyExpr The [KeyExpr] to which the subscriber is associated.
@@ -68,7 +75,7 @@ class Queryable<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R?, private var jniQueryable: JNIQueryable?
 ) : AutoCloseable, SessionDeclaration {
 
-    override fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return jniQueryable != null
     }
 
@@ -79,10 +86,6 @@ class Queryable<R> internal constructor(
 
     override fun close() {
         undeclare()
-    }
-
-    protected fun finalize() {
-        jniQueryable?.close()
     }
 
     companion object {
@@ -119,7 +122,7 @@ class Queryable<R> internal constructor(
         private val keyExpr: KeyExpr,
         private var callback: Callback<Query>? = null,
         private var handler: Handler<Query, R>? = null
-    ): Resolvable<Queryable<R>> {
+    ) : Resolvable<Queryable<R>> {
         private var complete: Boolean = false
         private var onClose: (() -> Unit)? = null
 
@@ -165,7 +168,15 @@ class Queryable<R> internal constructor(
                 handler?.onClose()
                 onClose?.invoke()
             }
-            return session.run { resolveQueryable(keyExpr, resolvedCallback, resolvedOnClose, handler?.receiver(), complete) }
+            return session.run {
+                resolveQueryable(
+                    keyExpr,
+                    resolvedCallback,
+                    resolvedOnClose,
+                    handler?.receiver(),
+                    complete
+                )
+            }
         }
     }
 }

@@ -18,12 +18,9 @@ package io.zenoh
  * Session declaration.
  *
  * A session declaration is either a [io.zenoh.publication.Publisher],
- * a [io.zenoh.subscriber.Subscriber] or a [io.zenoh.queryable.Queryable] declared from a [Session].
+ * a [io.zenoh.subscriber.Subscriber], a [io.zenoh.queryable.Queryable] or a [io.zenoh.keyexpr.KeyExpr] declared from a [Session].
  */
 interface SessionDeclaration {
-
-    /** Returns true if the declaration has not been undeclared. */
-    fun isValid(): Boolean
 
     /** Undeclare a declaration. No further operations should be performed after calling this function. */
     fun undeclare()

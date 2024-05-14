@@ -22,6 +22,8 @@ import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
+ * # Publisher
+ *
  * A Zenoh Publisher.
  *
  * A publisher is automatically dropped when using it with the 'try-with-resources' statement (i.e. 'use' in Kotlin).
@@ -55,6 +57,12 @@ import io.zenoh.value.Value
  * ```
  *
  * The publisher configuration parameters can be later changed using the setter functions.
+ *
+ * ## Lifespan
+ *
+ * Internally, the [Session] from which the [Publisher] was declared keeps a reference to it, therefore keeping it alive
+ * until the session is closed. For the cases where we want to stop the publisher earlier, it's necessary
+ * to keep a reference to it in order to undeclare it later.
  *
  * @property keyExpr The key expression the publisher will be associated to.
  * @property jniPublisher Delegate class handling the communication with the native code.
@@ -118,7 +126,7 @@ class Publisher internal constructor(
         jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
     }
 
-    override fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return jniPublisher != null
     }
 
@@ -129,10 +137,6 @@ class Publisher internal constructor(
     override fun undeclare() {
         jniPublisher?.close()
         jniPublisher = null
-    }
-
-    protected fun finalize() {
-        jniPublisher?.close()
     }
 
     class Put internal constructor(
