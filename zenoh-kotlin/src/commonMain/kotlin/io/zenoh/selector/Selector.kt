@@ -15,6 +15,7 @@
 package io.zenoh.selector
 
 import io.zenoh.keyexpr.KeyExpr
+import java.net.URLDecoder
 
 /**
  * A selector is the combination of a [KeyExpr], which defines the
@@ -27,7 +28,20 @@ import io.zenoh.keyexpr.KeyExpr
  * @property keyExpr The [KeyExpr] of the selector.
  * @property parameters The parameters of the selector.
  */
-class Selector(val keyExpr: KeyExpr, val parameters: String = ""): AutoCloseable {
+class Selector(val keyExpr: KeyExpr, val parameters: String = "") : AutoCloseable {
+
+    /** Extracts the selector [parameters]' name-value pairs into a map, returning an error in case of duplicated parameters. */
+    fun parametersStringMap(): Result<Map<String, String>> = runCatching {
+        parameters.split('&').fold(mapOf()) { parametersMap, parameter ->
+            val keyValuePair = parameter.split('=')
+            val key = keyValuePair[0]
+            if (parametersMap.containsKey(key)) {
+                throw IllegalArgumentException("Duplicated parameter `$key` detected.")
+            }
+            val value = keyValuePair.getOrNull(1)?.let { URLDecoder.decode(it, Charsets.UTF_8.name()) } ?: ""
+            parametersMap + (key to value)
+        }
+    }
 
     override fun toString(): String {
         return if (parameters.isEmpty()) "$keyExpr" else "$keyExpr?$parameters"
