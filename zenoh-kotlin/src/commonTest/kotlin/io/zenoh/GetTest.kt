@@ -89,19 +89,21 @@ class GetTest {
     @Test
     fun getWithSelectorParamsTest() {
         var receivedParams = String()
-        val queryable = session.declareQueryable(keyExpr).with {
-            it.use { query ->
-                receivedParams = query.parameters
-            }
-        }.res().getOrThrow()
+        var receivedParamsMap = mapOf<String, String?>()
+        val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
+            receivedParams = query.parameters
+            receivedParamsMap = query.selector.parametersStringMap().getOrThrow()
+        }}.res().getOrThrow()
 
-        val params = "arg1=val1,arg2=val2"
+        val params = "arg1=val1&arg2=val2&arg3"
+        val paramsMap = mapOf("arg1" to "val1", "arg2" to "val2", "arg3" to "")
         val selector = Selector(keyExpr, params)
         session.get(selector).with {}.timeout(Duration.ofMillis(1000)).res()
-        Thread.sleep(1000)
 
         queryable.close()
+
         assertEquals(params, receivedParams)
+        assertEquals(paramsMap, receivedParamsMap)
     }
 }
 
