@@ -21,6 +21,8 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -32,6 +34,9 @@ import kotlin.test.*
 class SubscriberTest {
 
     companion object {
+        val TEST_PRIORITY = Priority.DATA_HIGH;
+        val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK;
+
         val testValues = arrayListOf(
             Value("Test 1".encodeToByteArray(), Encoding(KnownEncoding.TEXT_PLAIN)),
             Value("Test 2".encodeToByteArray(), Encoding(KnownEncoding.TEXT_JSON)),
@@ -60,11 +65,18 @@ class SubscriberTest {
         val subscriber =
             session.declareSubscriber(testKeyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
 
-        testValues.forEach { value -> session.put(testKeyExpr, value).res() }
+        testValues.forEach { value ->
+            session.put(testKeyExpr, value)
+                .priority(TEST_PRIORITY)
+                .congestionControl(TEST_CONGESTION_CONTROL) 
+                .res() 
+        }
         assertEquals(receivedSamples.size, testValues.size)
 
         receivedSamples.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.value, value)
+            assertEquals(sample.qos.priority(), TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
         }
 
         subscriber.close()
@@ -75,11 +87,18 @@ class SubscriberTest {
         val handler = QueueHandler<Sample>()
         val subscriber = session.declareSubscriber(testKeyExpr).with(handler).res().getOrThrow()
 
-        testValues.forEach { value -> session.put(testKeyExpr, value).res() }
+        testValues.forEach { value -> 
+            session.put(testKeyExpr, value)
+                .priority(TEST_PRIORITY)
+                .congestionControl(TEST_CONGESTION_CONTROL) 
+                .res() 
+        }
         assertEquals(handler.queue.size, testValues.size)
 
         handler.queue.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.value, value)
+            assertEquals(sample.qos.priority(), TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
         }
 
         subscriber.close()

@@ -15,6 +15,8 @@
 package io.zenoh.publication
 
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import io.zenoh.Session
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr

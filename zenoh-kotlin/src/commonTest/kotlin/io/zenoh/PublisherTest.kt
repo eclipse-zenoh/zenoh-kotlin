@@ -19,6 +19,7 @@ import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.SampleKind
+import io.zenoh.prelude.QoS
 import io.zenoh.publication.Publisher
 import io.zenoh.sample.Sample
 import io.zenoh.subscriber.Subscriber

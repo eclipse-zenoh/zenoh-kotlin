@@ -18,8 +18,8 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 
 class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Put example"

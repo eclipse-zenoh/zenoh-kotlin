@@ -26,8 +26,8 @@ use zenoh::{
     value::Value,
 };
 
-use crate::errors::Result;
 use crate::{errors::Error, utils::attachment_to_vec};
+use crate::{errors::Result, sample::qos_into_jbyte};
 
 pub(crate) fn on_reply(
     mut env: JNIEnv,
@@ -74,7 +74,7 @@ fn on_reply_success(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZJ[BIIJZ[B)V",
+        "(Ljava/lang/String;ZJ[BIIJZB[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
@@ -84,6 +84,7 @@ fn on_reply_success(
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
+            JValue::from(qos_into_jbyte(sample.qos)),
             JValue::from(&attachment_bytes),
         ],
     ) {

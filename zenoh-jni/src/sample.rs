@@ -17,17 +17,18 @@ use crate::{
     value::decode_value,
 };
 use jni::{
-    objects::JByteArray,
-    sys::{jboolean, jint, jlong},
+    objects::{JByteArray, JClass},
+    sys::{jboolean, jbyte, jint, jlong},
     JNIEnv,
 };
 use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     prelude::{KeyExpr, SampleKind},
-    sample::Sample,
+    sample::{QoS, Sample},
 };
 
 /// Attempts to reconstruct a Zenoh [Sample] from the Java/Kotlin fields specified.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn decode_sample(
     env: &mut JNIEnv,
     key_expr: KeyExpr<'static>,
@@ -36,6 +37,7 @@ pub(crate) fn decode_sample(
     sample_kind: jint,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
+    qos: jbyte,
 ) -> Result<Sample> {
     let value = decode_value(env, payload, encoding)?;
     let mut sample = Sample::new(key_expr, value);
@@ -45,6 +47,7 @@ pub(crate) fn decode_sample(
     } else {
         None
     };
+    sample.qos = qos_from_jbyte(qos);
     Ok(sample)
 }
 
@@ -57,4 +60,51 @@ pub(crate) fn decode_sample_kind(sample_kind: jint) -> Result<SampleKind> {
             sample_kind,
         ))),
     }
+}
+
+pub fn qos_from_jbyte(qos: jbyte) -> QoS {
+    unsafe { std::mem::transmute::<jbyte, QoS>(qos) }
+}
+
+pub fn qos_into_jbyte(qos: QoS) -> jbyte {
+    unsafe { std::mem::transmute::<QoS, jbyte>(qos) }
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getPriorityViaJNI(
+    _env: JNIEnv,
+    _class: JClass,
+    qos: jbyte,
+) -> jint {
+    qos_from_jbyte(qos).priority() as jint
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getCongestionControlViaJNI(
+    _env: JNIEnv,
+    _class: JClass,
+    qos: jbyte,
+) -> jint {
+    qos_from_jbyte(qos).congestion_control() as jint
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_getExpressdViaJNI(
+    _env: JNIEnv,
+    _class: JClass,
+    qos: jbyte,
+) -> jboolean {
+    qos_from_jbyte(qos).express() as jboolean
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIQoS_00024Companion_getDefaultQoSViaJNI(
+    _env: JNIEnv,
+    _class: JClass,
+) -> jbyte {
+    qos_into_jbyte(QoS::default())
 }
