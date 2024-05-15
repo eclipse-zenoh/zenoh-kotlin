@@ -56,10 +56,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                             subscriber.use {
                                 println("Press CTRL-C to quit...")
                                 runBlocking {
-                                    val receiver = subscriber.receiver!!
-                                    val iterator = receiver.iterator()
-                                    while (iterator.hasNext()) {
-                                        val sample = iterator.next()
+                                    for (sample in subscriber.receiver!!) {
                                         println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
                                             sample.attachment?.let {
                                                 ", with attachment: " + "${

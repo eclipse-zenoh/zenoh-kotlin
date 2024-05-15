@@ -99,11 +99,11 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
-        "test/thr".intoKeyExpr().onSuccess {
-            it.use { keyExpr ->
+        "test/thr".intoKeyExpr().onSuccess { keyExpr ->
+            keyExpr.use {
                 println("Opening Session")
-                Session.open(config).onSuccess {
-                    it.use { session ->
+                Session.open(config).onSuccess { session ->
+                    session.use {
                         println("Press CTRL-C to quit...")
                         subscriber =
                             session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()

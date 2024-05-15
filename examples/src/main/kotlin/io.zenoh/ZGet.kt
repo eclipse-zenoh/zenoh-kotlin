@@ -89,16 +89,12 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                                 }
                             }
                             .res()
-                            .onSuccess {
+                            .onSuccess { receiver ->
                                 runBlocking {
-                                    val iterator = it!!.iterator()
-                                    while (iterator.hasNext()) {
-                                        val reply = iterator.next()
-                                        if (reply is Reply.Success) {
-                                            println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
-                                        } else {
-                                            reply as Reply.Error
-                                            println("Received (ERROR: '${reply.error}')")
+                                    for (reply in receiver!!) {
+                                        when (reply) {
+                                            is Reply.Success -> {println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")}
+                                            is Reply.Error -> println("Received (ERROR: '${reply.error}')")
                                         }
                                     }
                                 }
