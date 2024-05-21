@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           case ${{ matrix.job.target }} in
-            *-linux-gnu*) cargo install cargo-deb ;;
+            *-linux-gnu*) cargo +stable install cargo-deb --locked ;;
           esac
 
           case ${{ matrix.job.target }} in
