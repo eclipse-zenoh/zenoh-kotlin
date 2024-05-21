@@ -27,8 +27,8 @@ use crate::{
     utils::attachment_to_vec,
 };
 use crate::{
-    key_expr::process_key_expr,
     sample::qos_into_jbyte,
+    key_expr::process_kotlin_key_expr,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
 
@@ -92,13 +92,15 @@ pub(crate) unsafe fn declare_subscriber(
     let reliability = decode_reliability(reliability)?;
     let on_close = load_on_close(&java_vm, on_close_global_ref);
 
-    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
+    let key_expr = process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr)?;
     tracing::debug!("Declaring subscriber on '{}'...", key_expr);
     let session = Arc::from_raw(session_ptr);
+
     let result = session
         .declare_subscriber(key_expr.to_owned())
         .callback(move |sample| {
-            on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
+            on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+
             let mut env = match java_vm.attach_current_thread_as_daemon() {
                 Ok(env) => env,
                 Err(err) => {
@@ -111,17 +113,17 @@ pub(crate) unsafe fn declare_subscriber(
                 match env.byte_array_from_slice(sample.value.payload.contiguous().as_ref()) {
                     Ok(byte_array) => byte_array,
                     Err(err) => {
-                        tracing::error!("On subscriber callback error: {}", err.to_string());
+                        tracing::error!("On subscriber callback error: {}", err);
                         return;
                     }
                 };
 
             let encoding: jint = sample.value.encoding.prefix().to_owned() as jint;
-            let kind = sample.kind.to_owned() as jint;
-            let (timestamp, is_valid) = sample.timestamp.map_or_else(
-                || (0, false),
-                |timestamp| (timestamp.get_time().as_u64(), true),
-            );
+            let kind = sample.kind as jint;
+            let (timestamp, is_valid) = sample
+                .timestamp
+                .map(|timestamp| (timestamp.get_time().as_u64(), true))
+                .unwrap_or((0, false));
 
             let attachment_bytes = match sample.attachment.map_or_else(
                 || env.byte_array_from_slice(&[]),
@@ -131,7 +133,7 @@ pub(crate) unsafe fn declare_subscriber(
                 Err(err) => {
                     tracing::error!(
                         "On subscriber callback error. Error processing attachment: {}.",
-                        err.to_string()
+                        err
                     );
                     return;
                 }
@@ -148,7 +150,7 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
-            match env.call_method(
+            if let Err(err) = env.call_method(
                 &callback_global_ref,
                 "run",
                 "(Ljava/lang/String;[BIIJZB[B)V",
@@ -163,11 +165,8 @@ pub(crate) unsafe fn declare_subscriber(
                     JValue::from(&attachment_bytes),
                 ],
             ) {
-                Ok(_) => {}
-                Err(err) => {
-                    tracing::error!("On subscriber callback error: {}", err.to_string());
-                }
-            };
+                tracing::error!("On subscriber callback error: {}", err);
+            }
             _ = env
                 .delete_local_ref(key_expr_str)
                 .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
@@ -180,6 +179,7 @@ pub(crate) unsafe fn declare_subscriber(
         })
         .reliability(reliability)
         .res();
+
     std::mem::forget(session);
 
     let subscriber =
@@ -188,7 +188,7 @@ pub(crate) unsafe fn declare_subscriber(
     tracing::debug!(
         "Subscriber declared on '{}' with reliability '{:?}'.",
         key_expr,
-        reliability,
+        reliability
     );
     Ok(Arc::into_raw(Arc::new(subscriber)))
 }

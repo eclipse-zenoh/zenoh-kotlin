@@ -24,7 +24,7 @@ use zenoh::{queryable::Queryable, Session};
 
 use crate::{
     errors::{Error, Result},
-    key_expr::process_key_expr,
+    key_expr::process_kotlin_key_expr,
     query::on_query,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
@@ -86,7 +86,7 @@ pub(crate) unsafe fn declare_queryable(
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
     let on_close_global_ref = get_callback_global_ref(env, on_close)?;
-    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
+    let key_expr = process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr)?;
     let complete = complete != 0;
     let on_close = load_on_close(&java_vm, on_close_global_ref);
     let session: Arc<Session> = Arc::from_raw(session_ptr);

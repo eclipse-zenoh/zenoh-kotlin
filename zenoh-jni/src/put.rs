@@ -13,7 +13,7 @@
 //
 
 use crate::errors::{Error, Result};
-use crate::key_expr::process_key_expr;
+use crate::key_expr::process_kotlin_key_expr;
 use crate::sample::decode_sample_kind;
 use crate::utils::{decode_byte_array, vec_to_attachment};
 use crate::value::decode_value;
@@ -56,7 +56,7 @@ pub(crate) fn on_put(
     sample_kind: jint,
     attachment: JByteArray,
 ) -> Result<()> {
-    let key_expr = unsafe { process_key_expr(env, &key_expr_str, key_expr_ptr) }?;
+    let key_expr = unsafe { process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr) }?;
     let value = decode_value(env, payload, encoding)?;
     let sample_kind = decode_sample_kind(sample_kind)?;
     let congestion_control = match decode_congestion_control(congestion_control) {

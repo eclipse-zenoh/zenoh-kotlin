@@ -29,7 +29,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
-    key_expr::process_key_expr,
+    key_expr::process_kotlin_key_expr,
     utils::attachment_to_vec,
     value::decode_value,
 };
@@ -79,12 +79,12 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     qos: jbyte,
     attachment: JByteArray,
 ) {
-    let key_expr: KeyExpr<'static> = match process_key_expr(&mut env, &key_expr_str, key_expr_ptr) {
+    let key_expr = match process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) {
         Ok(key_expr) => key_expr,
         Err(err) => {
-            _ = err
-                .throw_on_jvm(&mut env)
-                .map_err(|err| tracing::error!("{}", err));
+            if let Err(err) = err.throw_on_jvm(&mut env) {
+                tracing::error!("{}", err);
+            }
             return;
         }
     };
@@ -101,19 +101,20 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     ) {
         Ok(sample) => sample,
         Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!("Unable to throw exception on query reply failure. {}", err)
-            });
+            if let Err(err) = err.throw_on_jvm(&mut env) {
+                tracing::error!("Unable to throw exception on query reply failure: {}", err);
+            }
             return;
         }
     };
-    let attachment: Option<Attachment> = if !attachment.is_null() {
+
+    let attachment = if !attachment.is_null() {
         match decode_byte_array(&env, attachment) {
             Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
             Err(err) => {
-                _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                    tracing::error!("Unable to throw exception on query reply failure. {}", err)
-                });
+                if let Err(err) = err.throw_on_jvm(&mut env) {
+                    tracing::error!("Unable to throw exception on query reply failure: {}", err);
+                }
                 return;
             }
         }
@@ -123,7 +124,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 
     let query = Arc::from_raw(query_ptr);
     query_reply(env, &query, Ok(sample), attachment);
-    mem::forget(query)
+    mem::forget(query);
 }
 
 /// Replies with error to a Zenoh query via JNI.
@@ -246,35 +247,34 @@ pub(crate) fn on_query(
                 ))
             })?;
 
-    let (with_value, payload, encoding) = match value {
-        Some(value) => {
-            let byte_array = env
-                .byte_array_from_slice(value.payload.contiguous().as_ref())
-                .map_err(|err| Error::Jni(err.to_string()))?;
-            let encoding: i32 = value.encoding.prefix().to_owned() as i32;
-            (true, byte_array, encoding)
-        }
-        None => (false, JPrimitiveArray::default(), 0),
+    let (with_value, payload, encoding) = if let Some(value) = value {
+        let byte_array = env
+            .byte_array_from_slice(value.payload.contiguous().as_ref())
+            .map_err(|err| Error::Jni(err.to_string()))?;
+        let encoding: i32 = value.encoding.prefix().to_owned() as i32;
+        (true, byte_array, encoding)
+    } else {
+        (false, JPrimitiveArray::default(), 0)
     };
 
-    let attachment_bytes = match query.attachment().map_or_else(
-        || env.byte_array_from_slice(&[]),
-        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment.clone()).as_slice()),
-    ) {
-        Ok(byte_array) => Ok(byte_array),
-        Err(err) => Err(Error::Jni(format!(
-            "Error processing attachment of reply: {}.",
-            err
-        ))),
-    }?;
+    let attachment_bytes = query
+        .attachment()
+        .map_or_else(
+            || env.byte_array_from_slice(&[]),
+            |attachment| {
+                env.byte_array_from_slice(attachment_to_vec(attachment.clone()).as_slice())
+            },
+        )
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
-    let key_expr_str = match env.new_string(&query.key_expr().to_string()) {
-        Ok(key_expr_str) => key_expr_str,
-        Err(err) => Err(Error::Jni(format!(
-            "Could not create a JString through JNI for the Query key expression. {}",
-            err
-        )))?,
-    };
+    let key_expr_str = env
+        .new_string(&query.key_expr().to_string())
+        .map_err(|err| {
+            Error::Jni(format!(
+                "Could not create a JString through JNI for the Query key expression. {}",
+                err
+            ))
+        })?;
 
     let query_ptr = Arc::into_raw(Arc::new(query));
 

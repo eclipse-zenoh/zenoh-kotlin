@@ -49,34 +49,33 @@ fn on_reply_success(
     let zenoh_id = env
         .new_string(replier_id.to_string())
         .map_err(|err| Error::Jni(err.to_string()))?;
+
     let byte_array = env
         .byte_array_from_slice(sample.value.payload.contiguous().as_ref())
         .map_err(|err| Error::Jni(err.to_string()))?;
+
     let encoding: jint = sample.value.encoding.prefix().to_owned() as jint;
-    let kind = sample.kind.to_owned() as jint;
-    let (timestamp, is_valid) = sample.timestamp.map_or_else(
-        || (0, false),
-        |timestamp| (timestamp.get_time().as_u64(), true),
-    );
+    let kind = sample.kind as jint;
 
-    let attachment_bytes = match sample.attachment.map_or_else(
-        || env.byte_array_from_slice(&[]),
-        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
-    ) {
-        Ok(byte_array) => Ok(byte_array),
-        Err(err) => Err(Error::Jni(format!(
-            "Error processing attachment of reply: {}.",
-            err
-        ))),
-    }?;
+    let (timestamp, is_valid) = sample
+        .timestamp
+        .map(|timestamp| (timestamp.get_time().as_u64(), true))
+        .unwrap_or((0, false));
 
-    let key_expr_str = match env.new_string(&sample.key_expr.to_string()) {
-        Ok(key_expr_str) => key_expr_str,
-        Err(err) => Err(Error::Jni(format!(
+    let attachment_bytes = sample
+        .attachment
+        .map_or_else(
+            || env.byte_array_from_slice(&[]),
+            |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+        )
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
+
+    let key_expr_str = env.new_string(sample.key_expr.to_string()).map_err(|err| {
+        Error::Jni(format!(
             "Could not create a JString through JNI for the Sample key expression. {}",
             err
-        )))?,
-    };
+        ))
+    })?;
 
     let result = match env.call_method(
         callback_global_ref,

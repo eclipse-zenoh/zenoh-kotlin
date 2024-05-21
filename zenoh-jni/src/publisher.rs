@@ -27,7 +27,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
-    key_expr::process_key_expr,
+    key_expr::process_kotlin_key_expr,
     utils::{decode_byte_array, vec_to_attachment},
 };
 use crate::{
@@ -138,7 +138,7 @@ pub(crate) unsafe fn declare_publisher(
     priority: jint,
 ) -> Result<*const Publisher<'static>> {
     let session = Arc::from_raw(session_ptr);
-    let key_expr = process_key_expr(env, &key_expr_str, key_expr_ptr)?;
+    let key_expr = process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr)?;
     let congestion_control = decode_congestion_control(congestion_control)?;
     let priority = decode_priority(priority)?;
     let result = session

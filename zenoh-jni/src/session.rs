@@ -13,7 +13,7 @@
 //
 
 use crate::errors::{Error, Result};
-use crate::key_expr::process_key_expr;
+use crate::key_expr::process_kotlin_key_expr;
 use crate::publisher::declare_publisher;
 use crate::put::on_put;
 use crate::query::{decode_consolidation, decode_query_target};
@@ -732,7 +732,7 @@ fn on_get_query(
     value_params: Option<(JByteArray, jint)>,
     encoded_attachment: JByteArray,
 ) -> Result<()> {
-    let key_expr = unsafe { process_key_expr(env, &key_expr_str, key_expr_ptr) }?;
+    let key_expr = unsafe { process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr) }?;
     let java_vm = Arc::new(get_java_vm(env)?);
     let callback_global_ref = get_callback_global_ref(env, callback)?;
     let on_close_global_ref = get_callback_global_ref(env, on_close)?;
