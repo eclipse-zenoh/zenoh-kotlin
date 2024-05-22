@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use jni::{
     objects::{JClass, JObject, JString, JValue},
-    sys::{jint, jlong},
+    sys::jint,
     JNIEnv,
 };
 use zenoh::prelude::r#sync::*;
@@ -27,8 +27,8 @@ use crate::{
     utils::attachment_to_vec,
 };
 use crate::{
-    sample::qos_into_jbyte,
     key_expr::process_kotlin_key_expr,
+    sample::qos_into_jbyte,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
 
