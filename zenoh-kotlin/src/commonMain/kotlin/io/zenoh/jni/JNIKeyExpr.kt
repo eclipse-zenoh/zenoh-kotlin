@@ -22,66 +22,44 @@ internal class JNIKeyExpr(internal val ptr: Long) {
     companion object {
         fun tryFrom(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load() // It may happen the zenoh library is not yet loaded when creating a key expression.
-            val keyExprPtr = tryFromViaJNI(keyExpr)
-            KeyExpr(JNIKeyExpr(keyExprPtr))
+            KeyExpr(tryFromViaJNI(keyExpr))
         }
 
         fun autocanonize(keyExpr: String): Result<KeyExpr> = runCatching {
             Zenoh.load()
-            val keyExprPtr = autocanonizeViaJNI(keyExpr)
-            KeyExpr(JNIKeyExpr(keyExprPtr))
+            KeyExpr(autocanonizeViaJNI(keyExpr))
         }
+
+        fun intersects(keyExprA: KeyExpr, keyExprB: KeyExpr): Boolean = intersectsViaJNI(
+            keyExprA.jniKeyExpr?.ptr ?: 0,
+            keyExprA.keyExpr,
+            keyExprB.jniKeyExpr?.ptr ?: 0,
+            keyExprB.keyExpr
+        )
+
+        fun includes(keyExprA: KeyExpr, keyExprB: KeyExpr): Boolean = includesViaJNI(
+            keyExprA.jniKeyExpr?.ptr ?: 0,
+            keyExprA.keyExpr,
+            keyExprB.jniKeyExpr?.ptr ?: 0,
+            keyExprB.keyExpr
+        )
 
         @Throws(Exception::class)
-        private external fun tryFromViaJNI(keyExpr: String): Long
+        private external fun tryFromViaJNI(keyExpr: String): String
 
         @Throws(Exception::class)
-        private external fun autocanonizeViaJNI(keyExpr: String): Long
-    }
+        private external fun autocanonizeViaJNI(keyExpr: String): String
 
-    override fun toString(): String {
-        return getStringValueViaJNI(ptr)
-    }
+        @Throws(Exception::class)
+        private external fun intersectsViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
 
-    fun intersects(other: KeyExpr): Boolean {
-        if (other.jniKeyExpr == null) {
-            return false
-        }
-        return intersectsViaJNI(ptr, other.jniKeyExpr!!.ptr)
-    }
-
-    fun includes(other: KeyExpr): Boolean {
-        if (other.jniKeyExpr == null) {
-            return false
-        }
-        return includesViaJNI(ptr, other.jniKeyExpr!!.ptr)
+        @Throws(Exception::class)
+        private external fun includesViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
     }
 
     fun close() {
         freePtrViaJNI(ptr)
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as JNIKeyExpr
-
-        return equalsViaJNI(ptr, other.ptr)
-    }
-
-    override fun hashCode(): Int {
-        return ptr.hashCode()
-    }
-
-    private external fun equalsViaJNI(ptrA: Long, ptrB: Long): Boolean
-
-    private external fun intersectsViaJNI(ptrA: Long, ptrB: Long): Boolean
-
-    private external fun includesViaJNI(ptrA: Long, ptrB: Long): Boolean
-
-    @Throws(Exception::class)
-    private external fun getStringValueViaJNI(ptr: Long): String
 
     /** Frees the underlying native KeyExpr. */
     private external fun freePtrViaJNI(ptr: Long)

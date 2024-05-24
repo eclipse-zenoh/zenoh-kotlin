@@ -52,10 +52,10 @@ class KeyExprTest {
         assertNotEquals(keyExpr1, keyExpr3)
 
         keyExpr2.close()
-        assertNotEquals(keyExpr1, keyExpr2)
+        assertEquals(keyExpr1, keyExpr2)
 
         keyExpr1.close()
-        assertNotEquals(keyExpr1, keyExpr2)
+        assertEquals(keyExpr1, keyExpr2)
     }
 
     @Test
@@ -69,11 +69,9 @@ class KeyExprTest {
     fun toStringTest() {
         val keyExprStr = "example/test/a/b/c"
         val keyExpr = KeyExpr.tryFrom(keyExprStr).getOrThrow()
-
         assertEquals(keyExprStr, keyExpr.toString())
-
         keyExpr.close()
-        assertTrue(keyExpr.toString().isEmpty())
+        assertEquals(keyExprStr, keyExpr.toString())
     }
 
     @Test
@@ -118,11 +116,16 @@ class KeyExprTest {
         val undeclare1 = session.undeclare(keyExpr).res()
         assertTrue(undeclare1.isSuccess)
 
-        // Undeclaring a key expr that was not declared through a session.
-        val keyExpr2 = "x/y/z".intoKeyExpr().getOrThrow()
-        val undeclare2 = session.undeclare(keyExpr2).res()
+        // Undeclaring twice a key expression shall fail.
+        val undeclare2 = session.undeclare(keyExpr).res()
         assertTrue(undeclare2.isFailure)
         assertTrue(undeclare2.exceptionOrNull() is SessionException)
+
+        // Undeclaring a key expr that was not declared through a session.
+        val keyExpr2 = "x/y/z".intoKeyExpr().getOrThrow()
+        val undeclare3 = session.undeclare(keyExpr2).res()
+        assertTrue(undeclare3.isFailure)
+        assertTrue(undeclare3.exceptionOrNull() is SessionException)
 
         session.close()
         keyExpr.close()

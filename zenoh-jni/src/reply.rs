@@ -12,11 +12,9 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::sync::Arc;
-
 use jni::{
     objects::{GlobalRef, JObject, JValue},
-    sys::{jint, jlong},
+    sys::jint,
     JNIEnv,
 };
 use zenoh::{
@@ -49,36 +47,42 @@ fn on_reply_success(
     let zenoh_id = env
         .new_string(replier_id.to_string())
         .map_err(|err| Error::Jni(err.to_string()))?;
+
     let byte_array = env
         .byte_array_from_slice(sample.value.payload.contiguous().as_ref())
         .map_err(|err| Error::Jni(err.to_string()))?;
+
     let encoding: jint = sample.value.encoding.prefix().to_owned() as jint;
-    let kind = sample.kind.to_owned() as jint;
-    let (timestamp, is_valid) = sample.timestamp.map_or_else(
-        || (0, false),
-        |timestamp| (timestamp.get_time().as_u64(), true),
-    );
+    let kind = sample.kind as jint;
 
-    let attachment_bytes = match sample.attachment.map_or_else(
-        || env.byte_array_from_slice(&[]),
-        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
-    ) {
-        Ok(byte_array) => Ok(byte_array),
-        Err(err) => Err(Error::Jni(format!(
-            "Error processing attachment of reply: {}.",
+    let (timestamp, is_valid) = sample
+        .timestamp
+        .map(|timestamp| (timestamp.get_time().as_u64(), true))
+        .unwrap_or((0, false));
+
+    let attachment_bytes = sample
+        .attachment
+        .map_or_else(
+            || env.byte_array_from_slice(&[]),
+            |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+        )
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
+
+    let key_expr_str = env.new_string(sample.key_expr.to_string()).map_err(|err| {
+        Error::Jni(format!(
+            "Could not create a JString through JNI for the Sample key expression. {}",
             err
-        ))),
-    }?;
+        ))
+    })?;
 
-    let key_expr_ptr = Arc::into_raw(Arc::new(sample.key_expr));
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZJ[BIIJZB[B)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZB[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
-            JValue::from(key_expr_ptr as jlong),
+            JValue::from(&key_expr_str),
             JValue::from(&byte_array),
             JValue::from(encoding),
             JValue::from(kind),
@@ -90,14 +94,14 @@ fn on_reply_success(
     ) {
         Ok(_) => Ok(()),
         Err(err) => {
-            unsafe {
-                Arc::from_raw(key_expr_ptr);
-            }
             _ = env.exception_describe();
             Err(Error::Jni(format!("On GET callback error: {}", err)))
         }
     };
 
+    _ = env
+        .delete_local_ref(key_expr_str)
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(zenoh_id)
         .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));

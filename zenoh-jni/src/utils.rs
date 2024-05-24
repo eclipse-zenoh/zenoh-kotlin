@@ -23,9 +23,9 @@ use zenoh::sample::{Attachment, AttachmentBuilder};
 use crate::errors::{Error, Result};
 
 /// Converts a JString into a rust String.
-pub(crate) fn decode_string(env: &mut JNIEnv, string: JString) -> Result<String> {
+pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {
     let binding = env
-        .get_string(&string)
+        .get_string(string)
         .map_err(|err| Error::Jni(format!("Error while retrieving JString: {}", err)))?;
     let value = binding
         .to_str()

@@ -30,7 +30,8 @@ internal class JNIQuery(private val ptr: Long) {
         val timestampEnabled = sample.timestamp != null
         replySuccessViaJNI(
             ptr,
-            sample.keyExpr.jniKeyExpr!!.ptr,
+            sample.keyExpr.jniKeyExpr?.ptr ?: 0,
+            sample.keyExpr.keyExpr,
             sample.value.payload,
             sample.value.encoding.knownEncoding.ordinal,
             sample.kind.ordinal,
@@ -52,7 +53,8 @@ internal class JNIQuery(private val ptr: Long) {
     @Throws(Exception::class)
     private external fun replySuccessViaJNI(
         queryPtr: Long,
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         valuePayload: ByteArray,
         valueEncoding: Int,
         sampleKind: Int,

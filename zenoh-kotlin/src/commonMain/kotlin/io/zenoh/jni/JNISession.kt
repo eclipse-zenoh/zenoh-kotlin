@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
+import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.prelude.KnownEncoding
@@ -60,7 +61,8 @@ internal class JNISession {
 
     fun declarePublisher(builder: Publisher.Builder): Result<Publisher> = runCatching {
         val publisherRawPtr = declarePublisherViaJNI(
-            builder.keyExpr.jniKeyExpr!!.ptr,
+            builder.keyExpr.jniKeyExpr?.ptr ?: 0,
+            builder.keyExpr.keyExpr,
             sessionPtr.get(),
             builder.congestionControl.value,
             builder.priority.value,
@@ -77,11 +79,11 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExprPtr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
+            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
-                    KeyExpr(JNIKeyExpr(keyExprPtr)),
+                    KeyExpr(keyExpr, null),
                     Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                     SampleKind.fromInt(kind),
                     timestamp,
@@ -91,7 +93,7 @@ internal class JNISession {
                 callback.run(sample)
             }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
@@ -100,17 +102,17 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
-            JNIQueryableCallback { keyExprPtr: Long, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, attachmentBytes: ByteArray, queryPtr: Long ->
+            JNIQueryableCallback { keyExpr: String, selectorParams: String, withValue: Boolean, payload: ByteArray?, encoding: Int, attachmentBytes: ByteArray, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
-                val keyExpression = KeyExpr(JNIKeyExpr(keyExprPtr))
-                val selector = Selector(keyExpression, selectorParams)
+                val keyExpr2 = KeyExpr(keyExpr, null)
+                val selector = Selector(keyExpr2, selectorParams)
                 val value: Value? = if (withValue) Value(payload!!, Encoding(KnownEncoding.fromInt(encoding))) else null
                 val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
-                val query = Query(keyExpression, selector, value, decodedAttachment, jniQuery)
+                val query = Query(keyExpr2, selector, value, decodedAttachment, jniQuery)
                 callback.run(query)
             }
         val queryableRawPtr =
-            declareQueryableViaJNI(keyExpr.jniKeyExpr!!.ptr, sessionPtr.get(), queryCallback, onClose, complete)
+            declareQueryableViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), queryCallback, onClose, complete)
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
@@ -126,12 +128,12 @@ internal class JNISession {
         attachment: Attachment?
     ): Result<R?> = runCatching {
         val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExprPtr: Long, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
+            JNIGetCallback { replierId: String, success: Boolean, keyExpr: String, payload: ByteArray, encoding: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
                 if (success) {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                     val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                     val sample = Sample(
-                        KeyExpr(JNIKeyExpr(keyExprPtr)),
+                        KeyExpr(keyExpr, null),
                         Value(payload, Encoding(KnownEncoding.fromInt(encoding))),
                         SampleKind.fromInt(kind),
                         timestamp,
@@ -148,7 +150,8 @@ internal class JNISession {
 
         if (value == null) {
             getViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
+                selector.keyExpr.keyExpr,
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
@@ -160,7 +163,8 @@ internal class JNISession {
             )
         } else {
             getWithValueViaJNI(
-                selector.keyExpr.jniKeyExpr!!.ptr,
+                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
+                selector.keyExpr.keyExpr,
                 selector.parameters,
                 sessionPtr.get(),
                 getCallback,
@@ -178,11 +182,14 @@ internal class JNISession {
 
     fun declareKeyExpr(keyExpr: String): Result<KeyExpr> = runCatching {
         val ptr = declareKeyExprViaJNI(sessionPtr.get(), keyExpr)
-        return Result.success(KeyExpr(JNIKeyExpr(ptr)))
+        return Result.success(KeyExpr(keyExpr, JNIKeyExpr(ptr)))
     }
 
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
-        undeclareKeyExprViaJNI(sessionPtr.get(), keyExpr.jniKeyExpr!!.ptr)
+        keyExpr.jniKeyExpr?.run {
+            undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
+            keyExpr.close()
+        } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
     }
 
     @Throws(Exception::class)
@@ -191,7 +198,8 @@ internal class JNISession {
         put: Put,
     ) {
         putViaJNI(
-            keyExpr.jniKeyExpr!!.ptr,
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
             sessionPtr.get(),
             put.value.payload,
             put.value.encoding.knownEncoding.ordinal,
@@ -212,12 +220,17 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declarePublisherViaJNI(
-        keyExpr: Long, ptr: Long, congestionControl: Int, priority: Int
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        congestionControl: Int,
+        priority: Int
     ): Long
 
     @Throws(Exception::class)
     private external fun declareSubscriberViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         callback: JNISubscriberCallback,
         onClose: JNIOnCloseCallback,
@@ -226,7 +239,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun declareQueryableViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         callback: JNIQueryableCallback,
         onClose: JNIOnCloseCallback,
@@ -241,7 +255,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun getViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
@@ -254,7 +269,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun getWithValueViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         selectorParams: String,
         sessionPtr: Long,
         callback: JNIGetCallback,
@@ -269,7 +285,8 @@ internal class JNISession {
 
     @Throws(Exception::class)
     private external fun putViaJNI(
-        keyExpr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
         sessionPtr: Long,
         valuePayload: ByteArray,
         valueEncoding: Int,

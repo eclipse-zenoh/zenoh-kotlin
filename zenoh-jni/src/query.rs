@@ -12,10 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::{mem, ops::Deref, sync::Arc};
+use std::{mem, sync::Arc};
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JValue},
+    objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JString, JValue},
     sys::{jboolean, jbyte, jint, jlong},
     JNIEnv,
 };
@@ -29,6 +29,7 @@ use zenoh::{
 
 use crate::{
     errors::{Error, Result},
+    key_expr::process_kotlin_key_expr,
     utils::attachment_to_vec,
     value::decode_value,
 };
@@ -45,7 +46,10 @@ use crate::{
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `ptr`: The raw pointer to the Zenoh query.
-/// - `key_expr`: The key expression associated with the query result.
+/// - `key_expr_ptr`: The key expression pointer associated with the query result. This parameter
+///    is meant to be used with declared key expressions, which have a pointer associated to them.
+///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
+/// - `key_expr_string`: The string representation of the key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding`: The encoding of the payload.
 /// - `sample_kind`: The kind of sample.
@@ -66,6 +70,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     _class: JClass,
     query_ptr: *const zenoh::queryable::Query,
     key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
     payload: JByteArray,
     encoding: jint,
     sample_kind: jint,
@@ -74,12 +79,19 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     qos: jbyte,
     attachment: JByteArray,
 ) {
-    let key_expr = Arc::from_raw(key_expr_ptr);
-    let key_expr_clone = key_expr.deref().clone();
-    std::mem::forget(key_expr);
+    let key_expr = match process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) {
+        Ok(key_expr) => key_expr,
+        Err(err) => {
+            if let Err(err) = err.throw_on_jvm(&mut env) {
+                tracing::error!("{}", err);
+            }
+            return;
+        }
+    };
+
     let sample = match decode_sample(
         &mut env,
-        key_expr_clone,
+        key_expr,
         payload,
         encoding,
         sample_kind,
@@ -89,19 +101,20 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     ) {
         Ok(sample) => sample,
         Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!("Unable to throw exception on query reply failure. {}", err)
-            });
+            if let Err(err) = err.throw_on_jvm(&mut env) {
+                tracing::error!("Unable to throw exception on query reply failure: {}", err);
+            }
             return;
         }
     };
-    let attachment: Option<Attachment> = if !attachment.is_null() {
+
+    let attachment = if !attachment.is_null() {
         match decode_byte_array(&env, attachment) {
             Ok(attachment_bytes) => Some(vec_to_attachment(attachment_bytes)),
             Err(err) => {
-                _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                    tracing::error!("Unable to throw exception on query reply failure. {}", err)
-                });
+                if let Err(err) = err.throw_on_jvm(&mut env) {
+                    tracing::error!("Unable to throw exception on query reply failure: {}", err);
+                }
                 return;
             }
         }
@@ -111,7 +124,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 
     let query = Arc::from_raw(query_ptr);
     query_reply(env, &query, Ok(sample), attachment);
-    mem::forget(query)
+    mem::forget(query);
 }
 
 /// Replies with error to a Zenoh query via JNI.
@@ -234,39 +247,44 @@ pub(crate) fn on_query(
                 ))
             })?;
 
-    let (with_value, payload, encoding) = match value {
-        Some(value) => {
-            let byte_array = env
-                .byte_array_from_slice(value.payload.contiguous().as_ref())
-                .map_err(|err| Error::Jni(err.to_string()))?;
-            let encoding: i32 = value.encoding.prefix().to_owned() as i32;
-            (true, byte_array, encoding)
-        }
-        None => (false, JPrimitiveArray::default(), 0),
+    let (with_value, payload, encoding) = if let Some(value) = value {
+        let byte_array = env
+            .byte_array_from_slice(value.payload.contiguous().as_ref())
+            .map_err(|err| Error::Jni(err.to_string()))?;
+        let encoding: i32 = value.encoding.prefix().to_owned() as i32;
+        (true, byte_array, encoding)
+    } else {
+        (false, JPrimitiveArray::default(), 0)
     };
 
-    let attachment_bytes = match query.attachment().map_or_else(
-        || env.byte_array_from_slice(&[]),
-        |attachment| env.byte_array_from_slice(attachment_to_vec(attachment.clone()).as_slice()),
-    ) {
-        Ok(byte_array) => Ok(byte_array),
-        Err(err) => Err(Error::Jni(format!(
-            "Error processing attachment of reply: {}.",
-            err
-        ))),
-    }?;
+    let attachment_bytes = query
+        .attachment()
+        .map_or_else(
+            || env.byte_array_from_slice(&[]),
+            |attachment| {
+                env.byte_array_from_slice(attachment_to_vec(attachment.clone()).as_slice())
+            },
+        )
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
-    let key_expr = query.key_expr().clone();
-    let key_expr_ptr = Arc::into_raw(Arc::new(key_expr));
+    let key_expr_str = env
+        .new_string(&query.key_expr().to_string())
+        .map_err(|err| {
+            Error::Jni(format!(
+                "Could not create a JString through JNI for the Query key expression. {}",
+                err
+            ))
+        })?;
+
     let query_ptr = Arc::into_raw(Arc::new(query));
 
     let result = env
         .call_method(
             callback_global_ref,
             "run",
-            "(JLjava/lang/String;Z[BI[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;Z[BI[BJ)V",
             &[
-                JValue::from(key_expr_ptr as jlong),
+                JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
                 JValue::from(with_value),
                 JValue::from(&payload),
@@ -283,12 +301,14 @@ pub(crate) fn on_query(
             // the raw pointers back into an `Arc` and freeing the memory.
             unsafe {
                 Arc::from_raw(query_ptr);
-                Arc::from_raw(key_expr_ptr)
             };
             _ = env.exception_describe();
             Error::Jni(format!("{}", err))
         });
 
+    _ = env
+        .delete_local_ref(key_expr_str)
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     _ = env
         .delete_local_ref(selector_params_jstr)
         .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
