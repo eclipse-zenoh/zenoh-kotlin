@@ -18,30 +18,27 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    prelude::{SplitBuffer, ZenohId},
-    query::Reply,
-    sample::Sample,
-    value::Value,
+    internal::EncodingInternals, prelude::ZenohId, query::Reply, sample::Sample, value::Value,
 };
 
-use crate::{errors::Error, utils::attachment_to_vec};
-use crate::{errors::Result, sample::qos_into_jbyte};
+use crate::errors::Error;
+use crate::errors::Result;
 
 pub(crate) fn on_reply(
     mut env: JNIEnv,
-    reply: Reply,
+    reply: &Reply,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    match reply.sample {
-        Ok(sample) => on_reply_success(&mut env, reply.replier_id, sample, callback_global_ref),
-        Err(value) => on_reply_error(&mut env, reply.replier_id, value, callback_global_ref),
+    match reply.result() {
+        Ok(sample) => on_reply_success(&mut env, reply.replier_id(), sample, callback_global_ref),
+        Err(value) => on_reply_error(&mut env, reply.replier_id(), value, callback_global_ref),
     }
 }
 
 fn on_reply_success(
     env: &mut JNIEnv,
     replier_id: ZenohId,
-    sample: Sample,
+    sample: &Sample,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
     let zenoh_id = env
@@ -49,31 +46,35 @@ fn on_reply_success(
         .map_err(|err| Error::Jni(err.to_string()))?;
 
     let byte_array = env
-        .byte_array_from_slice(sample.value.payload.contiguous().as_ref())
+        .byte_array_from_slice(sample.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
         .map_err(|err| Error::Jni(err.to_string()))?;
 
-    let encoding: jint = sample.value.encoding.prefix().to_owned() as jint;
-    let kind = sample.kind as jint;
+    let encoding: jint = sample.encoding().id() as jint;
+    let kind = sample.kind() as jint;
 
     let (timestamp, is_valid) = sample
-        .timestamp
+        .timestamp()
         .map(|timestamp| (timestamp.get_time().as_u64(), true))
         .unwrap_or((0, false));
 
     let attachment_bytes = sample
-        .attachment
+        .attachment()
         .map_or_else(
             || env.byte_array_from_slice(&[]),
-            |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+            |attachment| {
+                env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
+            },
         )
         .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
-    let key_expr_str = env.new_string(sample.key_expr.to_string()).map_err(|err| {
-        Error::Jni(format!(
-            "Could not create a JString through JNI for the Sample key expression. {}",
-            err
-        ))
-    })?;
+    let key_expr_str = env
+        .new_string(sample.key_expr().to_string())
+        .map_err(|err| {
+            Error::Jni(format!(
+                "Could not create a JString through JNI for the Sample key expression. {}",
+                err
+            ))
+        })?;
 
     let result = match env.call_method(
         callback_global_ref,
@@ -88,7 +89,7 @@ fn on_reply_success(
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
-            JValue::from(qos_into_jbyte(sample.qos)),
+            JValue::from(0), // TODO provide QoS information
             JValue::from(&attachment_bytes),
         ],
     ) {
@@ -117,7 +118,7 @@ fn on_reply_success(
 fn on_reply_error(
     env: &mut JNIEnv,
     replier_id: ZenohId,
-    value: Value,
+    value: &Value,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
     let zenoh_id = env
@@ -125,9 +126,9 @@ fn on_reply_error(
         .map_err(|err| Error::Jni(err.to_string()))?;
 
     let byte_array = env
-        .byte_array_from_slice(value.payload.contiguous().as_ref())
+        .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
         .map_err(|err| Error::Jni(err.to_string()))?;
-    let encoding: jint = value.encoding.prefix().to_owned() as jint;
+    let encoding: jint = value.encoding().id() as jint;
 
     let result = match env.call_method(
         callback_global_ref,

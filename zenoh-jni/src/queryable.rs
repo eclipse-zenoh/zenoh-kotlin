@@ -19,8 +19,12 @@ use jni::{
     sys::jboolean,
     JNIEnv,
 };
-use zenoh::prelude::r#sync::*;
-use zenoh::{queryable::Queryable, Session};
+use zenoh::queryable::Queryable;
+use zenoh::{
+    key_expr::KeyExpr,
+    prelude::Wait,
+    session::{Session, SessionDeclarations},
+};
 
 use crate::{
     errors::{Error, Result},
@@ -78,7 +82,7 @@ pub(crate) unsafe fn declare_queryable(
     env: &mut JNIEnv,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     complete: jboolean,
@@ -113,6 +117,6 @@ pub(crate) unsafe fn declare_queryable(
 
     std::mem::forget(session);
     queryable
-        .res()
+        .wait()
         .map_err(|err| Error::Session(format!("Error declaring queryable: {}", err)))
 }

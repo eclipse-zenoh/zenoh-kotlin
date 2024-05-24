@@ -20,19 +20,19 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    prelude::{sync::SyncResolve, KeyExpr},
+    encoding::Encoding,
+    internal::EncodingInternals,
+    prelude::{KeyExpr, Wait},
     publication::Publisher,
-    Session, SessionDeclarations,
+    sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait},
+    session::{Session, SessionDeclarations},
 };
 
+use crate::put::{decode_congestion_control, decode_priority};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
-    utils::{decode_byte_array, vec_to_attachment},
-};
-use crate::{
-    put::{decode_congestion_control, decode_priority},
-    value::decode_value,
+    utils::decode_byte_array,
 };
 
 /// Performs a put operation on a Zenoh publisher via JNI.
@@ -145,7 +145,7 @@ pub(crate) unsafe fn declare_publisher(
         .declare_publisher(key_expr)
         .congestion_control(congestion_control)
         .priority(priority)
-        .res();
+        .wait();
     std::mem::forget(session);
     match result {
         Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
@@ -172,14 +172,16 @@ fn perform_put(
     encoded_attachment: JByteArray,
     publisher: Arc<Publisher>,
 ) -> Result<()> {
-    let value = decode_value(env, payload, encoding)?;
-    let mut publication = publisher.put(value);
+    let payload = decode_byte_array(env, payload)?;
+    let mut publication = publisher.put(payload);
+    let encoding = Encoding::new(encoding as u16, None); // TODO: pass schema through JNI
+    publication = publication.encoding(encoding);
     if !encoded_attachment.is_null() {
-        let aux = decode_byte_array(env, encoded_attachment)?;
-        publication = publication.with_attachment(vec_to_attachment(aux))
+        let attachment = decode_byte_array(env, encoded_attachment)?;
+        publication = publication.attachment::<Vec<u8>>(attachment.into())
     };
     publication
-        .res_sync()
+        .wait()
         .map_err(|err| Error::Session(err.to_string()))
 }
 
@@ -218,10 +220,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
     };
     tracing::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
     unsafe {
-        let publisher = core::ptr::read(ptr);
+        let mut publisher = core::ptr::read(ptr);
         core::ptr::write(
             ptr as *mut _,
-            publisher.congestion_control(congestion_control),
+            publisher.set_congestion_control(congestion_control),
         );
     }
 }
@@ -261,8 +263,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
     };
     tracing::debug!("Setting publisher priority with '{priority:?}'.");
     unsafe {
-        let publisher = core::ptr::read(ptr);
-        core::ptr::write(ptr as *mut _, publisher.priority(priority));
+        let mut publisher = core::ptr::read(ptr);
+        core::ptr::write(ptr as *mut _, publisher.set_priority(priority));
     }
 }
 
@@ -283,11 +285,11 @@ fn perform_delete(
 ) -> Result<()> {
     let mut delete = publisher.delete();
     if !encoded_attachment.is_null() {
-        let aux = decode_byte_array(env, encoded_attachment)?;
-        delete = delete.with_attachment(vec_to_attachment(aux))
+        let attachment = decode_byte_array(env, encoded_attachment)?;
+        delete = delete.attachment::<Vec<u8>>(attachment.into())
     };
     delete
-        .res()
+        .wait()
         .map_err(|err| Error::Session(format!("{}", err)))
 }
 

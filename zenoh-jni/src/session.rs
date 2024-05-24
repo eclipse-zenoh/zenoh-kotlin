@@ -22,9 +22,7 @@ use crate::reply::on_reply;
 use crate::subscriber::declare_subscriber;
 use crate::utils::{
     decode_byte_array, decode_string, get_callback_global_ref, get_java_vm, load_on_close,
-    vec_to_attachment,
 };
-use crate::value::decode_value;
 
 use jni::objects::{JByteArray, JClass, JObject, JString};
 use jni::sys::{jboolean, jint, jlong};
@@ -34,7 +32,14 @@ use std::ptr::null;
 use std::sync::Arc;
 use std::time::Duration;
 use zenoh::config::Config;
-use zenoh::prelude::r#sync::*;
+use zenoh::encoding::Encoding;
+use zenoh::internal::EncodingInternals;
+use zenoh::key_expr::KeyExpr;
+use zenoh::prelude::Wait;
+use zenoh::sample::{SampleBuilderTrait, ValueBuilderTrait};
+use zenoh::selector::Selector;
+use zenoh::session::Session;
+use zenoh::value::Value;
 
 /// Open a Zenoh session via JNI.
 ///
@@ -58,7 +63,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     config_path: JString,
-) -> *const zenoh::Session {
+) -> *const Session {
     let session = open_session(&mut env, config_path);
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
@@ -96,7 +101,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     json_config: JString,
-) -> *const zenoh::Session {
+) -> *const Session {
     let session = open_session_with_json_config(&mut env, json_config);
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
@@ -120,7 +125,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
 /// Returns:
 /// - A [Result] with a [zenoh::Session] in case of success or an [Error::Session] in case of failure.
 ///
-fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<zenoh::Session> {
+fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<Session> {
     let config_file_path = decode_string(env, &config_path)?;
     let config = if config_file_path.is_empty() {
         Config::default()
@@ -128,7 +133,7 @@ fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<zenoh::Session
         Config::from_file(config_file_path).map_err(|err| Error::Session(err.to_string()))?
     };
     zenoh::open(config)
-        .res()
+        .wait()
         .map_err(|err| Error::Session(err.to_string()))
 }
 
@@ -140,7 +145,7 @@ fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<zenoh::Session
 /// Returns:
 /// - A [Result] with a [zenoh::Session] in case of success or an [Error::Session] in case of failure.
 ///
-fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Result<zenoh::Session> {
+fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Result<Session> {
     let json_config = decode_string(env, &json_config)?;
     let config = if json_config.is_empty() {
         Config::default()
@@ -155,7 +160,7 @@ fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Resu
         })?
     };
     zenoh::open(config)
-        .res()
+        .wait()
         .map_err(|err| Error::Session(err.to_string()))
 }
 
@@ -182,7 +187,7 @@ fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Resu
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    ptr: *const zenoh::Session,
+    ptr: *const Session,
 ) {
     let ptr = Arc::try_unwrap(Arc::from_raw(ptr));
     match ptr {
@@ -237,7 +242,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
 ) -> *const zenoh::publication::Publisher<'static> {
@@ -297,12 +302,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     payload: JByteArray,
     encoding: jint,
     congestion_control: jint,
     priority: jint,
-    sample_kind: jint,
+    _sample_kind: jint, // TODO: remove
     attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
@@ -315,7 +320,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         encoding,
         congestion_control,
         priority,
-        sample_kind,
         attachment,
     ) {
         Ok(_) => {}
@@ -366,7 +370,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     reliability: jint,
@@ -428,7 +432,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     _class: JClass,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     complete: jboolean,
@@ -480,7 +484,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     key_expr_str: JString,
 ) -> *const KeyExpr<'static> {
     match declare_keyexpr(&mut env, session_ptr, key_expr_str) {
@@ -522,13 +526,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     key_expr_ptr: *const KeyExpr<'static>,
 ) {
     let session = Arc::from_raw(session_ptr);
     let key_expr = Arc::from_raw(key_expr_ptr);
     let key_expr_clone = key_expr.deref().clone();
-    match session.undeclare(key_expr_clone).res() {
+    match session.undeclare(key_expr_clone).wait() {
         Ok(_) => {}
         Err(err) => {
             _ = Error::Session(format!(
@@ -581,7 +585,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
     selector_params: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     timeout_ms: jlong,
@@ -657,7 +661,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
     selector_params: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     timeout_ms: jlong,
@@ -741,7 +745,7 @@ fn on_get_query(
     let selector_params = decode_string(env, &selector_params)?;
     let timeout = Duration::from_millis(timeout_ms as u64);
     let on_close = load_on_close(&java_vm, on_close_global_ref);
-    let selector = Selector::from(&key_expr).with_parameters(&selector_params);
+    let selector = Selector::new(&key_expr, &*selector_params);
     let mut get_builder = session
         .get(selector)
         .callback(move |reply| {
@@ -754,7 +758,7 @@ fn on_get_query(
                     return;
                 }
             };
-            match on_reply(env, reply, &callback_global_ref) {
+            match on_reply(env, &reply, &callback_global_ref) {
                 Ok(_) => {}
                 Err(err) => tracing::error!("{}", err),
             }
@@ -763,26 +767,21 @@ fn on_get_query(
         .timeout(timeout)
         .consolidation(consolidation);
 
-    let mut binding = None;
     if let Some((payload, encoding)) = value_params {
-        let value = decode_value(env, payload, encoding)?;
-        get_builder = get_builder.with_value(value.to_owned());
-        binding = Some(value)
+        let encoding = Encoding::new(encoding as u16, None); // TODO: provide schema
+        let buff = decode_byte_array(env, payload)?;
+        let value = Value::new(buff, encoding);
+        get_builder = get_builder.value(value);
     }
 
     if !encoded_attachment.is_null() {
-        let aux = decode_byte_array(env, encoded_attachment)?;
-        let attachment = vec_to_attachment(aux);
-        get_builder = get_builder.with_attachment(attachment);
+        let attachment = decode_byte_array(env, encoded_attachment)?;
+        get_builder = get_builder.attachment::<Vec<u8>>(attachment.into());
     }
 
     get_builder
-        .res()
-        .map(|_| {
-            tracing::trace!(
-                "Performing get on {key_expr:?}, with target '{query_target:?}', with timeout '{timeout:?}', consolidation '{consolidation:?}', with value: '{binding:?}'",
-            )
-        })
+        .wait()
+        .map(|_| tracing::trace!("Performing get on {key_expr:?}.",))
         .map_err(|err| Error::Session(err.to_string()))?;
     Ok(())
 }
@@ -794,7 +793,7 @@ pub(crate) unsafe fn declare_keyexpr(
 ) -> Result<KeyExpr<'static>> {
     let key_expr = decode_string(env, &key_expr)?;
     let session: Arc<Session> = Arc::from_raw(session_ptr);
-    let result = session.declare_keyexpr(key_expr.to_owned()).res();
+    let result = session.declare_keyexpr(key_expr.to_owned()).wait();
     std::mem::forget(session);
 
     match result {

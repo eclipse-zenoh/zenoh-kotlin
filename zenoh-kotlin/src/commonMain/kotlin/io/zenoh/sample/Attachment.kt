@@ -27,7 +27,7 @@ package io.zenoh.sample
  * @property values
  * @constructor Create empty Attachment
  */
-class Attachment internal constructor(val values: List<Pair<ByteArray, ByteArray>>) {
+class Attachment internal constructor(val values: List<Pair<ByteArray, ByteArray>>) { //TODO(protocol changes): update attachment logic.
 
     class Builder {
 

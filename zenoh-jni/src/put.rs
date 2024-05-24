@@ -14,15 +14,19 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::sample::decode_sample_kind;
-use crate::utils::{decode_byte_array, vec_to_attachment};
-use crate::value::decode_value;
+use crate::utils::decode_byte_array;
 
 use jni::objects::{JByteArray, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
 use std::sync::Arc;
-use zenoh::prelude::r#sync::*;
+use zenoh::encoding::Encoding;
+use zenoh::internal::EncodingInternals;
+use zenoh::key_expr::KeyExpr;
+use zenoh::prelude::Wait;
+use zenoh::publication::{CongestionControl, Priority};
+use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
+use zenoh::session::Session;
 
 /// Performs a `put` operation in the Zenoh session, propagating eventual errors.
 ///
@@ -37,7 +41,6 @@ use zenoh::prelude::r#sync::*;
 /// - `encoding`: The [Encoding] of the put operation.
 /// - `congestion_control`: The [CongestionControl] mechanism specified.
 /// - `priority`: The [Priority] mechanism specified.
-/// - `sample_kind`: The [SampleKind] of the put operation.
 /// - `attachment`: An optional attachment, encoded into a byte array. May be null.
 ///
 /// Returns:
@@ -53,12 +56,11 @@ pub(crate) fn on_put(
     encoding: jint,
     congestion_control: jint,
     priority: jint,
-    sample_kind: jint,
     attachment: JByteArray,
 ) -> Result<()> {
     let key_expr = unsafe { process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr) }?;
-    let value = decode_value(env, payload, encoding)?;
-    let sample_kind = decode_sample_kind(sample_kind)?;
+    let payload = decode_byte_array(env, payload)?;
+    let encoding = Encoding::new(encoding as u16, None); // TODO: provide schema
     let congestion_control = match decode_congestion_control(congestion_control) {
         Ok(congestion_control) => congestion_control,
         Err(err) => {
@@ -79,23 +81,20 @@ pub(crate) fn on_put(
     };
 
     let mut put_builder = session
-        .put(&key_expr, value.to_owned())
-        .kind(sample_kind)
+        .put(&key_expr, payload)
         .congestion_control(congestion_control)
+        .encoding(encoding)
         .priority(priority);
 
     if !attachment.is_null() {
         let attachment = decode_byte_array(env, attachment)?;
-        put_builder = put_builder.with_attachment(vec_to_attachment(attachment))
+        put_builder = put_builder.attachment(attachment)
     }
 
-    match put_builder.res() {
-        Ok(_) => {
-            tracing::trace!("Put on '{key_expr}' with value '{value}' and encoding '{}'. Kind: '{sample_kind}', Congestion control: '{congestion_control:?}', Priority: '{priority:?}'", value.encoding);
-            Ok(())
-        }
-        Err(err) => Err(Error::Session(format!("{}", err))),
-    }
+    put_builder
+        .wait()
+        .map(|_| tracing::trace!("Put on '{key_expr}'"))
+        .map_err(|err| Error::Session(format!("{err}")))
 }
 
 pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {

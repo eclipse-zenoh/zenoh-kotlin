@@ -19,16 +19,17 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::prelude::r#sync::*;
-use zenoh::subscriber::Subscriber;
-
-use crate::{
-    errors::{Error, Result},
-    utils::attachment_to_vec,
+use zenoh::{
+    internal::EncodingInternals,
+    key_expr::KeyExpr,
+    prelude::Wait,
+    session::{Session, SessionDeclarations},
+    subscriber::{Reliability, Subscriber},
 };
+
+use crate::errors::{Error, Result};
 use crate::{
     key_expr::process_kotlin_key_expr,
-    sample::qos_into_jbyte,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
 };
 
@@ -81,7 +82,7 @@ pub(crate) unsafe fn declare_subscriber(
     env: &mut JNIEnv,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
-    session_ptr: *const zenoh::Session,
+    session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
     reliability: jint,
@@ -109,25 +110,28 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
-            let byte_array =
-                match env.byte_array_from_slice(sample.value.payload.contiguous().as_ref()) {
-                    Ok(byte_array) => byte_array,
-                    Err(err) => {
-                        tracing::error!("On subscriber callback error: {}", err);
-                        return;
-                    }
-                };
+            let byte_array = match env
+                .byte_array_from_slice(sample.payload().deserialize::<Vec<u8>>().unwrap().as_ref())
+            {
+                Ok(byte_array) => byte_array,
+                Err(err) => {
+                    tracing::error!("On subscriber callback error: {}", err);
+                    return;
+                }
+            };
 
-            let encoding: jint = sample.value.encoding.prefix().to_owned() as jint;
-            let kind = sample.kind as jint;
+            let encoding: jint = sample.encoding().id() as jint;
+            let kind = sample.kind() as jint;
             let (timestamp, is_valid) = sample
-                .timestamp
+                .timestamp()
                 .map(|timestamp| (timestamp.get_time().as_u64(), true))
                 .unwrap_or((0, false));
 
-            let attachment_bytes = match sample.attachment.map_or_else(
+            let attachment_bytes = match sample.attachment().map_or_else(
                 || env.byte_array_from_slice(&[]),
-                |attachment| env.byte_array_from_slice(attachment_to_vec(attachment).as_slice()),
+                |attachment| {
+                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
+                },
             ) {
                 Ok(byte_array) => byte_array,
                 Err(err) => {
@@ -139,7 +143,7 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
-            let key_expr_str = match env.new_string(sample.key_expr.to_string()) {
+            let key_expr_str = match env.new_string(sample.key_expr().to_string()) {
                 Ok(key_expr_str) => key_expr_str,
                 Err(err) => {
                     tracing::error!(
@@ -161,7 +165,7 @@ pub(crate) unsafe fn declare_subscriber(
                     JValue::from(kind),
                     JValue::from(timestamp as i64),
                     JValue::from(is_valid),
-                    JValue::from(qos_into_jbyte(sample.qos)),
+                    JValue::from(0), // TODO: propagate QoS information
                     JValue::from(&attachment_bytes),
                 ],
             ) {
@@ -178,7 +182,7 @@ pub(crate) unsafe fn declare_subscriber(
                 .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
         })
         .reliability(reliability)
-        .res();
+        .wait();
 
     std::mem::forget(session);
 
