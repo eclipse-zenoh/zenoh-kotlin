@@ -33,7 +33,8 @@ internal class JNIQuery(private val ptr: Long) {
             sample.keyExpr.jniKeyExpr?.ptr ?: 0,
             sample.keyExpr.keyExpr,
             sample.value.payload,
-            sample.value.encoding.knownEncoding.ordinal,
+            sample.value.encoding.id.ordinal,
+            sample.value.encoding.schema,
             sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
@@ -43,7 +44,7 @@ internal class JNIQuery(private val ptr: Long) {
     }
 
     fun replyError(errorValue: Value): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.knownEncoding.ordinal)
+        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.id.ordinal)
     }
 
     fun close() {
@@ -56,7 +57,8 @@ internal class JNIQuery(private val ptr: Long) {
         keyExprPtr: Long,
         keyExprString: String,
         valuePayload: ByteArray,
-        valueEncoding: Int,
+        valueEncodingId: Int,
+        valueEncodingSchema: String?,
         sampleKind: Int,
         timestampEnabled: Boolean,
         timestampNtp64: Long,

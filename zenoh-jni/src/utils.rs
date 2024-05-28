@@ -14,11 +14,14 @@
 
 use std::sync::Arc;
 
+use crate::errors::{Error, Result};
 use jni::{
     objects::{JByteArray, JObject, JString},
+    sys::jint,
     JNIEnv, JavaVM,
 };
-use crate::errors::{Error, Result};
+use zenoh::internal::EncodingInternals;
+use zenoh::{buffers::ZSlice, encoding::Encoding};
 
 /// Converts a JString into a rust String.
 pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {
@@ -29,6 +32,19 @@ pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String
         .to_str()
         .map_err(|err| Error::Jni(format!("Error decoding JString: {}", err)))?;
     Ok(value.to_string())
+}
+
+pub(crate) fn decode_encoding(
+    mut env: &mut JNIEnv,
+    encoding: jint,
+    schema: &JString,
+) -> Result<Encoding> {
+    let schema: Option<ZSlice> = if schema.is_null() {
+        None
+    } else {
+        Some(decode_string(env, schema)?.into_bytes().into())
+    };
+    Ok(Encoding::new(encoding as u16, schema))
 }
 
 pub(crate) fn get_java_vm(env: &mut JNIEnv) -> Result<JavaVM> {

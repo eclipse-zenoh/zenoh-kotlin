@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::sync::Arc;
+use std::{sync::Arc};
 
 use jni::{
     objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JString, JValue},
@@ -21,7 +21,6 @@ use jni::{
 };
 use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
-    encoding::Encoding,
     internal::EncodingInternals,
     prelude::{KeyExpr, Wait},
     query::{ConsolidationMode, QueryTarget},
@@ -30,7 +29,7 @@ use zenoh::{
     value::Value,
 };
 
-use crate::utils::decode_byte_array;
+use crate::utils::{decode_byte_array, decode_encoding};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
@@ -51,6 +50,7 @@ use crate::{
 /// - `key_expr_string`: The string representation of the key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding_id`: The encoding id of the payload.
+/// - `encoding_schema`: Optional encoding schema, may be null.
 /// - `sample_kind`: The kind of sample.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
@@ -72,6 +72,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     key_expr_str: JString,
     payload: JByteArray,
     encoding_id: jint,
+    encoding_schema: JString,
     _sample_kind: jint, // TODO: remove sample kind
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
@@ -83,7 +84,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let payload = decode_byte_array(&env, payload)?;
         let mut reply_builder = query.reply(key_expr, payload);
-        reply_builder = reply_builder.encoding(Encoding::new(encoding_id as u16, None));
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        reply_builder = reply_builder.encoding(encoding);
         if timestamp_enabled != 0 {
             let ts = Timestamp::new(NTP64(timestamp_ntp_64 as u64), ID::rand());
             reply_builder = reply_builder.timestamp(ts)
@@ -113,7 +115,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 /// - `ptr`: The raw pointer to the Zenoh query.
 /// - `key_expr`: The key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
-/// - `encoding`: The encoding of the payload as a jint.
+/// - `encoding_id`: The encoding id of the payload.
+/// - `encoding_schema`: Optional encoding schema, may be null.
 /// - `attachment`: The user attachment bytes.
 ///
 /// Safety:
@@ -129,15 +132,38 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     _class: JClass,
     ptr: *const zenoh::queryable::Query,
     payload: JByteArray,
-    encoding: jint,
+    encoding_id: jint,
+    encoding_schema: JString,
     _attachment: JByteArray, // TODO: remove attachment
 ) {
     let _ = || -> Result<()> {
         let query = Arc::from_raw(ptr);
-        let reply_builder = query.reply_err(Value::new(
-            decode_byte_array(&env, payload)?,
-            Encoding::new(encoding as u16, None),
-        ));
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        let reply_builder =
+            query.reply_err(Value::new(decode_byte_array(&env, payload)?, encoding));
+        reply_builder
+            .wait()
+            .map_err(|err| Error::Session(format!("{err}")))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    ptr: *const zenoh::queryable::Query,
+    payload: JByteArray,
+    encoding_id: jint,
+    encoding_schema: JString,
+    _attachment: JByteArray, // TODO: remove attachment
+) {
+    let _ = || -> Result<()> {
+        let query = Arc::from_raw(ptr);
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        let reply_builder =
+            query.reply_err(Value::new(decode_byte_array(&env, payload)?, encoding));
         reply_builder
             .wait()
             .map_err(|err| Error::Session(format!("{err}")))

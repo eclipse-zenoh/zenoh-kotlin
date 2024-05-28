@@ -14,14 +14,12 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::utils::decode_byte_array;
+use crate::utils::{decode_byte_array, decode_encoding};
 
 use jni::objects::{JByteArray, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
 use std::sync::Arc;
-use zenoh::encoding::Encoding;
-use zenoh::internal::EncodingInternals;
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
 use zenoh::publication::{CongestionControl, Priority};
@@ -38,7 +36,8 @@ use zenoh::session::Session;
 ///     is valid, then this parameter won't be considered.
 /// - `session`: An [Session] to use for the put operation.
 /// - `payload`: The payload to send through the network.
-/// - `encoding`: The [Encoding] of the put operation.
+/// - `encoding_id`: The encoding id of the payload.
+/// - `encoding_schema`: Optional encoding schema, may be null.
 /// - `congestion_control`: The [CongestionControl] mechanism specified.
 /// - `priority`: The [Priority] mechanism specified.
 /// - `attachment`: An optional attachment, encoded into a byte array. May be null.
@@ -53,14 +52,15 @@ pub(crate) fn on_put(
     key_expr_str: JString,
     session: &Arc<Session>,
     payload: JByteArray,
-    encoding: jint,
+    encoding_id: jint,
+    encoding_schema: JString,
     congestion_control: jint,
     priority: jint,
     attachment: JByteArray,
 ) -> Result<()> {
     let key_expr = unsafe { process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr) }?;
     let payload = decode_byte_array(env, payload)?;
-    let encoding = Encoding::new(encoding as u16, None); // TODO: provide schema
+    let encoding = decode_encoding(env, encoding_id, &encoding_schema)?;
     let congestion_control = match decode_congestion_control(congestion_control) {
         Ok(congestion_control) => congestion_control,
         Err(err) => {

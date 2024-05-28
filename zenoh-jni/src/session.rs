@@ -281,7 +281,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
 ///     receiving a key expression that was not declared.
 /// - `session_ptr`: Raw pointer to the [Session] to be used for the operation.
 /// - `payload`: The payload to send through the network.
-/// - `encoding`: The [Encoding] of the put operation.
+/// - `encoding_id`: The encoding id of the payload.
+/// - `encoding_schema`: Optional encoding schema, may be null.
 /// - `congestion_control`: The [CongestionControl] mechanism specified.
 /// - `priority`: The [Priority] mechanism specified.
 /// - `sample_kind`: The [SampleKind] of the put operation.
@@ -304,7 +305,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     key_expr_str: JString,
     session_ptr: *const Session,
     payload: JByteArray,
-    encoding: jint,
+    encoding_id: jint,
+    encoding_schema: JString,
     congestion_control: jint,
     priority: jint,
     _sample_kind: jint, // TODO: remove
@@ -317,7 +319,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         key_expr_str,
         &session,
         payload,
-        encoding,
+        encoding_id,
+        encoding_schema,
         congestion_control,
         priority,
         attachment,
@@ -776,7 +779,7 @@ fn on_get_query(
 
     if !encoded_attachment.is_null() {
         let attachment = decode_byte_array(env, encoded_attachment)?;
-        get_builder = get_builder.attachment::<Vec<u8>>(attachment.into());
+        get_builder = get_builder.attachment::<Vec<u8>>(attachment);
     }
 
     get_builder

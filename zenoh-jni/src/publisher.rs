@@ -20,7 +20,6 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    encoding::Encoding,
     internal::EncodingInternals,
     prelude::{KeyExpr, Wait},
     publication::Publisher,
@@ -28,11 +27,14 @@ use zenoh::{
     session::{Session, SessionDeclarations},
 };
 
-use crate::put::{decode_congestion_control, decode_priority};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
-    utils::decode_byte_array,
+    utils::{decode_byte_array, decode_encoding},
+};
+use crate::{
+    put::{decode_congestion_control, decode_priority},
+    throw_exception,
 };
 
 /// Performs a put operation on a Zenoh publisher via JNI.
@@ -60,29 +62,27 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     payload: JByteArray,
-    encoding: jint,
+    encoding_id: jint,
+    encoding_schema: JString,
     encoded_attachment: JByteArray,
     ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(ptr);
-    match perform_put(
-        &env,
-        payload,
-        encoding,
-        encoded_attachment,
-        publisher.clone(),
-    ) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on PUT operation failure: {}",
-                    err
-                )
-            });
-        }
-    };
-    std::mem::forget(publisher)
+    let _ = || -> Result<()> {
+        let payload = decode_byte_array(&env, payload)?;
+        let mut publication = publisher.put(payload);
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        publication = publication.encoding(encoding);
+        if !encoded_attachment.is_null() {
+            let attachment = decode_byte_array(&env, encoded_attachment)?;
+            publication = publication.attachment::<Vec<u8>>(attachment)
+        };
+        publication
+            .wait()
+            .map_err(|err| Error::Session(err.to_string()))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+    std::mem::forget(publisher);
 }
 
 /// Frees the memory associated with a Zenoh publisher raw pointer via JNI.
@@ -151,38 +151,6 @@ pub(crate) unsafe fn declare_publisher(
         Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
         Err(err) => Err(Error::Session(err.to_string())),
     }
-}
-
-/// Performs a PUT operation via JNI using the specified Zenoh publisher.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `payload`: The payload as a `JByteArray`.
-/// - `encoding`: The encoding of the payload.
-/// - `encoded_attachment`: Optional encoded attachment. May be null.
-/// - `publisher`: The Zenoh publisher.
-///
-/// Returns:
-/// - A [Result] indicating the success or failure of the operation.
-///
-fn perform_put(
-    env: &JNIEnv,
-    payload: JByteArray,
-    encoding: jint,
-    encoded_attachment: JByteArray,
-    publisher: Arc<Publisher>,
-) -> Result<()> {
-    let payload = decode_byte_array(env, payload)?;
-    let mut publication = publisher.put(payload);
-    let encoding = Encoding::new(encoding as u16, None); // TODO: pass schema through JNI
-    publication = publication.encoding(encoding);
-    if !encoded_attachment.is_null() {
-        let attachment = decode_byte_array(env, encoded_attachment)?;
-        publication = publication.attachment::<Vec<u8>>(attachment.into())
-    };
-    publication
-        .wait()
-        .map_err(|err| Error::Session(err.to_string()))
 }
 
 /// Modifies the congestion control policy of a running Publisher through JNI.
@@ -286,7 +254,7 @@ fn perform_delete(
     let mut delete = publisher.delete();
     if !encoded_attachment.is_null() {
         let attachment = decode_byte_array(env, encoded_attachment)?;
-        delete = delete.attachment::<Vec<u8>>(attachment.into())
+        delete = delete.attachment::<Vec<u8>>(attachment)
     };
     delete
         .wait()
