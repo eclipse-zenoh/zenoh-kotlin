@@ -154,10 +154,14 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
+            let express = sample.express();
+            let priority = sample.priority() as jint;
+            let cc = sample.congestion_control() as jint;
+
             if let Err(err) = env.call_method(
                 &callback_global_ref,
                 "run",
-                "(Ljava/lang/String;[BIIJZB[B)V",
+                "(Ljava/lang/String;[BIIJZ[BZII)V",
                 &[
                     JValue::from(&key_expr_str),
                     JValue::from(&byte_array),
@@ -165,8 +169,10 @@ pub(crate) unsafe fn declare_subscriber(
                     JValue::from(kind),
                     JValue::from(timestamp as i64),
                     JValue::from(is_valid),
-                    JValue::from(0), // TODO: propagate QoS information
                     JValue::from(&attachment_bytes),
+                    JValue::from(express),
+                    JValue::from(priority),
+                    JValue::from(cc),
                 ],
             ) {
                 tracing::error!("On subscriber callback error: {}", err);

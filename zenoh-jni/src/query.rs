@@ -16,16 +16,17 @@ use std::sync::Arc;
 
 use jni::{
     objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JString, JValue},
-    sys::{jboolean, jbyte, jint, jlong},
+    sys::{jboolean, jint, jlong},
     JNIEnv,
 };
 use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     internal::EncodingInternals,
     prelude::{KeyExpr, Wait},
+    publication::{CongestionControl, Priority},
     query::{ConsolidationMode, QueryTarget},
     queryable::Query,
-    sample::{SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
+    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
     value::Value,
 };
 
@@ -76,8 +77,10 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     _sample_kind: jint, // TODO: remove sample kind
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
-    _qos: jbyte, // TODO: replace qos with CongestionControl, Expres... etc
     attachment: JByteArray,
+    qos_express: jboolean,
+    qos_priority: jint,
+    qos_congestion_control: jint,
 ) {
     let _ = || -> Result<()> {
         let query = Arc::from_raw(query_ptr); //TODO: invalidate query ptr after reply on Kotlin
@@ -93,6 +96,13 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         if !attachment.is_null() {
             reply_builder = reply_builder.attachment(decode_byte_array(&env, attachment)?);
         }
+        reply_builder = reply_builder.express(qos_express != 0);
+        reply_builder = reply_builder.priority(Priority::try_from(qos_priority as u8).unwrap()); // The numeric value is always within range.
+        reply_builder = if qos_congestion_control != 0 {
+            reply_builder.congestion_control(CongestionControl::Block)
+        } else {
+            reply_builder.congestion_control(CongestionControl::Drop)
+        };
         reply_builder
             .wait()
             .map_err(|err| Error::Session(format!("{err}")))

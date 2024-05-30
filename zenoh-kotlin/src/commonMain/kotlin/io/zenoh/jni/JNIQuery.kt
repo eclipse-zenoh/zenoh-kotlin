@@ -38,8 +38,10 @@ internal class JNIQuery(private val ptr: Long) {
             sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            0,
             sample.attachment?.let { encodeAttachment(it) },
+            sample.qos.express,
+            sample.qos.priority.ordinal,
+            sample.qos.congestionControl.ordinal
         )
     }
 
@@ -62,8 +64,10 @@ internal class JNIQuery(private val ptr: Long) {
         sampleKind: Int,
         timestampEnabled: Boolean,
         timestampNtp64: Long,
-        qos: Byte,
         attachment: ByteArray?,
+        qosExpress: Boolean,
+        qosPriority: Int,
+        qosCongestionControl: Int,
     )
 
     @Throws(Exception::class)

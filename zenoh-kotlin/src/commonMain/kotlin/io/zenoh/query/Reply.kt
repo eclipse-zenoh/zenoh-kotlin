@@ -20,6 +20,9 @@ import io.zenoh.sample.Sample
 import io.zenoh.prelude.SampleKind
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
+import io.zenoh.prelude.QoS
 import io.zenoh.sample.Attachment
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
@@ -110,6 +113,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             private var kind = SampleKind.PUT
             private var timeStamp: TimeStamp? = null
             private var attachment: Attachment? = null
+            private var qosBuilder = QoS.Builder()
 
             /**
              * Sets the [SampleKind] of the replied [Sample].
@@ -127,10 +131,27 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
 
             /**
+             * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+             */
+            fun express(express: Boolean) = apply { qosBuilder.express(express) }
+
+            /**
+             * Sets the [Priority] of the reply.
+             */
+            fun priority(priority: Priority) = apply { qosBuilder.priority(priority) }
+
+            /**
+             * Sets the [CongestionControl] of the reply.
+             *
+             * @param congestionControl
+             */
+            fun congestionControl(congestionControl: CongestionControl) = apply { qosBuilder.congestionControl(congestionControl) }
+
+            /**
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
             override fun res(): Result<Unit> {
-                val sample = Sample(keyExpr, value, kind, timeStamp, /*QoS.default(),*/ attachment)
+                val sample = Sample(keyExpr, value, kind, timeStamp, qosBuilder.build(), attachment)
                 return query.reply(Success("", sample)).res()
             }
         }

@@ -30,5 +30,7 @@ enum class CongestionControl (val value: Int) {
 
     companion object {
         fun fromInt(value: Int) = entries.first { it.value == value }
+
+        fun default() = DROP
     }
 }

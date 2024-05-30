@@ -71,6 +71,9 @@ class Query internal constructor(
     /**
      * Perform a reply operation to the remote [Query].
      *
+     * A query can not be replied more than once. After the reply is performed, the query is considered
+     * to be no more valid and further attempts to reply to it will fail.
+     *
      * @param reply The [Reply] to the Query.
      * @return A [Resolvable] that returns a [Result] with the status of the reply operation.
      */
@@ -78,7 +81,6 @@ class Query internal constructor(
         jniQuery?.apply {
             reply as Reply.Success // Since error replies are not yet supported, we assume a reply is a Success reply.
             val result = replySuccess(reply.sample)
-            this.close()
             jniQuery = null
             return@Resolvable result
         }

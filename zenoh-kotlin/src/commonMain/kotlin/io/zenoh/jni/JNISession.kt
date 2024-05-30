@@ -78,7 +78,7 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, _qos, attachmentBytes ->
+            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
@@ -86,7 +86,7 @@ internal class JNISession {
                     Value(payload, Encoding(ID.fromId(encoding)!!)),
                     SampleKind.fromInt(kind),
                     timestamp,
-//                    QoS(qos),
+                    QoS(express, congestionControl, priority),
                     attachment
                 )
                 callback.run(sample)
@@ -110,8 +110,9 @@ internal class JNISession {
                 val query = Query(keyExpr2, selector, value, decodedAttachment, jniQuery)
                 callback.run(query)
             }
-        val queryableRawPtr =
-            declareQueryableViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), queryCallback, onClose, complete)
+        val queryableRawPtr = declareQueryableViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), queryCallback, onClose, complete
+        )
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
@@ -126,26 +127,38 @@ internal class JNISession {
         value: Value?,
         attachment: Attachment?
     ): Result<R?> = runCatching {
-        val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExpr: String, payload: ByteArray, encodingId: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, attachmentBytes: ByteArray ->
-                if (success) {
-                    val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                    val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
-                    val sample = Sample(
-                        KeyExpr(keyExpr, null),
-                        Value(payload, Encoding(ID.fromId(encodingId)!!)),
-                        SampleKind.fromInt(kind),
-                        timestamp,
-//                        QoS(qos),
-                        decodedAttachment
-                    )
-                    val reply = Reply.Success(replierId, sample)
-                    callback.run(reply)
-                } else {
-                    val reply = Reply.Error(replierId, Value(payload, Encoding(ID.fromId(encodingId)!!)))
-                    callback.run(reply)
-                }
+        val getCallback = JNIGetCallback {
+                replierId: String,
+                success: Boolean,
+                keyExpr: String,
+                payload: ByteArray,
+                encodingId: Int,
+                kind: Int,
+                timestampNTP64: Long,
+                timestampIsValid: Boolean,
+                attachmentBytes: ByteArray,
+                express: Boolean,
+                priority: Int,
+                congestionControl: Int,
+            ->
+            if (success) {
+                val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
+                val sample = Sample(
+                    KeyExpr(keyExpr, null),
+                    Value(payload, Encoding(ID.fromId(encodingId)!!)),
+                    SampleKind.fromInt(kind),
+                    timestamp,
+                    QoS(express, congestionControl, priority),
+                    decodedAttachment
+                )
+                val reply = Reply.Success(replierId, sample)
+                callback.run(reply)
+            } else {
+                val reply = Reply.Error(replierId, Value(payload, Encoding(ID.fromId(encodingId)!!)))
+                callback.run(reply)
             }
+        }
 
         getViaJNI(
             selector.keyExpr.jniKeyExpr?.ptr ?: 0,

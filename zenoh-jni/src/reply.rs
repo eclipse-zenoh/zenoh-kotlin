@@ -12,8 +12,6 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use std::ptr::null;
-
 use jni::{
     objects::{GlobalRef, JByteArray, JObject, JValue},
     sys::jint,
@@ -78,10 +76,14 @@ fn on_reply_success(
             ))
         })?;
 
+    let express = sample.express();
+    let priority = sample.priority() as jint;
+    let cc = sample.congestion_control() as jint;
+
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[B)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
@@ -91,8 +93,10 @@ fn on_reply_success(
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
-            // JValue::from(0u8), // TODO provide QoS information
             JValue::from(&attachment_bytes),
+            JValue::from(express),
+            JValue::from(priority),
+            JValue::from(cc),
         ],
     ) {
         Ok(_) => Ok(()),
