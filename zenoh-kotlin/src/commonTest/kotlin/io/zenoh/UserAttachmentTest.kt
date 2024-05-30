@@ -21,7 +21,6 @@ import io.zenoh.jni.toInt
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.KnownEncoding
 import io.zenoh.query.Reply
 import io.zenoh.sample.Attachment
 import io.zenoh.sample.Sample
@@ -35,7 +34,7 @@ class UserAttachmentTest {
     private lateinit var keyExpr: KeyExpr
 
     companion object {
-        val value = Value("test", Encoding(KnownEncoding.TEXT_PLAIN))
+        val value = Value("test", Encoding(Encoding.ID.TEXT_PLAIN))
         const val keyExprString = "example/testing/attachment"
         val attachmentPairs = arrayListOf(
             "key1" to "value1", "key2" to "value2", "key3" to "value3", "repeatedKey" to "value1", "repeatedKey" to "value2"

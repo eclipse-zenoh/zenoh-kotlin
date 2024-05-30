@@ -38,7 +38,7 @@ internal class JNIQuery(private val ptr: Long) {
             sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.qos.jniQoS.qos,
+            0,
             sample.attachment?.let { encodeAttachment(it) },
         )
     }

@@ -20,7 +20,6 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    internal::EncodingInternals,
     prelude::{KeyExpr, Wait},
     publication::Publisher,
     sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait},

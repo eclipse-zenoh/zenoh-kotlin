@@ -59,7 +59,7 @@ class QueryableTest {
     @Test
     fun queryable_runsWithCallback() = runBlocking {
         val sample = Sample(
-            testKeyExpr, Value(testPayload), SampleKind.PUT, TimeStamp(Date.from(Instant.now())),  QoS.default()
+            testKeyExpr, Value(testPayload), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
         )
         val queryable = session.declareQueryable(testKeyExpr).with { query ->
             query.reply(testKeyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()
@@ -162,7 +162,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
         val payload = "Hello queryable $counter!"
         counter++
         val sample = Sample(
-            query.keyExpr, Value(payload), SampleKind.PUT, TimeStamp(Date.from(Instant.now())), QoS.default()
+            query.keyExpr, Value(payload), SampleKind.PUT, TimeStamp(Date.from(Instant.now()))
         )
         performedReplies.add(sample)
         query.reply(query.keyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()

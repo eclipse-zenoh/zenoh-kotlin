@@ -12,8 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use std::ptr::null;
+
 use jni::{
-    objects::{GlobalRef, JObject, JValue},
+    objects::{GlobalRef, JByteArray, JObject, JValue},
     sys::jint,
     JNIEnv,
 };
@@ -79,7 +81,7 @@ fn on_reply_success(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZB[B)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
@@ -89,7 +91,7 @@ fn on_reply_success(
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
-            JValue::from(0), // TODO provide QoS information
+            // JValue::from(0u8), // TODO provide QoS information
             JValue::from(&attachment_bytes),
         ],
     ) {
@@ -133,7 +135,7 @@ fn on_reply_error(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZJ[BIIJZ)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[B)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(false),
@@ -143,6 +145,7 @@ fn on_reply_error(
             JValue::from(0),
             JValue::from(0),
             JValue::from(false),
+            JValue::from(&JByteArray::default()),
         ],
     ) {
         Ok(_) => Ok(()),

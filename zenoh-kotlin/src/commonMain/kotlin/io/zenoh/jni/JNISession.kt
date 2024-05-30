@@ -78,7 +78,7 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
-            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, qos, attachmentBytes ->
+            JNISubscriberCallback { keyExpr, payload, encoding, kind, timestampNTP64, timestampIsValid, _qos, attachmentBytes ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
@@ -86,7 +86,7 @@ internal class JNISession {
                     Value(payload, Encoding(ID.fromId(encoding)!!)),
                     SampleKind.fromInt(kind),
                     timestamp,
-                    QoS(qos),
+//                    QoS(qos),
                     attachment
                 )
                 callback.run(sample)
@@ -127,7 +127,7 @@ internal class JNISession {
         attachment: Attachment?
     ): Result<R?> = runCatching {
         val getCallback =
-            JNIGetCallback { replierId: String, success: Boolean, keyExpr: String, payload: ByteArray, encodingId: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, qos: Byte, attachmentBytes: ByteArray ->
+            JNIGetCallback { replierId: String, success: Boolean, keyExpr: String, payload: ByteArray, encodingId: Int, kind: Int, timestampNTP64: Long, timestampIsValid: Boolean, attachmentBytes: ByteArray ->
                 if (success) {
                     val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                     val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
@@ -136,7 +136,7 @@ internal class JNISession {
                         Value(payload, Encoding(ID.fromId(encodingId)!!)),
                         SampleKind.fromInt(kind),
                         timestamp,
-                        QoS(qos),
+//                        QoS(qos),
                         decodedAttachment
                     )
                     val reply = Reply.Success(replierId, sample)
@@ -147,35 +147,22 @@ internal class JNISession {
                 }
             }
 
-        if (value == null) {
-            getViaJNI(
-                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
-                selector.keyExpr.keyExpr,
-                selector.parameters,
-                sessionPtr.get(),
-                getCallback,
-                onClose,
-                timeout.toMillis(),
-                target.ordinal,
-                consolidation.ordinal,
-                attachment?.let { encodeAttachment(it) }
-            )
-        } else {
-            getWithValueViaJNI(
-                selector.keyExpr.jniKeyExpr?.ptr ?: 0,
-                selector.keyExpr.keyExpr,
-                selector.parameters,
-                sessionPtr.get(),
-                getCallback,
-                onClose,
-                timeout.toMillis(),
-                target.ordinal,
-                consolidation.ordinal,
-                value.payload,
-                value.encoding.id.ordinal,
-                attachment?.let { encodeAttachment(it) }
-            )
-        }
+        getViaJNI(
+            selector.keyExpr.jniKeyExpr?.ptr ?: 0,
+            selector.keyExpr.keyExpr,
+            selector.parameters,
+            sessionPtr.get(),
+            getCallback,
+            onClose,
+            timeout.toMillis(),
+            target.ordinal,
+            consolidation.ordinal,
+            attachment?.let { encodeAttachment(it) },
+            value != null,
+            value?.payload,
+            value?.encoding?.id?.ordinal,
+            value?.encoding?.schema
+        )
         receiver
     }
 
@@ -265,22 +252,10 @@ internal class JNISession {
         target: Int,
         consolidation: Int,
         attachmentBytes: ByteArray?,
-    )
-
-    @Throws(Exception::class)
-    private external fun getWithValueViaJNI(
-        keyExprPtr: Long,
-        keyExprString: String,
-        selectorParams: String,
-        sessionPtr: Long,
-        callback: JNIGetCallback,
-        onClose: JNIOnCloseCallback,
-        timeoutMs: Long,
-        target: Int,
-        consolidation: Int,
-        payload: ByteArray,
-        encoding: Int,
-        attachmentBytes: ByteArray?
+        withValue: Boolean,
+        payload: ByteArray?,
+        encodingId: Int?,
+        encodingSchema: String?,
     )
 
     @Throws(Exception::class)

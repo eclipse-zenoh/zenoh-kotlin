@@ -20,8 +20,10 @@ use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
 use crate::subscriber::declare_subscriber;
+use crate::throw_exception;
 use crate::utils::{
-    decode_byte_array, decode_string, get_callback_global_ref, get_java_vm, load_on_close,
+    decode_byte_array, decode_encoding, decode_string, get_callback_global_ref, get_java_vm,
+    load_on_close,
 };
 
 use jni::objects::{JByteArray, JClass, JObject, JString};
@@ -32,8 +34,6 @@ use std::ptr::null;
 use std::sync::Arc;
 use std::time::Duration;
 use zenoh::config::Config;
-use zenoh::encoding::Encoding;
-use zenoh::internal::EncodingInternals;
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
 use zenoh::sample::{SampleBuilderTrait, ValueBuilderTrait};
@@ -549,7 +549,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
     std::mem::forget(key_expr);
 }
 
-/// Performs a `get` operation in the Zenoh session via JNI.
+/// Performs a `get` operation in the Zenoh session via JNI with Value.
 ///
 /// This function is meant to be called from Java/Kotlin code through JNI.
 ///
@@ -558,17 +558,23 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `_class`: The JNI class.
 /// - `key_expr_ptr`: Raw pointer to a declared [KeyExpr] to be used for the query. May be null in case
 ///     of using a non declared key expression, in which case the key_expr_str parameter will be used instead.
-/// - `key_expr_str`: String representation of the key expression to be used for the query. It is not
+/// - `key_expr_str`: String representation of the key expression to be used to declare the query. It is not
 ///     considered if a key_expr_ptr is provided.
 /// - `selector_params`: Parameters of the selector.
-/// - `session_ptr`: A raw pointer to the Zenoh session.
-/// - `callback`: An instance of the Java/Kotlin `JNIGetCallback` function interface to be called upon receiving a reply.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when the get operation won't receive
-///     any more replies.
+/// - `session_ptr`: A raw pointer to the Zenoh [Session].
+/// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when no more replies will be received.
 /// - `timeout_ms`: The timeout in milliseconds.
 /// - `target`: The [QueryTarget] as the ordinal of the enum.
 /// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
+/// - `payload`: The payload of the [Value]
+/// - `encoding`: The [Encoding] as the ordinal of the enum.
 /// - `attachment`: An optional attachment encoded into a byte array.
+/// - `with_value`: Boolean value to tell if a value must be included in the get operation. If true,
+///     then the next params are valid.
+/// - `value_payload`: The payload of the value (if present, otherwise it'll be null).
+/// - `encoding_id`: The encoding of the value payload.
+/// - `encoding_schema`: The encoding schema of the value payload, may be null.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -595,198 +601,62 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     target: jint,
     consolidation: jint,
     attachment: JByteArray,
+    with_value: jboolean,
+    value_payload: JByteArray,
+    encoding_id: jint,
+    encoding_schema: JString,
 ) {
     let session = Arc::from_raw(session_ptr);
-    match on_get_query(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        selector_params,
-        &session,
-        callback,
-        on_close,
-        timeout_ms,
-        target,
-        consolidation,
-        None,
-        attachment,
-    ) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on get operation failure. {}",
-                    err
-                )
-            });
-        }
-    }
-    std::mem::forget(session);
-}
-
-/// Performs a `get` operation in the Zenoh session via JNI with Value.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `_class`: The JNI class.
-/// - `key_expr_ptr`: Raw pointer to a declared [KeyExpr] to be used for the query. May be null in case
-///     of using a non declared key expression, in which case the key_expr_str parameter will be used instead.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the query. It is not
-///     considered if a key_expr_ptr is provided.
-/// - `selector_params`: Parameters of the selector.
-/// - `session_ptr`: A raw pointer to the Zenoh [Session].
-/// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when no more replies will be received.
-/// - `timeout_ms`: The timeout in milliseconds.
-/// - `target`: The [QueryTarget] as the ordinal of the enum.
-/// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
-/// - `payload`: The payload of the [Value]
-/// - `encoding`: The [Encoding] as the ordinal of the enum.
-/// - `attachment`: An optional attachment encoded into a byte array.
-///
-/// Safety:
-/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
-///
-/// Throws:
-/// - An exception in case of failure handling the query.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getWithValueViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    key_expr_ptr: *const KeyExpr<'static>,
-    key_expr_str: JString,
-    selector_params: JString,
-    session_ptr: *const Session,
-    callback: JObject,
-    on_close: JObject,
-    timeout_ms: jlong,
-    target: jint,
-    consolidation: jint,
-    payload: JByteArray,
-    encoding: jint,
-    attachment: JByteArray,
-) {
-    let session = Arc::from_raw(session_ptr);
-    match on_get_query(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        selector_params,
-        &session,
-        callback,
-        on_close,
-        timeout_ms,
-        target,
-        consolidation,
-        Some((payload, encoding)),
-        attachment,
-    ) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on get operation failure. {}",
-                    err
-                )
-            });
-        }
-    }
-    std::mem::forget(session);
-}
-
-/// Performs a `get` operation in the Zenoh session via JNI.
-///
-/// Parameters:
-/// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr_ptr`: Raw pointer to a declared [KeyExpr] to be used for the query. May be null in case
-///     of using a non declared key expression, in which case the key_expr_str parameter will be used instead.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the query. It is not
-///     considered if a key_expr_ptr is provided.
-/// - `session`: An `Arc<Session>` representing the Zenoh session.
-/// - `callback`: A Java/Kotlin `JNIGetCallback` function interface to be called upon receiving a reply.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when Zenoh notifies
-///     that no more replies will be received.
-/// - `timeout_ms`: The timeout in milliseconds.
-/// - `target`: The [QueryTarget] as the ordinal of the enum.
-/// - `consolidation`: The [ConsolidationMode] as the ordinal of the enum.
-/// - `value_params`: Parameters of the value (payload as [JByteArray] and encoding as [jint]) to
-///     be set in case the get is performed "with value".
-/// - `encoded_attachment`: An optional attachment encoded into a byte array.
-///
-/// Returns:
-/// - A `Result` indicating the result of the `get` operation.
-///
-#[allow(clippy::too_many_arguments)]
-fn on_get_query(
-    env: &mut JNIEnv,
-    key_expr_ptr: *const KeyExpr<'static>,
-    key_expr_str: JString,
-    selector_params: JString,
-    session: &Arc<Session>,
-    callback: JObject,
-    on_close: JObject,
-    timeout_ms: jlong,
-    target: jint,
-    consolidation: jint,
-    value_params: Option<(JByteArray, jint)>,
-    encoded_attachment: JByteArray,
-) -> Result<()> {
-    let key_expr = unsafe { process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr) }?;
-    let java_vm = Arc::new(get_java_vm(env)?);
-    let callback_global_ref = get_callback_global_ref(env, callback)?;
-    let on_close_global_ref = get_callback_global_ref(env, on_close)?;
-    let query_target = decode_query_target(target)?;
-    let consolidation = decode_consolidation(consolidation)?;
-    let selector_params = decode_string(env, &selector_params)?;
-    let timeout = Duration::from_millis(timeout_ms as u64);
-    let on_close = load_on_close(&java_vm, on_close_global_ref);
-    let selector = Selector::new(&key_expr, &*selector_params);
-    let mut get_builder = session
-        .get(selector)
-        .callback(move |reply| {
-            on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
-            tracing::debug!("Receiving reply through JNI: {:?}", reply);
-            let env = match java_vm.attach_current_thread_as_daemon() {
-                Ok(env) => env,
-                Err(err) => {
-                    tracing::error!("Unable to attach thread for GET query callback: {}", err);
-                    return;
+    let _ = || -> Result<()> {
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
+        let query_target = decode_query_target(target)?;
+        let consolidation = decode_consolidation(consolidation)?;
+        let selector_params = decode_string(&mut env, &selector_params)?;
+        let timeout = Duration::from_millis(timeout_ms as u64);
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+        let selector = Selector::new(&key_expr, &*selector_params);
+        let mut get_builder = session
+            .get(selector)
+            .callback(move |reply| {
+                on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
+                tracing::debug!("Receiving reply through JNI: {:?}", reply);
+                let env = match java_vm.attach_current_thread_as_daemon() {
+                    Ok(env) => env,
+                    Err(err) => {
+                        tracing::error!("Unable to attach thread for GET query callback: {}", err);
+                        return;
+                    }
+                };
+                match on_reply(env, &reply, &callback_global_ref) {
+                    Ok(_) => {}
+                    Err(err) => tracing::error!("{}", err),
                 }
-            };
-            match on_reply(env, &reply, &callback_global_ref) {
-                Ok(_) => {}
-                Err(err) => tracing::error!("{}", err),
-            }
-        })
-        .target(query_target)
-        .timeout(timeout)
-        .consolidation(consolidation);
+            })
+            .target(query_target)
+            .timeout(timeout)
+            .consolidation(consolidation);
 
-    if let Some((payload, encoding)) = value_params {
-        let encoding = Encoding::new(encoding as u16, None); // TODO: provide schema
-        let buff = decode_byte_array(env, payload)?;
-        let value = Value::new(buff, encoding);
-        get_builder = get_builder.value(value);
-    }
+        if with_value != 0 {
+            let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+            let value = Value::new(decode_byte_array(&env, value_payload)?, encoding);
+            get_builder = get_builder.value(value);
+        }
 
-    if !encoded_attachment.is_null() {
-        let attachment = decode_byte_array(env, encoded_attachment)?;
-        get_builder = get_builder.attachment::<Vec<u8>>(attachment);
-    }
+        if !attachment.is_null() {
+            let attachment = decode_byte_array(&env, attachment)?;
+            get_builder = get_builder.attachment::<Vec<u8>>(attachment);
+        }
 
-    get_builder
-        .wait()
-        .map(|_| tracing::trace!("Performing get on {key_expr:?}.",))
-        .map_err(|err| Error::Session(err.to_string()))?;
-    Ok(())
+        get_builder
+            .wait()
+            .map(|_| tracing::trace!("Performing get on '{key_expr}'.",))
+            .map_err(|err| Error::Session(err.to_string()))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+    std::mem::forget(session);
 }
 
 pub(crate) unsafe fn declare_keyexpr(

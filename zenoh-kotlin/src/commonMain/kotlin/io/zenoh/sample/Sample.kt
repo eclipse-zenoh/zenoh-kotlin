@@ -39,7 +39,7 @@ class Sample(
     val value: Value,
     val kind: SampleKind,
     val timestamp: TimeStamp?,
-    val qos: QoS,
+//    val qos: QoS,
     val attachment: Attachment? = null
 ): ZenohType {
     override fun toString(): String {

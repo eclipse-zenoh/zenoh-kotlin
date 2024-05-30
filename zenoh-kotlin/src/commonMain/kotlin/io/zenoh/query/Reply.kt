@@ -18,7 +18,6 @@ import io.zenoh.Resolvable
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
 import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.sample.Attachment
@@ -131,7 +130,7 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
             override fun res(): Result<Unit> {
-                val sample = Sample(keyExpr, value, kind, timeStamp, QoS.default(), attachment)
+                val sample = Sample(keyExpr, value, kind, timeStamp, /*QoS.default(),*/ attachment)
                 return query.reply(Success("", sample)).res()
             }
         }

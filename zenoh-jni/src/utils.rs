@@ -35,7 +35,7 @@ pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String
 }
 
 pub(crate) fn decode_encoding(
-    mut env: &mut JNIEnv,
+    env: &mut JNIEnv,
     encoding: jint,
     schema: &JString,
 ) -> Result<Encoding> {

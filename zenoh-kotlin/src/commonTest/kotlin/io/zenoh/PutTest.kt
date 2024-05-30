@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
@@ -36,7 +35,7 @@ class PutTest {
         var receivedSample: Sample? = null
         val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
-        val value = Value(TEST_PAYLOAD.toByteArray(), Encoding(KnownEncoding.TEXT_PLAIN))
+        val value = Value(TEST_PAYLOAD.toByteArray(), Encoding(Encoding.ID.TEXT_PLAIN))
         session.put(keyExpr, value).res()
         subscriber.close()
         session.close()
