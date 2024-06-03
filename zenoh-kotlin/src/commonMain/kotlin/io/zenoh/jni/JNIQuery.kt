@@ -35,18 +35,17 @@ internal class JNIQuery(private val ptr: Long) {
             sample.value.payload,
             sample.value.encoding.id.ordinal,
             sample.value.encoding.schema,
-            sample.kind.ordinal,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
             sample.attachment?.let { encodeAttachment(it) },
             sample.qos.express,
-            sample.qos.priority.ordinal,
-            sample.qos.congestionControl.ordinal
+            sample.qos.priority.value,
+            sample.qos.congestionControl.value
         )
     }
 
     fun replyError(errorValue: Value): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.id.ordinal)
+        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
     }
 
     fun close() {
@@ -61,7 +60,6 @@ internal class JNIQuery(private val ptr: Long) {
         valuePayload: ByteArray,
         valueEncodingId: Int,
         valueEncodingSchema: String?,
-        sampleKind: Int,
         timestampEnabled: Boolean,
         timestampNtp64: Long,
         attachment: ByteArray?,
@@ -75,6 +73,7 @@ internal class JNIQuery(private val ptr: Long) {
         queryPtr: Long,
         errorValuePayload: ByteArray,
         errorValueEncoding: Int,
+        encodingSchema: String?,
     )
 
     /** Frees the underlying native Query. */

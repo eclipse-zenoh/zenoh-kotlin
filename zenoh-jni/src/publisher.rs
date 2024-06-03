@@ -20,10 +20,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    prelude::{KeyExpr, Wait},
-    publication::Publisher,
-    sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait},
-    session::{Session, SessionDeclarations},
+    key_expr::KeyExpr, prelude::Wait, publisher::Publisher, sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait}, session::{Session, SessionDeclarations}
 };
 
 use crate::{

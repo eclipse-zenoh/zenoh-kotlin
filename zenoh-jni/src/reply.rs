@@ -18,7 +18,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    internal::EncodingInternals, prelude::ZenohId, query::Reply, sample::Sample, value::Value,
+    config::ZenohId, internal::EncodingInternals, query::Reply, sample::Sample, value::Value,
 };
 
 use crate::errors::Error;

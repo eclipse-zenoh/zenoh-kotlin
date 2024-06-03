@@ -29,6 +29,7 @@ use crate::utils::{
 use jni::objects::{JByteArray, JClass, JObject, JString};
 use jni::sys::{jboolean, jint, jlong};
 use jni::JNIEnv;
+use zenoh::publisher::Publisher;
 use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
@@ -245,7 +246,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
-) -> *const zenoh::publication::Publisher<'static> {
+) -> *const Publisher<'static> {
     let result = declare_publisher(
         &mut env,
         key_expr_ptr,

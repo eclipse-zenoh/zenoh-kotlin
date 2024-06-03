@@ -115,20 +115,16 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
             private var attachment: Attachment? = null
             private var qosBuilder = QoS.Builder()
 
-            /**
-             * Sets the [SampleKind] of the replied [Sample].
-             */
-            fun withKind(kind: SampleKind) = apply { this.kind = kind }
 
             /**
              * Sets the [TimeStamp] of the replied [Sample].
              */
-            fun withTimeStamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
+            fun timestamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
 
             /**
              * Appends an [Attachment] to the reply.
              */
-            fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+            fun attachment(attachment: Attachment) = apply { this.attachment = attachment }
 
             /**
              * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.

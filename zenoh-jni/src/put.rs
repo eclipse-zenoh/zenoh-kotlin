@@ -19,10 +19,10 @@ use crate::utils::{decode_byte_array, decode_encoding};
 use jni::objects::{JByteArray, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
+use zenoh::publisher::{CongestionControl, Priority};
 use std::sync::Arc;
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
-use zenoh::publication::{CongestionControl, Priority};
 use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::session::Session;
 

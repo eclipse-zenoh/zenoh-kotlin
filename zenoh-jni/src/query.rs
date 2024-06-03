@@ -22,12 +22,12 @@ use jni::{
 use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     internal::EncodingInternals,
-    prelude::{KeyExpr, Wait},
-    publication::{CongestionControl, Priority},
+    key_expr::KeyExpr,
+    prelude::Wait,
+    publisher::{CongestionControl, Priority},
     query::{ConsolidationMode, QueryTarget},
     queryable::Query,
     sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
-    value::Value,
 };
 
 use crate::utils::{decode_byte_array, decode_encoding};
@@ -74,7 +74,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     payload: JByteArray,
     encoding_id: jint,
     encoding_schema: JString,
-    _sample_kind: jint, // TODO: remove sample kind
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
     attachment: JByteArray,
@@ -123,11 +122,9 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `ptr`: The raw pointer to the Zenoh query.
-/// - `key_expr`: The key expression associated with the query result.
 /// - `payload`: The payload as a `JByteArray`.
 /// - `encoding_id`: The encoding id of the payload.
 /// - `encoding_schema`: Optional encoding schema, may be null.
-/// - `attachment`: The user attachment bytes.
 ///
 /// Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -144,14 +141,13 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     payload: JByteArray,
     encoding_id: jint,
     encoding_schema: JString,
-    _attachment: JByteArray, // TODO: remove attachment
 ) {
     let _ = || -> Result<()> {
         let query = Arc::from_raw(ptr);
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
-        let reply_builder =
-            query.reply_err(Value::new(decode_byte_array(&env, payload)?, encoding));
-        reply_builder
+        query
+            .reply_err(decode_byte_array(&env, payload)?)
+            .encoding(encoding)
             .wait()
             .map_err(|err| Error::Session(format!("{err}")))
     }()
@@ -164,17 +160,14 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     ptr: *const zenoh::queryable::Query,
-    payload: JByteArray,
-    encoding_id: jint,
-    encoding_schema: JString,
-    _attachment: JByteArray, // TODO: remove attachment
+    key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
 ) {
     let _ = || -> Result<()> {
         let query = Arc::from_raw(ptr);
-        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
-        let reply_builder =
-            query.reply_err(Value::new(decode_byte_array(&env, payload)?, encoding));
-        reply_builder
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        query
+            .reply_del(key_expr)
             .wait()
             .map_err(|err| Error::Session(format!("{err}")))
     }()

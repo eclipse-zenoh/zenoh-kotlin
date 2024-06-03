@@ -18,7 +18,7 @@ use std::sync::Arc;
 use jni::objects::JClass;
 use jni::sys::{jboolean, jstring};
 use jni::{objects::JString, JNIEnv};
-use zenoh::prelude::KeyExpr;
+use zenoh::key_expr::KeyExpr;
 
 use crate::errors::Error;
 use crate::errors::Result;

@@ -17,6 +17,8 @@ package io.zenoh
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.QoS
 import io.zenoh.query.Reply
@@ -66,7 +68,7 @@ class QueryableTest {
             QoS.default()
         )
         val queryable = session.declareQueryable(testKeyExpr).with { query ->
-            query.reply(testKeyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()
+            query.reply(testKeyExpr).success(sample.value).timestamp(sample.timestamp!!).res()
         }.res().getOrThrow()
 
         var reply: Reply? = null
@@ -133,6 +135,34 @@ class QueryableTest {
         assertEquals(Value("Test value"), receivedQuery!!.value)
     }
 
+    @Test
+    fun queryReplySuccessTest() {
+        val message = "Test message"
+        val timestamp = TimeStamp.getCurrentTime()
+        val priority = Priority.DATA_HIGH
+        val express = true
+        val congestionControl = CongestionControl.DROP
+        val queryable = session.declareQueryable(testKeyExpr).with {
+            it.use { query ->
+                query.reply(testKeyExpr).success(message).timestamp(timestamp).priority(priority).express(express)
+                    .congestionControl(congestionControl).res()
+            }
+        }.res().getOrThrow()
+
+        var receivedReply: Reply? = null
+        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+
+        queryable.close()
+
+        assertTrue(receivedReply is Reply.Success)
+        val reply = receivedReply as Reply.Success
+        assertEquals(message, reply.sample.value.payload.decodeToString())
+        assertEquals(timestamp, reply.sample.timestamp)
+        assertEquals(priority, reply.sample.qos.priority)
+        assertEquals(express, reply.sample.qos.express)
+        assertEquals(congestionControl, reply.sample.qos.congestionControl)
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() = runBlocking {
@@ -173,6 +203,6 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             QoS.default()
         )
         performedReplies.add(sample)
-        query.reply(query.keyExpr).success(sample.value).withTimeStamp(sample.timestamp!!).res()
+        query.reply(query.keyExpr).success(sample.value).timestamp(sample.timestamp!!).res()
     }
 }

@@ -46,8 +46,7 @@ class GetTest {
         queryable = session.declareQueryable(keyExpr).with { query ->
             query.reply(query.keyExpr)
                 .success(value)
-                .withTimeStamp(timestamp)
-                .withKind(kind)
+                .timestamp(timestamp)
                 .res()
         }.res().getOrThrow()
     }

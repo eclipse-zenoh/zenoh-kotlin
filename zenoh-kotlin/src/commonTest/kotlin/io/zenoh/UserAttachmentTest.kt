@@ -160,7 +160,7 @@ class UserAttachmentTest {
     fun queryReplyWithAttachmentTest() {
         var receivedAttachment: Attachment? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("test").withAttachment(attachment).res()
+            query.reply(keyExpr).success("test").attachment(attachment).res()
         }.res().getOrThrow()
 
         session.get(keyExpr).with { reply ->
