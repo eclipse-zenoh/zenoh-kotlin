@@ -87,6 +87,9 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                                 attachment?.let {
                                     withAttachment(decodeAttachment(it))
                                 }
+                                value?.let {
+                                    withValue(it)
+                                }
                             }
                             .res()
                             .onSuccess { receiver ->

@@ -29,7 +29,6 @@ use crate::utils::{
 use jni::objects::{JByteArray, JClass, JObject, JString};
 use jni::sys::{jboolean, jint, jlong};
 use jni::JNIEnv;
-use zenoh::publisher::Publisher;
 use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
@@ -37,6 +36,7 @@ use std::time::Duration;
 use zenoh::config::Config;
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
+use zenoh::publisher::Publisher;
 use zenoh::sample::{SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
 use zenoh::session::Session;

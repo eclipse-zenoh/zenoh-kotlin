@@ -44,7 +44,9 @@ pub(crate) fn decode_encoding(
     } else {
         Some(decode_string(env, schema)?.into_bytes().into())
     };
-    Ok(Encoding::new(encoding as u16, schema))
+    let encoding_id = u16::try_from(encoding)
+        .map_err(|err| Error::Jni(format!("Failed to decode encoding: {err}")))?;
+    Ok(Encoding::new(encoding_id, schema))
 }
 
 pub(crate) fn get_java_vm(env: &mut JNIEnv) -> Result<JavaVM> {

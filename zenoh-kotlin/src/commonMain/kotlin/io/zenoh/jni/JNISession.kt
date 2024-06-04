@@ -173,7 +173,7 @@ internal class JNISession {
             attachment?.let { encodeAttachment(it) },
             value != null,
             value?.payload,
-            value?.encoding?.id?.ordinal,
+            value?.encoding?.id?.ordinal ?: 0,
             value?.encoding?.schema
         )
         receiver
@@ -267,7 +267,7 @@ internal class JNISession {
         attachmentBytes: ByteArray?,
         withValue: Boolean,
         payload: ByteArray?,
-        encodingId: Int?,
+        encodingId: Int,
         encodingSchema: String?,
     )
 
