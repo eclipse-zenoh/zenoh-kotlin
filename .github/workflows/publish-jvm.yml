@@ -120,7 +120,7 @@ jobs:
           esac
 
       - name: "Upload packages"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.job.target }}
           path: |
@@ -143,7 +143,7 @@ jobs:
         run: mkdir ${{env.JNI_LIB_PATHS}}
 
       - name: Download result of previous builds
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ${{env.JNI_LIB_PATHS}}
 
