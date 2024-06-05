@@ -133,6 +133,7 @@ internal class JNISession {
                 keyExpr: String,
                 payload: ByteArray,
                 encodingId: Int,
+                encodingSchema: String?,
                 kind: Int,
                 timestampNTP64: Long,
                 timestampIsValid: Boolean,
@@ -146,7 +147,7 @@ internal class JNISession {
                 val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
                     KeyExpr(keyExpr, null),
-                    Value(payload, Encoding(ID.fromId(encodingId)!!)),
+                    Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(express, congestionControl, priority),

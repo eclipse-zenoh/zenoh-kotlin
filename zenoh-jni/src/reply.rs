@@ -13,7 +13,7 @@
 //
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JObject, JValue},
+    objects::{GlobalRef, JByteArray, JObject, JString, JValue},
     sys::jint,
     JNIEnv,
 };
@@ -50,6 +50,12 @@ fn on_reply_success(
         .map_err(|err| Error::Jni(err.to_string()))?;
 
     let encoding: jint = sample.encoding().id() as jint;
+    let encoding_schema = match sample.encoding().schema() {
+        Some(schema) => env
+            .new_string(String::from_utf8(schema.to_vec()).unwrap())
+            .unwrap(), // TODO: remove unwraps
+        None => JString::default(),
+    };
     let kind = sample.kind() as jint;
 
     let (timestamp, is_valid) = sample
@@ -63,7 +69,7 @@ fn on_reply_success(
             || env.byte_array_from_slice(&[]),
             |attachment| {
                 env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
-            },
+            }, // TODO: provide JByteArray::default() instead of empty byte array.
         )
         .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
@@ -83,13 +89,14 @@ fn on_reply_success(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[BZII)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
             JValue::from(&key_expr_str),
             JValue::from(&byte_array),
             JValue::from(encoding),
+            JValue::from(&encoding_schema),
             JValue::from(kind),
             JValue::from(timestamp as i64),
             JValue::from(is_valid),
@@ -135,21 +142,30 @@ fn on_reply_error(
         .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
         .map_err(|err| Error::Jni(err.to_string()))?;
     let encoding: jint = value.encoding().id() as jint;
-
+    let encoding_schema = match value.encoding().schema() {
+        Some(schema) => env
+            .new_string(String::from_utf8(schema.to_vec()).unwrap())
+            .unwrap(), // TODO: remove unwraps
+        None => JString::default(),
+    };
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BIIJZ[B)V",
+        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(false),
             JValue::from(&JObject::null()),
             JValue::from(&byte_array),
             JValue::from(encoding),
+            JValue::from(&encoding_schema),
             JValue::from(0),
             JValue::from(0),
             JValue::from(false),
             JValue::from(&JByteArray::default()),
+            JValue::from(false),
+            JValue::from(0),
+            JValue::from(0)
         ],
     ) {
         Ok(_) => Ok(()),
