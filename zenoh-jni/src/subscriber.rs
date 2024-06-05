@@ -120,7 +120,13 @@ pub(crate) unsafe fn declare_subscriber(
                 }
             };
 
-            let encoding: jint = sample.encoding().id() as jint;
+            let encoding_id: jint = sample.encoding().id() as jint;
+            let encoding_schema = match sample.encoding().schema() {
+                Some(schema) => env
+                    .new_string(String::from_utf8(schema.to_vec()).unwrap())
+                    .unwrap(), // TODO: remove unwraps
+                None => JString::default(),
+            };
             let kind = sample.kind() as jint;
             let (timestamp, is_valid) = sample
                 .timestamp()
@@ -161,11 +167,12 @@ pub(crate) unsafe fn declare_subscriber(
             if let Err(err) = env.call_method(
                 &callback_global_ref,
                 "run",
-                "(Ljava/lang/String;[BIIJZ[BZII)V",
+                "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
                 &[
                     JValue::from(&key_expr_str),
                     JValue::from(&byte_array),
-                    JValue::from(encoding),
+                    JValue::from(encoding_id),
+                    JValue::from(&encoding_schema),
                     JValue::from(kind),
                     JValue::from(timestamp as i64),
                     JValue::from(is_valid),

@@ -18,7 +18,8 @@ internal fun interface JNISubscriberCallback {
     fun run(
         keyExpr: String,
         payload: ByteArray,
-        encoding: Int,
+        encodingId: Int,
+        encodingSchema: String?,
         kind: Int,
         timestampNTP64: Long,
         timestampIsValid: Boolean,
