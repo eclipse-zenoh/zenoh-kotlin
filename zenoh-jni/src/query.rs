@@ -232,14 +232,20 @@ pub(crate) fn on_query(
                 ))
             })?;
 
-    let (with_value, payload, encoding) = if let Some(value) = value {
+    let (with_value, payload, encoding_id, encoding_schema) = if let Some(value) = value {
         let byte_array = env
             .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) //TODO: refactor unwrap
             .map_err(|err| Error::Jni(err.to_string()))?;
         let encoding_id = value.encoding().id() as jint;
-        (true, byte_array, encoding_id)
+        let encoding_schema = match value.encoding().schema() {
+            Some(schema) => env
+                .new_string(String::from_utf8(schema.to_vec()).unwrap())
+                .unwrap(), // TODO: remove unwraps
+            None => JString::default(),
+        };
+        (true, byte_array, encoding_id, encoding_schema)
     } else {
-        (false, JPrimitiveArray::default(), 0)
+        (false, JPrimitiveArray::default(), 0, JString::default())
     };
 
     let attachment_bytes = query
@@ -267,13 +273,14 @@ pub(crate) fn on_query(
         .call_method(
             callback_global_ref,
             "run",
-            "(Ljava/lang/String;Ljava/lang/String;Z[BI[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;Z[BILjava/lang/String;[BJ)V",
             &[
                 JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
                 JValue::from(with_value),
                 JValue::from(&payload),
-                JValue::from(encoding),
+                JValue::from(encoding_id),
+                JValue::from(&encoding_schema),
                 JValue::from(&attachment_bytes),
                 JValue::from(query_ptr as jlong),
             ],
