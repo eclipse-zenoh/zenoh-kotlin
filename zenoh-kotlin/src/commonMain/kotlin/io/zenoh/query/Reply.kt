@@ -56,13 +56,12 @@ import org.apache.commons.net.ntp.TimeStamp
  *
  * @property replierId: unique ID identifying the replier.
  */
-abstract class Reply private constructor(val replierId: String) : ZenohType {
+sealed class Reply private constructor(val replierId: String) : ZenohType {
 
     /**
      * Builder to construct a [Reply].
      *
-     * This builder allows you to construct [Success] replies. **Error replies are not yet enabled since they are not yet
-     * supported on Zenoh.**
+     * This builder allows you to construct [Success] and [Error] replies.
      *
      * @property query The received [Query] to reply to.
      * @property keyExpr The [KeyExpr] from the queryable, which is at least an intersection of the query's key expression.
@@ -86,8 +85,22 @@ abstract class Reply private constructor(val replierId: String) : ZenohType {
          */
         fun success(message: String) = success(Value(message))
 
-//        TODO: uncomment line below when Zenoh enables Error replies.
-//        fun error(value: Value) = Error.Builder(query, value)
+        /**
+         * Returns an [Error.Builder] with the provided [value].
+         *
+         * @param value The [Value] of the error reply.
+         */
+        fun error(value: Value) = Error.Builder(query, value)
+
+        /**
+         * Returns an [Error.Builder] with a [Value] containing the provided [message].
+         *
+         * It is equivalent to calling `error(Value(message))`.
+         *
+         * @param message A string message for the error reply.
+         */
+        fun error(message: String) = error(Value(message))
+
     }
 
     /**

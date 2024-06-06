@@ -79,8 +79,15 @@ class Query internal constructor(
      */
     internal fun reply(reply: Reply): Resolvable<Unit> = Resolvable {
         jniQuery?.apply {
-            reply as Reply.Success // Since error replies are not yet supported, we assume a reply is a Success reply.
-            val result = replySuccess(reply.sample)
+            val result: Result<Unit> = when (reply) {
+                is Reply.Success -> {
+                    replySuccess(reply.sample)
+                }
+
+                is Reply.Error -> {
+                    replyError(reply.error)
+                }
+            }
             jniQuery = null
             return@Resolvable result
         }

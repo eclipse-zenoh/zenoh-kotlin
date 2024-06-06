@@ -163,6 +163,27 @@ class QueryableTest {
         assertEquals(congestionControl, reply.sample.qos.congestionControl)
     }
 
+    @Test
+    fun queryReplyErrorTest() {
+        val message = "Error message"
+        val queryable = session.declareQueryable(testKeyExpr).with {
+            it.use { query ->
+                query.reply(testKeyExpr).error(Value(message)).res()
+            }
+        }.res().getOrThrow()
+
+        var receivedReply: Reply? = null
+        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+
+        Thread.sleep(1000)
+        queryable.close()
+
+        assertNotNull(receivedReply)
+        assertTrue(receivedReply is Reply.Error)
+        val reply = receivedReply as Reply.Error
+        assertEquals(message, reply.error.payload.decodeToString())
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() = runBlocking {

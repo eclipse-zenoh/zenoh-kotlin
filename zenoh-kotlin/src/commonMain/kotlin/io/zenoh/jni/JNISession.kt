@@ -130,23 +130,23 @@ internal class JNISession {
         val getCallback = JNIGetCallback {
                 replierId: String,
                 success: Boolean,
-                keyExpr: String,
+                keyExpr: String?,
                 payload: ByteArray,
                 encodingId: Int,
                 encodingSchema: String?,
                 kind: Int,
                 timestampNTP64: Long,
                 timestampIsValid: Boolean,
-                attachmentBytes: ByteArray,
+                attachmentBytes: ByteArray?,
                 express: Boolean,
                 priority: Int,
                 congestionControl: Int,
             ->
             if (success) {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
+                val decodedAttachment = attachmentBytes?.let { decodeAttachment(it) }
                 val sample = Sample(
-                    KeyExpr(keyExpr, null),
+                    KeyExpr(keyExpr!!, null),
                     Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
                     SampleKind.fromInt(kind),
                     timestamp,
@@ -156,7 +156,7 @@ internal class JNISession {
                 val reply = Reply.Success(replierId, sample)
                 callback.run(reply)
             } else {
-                val reply = Reply.Error(replierId, Value(payload, Encoding(ID.fromId(encodingId)!!)))
+                val reply = Reply.Error(replierId, Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)))
                 callback.run(reply)
             }
         }

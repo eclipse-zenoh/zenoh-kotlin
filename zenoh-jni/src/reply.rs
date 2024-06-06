@@ -13,7 +13,7 @@
 //
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JObject, JString, JValue},
+    objects::{GlobalRef, JByteArray, JString, JValue},
     sys::jint,
     JNIEnv,
 };
@@ -66,10 +66,11 @@ fn on_reply_success(
     let attachment_bytes = sample
         .attachment()
         .map_or_else(
-            || env.byte_array_from_slice(&[]),
+            || Ok(JByteArray::default()),
             |attachment| {
                 env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
-            }, // TODO: provide JByteArray::default() instead of empty byte array.
+                //TODO: remove unwrap
+            },
         )
         .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
@@ -141,7 +142,7 @@ fn on_reply_error(
     let byte_array = env
         .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
         .map_err(|err| Error::Jni(err.to_string()))?;
-    let encoding: jint = value.encoding().id() as jint;
+    let encoding_id: jint = value.encoding().id() as jint;
     let encoding_schema = match value.encoding().schema() {
         Some(schema) => env
             .new_string(String::from_utf8(schema.to_vec()).unwrap())
@@ -155,17 +156,18 @@ fn on_reply_error(
         &[
             JValue::from(&zenoh_id),
             JValue::from(false),
-            JValue::from(&JObject::null()),
+            JValue::from(&JString::default()),
             JValue::from(&byte_array),
-            JValue::from(encoding),
+            JValue::from(encoding_id),
             JValue::from(&encoding_schema),
-            JValue::from(0),
-            JValue::from(0),
+            // The remaining parameters aren't used in case of replying error, so we set them to default.
+            JValue::from(0 as jint),
+            JValue::from(0 as i64),
             JValue::from(false),
             JValue::from(&JByteArray::default()),
             JValue::from(false),
-            JValue::from(0),
-            JValue::from(0)
+            JValue::from(0 as jint),
+            JValue::from(0 as jint),
         ],
     ) {
         Ok(_) => Ok(()),
