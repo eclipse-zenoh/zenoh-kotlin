@@ -20,7 +20,7 @@ use jni::{
     sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::internal::EncodingInternals;
+use zenoh::{internal::EncodingInternals, publisher::{CongestionControl, Priority}};
 use zenoh::{buffers::ZSlice, encoding::Encoding};
 
 /// Converts a JString into a rust String.
@@ -77,6 +77,23 @@ pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result
         .map_err(|err| Error::Jni(err.to_string()))?;
     let buff: Vec<u8> = unsafe { std::mem::transmute::<Vec<i8>, Vec<u8>>(buff) };
     Ok(buff)
+}
+
+pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {
+    match Priority::try_from(priority as u8) {
+        Ok(priority) => Ok(priority),
+        Err(err) => Err(Error::Session(format!("Error retrieving priority: {err}."))),
+    }
+}
+
+pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<CongestionControl> {
+    match congestion_control {
+        1 => Ok(CongestionControl::Block),
+        0 => Ok(CongestionControl::Drop),
+        _value => Err(Error::Session(format!(
+            "Unknown congestion control '{_value}'."
+        ))),
+    }
 }
 
 /// A type that calls a function when dropped

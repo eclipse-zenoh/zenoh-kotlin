@@ -317,7 +317,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, Value("Hello"))
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
      *         .res()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
@@ -340,7 +339,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, "Hello")
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
      *         .res()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
@@ -434,7 +432,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     internal fun resolveDelete(keyExpr:KeyExpr, delete: Delete): Result<Unit> = runCatching {
-        jniSession?.run { performPut(keyExpr, delete) }
+        jniSession?.run { performDelete(keyExpr, delete) }
     }
 
     /** Launches the session through the jni session, returning the [Session] on success. */

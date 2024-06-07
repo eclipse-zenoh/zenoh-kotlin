@@ -17,10 +17,7 @@ package io.zenoh.publication
 import io.zenoh.Resolvable
 import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
+import io.zenoh.prelude.*
 import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
@@ -36,7 +33,6 @@ import io.zenoh.value.Value
  *     session.put(keyExpr, "Hello")
  *         .congestionControl(CongestionControl.BLOCK)
  *         .priority(Priority.REALTIME)
- *         .kind(SampleKind.PUT)
  *         .res()
  *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
  *     }}
@@ -47,17 +43,13 @@ import io.zenoh.value.Value
  *
  * @property keyExpr The [KeyExpr] to which the put operation will be performed.
  * @property value The [Value] to put.
- * @property congestionControl The [CongestionControl] to be applied when routing the data.
- * @property priority The [Priority] of zenoh messages.
- * @property kind The [SampleKind] of the sample (put or delete).
+ * @property qos The [QoS] configuration.
  * @property attachment An optional user [Attachment].
  */
-open class Put protected constructor(
+class Put private constructor(
     val keyExpr: KeyExpr,
     val value: Value,
-    val congestionControl: CongestionControl,
-    val priority: Priority,
-    val kind: SampleKind,
+    val qos: QoS,
     val attachment: Attachment?
 ) {
 
@@ -71,7 +63,7 @@ open class Put protected constructor(
          * @param value The [Value] to put.
          * @return A [Put] operation [Builder].
          */
-        fun newBuilder(session: Session, keyExpr: KeyExpr, value: Value): Builder {
+        internal fun newBuilder(session: Session, keyExpr: KeyExpr, value: Value): Builder {
             return Builder(session, keyExpr, value)
         }
     }
@@ -82,22 +74,16 @@ open class Put protected constructor(
      * @property session The [Session] from which the put operation will be performed.
      * @property keyExpr The [KeyExpr] upon which the put operation will be performed.
      * @property value The [Value] to put.
-     * @property congestionControl The [CongestionControl] to be applied when routing the data,
-     *  defaults to [CongestionControl.DROP]
-     * @property priority The [Priority] of zenoh messages, defaults to [Priority.DATA].
-     * @property kind The [SampleKind] of the sample (put or delete), defaults to [SampleKind.PUT].
-     * @property attachment Optional user [Attachment].
      * @constructor Create a [Put] builder.
      */
     class Builder internal constructor(
         private val session: Session,
         private val keyExpr: KeyExpr,
         private var value: Value,
-        private var congestionControl: CongestionControl = CongestionControl.DROP,
-        private var priority: Priority = Priority.DATA,
-        private var kind: SampleKind = SampleKind.PUT,
-        private var attachment: Attachment? = null
     ): Resolvable<Unit> {
+
+        private var qosBuilder: QoS.Builder = QoS.Builder()
+        private var attachment: Attachment? = null
 
         /** Change the [Encoding] of the written data. */
         fun encoding(encoding: Encoding) = apply {
@@ -106,20 +92,22 @@ open class Put protected constructor(
 
         /** Change the [CongestionControl] to apply when routing the data. */
         fun congestionControl(congestionControl: CongestionControl) =
-            apply { this.congestionControl = congestionControl }
+            apply { this.qosBuilder.congestionControl(congestionControl) }
 
         /** Change the [Priority] of the written data. */
-        fun priority(priority: Priority) = apply { this.priority = priority }
+        fun priority(priority: Priority) = apply { this.qosBuilder.priority(priority) }
 
-        /** Change the [SampleKind] of the sample. If set to [SampleKind.DELETE], performs a delete operation. */
-        fun kind(kind: SampleKind) = apply { this.kind = kind }
+        /**
+         * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+         */
+        fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
 
         /** Set an attachment to the put operation. */
         fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
 
         /** Resolves the put operation, returning a [Result]. */
         override fun res(): Result<Unit> = runCatching {
-            val put = Put(keyExpr, value, congestionControl, priority, kind, attachment)
+            val put = Put(keyExpr, value, qosBuilder.build(), attachment)
             session.run { resolvePut(keyExpr, put) }
         }
     }

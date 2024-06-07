@@ -25,6 +25,7 @@ import io.zenoh.jni.callbacks.JNIQueryableCallback
 import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
+import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
 import io.zenoh.query.*
@@ -219,10 +220,26 @@ internal class JNISession {
             put.value.payload,
             put.value.encoding.id.ordinal,
             put.value.encoding.schema,
-            put.congestionControl.value,
-            put.priority.value,
-            put.kind.ordinal,
+            put.qos.congestionControl.value,
+            put.qos.priority.value,
+            put.qos.express,
             put.attachment?.let { encodeAttachment(it) }
+        )
+    }
+
+    @Throws(Exception::class)
+    fun performDelete(
+        keyExpr: KeyExpr,
+        delete: Delete,
+    ) {
+        deleteViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
+            sessionPtr.get(),
+            delete.qos.congestionControl.value,
+            delete.qos.priority.value,
+            delete.qos.express,
+            delete.attachment?.let { encodeAttachment(it) }
         )
     }
 
@@ -298,7 +315,18 @@ internal class JNISession {
         valueEncodingSchema: String?,
         congestionControl: Int,
         priority: Int,
-        kind: Int,
+        express: Boolean,
+        attachmentBytes: ByteArray?
+    )
+
+    @Throws(Exception::class)
+    private external fun deleteViaJNI(
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        congestionControl: Int,
+        priority: Int,
+        express: Boolean,
         attachmentBytes: ByteArray?
     )
 }

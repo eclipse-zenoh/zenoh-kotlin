@@ -15,15 +15,14 @@
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
 use crate::publisher::declare_publisher;
-use crate::put::on_put;
 use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
 use crate::subscriber::declare_subscriber;
 use crate::throw_exception;
 use crate::utils::{
-    decode_byte_array, decode_encoding, decode_string, get_callback_global_ref, get_java_vm,
-    load_on_close,
+    decode_byte_array, decode_congestion_control, decode_encoding, decode_priority, decode_string,
+    get_callback_global_ref, get_java_vm, load_on_close,
 };
 
 use jni::objects::{JByteArray, JClass, JObject, JString};
@@ -37,7 +36,7 @@ use zenoh::config::Config;
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
 use zenoh::publisher::Publisher;
-use zenoh::sample::{SampleBuilderTrait, ValueBuilderTrait};
+use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
 use zenoh::session::Session;
 use zenoh::value::Value;
@@ -286,7 +285,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
 /// - `encoding_schema`: Optional encoding schema, may be null.
 /// - `congestion_control`: The [CongestionControl] mechanism specified.
 /// - `priority`: The [Priority] mechanism specified.
-/// - `sample_kind`: The [SampleKind] of the put operation.
+/// - `is_express`: The express flag.
 /// - `attachment`: Optional attachment encoded into a byte array. May be null.
 ///
 /// Safety:
@@ -310,32 +309,99 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     encoding_schema: JString,
     congestion_control: jint,
     priority: jint,
-    _sample_kind: jint, // TODO: remove
+    is_express: jboolean,
     attachment: JByteArray,
 ) {
     let session = Arc::from_raw(session_ptr);
-    match on_put(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        &session,
-        payload,
-        encoding_id,
-        encoding_schema,
-        congestion_control,
-        priority,
-        attachment,
-    ) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on query declaration failure. {}",
-                    err
-                )
-            });
+    let _ = || -> Result<()> {
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let payload = decode_byte_array(&mut env, payload)?;
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let priority = decode_priority(priority)?;
+
+        let mut put_builder = session
+            .put(&key_expr, payload)
+            .congestion_control(congestion_control)
+            .encoding(encoding)
+            .express(is_express != 0)
+            .priority(priority);
+
+        if !attachment.is_null() {
+            let attachment = decode_byte_array(&mut env, attachment)?;
+            put_builder = put_builder.attachment(attachment)
         }
-    }
+
+        put_builder
+            .wait()
+            .map(|_| tracing::trace!("Put on '{key_expr}'"))
+            .map_err(|err| Error::Session(format!("{err}")))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+    std::mem::forget(session);
+}
+
+/// Performs a `delete` operation in the Zenoh session via JNI.
+///
+/// This function is meant to be called from Java/Kotlin code through JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the operation.
+/// - `key_expr_str`: String representation of the [KeyExpr] to be used for the operation.
+///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
+///     receiving a key expression that was not declared.
+/// - `session_ptr`: Raw pointer to the [Session] to be used for the operation.
+/// - `congestion_control`: The [CongestionControl] mechanism specified.
+/// - `priority`: The [Priority] mechanism specified.
+/// - `is_express`: The express flag.
+/// - `attachment`: Optional attachment encoded into a byte array. May be null.
+///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided session pointer is valid and has not been modified or freed.
+/// - The session pointer remains valid and the ownership of the session is not transferred,
+///   allowing safe usage of the session after this function call.
+/// - The function may throw a JNI exception or a Session exception in case of failure, which
+///   should be handled by the Java/Kotlin caller.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_str: JString,
+    session_ptr: *const Session,
+    congestion_control: jint,
+    priority: jint,
+    is_express: jboolean,
+    attachment: JByteArray,
+) {
+    let session = Arc::from_raw(session_ptr);
+    let _ = || -> Result<()> {
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let priority = decode_priority(priority)?;
+
+        let mut delete_builder = session
+            .delete(&key_expr)
+            .congestion_control(congestion_control)
+            .express(is_express != 0)
+            .priority(priority);
+
+        if !attachment.is_null() {
+            let attachment = decode_byte_array(&mut env, attachment)?;
+            delete_builder = delete_builder.attachment(attachment)
+        }
+
+        delete_builder
+            .wait()
+            .map(|_| tracing::trace!("Delete on '{key_expr}'"))
+            .map_err(|err| Error::Session(format!("{err}")))
+    }()
+    .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
 }
 

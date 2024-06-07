@@ -16,7 +16,6 @@ mod errors;
 mod key_expr;
 mod logger;
 mod publisher;
-mod put;
 mod query;
 mod queryable;
 mod reply;
