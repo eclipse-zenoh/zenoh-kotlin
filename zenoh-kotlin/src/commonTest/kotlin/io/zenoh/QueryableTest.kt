@@ -184,6 +184,33 @@ class QueryableTest {
         assertEquals(message, reply.error.payload.decodeToString())
     }
 
+    @Test
+    fun queryReplyDeleteTest() {
+        val timestamp = TimeStamp.getCurrentTime()
+        val priority = Priority.DATA_HIGH
+        val express = true
+        val congestionControl = CongestionControl.DROP
+        val queryable = session.declareQueryable(testKeyExpr).with {
+            it.use { query ->
+                query.reply(testKeyExpr).delete().timestamp(timestamp).priority(priority).express(express)
+                    .congestionControl(congestionControl).res()
+            }
+        }.res().getOrThrow()
+
+        var receivedReply: Reply? = null
+        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+
+        queryable.close()
+
+        assertNotNull(receivedReply)
+        assertTrue(receivedReply is Reply.Delete)
+        val reply = receivedReply as Reply.Delete
+        assertEquals(timestamp, reply.timestamp)
+        assertEquals(priority, reply.qos.priority)
+        assertEquals(express, reply.qos.express)
+        assertEquals(congestionControl, reply.qos.congestionControl)
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     @Test
     fun onCloseTest() = runBlocking {

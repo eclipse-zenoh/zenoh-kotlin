@@ -82,7 +82,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     qos_congestion_control: jint,
 ) {
     let _ = || -> Result<()> {
-        let query = Arc::from_raw(query_ptr); //TODO: invalidate query ptr after reply on Kotlin
+        let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let payload = decode_byte_array(&env, payload)?;
         let mut reply_builder = query.reply(key_expr, payload);
@@ -162,12 +162,32 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     ptr: *const zenoh::queryable::Query,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
+    timestamp_enabled: jboolean,
+    timestamp_ntp_64: jlong,
+    attachment: JByteArray,
+    qos_express: jboolean,
+    qos_priority: jint,
+    qos_congestion_control: jint,
 ) {
     let _ = || -> Result<()> {
         let query = Arc::from_raw(ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        query
-            .reply_del(key_expr)
+        let mut reply_builder = query.reply_del(key_expr);
+        if timestamp_enabled != 0 {
+            let ts = Timestamp::new(NTP64(timestamp_ntp_64 as u64), ID::rand());
+            reply_builder = reply_builder.timestamp(ts)
+        }
+        if !attachment.is_null() {
+            reply_builder = reply_builder.attachment(decode_byte_array(&env, attachment)?);
+        }
+        reply_builder = reply_builder.express(qos_express != 0);
+        reply_builder = reply_builder.priority(Priority::try_from(qos_priority as u8).unwrap()); // The numeric value is always within range.
+        reply_builder = if qos_congestion_control != 0 {
+            reply_builder.congestion_control(CongestionControl::Block)
+        } else {
+            reply_builder.congestion_control(CongestionControl::Drop)
+        };
+        reply_builder
             .wait()
             .map_err(|err| Error::Session(format!("{err}")))
     }()

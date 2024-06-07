@@ -83,9 +83,11 @@ class Query internal constructor(
                 is Reply.Success -> {
                     replySuccess(reply.sample)
                 }
-
                 is Reply.Error -> {
                     replyError(reply.error)
+                }
+                is Reply.Delete -> {
+                    replyDelete(reply.keyExpr, reply.timestamp, reply.attachment, reply.qos)
                 }
             }
             jniQuery = null
