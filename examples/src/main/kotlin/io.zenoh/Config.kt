@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.sample.Attachment
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
@@ -72,7 +71,3 @@ internal fun loadConfig(
     return config
 }
 
-internal fun decodeAttachment(attachment: String): Attachment {
-    val pairs = attachment.split("&").map { it.split("=").let { (k, v) -> k.toByteArray() to v.toByteArray() } }
-    return Attachment.Builder().addAll(pairs).res()
-}

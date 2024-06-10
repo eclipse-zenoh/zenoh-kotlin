@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use jni::{
-    objects::{JClass, JObject, JString, JValue},
+    objects::{JByteArray, JClass, JObject, JString, JValue},
     sys::jint,
     JNIEnv,
 };
@@ -134,9 +134,9 @@ pub(crate) unsafe fn declare_subscriber(
                 .unwrap_or((0, false));
 
             let attachment_bytes = match sample.attachment().map_or_else(
-                || env.byte_array_from_slice(&[]),
+                || Ok(JByteArray::default()),
                 |attachment| {
-                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
+                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref()) //TODO: remove unwrap
                 },
             ) {
                 Ok(byte_array) => byte_array,

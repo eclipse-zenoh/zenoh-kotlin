@@ -23,7 +23,7 @@ internal fun interface JNISubscriberCallback {
         kind: Int,
         timestampNTP64: Long,
         timestampIsValid: Boolean,
-        attachment: ByteArray,
+        attachment: ByteArray?,
         express: Boolean,
         priority: Int,
         congestionControl: Int,

@@ -271,9 +271,10 @@ pub(crate) fn on_query(
     let attachment_bytes = query
         .attachment()
         .map_or_else(
-            || env.byte_array_from_slice(&[]),
+            || Ok(JByteArray::default()),
             |attachment| {
                 env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
+                // TODO: remove unwrap
             },
         )
         .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;

@@ -23,7 +23,6 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
-import io.zenoh.sample.Attachment
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -131,7 +130,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
 
             private val kind = SampleKind.PUT
             private var timeStamp: TimeStamp? = null
-            private var attachment: Attachment? = null
+            private var attachment: ByteArray? = null
             private var qosBuilder = QoS.Builder()
 
             /**
@@ -140,9 +139,9 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
             fun timestamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
 
             /**
-             * Appends an [Attachment] to the reply.
+             * Appends an attachment to the reply.
              */
-            fun attachment(attachment: Attachment) = apply { this.attachment = attachment }
+            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
             /**
              * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
@@ -241,7 +240,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
         replierId: String,
         val keyExpr: KeyExpr,
         val timestamp: TimeStamp?,
-        val attachment: Attachment?,
+        val attachment: ByteArray?,
         val qos: QoS
     ) : Reply(replierId) {
 
@@ -249,7 +248,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
 
             private val kind = SampleKind.DELETE
             private var timeStamp: TimeStamp? = null
-            private var attachment: Attachment? = null
+            private var attachment: ByteArray? = null
             private var qosBuilder = QoS.Builder()
 
             /**
@@ -258,9 +257,9 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
             fun timestamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
 
             /**
-             * Appends an [Attachment] to the reply.
+             * Appends an attachment to the reply.
              */
-            fun attachment(attachment: Attachment) = apply { this.attachment = attachment }
+            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
             /**
              * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.

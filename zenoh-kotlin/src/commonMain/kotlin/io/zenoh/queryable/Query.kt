@@ -22,7 +22,6 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.query.Reply
-import io.zenoh.sample.Attachment
 
 /**
  * Represents a Zenoh Query in Kotlin.
@@ -41,7 +40,7 @@ class Query internal constructor(
     val keyExpr: KeyExpr,
     val selector: Selector,
     val value: Value?,
-    val attachment: Attachment?,
+    val attachment: ByteArray?,
     private var jniQuery: JNIQuery?
 ) : AutoCloseable, ZenohType {
 

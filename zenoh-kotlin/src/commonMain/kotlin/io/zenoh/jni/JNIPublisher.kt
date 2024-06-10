@@ -17,7 +17,6 @@ package io.zenoh.jni
 import io.zenoh.*
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
-import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
@@ -31,19 +30,19 @@ internal class JNIPublisher(private val ptr: Long) {
      * Put operation.
      *
      * @param value The [Value] to be put.
-     * @param attachment Optional [Attachment].
+     * @param attachment Optional attachment.
      */
-    fun put(value: Value, attachment: Attachment?): Result<Unit> = runCatching {
-        putViaJNI(value.payload, value.encoding.id.ordinal, value.encoding.schema, attachment?.let { encodeAttachment(it) }, ptr)
+    fun put(value: Value, attachment: ByteArray?): Result<Unit> = runCatching {
+        putViaJNI(value.payload, value.encoding.id.ordinal, value.encoding.schema, attachment, ptr)
     }
 
     /**
      * Delete operation.
      *
-     * @param attachment Optional [Attachment].
+     * @param attachment Optional attachment.
      */
-    fun delete(attachment: Attachment?): Result<Unit> = runCatching {
-        deleteViaJNI(attachment?.let { encodeAttachment(it) }, ptr)
+    fun delete(attachment: ByteArray?): Result<Unit> = runCatching {
+        deleteViaJNI(attachment, ptr)
     }
 
     /**
@@ -103,11 +102,11 @@ internal class JNIPublisher(private val ptr: Long) {
     /** Puts through the native Publisher. */
     @Throws(Exception::class)
     private external fun putViaJNI(
-        valuePayload: ByteArray, encodingId: Int, encodingSchema: String?, encodedAttachment: ByteArray?, ptr: Long
+        valuePayload: ByteArray, encodingId: Int, encodingSchema: String?, attachment: ByteArray?, ptr: Long
     )
 
     @Throws(Exception::class)
-    private external fun deleteViaJNI(encodedAttachment: ByteArray?, ptr: Long)
+    private external fun deleteViaJNI(attachment: ByteArray?, ptr: Long)
 
     /** Frees the underlying native Publisher. */
     private external fun freePtrViaJNI(ptr: Long)

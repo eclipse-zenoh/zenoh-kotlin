@@ -31,7 +31,6 @@ import io.zenoh.publication.Put
 import io.zenoh.query.*
 import io.zenoh.queryable.Query
 import io.zenoh.queryable.Queryable
-import io.zenoh.sample.Attachment
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
@@ -81,14 +80,13 @@ internal class JNISession {
         val subCallback =
             JNISubscriberCallback { keyExpr, payload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                val attachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
                 val sample = Sample(
                     KeyExpr(keyExpr, null),
                     Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(express, congestionControl, priority),
-                    attachment
+                    attachmentBytes
                 )
                 callback.run(sample)
             }
@@ -102,14 +100,13 @@ internal class JNISession {
         keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
-            JNIQueryableCallback { keyExpr: String, selectorParams: String, withValue: Boolean, payload: ByteArray?, encodingId: Int, encodingSchema: String?, attachmentBytes: ByteArray, queryPtr: Long ->
+            JNIQueryableCallback { keyExpr: String, selectorParams: String, withValue: Boolean, payload: ByteArray?, encodingId: Int, encodingSchema: String?, attachmentBytes: ByteArray?, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
                 val keyExpr2 = KeyExpr(keyExpr, null)
                 val selector = Selector(keyExpr2, selectorParams)
                 val value: Value? =
                     if (withValue) Value(payload!!, Encoding(ID.fromId(encodingId)!!, encodingSchema)) else null
-                val decodedAttachment = attachmentBytes.takeIf { it.isNotEmpty() }?.let { decodeAttachment(it) }
-                val query = Query(keyExpr2, selector, value, decodedAttachment, jniQuery)
+                val query = Query(keyExpr2, selector, value, attachmentBytes, jniQuery)
                 callback.run(query)
             }
         val queryableRawPtr = declareQueryableViaJNI(
@@ -127,7 +124,7 @@ internal class JNISession {
         target: QueryTarget,
         consolidation: ConsolidationMode,
         value: Value?,
-        attachment: Attachment?
+        attachment: ByteArray?
     ): Result<R?> = runCatching {
         val getCallback = JNIGetCallback {
                 replierId: String,
@@ -147,7 +144,6 @@ internal class JNISession {
             val reply: Reply
             if (success) {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                val decodedAttachment = attachmentBytes?.let { decodeAttachment(it) }
                 when (SampleKind.fromInt(kind)) {
                     SampleKind.PUT -> {
                         val sample = Sample(
@@ -156,7 +152,7 @@ internal class JNISession {
                             SampleKind.fromInt(kind),
                             timestamp,
                             QoS(express, congestionControl, priority),
-                            decodedAttachment
+                            attachmentBytes
                         )
                         reply = Reply.Success(replierId, sample)
                     }
@@ -166,7 +162,7 @@ internal class JNISession {
                             replierId,
                             KeyExpr(keyExpr!!, null),
                             timestamp,
-                            decodedAttachment,
+                            attachmentBytes,
                             QoS(express, congestionControl, priority)
                         )
                     }
@@ -187,7 +183,7 @@ internal class JNISession {
             timeout.toMillis(),
             target.ordinal,
             consolidation.ordinal,
-            attachment?.let { encodeAttachment(it) },
+            attachment,
             value != null,
             value?.payload,
             value?.encoding?.id?.ordinal ?: 0,
@@ -223,7 +219,7 @@ internal class JNISession {
             put.qos.congestionControl.value,
             put.qos.priority.value,
             put.qos.express,
-            put.attachment?.let { encodeAttachment(it) }
+            put.attachment
         )
     }
 
@@ -239,7 +235,7 @@ internal class JNISession {
             delete.qos.congestionControl.value,
             delete.qos.priority.value,
             delete.qos.express,
-            delete.attachment?.let { encodeAttachment(it) }
+            delete.attachment
         )
     }
 
