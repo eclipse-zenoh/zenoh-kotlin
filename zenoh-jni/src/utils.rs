@@ -20,8 +20,9 @@ use jni::{
     sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::{internal::EncodingInternals, publisher::{CongestionControl, Priority}};
-use zenoh::{buffers::ZSlice, encoding::Encoding};
+use zenoh::internal::buffers::ZSlice;
+use zenoh::publisher::CongestionControl;
+use zenoh::{core::Priority, encoding::Encoding};
 
 /// Converts a JString into a rust String.
 pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {

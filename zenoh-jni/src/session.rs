@@ -315,7 +315,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     let session = Arc::from_raw(session_ptr);
     let _ = || -> Result<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        let payload = decode_byte_array(&mut env, payload)?;
+        let payload = decode_byte_array(&env, payload)?;
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
@@ -328,7 +328,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
             .priority(priority);
 
         if !attachment.is_null() {
-            let attachment = decode_byte_array(&mut env, attachment)?;
+            let attachment = decode_byte_array(&env, attachment)?;
             put_builder = put_builder.attachment(attachment)
         }
 
@@ -392,7 +392,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
             .priority(priority);
 
         if !attachment.is_null() {
-            let attachment = decode_byte_array(&mut env, attachment)?;
+            let attachment = decode_byte_array(&env, attachment)?;
             delete_builder = delete_builder.attachment(attachment)
         }
 

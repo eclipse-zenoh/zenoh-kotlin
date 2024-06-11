@@ -21,12 +21,11 @@ use jni::{
 };
 use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
-    internal::EncodingInternals,
+    core::Priority,
     key_expr::KeyExpr,
     prelude::Wait,
-    publisher::{CongestionControl, Priority},
-    query::{ConsolidationMode, QueryTarget},
-    queryable::Query,
+    publisher::CongestionControl,
+    query::{ConsolidationMode, Query, QueryTarget},
     sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
 };
 
@@ -68,7 +67,7 @@ use crate::{
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    query_ptr: *const zenoh::queryable::Query,
+    query_ptr: *const Query,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
     payload: JByteArray,
@@ -137,7 +136,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    ptr: *const zenoh::queryable::Query,
+    ptr: *const Query,
     payload: JByteArray,
     encoding_id: jint,
     encoding_schema: JString,
@@ -159,7 +158,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    ptr: *const zenoh::queryable::Query,
+    ptr: *const Query,
     key_expr_ptr: *const KeyExpr<'static>,
     key_expr_str: JString,
     timestamp_enabled: jboolean,
@@ -214,7 +213,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    ptr: *const zenoh::queryable::Query,
+    ptr: *const Query,
 ) {
     Arc::from_raw(ptr);
 }

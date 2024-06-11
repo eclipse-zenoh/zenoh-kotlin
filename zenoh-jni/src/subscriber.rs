@@ -20,7 +20,6 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    internal::EncodingInternals,
     key_expr::KeyExpr,
     prelude::Wait,
     session::{Session, SessionDeclarations},
@@ -136,7 +135,8 @@ pub(crate) unsafe fn declare_subscriber(
             let attachment_bytes = match sample.attachment().map_or_else(
                 || Ok(JByteArray::default()),
                 |attachment| {
-                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref()) //TODO: remove unwrap
+                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
+                    //TODO: remove unwrap
                 },
             ) {
                 Ok(byte_array) => byte_array,

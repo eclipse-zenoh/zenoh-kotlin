@@ -18,7 +18,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    config::ZenohId, internal::EncodingInternals, query::Reply, sample::Sample, value::Value,
+    config::ZenohId, query::Reply, sample::Sample, value::Value,
 };
 
 use crate::errors::Error;
@@ -30,8 +30,8 @@ pub(crate) fn on_reply(
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
     match reply.result() {
-        Ok(sample) => on_reply_success(&mut env, reply.replier_id(), sample, callback_global_ref),
-        Err(value) => on_reply_error(&mut env, reply.replier_id(), value, callback_global_ref),
+        Ok(sample) => on_reply_success(&mut env, reply.replier_id().into(), sample, callback_global_ref),
+        Err(value) => on_reply_error(&mut env, reply.replier_id().into(), value, callback_global_ref),
     }
 }
 
@@ -162,7 +162,7 @@ fn on_reply_error(
             JValue::from(&encoding_schema),
             // The remaining parameters aren't used in case of replying error, so we set them to default.
             JValue::from(0 as jint),
-            JValue::from(0 as i64),
+            JValue::from(0_i64),
             JValue::from(false),
             JValue::from(&JByteArray::default()),
             JValue::from(false),
