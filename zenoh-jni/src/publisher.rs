@@ -190,10 +190,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
     unsafe {
         let mut publisher = core::ptr::read(ptr);
         publisher.set_congestion_control(congestion_control);
-        core::ptr::write(
-            ptr as *mut _,
-            (),
-        )
+        core::ptr::write(ptr as *mut _, ())
     }
 }
 
