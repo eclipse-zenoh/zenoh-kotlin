@@ -27,11 +27,14 @@ use zenoh::{
     session::{Session, SessionDeclarations},
 };
 
-use crate::{throw_exception, utils::{decode_congestion_control, decode_priority}};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
     utils::{decode_byte_array, decode_encoding},
+};
+use crate::{
+    throw_exception,
+    utils::{decode_congestion_control, decode_priority},
 };
 
 /// Performs a put operation on a Zenoh publisher via JNI.
@@ -186,10 +189,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
     tracing::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
     unsafe {
         let mut publisher = core::ptr::read(ptr);
+        publisher.set_congestion_control(congestion_control);
         core::ptr::write(
             ptr as *mut _,
-            publisher.set_congestion_control(congestion_control),
-        );
+            (),
+        )
     }
 }
 
@@ -229,7 +233,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
     tracing::debug!("Setting publisher priority with '{priority:?}'.");
     unsafe {
         let mut publisher = core::ptr::read(ptr);
-        core::ptr::write(ptr as *mut _, publisher.set_priority(priority));
+        publisher.set_priority(priority);
+        core::ptr::write(ptr as *mut _, ());
     }
 }
 
