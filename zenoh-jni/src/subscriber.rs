@@ -26,7 +26,10 @@ use zenoh::{
     subscriber::{Reliability, Subscriber},
 };
 
-use crate::errors::{Error, Result};
+use crate::{
+    errors::{Error, Result},
+    utils::{bytes_to_java_array, slice_to_java_string},
+};
 use crate::{
     key_expr::process_kotlin_key_expr,
     utils::{get_callback_global_ref, get_java_vm, load_on_close},
@@ -100,99 +103,73 @@ pub(crate) unsafe fn declare_subscriber(
         .declare_subscriber(key_expr.to_owned())
         .callback(move |sample| {
             on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+            let _ = || -> Result<()> {
+                let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                    Error::Jni(format!("Unable to attach thread for subscriber: {}", err))
+                })?;
+                let byte_array = bytes_to_java_array(&env, sample.payload())?;
 
-            let mut env = match java_vm.attach_current_thread_as_daemon() {
-                Ok(env) => env,
-                Err(err) => {
-                    tracing::error!("Unable to attach thread for subscriber: {}", err);
-                    return;
-                }
-            };
+                let encoding_id: jint = sample.encoding().id() as jint;
+                let encoding_schema = match sample.encoding().schema() {
+                    Some(schema) => slice_to_java_string(&env, schema)?,
+                    None => JString::default(),
+                };
+                let kind = sample.kind() as jint;
+                let (timestamp, is_valid) = sample
+                    .timestamp()
+                    .map(|timestamp| (timestamp.get_time().as_u64(), true))
+                    .unwrap_or((0, false));
 
-            let byte_array = match env
-                .byte_array_from_slice(sample.payload().deserialize::<Vec<u8>>().unwrap().as_ref())
-            {
-                Ok(byte_array) => byte_array,
-                Err(err) => {
+                let attachment_bytes = sample
+                    .attachment()
+                    .map_or_else(
+                        || Ok(JByteArray::default()),
+                        |attachment| bytes_to_java_array(&env, attachment),
+                    )
+                    .map_err(|err| Error::Jni(format!("Error processing attachment: {err}")))?;
+
+                let key_expr_str =
+                    env.new_string(sample.key_expr().to_string())
+                        .map_err(|err| {
+                            Error::Jni(format!("Error processing sample key expr: {err}"))
+                        })?;
+
+                let express = sample.express();
+                let priority = sample.priority() as jint;
+                let cc = sample.congestion_control() as jint;
+
+                if let Err(err) = env.call_method(
+                    &callback_global_ref,
+                    "run",
+                    "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+                    &[
+                        JValue::from(&key_expr_str),
+                        JValue::from(&byte_array),
+                        JValue::from(encoding_id),
+                        JValue::from(&encoding_schema),
+                        JValue::from(kind),
+                        JValue::from(timestamp as i64),
+                        JValue::from(is_valid),
+                        JValue::from(&attachment_bytes),
+                        JValue::from(express),
+                        JValue::from(priority),
+                        JValue::from(cc),
+                    ],
+                ) {
                     tracing::error!("On subscriber callback error: {}", err);
-                    return;
                 }
-            };
-
-            let encoding_id: jint = sample.encoding().id() as jint;
-            let encoding_schema = match sample.encoding().schema() {
-                Some(schema) => env
-                    .new_string(String::from_utf8(schema.to_vec()).unwrap())
-                    .unwrap(), // TODO: remove unwraps
-                None => JString::default(),
-            };
-            let kind = sample.kind() as jint;
-            let (timestamp, is_valid) = sample
-                .timestamp()
-                .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                .unwrap_or((0, false));
-
-            let attachment_bytes = match sample.attachment().map_or_else(
-                || Ok(JByteArray::default()),
-                |attachment| {
-                    env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
-                    //TODO: remove unwrap
-                },
-            ) {
-                Ok(byte_array) => byte_array,
-                Err(err) => {
-                    tracing::error!(
-                        "On subscriber callback error. Error processing attachment: {}.",
-                        err
-                    );
-                    return;
-                }
-            };
-
-            let key_expr_str = match env.new_string(sample.key_expr().to_string()) {
-                Ok(key_expr_str) => key_expr_str,
-                Err(err) => {
-                    tracing::error!(
-                        "Could not create a JString through JNI for the Sample key expression. {}",
-                        err
-                    );
-                    return;
-                }
-            };
-
-            let express = sample.express();
-            let priority = sample.priority() as jint;
-            let cc = sample.congestion_control() as jint;
-
-            if let Err(err) = env.call_method(
-                &callback_global_ref,
-                "run",
-                "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                &[
-                    JValue::from(&key_expr_str),
-                    JValue::from(&byte_array),
-                    JValue::from(encoding_id),
-                    JValue::from(&encoding_schema),
-                    JValue::from(kind),
-                    JValue::from(timestamp as i64),
-                    JValue::from(is_valid),
-                    JValue::from(&attachment_bytes),
-                    JValue::from(express),
-                    JValue::from(priority),
-                    JValue::from(cc),
-                ],
-            ) {
-                tracing::error!("On subscriber callback error: {}", err);
-            }
-            _ = env
-                .delete_local_ref(key_expr_str)
-                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-            _ = env
-                .delete_local_ref(byte_array)
-                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-            _ = env
-                .delete_local_ref(attachment_bytes)
-                .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                _ = env
+                    .delete_local_ref(key_expr_str)
+                    .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                _ = env
+                    .delete_local_ref(byte_array)
+                    .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                _ = env
+                    .delete_local_ref(attachment_bytes)
+                    .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                Ok(())
+            }()
+            .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
         })
         .reliability(reliability)
         .wait();

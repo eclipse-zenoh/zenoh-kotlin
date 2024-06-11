@@ -20,8 +20,8 @@ use jni::{
     sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::internal::buffers::ZSlice;
 use zenoh::publisher::CongestionControl;
+use zenoh::{bytes::ZBytes, internal::buffers::ZSlice};
 use zenoh::{core::Priority, encoding::Encoding};
 
 /// Converts a JString into a rust String.
@@ -95,6 +95,24 @@ pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<Cong
             "Unknown congestion control '{_value}'."
         ))),
     }
+}
+
+pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> Result<JByteArray<'a>> {
+    env.byte_array_from_slice(
+        slice
+            .deserialize::<Vec<u8>>()
+            .map_err(|err| Error::Session(format!("Unable to deserialize slice: {err}")))?
+            .as_ref(),
+    )
+    .map_err(|err| Error::Jni(err.to_string()))
+}
+
+pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> Result<JString<'a>> {
+    env.new_string(
+        String::from_utf8(slice.to_vec())
+            .map_err(|err| Error::Session(format!("Unable to decode string: {err}")))?,
+    )
+    .map_err(|err| Error::Jni(err.to_string()))
 }
 
 /// A type that calls a function when dropped

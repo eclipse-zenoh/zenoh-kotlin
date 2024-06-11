@@ -29,7 +29,7 @@ use zenoh::{
     sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
 };
 
-use crate::utils::{decode_byte_array, decode_encoding};
+use crate::utils::{bytes_to_java_array, decode_byte_array, decode_encoding, slice_to_java_string};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
@@ -252,14 +252,10 @@ pub(crate) fn on_query(
             })?;
 
     let (with_value, payload, encoding_id, encoding_schema) = if let Some(value) = value {
-        let byte_array = env
-            .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) //TODO: refactor unwrap
-            .map_err(|err| Error::Jni(err.to_string()))?;
+        let byte_array = bytes_to_java_array(&env, value.payload())?;
         let encoding_id = value.encoding().id() as jint;
         let encoding_schema = match value.encoding().schema() {
-            Some(schema) => env
-                .new_string(String::from_utf8(schema.to_vec()).unwrap())
-                .unwrap(), // TODO: remove unwraps
+            Some(schema) => slice_to_java_string(&env, schema)?,
             None => JString::default(),
         };
         (true, byte_array, encoding_id, encoding_schema)
@@ -271,12 +267,9 @@ pub(crate) fn on_query(
         .attachment()
         .map_or_else(
             || Ok(JByteArray::default()),
-            |attachment| {
-                env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
-                // TODO: remove unwrap
-            },
+            |attachment| bytes_to_java_array(&env, attachment),
         )
-        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: '{}'.", err)))?;
 
     let key_expr_str = env
         .new_string(&query.key_expr().to_string())

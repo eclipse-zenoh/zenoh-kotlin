@@ -17,12 +17,10 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::{
-    config::ZenohId, query::Reply, sample::Sample, value::Value,
-};
+use zenoh::{config::ZenohId, query::Reply, sample::Sample, value::Value};
 
-use crate::errors::Error;
-use crate::errors::Result;
+use crate::{errors::Error, utils::bytes_to_java_array};
+use crate::{errors::Result, utils::slice_to_java_string};
 
 pub(crate) fn on_reply(
     mut env: JNIEnv,
@@ -30,8 +28,18 @@ pub(crate) fn on_reply(
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
     match reply.result() {
-        Ok(sample) => on_reply_success(&mut env, reply.replier_id().into(), sample, callback_global_ref),
-        Err(value) => on_reply_error(&mut env, reply.replier_id().into(), value, callback_global_ref),
+        Ok(sample) => on_reply_success(
+            &mut env,
+            reply.replier_id().into(),
+            sample,
+            callback_global_ref,
+        ),
+        Err(value) => on_reply_error(
+            &mut env,
+            reply.replier_id().into(),
+            value,
+            callback_global_ref,
+        ),
     }
 }
 
@@ -45,15 +53,10 @@ fn on_reply_success(
         .new_string(replier_id.to_string())
         .map_err(|err| Error::Jni(err.to_string()))?;
 
-    let byte_array = env
-        .byte_array_from_slice(sample.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
-        .map_err(|err| Error::Jni(err.to_string()))?;
-
+    let byte_array = bytes_to_java_array(env, sample.payload())?;
     let encoding: jint = sample.encoding().id() as jint;
     let encoding_schema = match sample.encoding().schema() {
-        Some(schema) => env
-            .new_string(String::from_utf8(schema.to_vec()).unwrap())
-            .unwrap(), // TODO: remove unwraps
+        Some(schema) => slice_to_java_string(env, schema)?,
         None => JString::default(),
     };
     let kind = sample.kind() as jint;
@@ -67,10 +70,7 @@ fn on_reply_success(
         .attachment()
         .map_or_else(
             || Ok(JByteArray::default()),
-            |attachment| {
-                env.byte_array_from_slice(attachment.deserialize::<Vec<u8>>().unwrap().as_ref())
-                //TODO: remove unwrap
-            },
+            |attachment| bytes_to_java_array(env, attachment),
         )
         .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
 
@@ -139,14 +139,10 @@ fn on_reply_error(
         .new_string(replier_id.to_string())
         .map_err(|err| Error::Jni(err.to_string()))?;
 
-    let byte_array = env
-        .byte_array_from_slice(value.payload().deserialize::<Vec<u8>>().unwrap().as_ref()) // TODO: remove unwrap
-        .map_err(|err| Error::Jni(err.to_string()))?;
+    let payload = bytes_to_java_array(env, value.payload())?;
     let encoding_id: jint = value.encoding().id() as jint;
     let encoding_schema = match value.encoding().schema() {
-        Some(schema) => env
-            .new_string(String::from_utf8(schema.to_vec()).unwrap())
-            .unwrap(), // TODO: remove unwraps
+        Some(schema) => slice_to_java_string(env, schema)?,
         None => JString::default(),
     };
     let result = match env.call_method(
@@ -157,7 +153,7 @@ fn on_reply_error(
             JValue::from(&zenoh_id),
             JValue::from(false),
             JValue::from(&JString::default()),
-            JValue::from(&byte_array),
+            JValue::from(&payload),
             JValue::from(encoding_id),
             JValue::from(&encoding_schema),
             // The remaining parameters aren't used in case of replying error, so we set them to default.
@@ -181,7 +177,7 @@ fn on_reply_error(
         .delete_local_ref(zenoh_id)
         .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
     _ = env
-        .delete_local_ref(byte_array)
+        .delete_local_ref(payload)
         .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
     result
 }
