@@ -16,6 +16,15 @@ use std::fmt;
 
 use jni::JNIEnv;
 
+#[macro_export]
+macro_rules! throw_exception {
+    ($env:expr, $err:expr) => {
+        $err.throw_on_jvm(&mut $env).map_err(|err| {
+            tracing::error!("Unable to throw exception: {}", err);
+        })
+    };
+}
+
 pub(crate) type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]

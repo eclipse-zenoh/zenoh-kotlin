@@ -14,8 +14,11 @@
 
 package io.zenoh.jni
 
+import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.QoS
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
+import org.apache.commons.net.ntp.TimeStamp
 
 /**
  * Adapter class for interacting with a Query using JNI.
@@ -33,18 +36,36 @@ internal class JNIQuery(private val ptr: Long) {
             sample.keyExpr.jniKeyExpr?.ptr ?: 0,
             sample.keyExpr.keyExpr,
             sample.value.payload,
-            sample.value.encoding.knownEncoding.ordinal,
-            sample.kind.ordinal,
+            sample.value.encoding.id.ordinal,
+            sample.value.encoding.schema,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.qos.jniQoS.qos,
-            sample.attachment?.let { encodeAttachment(it) },
+            sample.attachment,
+            sample.qos.express,
+            sample.qos.priority.value,
+            sample.qos.congestionControl.value
         )
     }
 
     fun replyError(errorValue: Value): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.knownEncoding.ordinal)
+        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
     }
+
+    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ByteArray?, qos: QoS): Result<Unit> =
+        runCatching {
+            val timestampEnabled = timestamp != null
+            replyDeleteViaJNI(
+                ptr,
+                keyExpr.jniKeyExpr?.ptr ?: 0,
+                keyExpr.keyExpr,
+                timestampEnabled,
+                if (timestampEnabled) timestamp!!.ntpValue() else 0,
+                attachment,
+                qos.express,
+                qos.priority.value,
+                qos.congestionControl.value
+            )
+        }
 
     fun close() {
         freePtrViaJNI(ptr)
@@ -56,12 +77,14 @@ internal class JNIQuery(private val ptr: Long) {
         keyExprPtr: Long,
         keyExprString: String,
         valuePayload: ByteArray,
-        valueEncoding: Int,
-        sampleKind: Int,
+        valueEncodingId: Int,
+        valueEncodingSchema: String?,
         timestampEnabled: Boolean,
         timestampNtp64: Long,
-        qos: Byte,
         attachment: ByteArray?,
+        qosExpress: Boolean,
+        qosPriority: Int,
+        qosCongestionControl: Int,
     )
 
     @Throws(Exception::class)
@@ -69,6 +92,20 @@ internal class JNIQuery(private val ptr: Long) {
         queryPtr: Long,
         errorValuePayload: ByteArray,
         errorValueEncoding: Int,
+        encodingSchema: String?,
+    )
+
+    @Throws(Exception::class)
+    private external fun replyDeleteViaJNI(
+        queryPtr: Long,
+        keyExprPtr: Long,
+        keyExprString: String,
+        timestampEnabled: Boolean,
+        timestampNtp64: Long,
+        attachment: ByteArray?,
+        qosExpress: Boolean,
+        qosPriority: Int,
+        qosCongestionControl: Int,
     )
 
     /** Frees the underlying native Query. */

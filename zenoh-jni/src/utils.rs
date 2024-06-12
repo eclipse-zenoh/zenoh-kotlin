@@ -14,13 +14,15 @@
 
 use std::sync::Arc;
 
+use crate::errors::{Error, Result};
 use jni::{
     objects::{JByteArray, JObject, JString},
+    sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::sample::{Attachment, AttachmentBuilder};
-
-use crate::errors::{Error, Result};
+use zenoh::publisher::CongestionControl;
+use zenoh::{bytes::ZBytes, internal::buffers::ZSlice};
+use zenoh::{core::Priority, encoding::Encoding};
 
 /// Converts a JString into a rust String.
 pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {
@@ -31,6 +33,21 @@ pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String
         .to_str()
         .map_err(|err| Error::Jni(format!("Error decoding JString: {}", err)))?;
     Ok(value.to_string())
+}
+
+pub(crate) fn decode_encoding(
+    env: &mut JNIEnv,
+    encoding: jint,
+    schema: &JString,
+) -> Result<Encoding> {
+    let schema: Option<ZSlice> = if schema.is_null() {
+        None
+    } else {
+        Some(decode_string(env, schema)?.into_bytes().into())
+    };
+    let encoding_id = u16::try_from(encoding)
+        .map_err(|err| Error::Jni(format!("Failed to decode encoding: {err}")))?;
+    Ok(Encoding::new(encoding_id, schema))
 }
 
 pub(crate) fn get_java_vm(env: &mut JNIEnv) -> Result<JavaVM> {
@@ -61,6 +78,41 @@ pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result
         .map_err(|err| Error::Jni(err.to_string()))?;
     let buff: Vec<u8> = unsafe { std::mem::transmute::<Vec<i8>, Vec<u8>>(buff) };
     Ok(buff)
+}
+
+pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {
+    match Priority::try_from(priority as u8) {
+        Ok(priority) => Ok(priority),
+        Err(err) => Err(Error::Session(format!("Error retrieving priority: {err}."))),
+    }
+}
+
+pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<CongestionControl> {
+    match congestion_control {
+        1 => Ok(CongestionControl::Block),
+        0 => Ok(CongestionControl::Drop),
+        _value => Err(Error::Session(format!(
+            "Unknown congestion control '{_value}'."
+        ))),
+    }
+}
+
+pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> Result<JByteArray<'a>> {
+    env.byte_array_from_slice(
+        slice
+            .deserialize::<Vec<u8>>()
+            .map_err(|err| Error::Session(format!("Unable to deserialize slice: {err}")))?
+            .as_ref(),
+    )
+    .map_err(|err| Error::Jni(err.to_string()))
+}
+
+pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> Result<JString<'a>> {
+    env.new_string(
+        String::from_utf8(slice.to_vec())
+            .map_err(|err| Error::Session(format!("Unable to decode string: {err}")))?,
+    )
+    .map_err(|err| Error::Jni(err.to_string()))
 }
 
 /// A type that calls a function when dropped
@@ -114,63 +166,4 @@ pub(crate) fn load_on_close(
             }
         }
     })
-}
-
-/// This function is used in conjunction with the Kotlin function
-/// `decodeAttachment(attachmentBytes: ByteArray): Attachment` which takes a byte array with the
-/// format <key size><key payload><value size><value payload>, repeating this
-/// pattern for as many pairs there are in the attachment.
-///
-/// The kotlin function expects both key size and value size to be i32 integers expressed with
-/// little endian format.
-///
-pub(crate) fn attachment_to_vec(attachment: Attachment) -> Vec<u8> {
-    let mut buffer: Vec<u8> = Vec::new();
-    for (key, value) in attachment.iter() {
-        buffer.extend((key.len() as i32).to_le_bytes());
-        buffer.extend(&key[..]);
-        buffer.extend((value.len() as i32).to_le_bytes());
-        buffer.extend(&value[..]);
-    }
-    buffer
-}
-
-/// This function is used in conjunction with the Kotlin function
-/// `encodeAttachment(attachment: Attachment): ByteArray` which converts the attachment into a
-/// ByteArray with the format <key size><key payload><value size><value payload>, repeating this
-/// pattern for as many pairs there are in the attachment.
-///
-/// Both key size and value size are i32 integers with little endian format.
-///
-pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
-    let mut builder = AttachmentBuilder::new();
-    let mut idx = 0;
-    let i32_size = std::mem::size_of::<i32>();
-    let mut slice_size;
-
-    while idx < bytes.len() {
-        slice_size = i32::from_le_bytes(
-            bytes[idx..idx + i32_size]
-                .try_into()
-                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
-        );
-        idx += i32_size;
-
-        let key = &bytes[idx..idx + slice_size as usize];
-        idx += slice_size as usize;
-
-        slice_size = i32::from_le_bytes(
-            bytes[idx..idx + i32_size]
-                .try_into()
-                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
-        );
-        idx += i32_size;
-
-        let value = &bytes[idx..idx + slice_size as usize];
-        idx += slice_size as usize;
-
-        builder.insert(key, value);
-    }
-
-    builder.build()
 }

@@ -24,7 +24,6 @@ import io.zenoh.publication.Put
 import io.zenoh.query.*
 import io.zenoh.queryable.Query
 import io.zenoh.queryable.Queryable
-import io.zenoh.sample.Attachment
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
@@ -317,7 +316,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, Value("Hello"))
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
      *         .res()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
@@ -340,7 +338,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, "Hello")
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .kind(SampleKind.PUT)
      *         .res()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
@@ -422,7 +419,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget,
         consolidation: ConsolidationMode,
         value: Value?,
-        attachment: Attachment?,
+        attachment: ByteArray?,
     ): Result<R?> {
         return jniSession?.run {
             performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value, attachment)
@@ -434,7 +431,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     internal fun resolveDelete(keyExpr:KeyExpr, delete: Delete): Result<Unit> = runCatching {
-        jniSession?.run { performPut(keyExpr, delete) }
+        jniSession?.run { performDelete(keyExpr, delete) }
     }
 
     /** Launches the session through the jni session, returning the [Session] on success. */

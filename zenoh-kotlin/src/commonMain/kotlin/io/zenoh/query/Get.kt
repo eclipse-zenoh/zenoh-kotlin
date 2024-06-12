@@ -18,7 +18,6 @@ import io.zenoh.handlers.Callback
 import io.zenoh.Session
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.sample.Attachment
 import io.zenoh.selector.Selector
 import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
@@ -86,7 +85,7 @@ class Get<R> private constructor() {
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
         private var value: Value? = null
-        private var attachment: Attachment? = null
+        private var attachment: ByteArray? = null
         private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
@@ -141,8 +140,8 @@ class Get<R> private constructor() {
             return this
         }
 
-        /** Specify an [Attachment]. */
-        fun withAttachment(attachment: Attachment): Builder<R> {
+        /** Specify an attachment. */
+        fun withAttachment(attachment: ByteArray): Builder<R> {
             this.attachment = attachment
             return this
         }

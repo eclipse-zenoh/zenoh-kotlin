@@ -13,38 +13,56 @@
 //
 
 package io.zenoh.prelude
-import io.zenoh.jni.JNIQoS;
 
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
 /**
  * Quality of service settings used to send zenoh message.
+ *
+ * @property express If true, the message is not batched in order to reduce the latency.
+ * @property congestionControl [CongestionControl] policy used for the message.
+ * @property priority [Priority] policy used for the message.
  */
-class QoS internal constructor(internal val jniQoS: JNIQoS) {
-    internal constructor(qos: Byte): this(JNIQoS(qos))
+class QoS internal constructor(
+    internal val express: Boolean,
+    internal val congestionControl: CongestionControl,
+    internal val priority: Priority
+) {
+
+    internal constructor(express: Boolean, congestionControl: Int, priority: Int) : this(
+        express, CongestionControl.fromInt(congestionControl), Priority.fromInt(priority)
+    )
 
     /**
      * Returns priority of the message.
      */
-    fun priority(): Priority = jniQoS.getPriority()
+    fun priority(): Priority = priority
 
     /**
      * Returns congestion control setting of the message.
      */
-    fun congestionControl(): CongestionControl = jniQoS.getCongestionControl()
+    fun congestionControl(): CongestionControl = congestionControl
 
     /**
      * Returns express flag. If it is true, the message is not batched to reduce the latency.
      */
-    fun express(): Boolean = jniQoS.getExpress()
+    fun isExpress(): Boolean = express
 
     companion object {
-        
-        /**
-        * Returns default QoS settings.
-        */
-        fun default(): QoS {
-            return QoS(JNIQoS())
-        } 
+        fun default() = QoS(false, CongestionControl.default(), Priority.default())
+    }
+
+    internal class Builder(
+        private var express: Boolean = false,
+        private var congestionControl: CongestionControl = CongestionControl.default(),
+        private var priority: Priority = Priority.default(),
+    ) {
+
+        fun express(value: Boolean) = apply { this.express = value }
+
+        fun priority(priority: Priority) = apply { this.priority = priority }
+
+        fun congestionControl(congestionControl: CongestionControl) =
+            apply { this.congestionControl = congestionControl }
+
+        fun build() = QoS(express, congestionControl, priority)
     }
 }

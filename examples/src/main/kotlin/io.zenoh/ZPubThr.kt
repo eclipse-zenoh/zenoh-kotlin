@@ -21,11 +21,10 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
-import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Encoding
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
+import io.zenoh.prelude.Priority
 import io.zenoh.value.Value
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
@@ -72,7 +71,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         for (i in 0..<payloadSize) {
             data[i] = (i % 10).toByte()
         }
-        val value = Value(data, Encoding(KnownEncoding.EMPTY))
+        val value = Value(data, Encoding(Encoding.ID.ZENOH_BYTES))
 
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
 

@@ -18,10 +18,8 @@ import io.zenoh.*
 import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.CongestionControl
-import io.zenoh.sample.Attachment
 import io.zenoh.value.Value
 
 /**
@@ -141,10 +139,10 @@ class Publisher internal constructor(
     class Put internal constructor(
         private var jniPublisher: JNIPublisher?,
         val value: Value,
-        var attachment: Attachment? = null
+        var attachment: ByteArray? = null
     ) : Resolvable<Unit> {
 
-        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
         override fun res(): Result<Unit> = run {
             jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
@@ -153,10 +151,10 @@ class Publisher internal constructor(
 
     class Delete internal constructor(
         private var jniPublisher: JNIPublisher?,
-        var attachment: Attachment? = null
+        var attachment: ByteArray? = null
     ) : Resolvable<Unit> {
 
-        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
+        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
         override fun res(): Result<Unit> = run {
             jniPublisher?.delete(attachment) ?: InvalidPublisherResult

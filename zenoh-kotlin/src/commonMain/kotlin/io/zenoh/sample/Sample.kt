@@ -32,7 +32,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
  * @property qos The Quality of Service settings used to deliver the sample.
- * @property attachment Optional [Attachment].
+ * @property attachment Optional attachment.
  */
 class Sample(
     val keyExpr: KeyExpr,
@@ -40,7 +40,7 @@ class Sample(
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,
-    val attachment: Attachment? = null
+    val attachment: ByteArray? = null
 ): ZenohType {
     override fun toString(): String {
         return if (kind == SampleKind.DELETE) "$kind($keyExpr)" else "$kind($keyExpr: $value)"

@@ -18,7 +18,6 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
 import io.zenoh.selector.Selector
@@ -47,8 +46,7 @@ class GetTest {
         queryable = session.declareQueryable(keyExpr).with { query ->
             query.reply(query.keyExpr)
                 .success(value)
-                .withTimeStamp(timestamp)
-                .withKind(kind)
+                .timestamp(timestamp)
                 .res()
         }.res().getOrThrow()
     }
@@ -63,7 +61,9 @@ class GetTest {
     @Test
     fun get_runsWithCallback() {
         var reply: Reply? = null
-        session.get(keyExpr).with { reply = it }.timeout(Duration.ofMillis(1000)).res()
+        session.get(keyExpr).with {
+            reply = it
+        }.timeout(Duration.ofMillis(1000)).res()
 
         assertTrue(reply is Reply.Success)
         val sample = (reply as Reply.Success).sample

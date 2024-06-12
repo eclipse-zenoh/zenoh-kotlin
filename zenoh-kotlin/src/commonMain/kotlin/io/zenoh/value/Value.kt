@@ -15,7 +15,6 @@
 package io.zenoh.value
 
 import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.KnownEncoding
 
 /**
  * A Zenoh value.
@@ -28,9 +27,9 @@ import io.zenoh.prelude.KnownEncoding
 class Value(val payload: ByteArray, val encoding: Encoding) {
 
     /**
-     * Constructs a value with the provided message, using [KnownEncoding.TEXT_PLAIN] for encoding.
+     * Constructs a value with the provided message, using [Encoding.ID.TEXT_PLAIN] for encoding.
      */
-    constructor(message: String): this(message.toByteArray(), Encoding(KnownEncoding.TEXT_PLAIN))
+    constructor(message: String): this(message.toByteArray(), Encoding(Encoding.ID.TEXT_PLAIN))
 
     /**
      * Constructs a value with the provided message and encoding.
@@ -41,7 +40,7 @@ class Value(val payload: ByteArray, val encoding: Encoding) {
 
         /** Return an empty value. */
         fun empty(): Value {
-            return Value(ByteArray(0), Encoding(KnownEncoding.APP_OCTET_STREAM))
+            return Value(ByteArray(0), Encoding(Encoding.ID.ZENOH_BYTES))
         }
     }
 
