@@ -16,7 +16,7 @@ use std::sync::Arc;
 
 use jni::{
     objects::{JByteArray, JClass, JString},
-    sys::jint,
+    sys::{jboolean, jint},
     JNIEnv,
 };
 use zenoh::{
@@ -119,8 +119,9 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
 ///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
 ///     receiving a key expression that was not declared.
 /// - `session_ptr`: Raw pointer to the Zenoh [Session] to be used for the publisher.
-/// - `congestion_control`: The [zenoh::CongestionControl] configuration as an ordinal.
-/// - `priority`: The [zenoh::Priority] configuration as an ordinal.
+/// - `congestion_control`: The [zenoh::publisher::CongestionControl] configuration as an ordinal.
+/// - `priority`: The [zenoh::core::Priority] configuration as an ordinal.
+/// - `is_express`: The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]).
 ///
 /// Returns:
 /// - A [Result] containing a raw pointer to the declared Zenoh publisher ([Publisher]) in case of success,
@@ -136,6 +137,7 @@ pub(crate) unsafe fn declare_publisher(
     session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
+    is_express: jboolean,
 ) -> Result<*const Publisher<'static>> {
     let session = Arc::from_raw(session_ptr);
     let key_expr = process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr)?;
@@ -145,6 +147,7 @@ pub(crate) unsafe fn declare_publisher(
         .declare_publisher(key_expr)
         .congestion_control(congestion_control)
         .priority(priority)
+        .express(is_express != 0)
         .wait();
     std::mem::forget(session);
     match result {
@@ -160,7 +163,7 @@ pub(crate) unsafe fn declare_publisher(
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The Publisher class (unused but required).
-/// - `congestion_control`: The [zenoh::CongestionControl] value to be set.
+/// - `congestion_control`: The [zenoh::publisher::CongestionControl] value to be set.
 /// - `ptr`: Pointer to the publisher.
 ///
 /// Safety:
@@ -201,7 +204,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJ
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The Publisher class (unused but required).
-/// - `priority`: The [zenoh::Priority] value to be set.
+/// - `priority`: The [zenoh::core::Priority] value to be set.
 /// - `ptr`: Pointer to the publisher.
 ///
 /// Safety:

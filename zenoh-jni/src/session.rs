@@ -220,9 +220,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 /// - `key_expr_str`: String representation of the [KeyExpr] to be used for the publisher.
 ///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
 ///     receiving a key expression that was not declared.
-/// - `session_ptr`: The raw pointer to the Zenoh [Session] from which to declare the publisher.
-/// - `congestion_control`: The [CongestionControl] mechanism specified as an ordinal.
-/// - `priority`: The [Priority] mechanism specified as an ordinal.
+/// - `session_ptr`: Raw pointer to the Zenoh [Session] to be used for the publisher.
+/// - `congestion_control`: The [zenoh::publisher::CongestionControl] configuration as an ordinal.
+/// - `priority`: The [zenoh::core::Priority] configuration as an ordinal.
+/// - `is_express`: The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]).
 ///
 /// Returns:
 /// - A raw pointer to the declared Zenoh publisher or null in case of failure.
@@ -245,6 +246,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
+    is_express: jboolean,
 ) -> *const Publisher<'static> {
     let result = declare_publisher(
         &mut env,
@@ -253,6 +255,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
         session_ptr,
         congestion_control,
         priority,
+        is_express,
     );
     match result {
         Ok(ptr) => ptr,

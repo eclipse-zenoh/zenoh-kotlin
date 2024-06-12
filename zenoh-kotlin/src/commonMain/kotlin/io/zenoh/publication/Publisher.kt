@@ -20,6 +20,7 @@ import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.QoS
 import io.zenoh.value.Value
 
 /**
@@ -58,16 +59,14 @@ import io.zenoh.value.Value
  * The publisher configuration parameters can be later changed using the setter functions.
  *
  * @property keyExpr The key expression the publisher will be associated to.
+ * @property qos [QoS] configuration of the publisher.
  * @property jniPublisher Delegate class handling the communication with the native code.
- * @property congestionControl The congestion control policy.
- * @property priority The priority policy.
  * @constructor Create empty Publisher with the default configuration.
  */
 class Publisher internal constructor(
     val keyExpr: KeyExpr,
+    private var qos: QoS,
     private var jniPublisher: JNIPublisher?,
-    private var congestionControl: CongestionControl,
-    private var priority: Priority
 ) : SessionDeclaration, AutoCloseable {
 
     companion object {
@@ -89,7 +88,7 @@ class Publisher internal constructor(
 
     /** Get congestion control policy. */
     fun getCongestionControl(): CongestionControl {
-        return congestionControl
+        return qos.congestionControl()
     }
 
     /**
@@ -100,12 +99,13 @@ class Publisher internal constructor(
      * @param congestionControl: The [CongestionControl] policy.
      */
     fun setCongestionControl(congestionControl: CongestionControl) {
-        jniPublisher?.setCongestionControl(congestionControl)?.onSuccess { this.congestionControl = congestionControl }
+        jniPublisher?.setCongestionControl(congestionControl)?.onSuccess {
+            this@Publisher.qos = QoS(this.qos.express, congestionControl, this.qos.priority) }
     }
 
     /** Get priority policy. */
     fun getPriority(): Priority {
-        return priority
+        return qos.priority()
     }
 
     /**
@@ -116,7 +116,9 @@ class Publisher internal constructor(
      * @param priority: The [Priority] policy.
      */
     fun setPriority(priority: Priority) {
-        jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
+        jniPublisher?.setPriority(priority)?.onSuccess {
+            this@Publisher.qos = QoS(this.qos.express, this.qos.congestionControl, priority)
+        }
     }
 
     override fun isValid(): Boolean {
@@ -166,26 +168,28 @@ class Publisher internal constructor(
      *
      * @property session The [Session] from which the publisher is declared.
      * @property keyExpr The key expression the publisher will be associated to.
-     * @property congestionControl The congestion control policy, defaults to [CongestionControl.DROP].
-     * @property priority The priority policy, defaults to [Priority.DATA]
      * @constructor Create empty Builder.
      */
     class Builder internal constructor(
-        val session: Session,
-        val keyExpr: KeyExpr,
-        var congestionControl: CongestionControl = CongestionControl.DROP,
-        var priority: Priority = Priority.DATA,
+        internal val session: Session,
+        internal val keyExpr: KeyExpr,
     ) {
+        private var qosBuilder: QoS.Builder = QoS.Builder()
 
-        /** Change the `congestion_control` to apply when routing the data. */
+        /** Change the [CongestionControl] to apply when routing the data. */
         fun congestionControl(congestionControl: CongestionControl) =
-            apply { this.congestionControl = congestionControl }
+            apply { this.qosBuilder.congestionControl(congestionControl) }
 
-        /** Change the priority of the written data. */
-        fun priority(priority: Priority) = apply { this.priority = priority }
+        /** Change the [Priority] of the written data. */
+        fun priority(priority: Priority) = apply { this.qosBuilder.priority(priority) }
+
+        /**
+         * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+         */
+        fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
 
         fun res(): Result<Publisher> {
-            return session.run { resolvePublisher(this@Builder) }
+            return session.run { resolvePublisher(keyExpr, qosBuilder.build()) }
         }
     }
 }
