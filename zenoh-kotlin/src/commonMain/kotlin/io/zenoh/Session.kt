@@ -18,6 +18,7 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.QoS
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -380,9 +381,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
-    internal fun resolvePublisher(builder: Publisher.Builder): Result<Publisher> {
+    internal fun resolvePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(builder)
+            declarePublisher(keyExpr, qos)
         } ?: Result.failure(sessionClosedException)
     }
 

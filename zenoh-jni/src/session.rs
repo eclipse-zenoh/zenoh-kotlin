@@ -14,7 +14,6 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::publisher::declare_publisher;
 use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
@@ -38,7 +37,7 @@ use zenoh::prelude::Wait;
 use zenoh::publisher::Publisher;
 use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
-use zenoh::session::Session;
+use zenoh::session::{Session, SessionDeclarations};
 use zenoh::value::Value;
 
 /// Open a Zenoh session via JNI.
@@ -220,9 +219,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 /// - `key_expr_str`: String representation of the [KeyExpr] to be used for the publisher.
 ///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
 ///     receiving a key expression that was not declared.
-/// - `session_ptr`: The raw pointer to the Zenoh [Session] from which to declare the publisher.
-/// - `congestion_control`: The [CongestionControl] mechanism specified as an ordinal.
-/// - `priority`: The [Priority] mechanism specified as an ordinal.
+/// - `session_ptr`: Raw pointer to the Zenoh [Session] to be used for the publisher.
+/// - `congestion_control`: The [zenoh::publisher::CongestionControl] configuration as an ordinal.
+/// - `priority`: The [zenoh::core::Priority] configuration as an ordinal.
+/// - `is_express`: The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]).
 ///
 /// Returns:
 /// - A raw pointer to the declared Zenoh publisher or null in case of failure.
@@ -245,27 +245,29 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     session_ptr: *const Session,
     congestion_control: jint,
     priority: jint,
+    is_express: jboolean,
 ) -> *const Publisher<'static> {
-    let result = declare_publisher(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        session_ptr,
-        congestion_control,
-        priority,
-    );
-    match result {
-        Ok(ptr) => ptr,
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on publisher declaration failure. {}",
-                    err
-                )
-            });
-            null()
+    || -> Result<*const Publisher<'static>> {
+        let session = Arc::from_raw(session_ptr);
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let priority = decode_priority(priority)?;
+        let result = session
+            .declare_publisher(key_expr)
+            .congestion_control(congestion_control)
+            .priority(priority)
+            .express(is_express != 0)
+            .wait();
+        std::mem::forget(session);
+        match result {
+            Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
+            Err(err) => Err(Error::Session(err.to_string())),
         }
-    }
+    }()
+    .unwrap_or_else(|err| {
+        let _ = throw_exception!(env, err);
+        null()
+    })
 }
 
 /// Performs a `put` operation in the Zenoh session via JNI.
