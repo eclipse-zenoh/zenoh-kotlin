@@ -14,7 +14,6 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::publisher::declare_publisher;
 use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
@@ -38,7 +37,7 @@ use zenoh::prelude::Wait;
 use zenoh::publisher::Publisher;
 use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
-use zenoh::session::Session;
+use zenoh::session::{Session, SessionDeclarations};
 use zenoh::value::Value;
 
 /// Open a Zenoh session via JNI.
@@ -248,27 +247,27 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     priority: jint,
     is_express: jboolean,
 ) -> *const Publisher<'static> {
-    let result = declare_publisher(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        session_ptr,
-        congestion_control,
-        priority,
-        is_express,
-    );
-    match result {
-        Ok(ptr) => ptr,
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on publisher declaration failure. {}",
-                    err
-                )
-            });
-            null()
+    || -> Result<*const Publisher<'static>> {
+        let session = Arc::from_raw(session_ptr);
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let priority = decode_priority(priority)?;
+        let result = session
+            .declare_publisher(key_expr)
+            .congestion_control(congestion_control)
+            .priority(priority)
+            .express(is_express != 0)
+            .wait();
+        std::mem::forget(session);
+        match result {
+            Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
+            Err(err) => Err(Error::Session(err.to_string())),
         }
-    }
+    }()
+    .unwrap_or_else(|err| {
+        let _ = throw_exception!(env, err);
+        null()
+    })
 }
 
 /// Performs a `put` operation in the Zenoh session via JNI.

@@ -91,34 +91,9 @@ class Publisher internal constructor(
         return qos.congestionControl()
     }
 
-    /**
-     * Set the congestion control policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param congestionControl: The [CongestionControl] policy.
-     */
-    fun setCongestionControl(congestionControl: CongestionControl) {
-        jniPublisher?.setCongestionControl(congestionControl)?.onSuccess {
-            this@Publisher.qos = QoS(this.qos.express, congestionControl, this.qos.priority) }
-    }
-
     /** Get priority policy. */
     fun getPriority(): Priority {
         return qos.priority()
-    }
-
-    /**
-     * Set the priority policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param priority: The [Priority] policy.
-     */
-    fun setPriority(priority: Priority) {
-        jniPublisher?.setPriority(priority)?.onSuccess {
-            this@Publisher.qos = QoS(this.qos.express, this.qos.congestionControl, priority)
-        }
     }
 
     override fun isValid(): Boolean {

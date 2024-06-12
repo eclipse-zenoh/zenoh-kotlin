@@ -16,25 +16,19 @@ use std::sync::Arc;
 
 use jni::{
     objects::{JByteArray, JClass, JString},
-    sys::{jboolean, jint},
+    sys::jint,
     JNIEnv,
 };
 use zenoh::{
-    key_expr::KeyExpr,
     prelude::Wait,
     publisher::Publisher,
-    sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait},
-    session::{Session, SessionDeclarations},
+    sample::{SampleBuilderTrait, ValueBuilderTrait},
 };
 
+use crate::throw_exception;
 use crate::{
     errors::{Error, Result},
-    key_expr::process_kotlin_key_expr,
     utils::{decode_byte_array, decode_encoding},
-};
-use crate::{
-    throw_exception,
-    utils::{decode_congestion_control, decode_priority},
 };
 
 /// Performs a put operation on a Zenoh publisher via JNI.
@@ -108,134 +102,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
     ptr: *const Publisher,
 ) {
     Arc::from_raw(ptr);
-}
-
-/// Declares a Zenoh publisher via JNI.
-///
-/// Parameters:
-/// - `env`: A mutable reference to the JNI environment.
-/// - `key_expr_ptr`: Raw pointer to the [KeyExpr] to be used for the publisher.
-/// - `key_expr_str`: String representation of the [KeyExpr] to be used for the publisher.
-///     It is only considered when the key_expr_ptr parameter is null, meaning the function is
-///     receiving a key expression that was not declared.
-/// - `session_ptr`: Raw pointer to the Zenoh [Session] to be used for the publisher.
-/// - `congestion_control`: The [zenoh::publisher::CongestionControl] configuration as an ordinal.
-/// - `priority`: The [zenoh::core::Priority] configuration as an ordinal.
-/// - `is_express`: The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]).
-///
-/// Returns:
-/// - A [Result] containing a raw pointer to the declared Zenoh publisher ([Publisher]) in case of success,
-///   or an [Error] variant in case of failure.
-///
-/// Safety:
-/// - The returned raw pointer should be stored appropriately and later freed using [Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI].
-///
-pub(crate) unsafe fn declare_publisher(
-    env: &mut JNIEnv,
-    key_expr_ptr: *const KeyExpr<'static>,
-    key_expr_str: JString,
-    session_ptr: *const Session,
-    congestion_control: jint,
-    priority: jint,
-    is_express: jboolean,
-) -> Result<*const Publisher<'static>> {
-    let session = Arc::from_raw(session_ptr);
-    let key_expr = process_kotlin_key_expr(env, &key_expr_str, key_expr_ptr)?;
-    let congestion_control = decode_congestion_control(congestion_control)?;
-    let priority = decode_priority(priority)?;
-    let result = session
-        .declare_publisher(key_expr)
-        .congestion_control(congestion_control)
-        .priority(priority)
-        .express(is_express != 0)
-        .wait();
-    std::mem::forget(session);
-    match result {
-        Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
-        Err(err) => Err(Error::Session(err.to_string())),
-    }
-}
-
-/// Modifies the congestion control policy of a running Publisher through JNI.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `_class`: The Publisher class (unused but required).
-/// - `congestion_control`: The [zenoh::publisher::CongestionControl] value to be set.
-/// - `ptr`: Pointer to the publisher.
-///
-/// Safety:
-/// - This function is maked as unsafe due to raw pointer manipulation.
-/// - This function is NOT thread safe; if there were to be multiple threads calling this function
-///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///
-/// Throws:
-/// - An exception in case the congestion control fails to be decoded.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setCongestionControlViaJNI(
-    env: &mut JNIEnv,
-    _class: JClass,
-    congestion_control: jint,
-    ptr: *const Publisher<'static>,
-) {
-    let congestion_control = match decode_congestion_control(congestion_control) {
-        Ok(congestion_control) => congestion_control,
-        Err(err) => {
-            _ = err.throw_on_jvm(env);
-            return;
-        }
-    };
-    tracing::debug!("Setting publisher congestion control with '{congestion_control:?}'.");
-    unsafe {
-        let mut publisher = core::ptr::read(ptr);
-        publisher.set_congestion_control(congestion_control);
-        core::ptr::write(ptr as *mut _, ())
-    }
-}
-
-/// Modifies the priority policy of a running Publisher through JNI.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `_class`: The Publisher class (unused but required).
-/// - `priority`: The [zenoh::core::Priority] value to be set.
-/// - `ptr`: Pointer to the publisher.
-///
-/// Safety:
-/// - This function is maked as unsafe due to raw pointer manipulation.
-/// - This function is NOT thread safe; if there were to be multiple threads calling this function
-///   concurrently while providing the same Publisher pointer, the result will be non deterministic.
-///
-/// Throws:
-/// - An exception in case the priority fails to be decoded.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_setPriorityViaJNI(
-    env: &mut JNIEnv,
-    _class: JClass,
-    priority: jint,
-    ptr: *const Publisher<'static>,
-) {
-    let priority = match decode_priority(priority) {
-        Ok(priority) => priority,
-        Err(err) => {
-            _ = err.throw_on_jvm(env);
-            return;
-        }
-    };
-    tracing::debug!("Setting publisher priority with '{priority:?}'.");
-    unsafe {
-        let mut publisher = core::ptr::read(ptr);
-        publisher.set_priority(priority);
-        core::ptr::write(ptr as *mut _, ());
-    }
 }
 
 /// Performs a DELETE operation via JNI using the specified Zenoh publisher.
