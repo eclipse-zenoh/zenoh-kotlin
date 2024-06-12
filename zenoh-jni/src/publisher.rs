@@ -79,56 +79,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
     std::mem::forget(publisher);
 }
 
-/// Frees the memory associated with a Zenoh publisher raw pointer via JNI.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
-/// - `_env`: The JNI environment.
-/// - `_class`: The JNI class.
-/// - `ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
-///
-/// Safety:
-/// - The function is marked as unsafe due to raw pointer manipulation.
-/// - It assumes that the provided publisher pointer is valid and has not been modified or freed.
-/// - The function takes ownership of the raw pointer and releases the associated memory.
-/// - After calling this function, the publisher pointer becomes invalid and should not be used anymore.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
-    _env: JNIEnv,
-    _: JClass,
-    ptr: *const Publisher,
-) {
-    Arc::from_raw(ptr);
-}
-
-/// Performs a DELETE operation via JNI using the specified Zenoh publisher.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `encoded_attachment`: Optional encoded attachment. May be null.
-/// - `publisher`: The Zenoh [Publisher].
-///
-/// Returns:
-/// - A [Result] indicating the success or failure of the operation.
-///
-fn perform_delete(
-    env: &JNIEnv,
-    encoded_attachment: JByteArray,
-    publisher: Arc<Publisher>,
-) -> Result<()> {
-    let mut delete = publisher.delete();
-    if !encoded_attachment.is_null() {
-        let attachment = decode_byte_array(env, encoded_attachment)?;
-        delete = delete.attachment::<Vec<u8>>(attachment)
-    };
-    delete
-        .wait()
-        .map_err(|err| Error::Session(format!("{}", err)))
-}
-
 /// Performs a DELETE operation on a Zenoh publisher via JNI.
 ///
 /// This function is meant to be called from Java/Kotlin code through JNI.
@@ -155,16 +105,41 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
     ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(ptr);
-    match perform_delete(&env, encoded_attachment, publisher.clone()) {
-        Ok(_) => {}
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on WRITE operation failure: {}",
-                    err
-                )
-            });
-        }
-    };
+    let _ = || -> Result<()> {
+        let mut delete = publisher.delete();
+        if !encoded_attachment.is_null() {
+            let attachment = decode_byte_array(&env, encoded_attachment)?;
+            delete = delete.attachment::<Vec<u8>>(attachment)
+        };
+        delete
+            .wait()
+            .map_err(|err| Error::Session(format!("{}", err)))
+    }()
+    .map_err(|err| throw_exception!(env, err));
     std::mem::forget(publisher)
+}
+
+/// Frees the memory associated with a Zenoh publisher raw pointer via JNI.
+///
+/// This function is meant to be called from Java/Kotlin code through JNI.
+///
+/// Parameters:
+/// - `_env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation.
+/// - It assumes that the provided publisher pointer is valid and has not been modified or freed.
+/// - The function takes ownership of the raw pointer and releases the associated memory.
+/// - After calling this function, the publisher pointer becomes invalid and should not be used anymore.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
+    _env: JNIEnv,
+    _: JClass,
+    ptr: *const Publisher,
+) {
+    Arc::from_raw(ptr);
 }

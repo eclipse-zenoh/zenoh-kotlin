@@ -51,7 +51,6 @@ internal class JNIPublisher(private val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    /** Puts through the native Publisher. */
     @Throws(Exception::class)
     private external fun putViaJNI(
         valuePayload: ByteArray, encodingId: Int, encodingSchema: String?, attachment: ByteArray?, ptr: Long
@@ -60,7 +59,6 @@ internal class JNIPublisher(private val ptr: Long) {
     @Throws(Exception::class)
     private external fun deleteViaJNI(attachment: ByteArray?, ptr: Long)
 
-    /** Frees the underlying native Publisher. */
     private external fun freePtrViaJNI(ptr: Long)
 
 }
