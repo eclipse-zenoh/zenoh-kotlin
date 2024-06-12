@@ -28,6 +28,41 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Queryable example"
 ) {
 
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    keyExpr.use {
+                        println("Declaring Queryable on $key...")
+                        session.declareQueryable(keyExpr).res().onSuccess { queryable ->
+                            queryable.use {
+                                println("Press CTRL-C to quit...")
+                                queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
+                                    runBlocking {
+                                        handleRequests(receiverChannel, keyExpr)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun handleRequests(
+        receiverChannel: Channel<Query>, keyExpr: KeyExpr
+    ) {
+        for (query in receiverChannel) {
+            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+            query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
+                .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+        }
+    }
+
     private val key by option(
         "-k",
         "--key",
@@ -53,41 +88,6 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
-
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Queryable on " + key + "...")
-                        session.declareQueryable(keyExpr).res().onSuccess { queryable ->
-                            queryable.use {
-                                println("Press CTRL-C to quit...")
-                                queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
-                                    runBlocking {
-                                        handleRequests(receiverChannel, keyExpr)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun handleRequests(
-        receiverChannel: Channel<Query>, keyExpr: KeyExpr
-    ) {
-        for (query in receiverChannel) {
-            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-            query.reply(keyExpr).success(value).withKind(SampleKind.PUT).withTimeStamp(TimeStamp.getCurrentTime())
-                .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZQueryable(args.isEmpty()).main(args)

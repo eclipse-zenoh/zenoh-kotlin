@@ -21,6 +21,41 @@ import io.zenoh.keyexpr.intoKeyExpr
 class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Pub example"
 ) {
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        println("Opening session...")
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    keyExpr.use {
+                        println("Declaring publisher on '$keyExpr'...")
+                        session.declarePublisher(keyExpr).res().onSuccess { pub ->
+                            pub.use {
+                                println("Press CTRL-C to quit...")
+                                val attachment = attachment?.toByteArray()
+                                var idx = 0
+                                while (true) {
+                                    Thread.sleep(1000)
+                                    val payload = "[${
+                                        idx.toString().padStart(4, ' ')
+                                    }] $value"
+                                    println(
+                                        "Putting Data ('$keyExpr': '$payload')..."
+                                    )
+                                    attachment?.let {
+                                        pub.put(payload).withAttachment(attachment).res()
+                                    } ?: let { pub.put(payload).res() }
+                                    idx++
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }.onFailure { exception -> println(exception.message) }
+    }
+
 
     private val key by option(
         "-k", "--key", help = "The key expression to write to [default: demo/example/zenoh-kotlin-pub]", metavar = "key"
@@ -50,41 +85,6 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        println("Opening session...")
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring publisher on '$keyExpr'...")
-                        session.declarePublisher(keyExpr).res().onSuccess { pub ->
-                            pub.use {
-                                println("Press CTRL-C to quit...")
-                                val attachment = attachment?.let { decodeAttachment(it) }
-                                var idx = 0
-                                while (true) {
-                                    Thread.sleep(1000)
-                                    val payload = "[${
-                                            idx.toString().padStart(4, ' ')
-                                        }] $value"
-                                    println(
-                                        "Putting Data ('$keyExpr': '$payload')..."
-                                    )
-                                    attachment?.let {
-                                        pub.put(payload).withAttachment(attachment).res()
-                                    } ?: let { pub.put(payload).res() }
-                                    idx++
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }.onFailure { exception -> println(exception.message) }
-    }
 }
 
 fun main(args: Array<String>) = ZPub(args.isEmpty()).main(args)

@@ -25,6 +25,30 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Put example"
 ) {
 
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+
+        println("Opening Session...")
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    keyExpr.use {
+                        session.put(keyExpr, value)
+                            .congestionControl(CongestionControl.BLOCK)
+                            .priority(Priority.REALTIME)
+                            .apply {
+                                attachment?.let {
+                                    withAttachment(it.toByteArray())
+                                }
+                            }
+                            .res()
+                            .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
+                    }
+                }
+            }
+        }.onFailure { println(it.message) }
+    }
+
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
         "-k", "--key", help = "The key expression to write to [default: demo/example/zenoh-kotlin-put]", metavar = "key"
@@ -53,31 +77,6 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        println("Opening Session...")
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        session.put(keyExpr, value)
-                            .congestionControl(CongestionControl.BLOCK)
-                            .priority(Priority.REALTIME)
-                            .kind(SampleKind.PUT)
-                            .apply {
-                                attachment?.let {
-                                    withAttachment(decodeAttachment(it))
-                                }
-                            }
-                            .res()
-                            .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
-                    }
-                }
-            }
-        }.onFailure { println(it.message) }
-    }
 }
 
 fun main(args: Array<String>) = ZPut(args.isEmpty()).main(args)

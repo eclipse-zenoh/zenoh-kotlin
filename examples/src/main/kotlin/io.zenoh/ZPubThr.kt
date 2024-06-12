@@ -31,41 +31,6 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"
 ) {
 
-    private val payloadSize by argument(
-        "payload_size",
-        help = "Sets the size of the payload to publish [Default: 8]"
-    ).int().default(8)
-
-    private val priorityInput by option(
-        "-p",
-        "--priority",
-        help = "Priority for sending data",
-        metavar = "priority"
-    ).int()
-    private val number by option(
-        "-n",
-        "--number",
-        help = "Number of messages in each throughput measurements [default: 100000]",
-        metavar = "number"
-    ).ulong().default(100000u)
-    private val statsPrint by option("-t", "--print", help = "Print the statistics").boolean().default(true)
-    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val connect: List<String> by option(
-        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
-    private val listen: List<String> by option(
-        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
-    private val mode by option(
-        "-m",
-        "--mode",
-        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
-        metavar = "mode"
-    ).default("peer")
-    private val noMulticastScouting: Boolean by option(
-        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
-    ).flag(default = false)
-
     override fun run() {
         val data = ByteArray(payloadSize)
         for (i in 0..<payloadSize) {
@@ -105,6 +70,41 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
             }
         }
     }
+
+    private val payloadSize by argument(
+        "payload_size",
+        help = "Sets the size of the payload to publish [Default: 8]"
+    ).int().default(8)
+
+    private val priorityInput by option(
+        "-p",
+        "--priority",
+        help = "Priority for sending data",
+        metavar = "priority"
+    ).int()
+    private val number by option(
+        "-n",
+        "--number",
+        help = "Number of messages in each throughput measurements [default: 100000]",
+        metavar = "number"
+    ).ulong().default(100000u)
+    private val statsPrint by option("-t", "--print", help = "Print the statistics").boolean().default(true)
+    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
 }
 
 fun main(args: Array<String>) = ZPubThr(args.isEmpty()).main(args)

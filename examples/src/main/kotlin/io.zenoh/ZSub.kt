@@ -23,6 +23,35 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Sub example"
 ) {
 
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+
+        println("Opening session...")
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    keyExpr.use {
+                        println("Declaring Subscriber on '$keyExpr'...")
+                        session.declareSubscriber(keyExpr).bestEffort().res().onSuccess { subscriber ->
+                            subscriber.use {
+                                println("Press CTRL-C to quit...")
+                                runBlocking {
+                                    for (sample in subscriber.receiver!!) {
+                                        println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
+                                            sample.attachment?.let {
+                                                ", with attachment: " + it.decodeToString()
+                                            } ?: ""
+                                        })")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }.onFailure { exception -> println(exception.message) }
+    }
+
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
         "-k", "--key", help = "The key expression to subscribe to [default: demo/example/**]", metavar = "key"
@@ -42,37 +71,6 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        println("Opening session...")
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Subscriber on '$keyExpr'...")
-                        session.declareSubscriber(keyExpr).bestEffort().res().onSuccess { subscriber ->
-                            subscriber.use {
-                                println("Press CTRL-C to quit...")
-                                runBlocking {
-                                    for (sample in subscriber.receiver!!) {
-                                        println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
-                                            sample.attachment?.let {
-                                                ", with attachment: " + "${
-                                                    it.values.map { it.first.decodeToString() to it.second.decodeToString() }
-                                                }"
-                                            } ?: ""
-                                        })")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }.onFailure { exception -> println(exception.message) }
-    }
 }
 
 fun main(args: Array<String>) = ZSub(args.isEmpty()).main(args)
