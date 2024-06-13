@@ -20,7 +20,7 @@ use jni::{
     sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::publisher::CongestionControl;
+use zenoh::{publisher::CongestionControl, query::{ConsolidationMode, QueryTarget}, subscriber::Reliability};
 use zenoh::{bytes::ZBytes, internal::buffers::ZSlice};
 use zenoh::{core::Priority, encoding::Encoding};
 
@@ -97,6 +97,37 @@ pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<Cong
     }
 }
 
+pub(crate) fn decode_query_target(target: jint) -> Result<QueryTarget> {
+    match target {
+        0 => Ok(QueryTarget::BestMatching),
+        1 => Ok(QueryTarget::All),
+        2 => Ok(QueryTarget::AllComplete),
+        value => Err(Error::Session(format!(
+            "Unable to decode QueryTarget {value}"
+        ))),
+    }
+}
+
+pub(crate) fn decode_consolidation(consolidation: jint) -> Result<ConsolidationMode> {
+    match consolidation {
+        0 => Ok(ConsolidationMode::None),
+        1 => Ok(ConsolidationMode::Monotonic),
+        2 => Ok(ConsolidationMode::Latest),
+        value => Err(Error::Session(format!(
+            "Unable to decode consolidation {value}"
+        ))),
+    }
+}
+
+pub(crate) fn decode_reliability(reliability: jint) -> Result<Reliability> {
+    match reliability {
+        0 => Ok(Reliability::BestEffort),
+        1 => Ok(Reliability::Reliable),
+        value => Err(Error::Session(format!(
+            "Unable to decode reliability '{value}'"
+        ))),
+    }
+}
 pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> Result<JByteArray<'a>> {
     env.byte_array_from_slice(
         slice

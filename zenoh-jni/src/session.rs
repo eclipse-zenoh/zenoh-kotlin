@@ -14,17 +14,16 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::query::{decode_consolidation, decode_query_target};
 use crate::queryable::declare_queryable;
 use crate::reply::on_reply;
-use crate::subscriber::declare_subscriber;
 use crate::throw_exception;
 use crate::utils::{
-    decode_byte_array, decode_congestion_control, decode_encoding, decode_priority, decode_string,
-    get_callback_global_ref, get_java_vm, load_on_close,
+    bytes_to_java_array, decode_byte_array, decode_congestion_control, decode_consolidation,
+    decode_encoding, decode_priority, decode_query_target, decode_reliability, decode_string,
+    get_callback_global_ref, get_java_vm, load_on_close, slice_to_java_string,
 };
 
-use jni::objects::{JByteArray, JClass, JObject, JString};
+use jni::objects::{JByteArray, JClass, JObject, JString, JValue};
 use jni::sys::{jboolean, jint, jlong};
 use jni::JNIEnv;
 use std::ops::Deref;
@@ -38,6 +37,7 @@ use zenoh::publisher::Publisher;
 use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
 use zenoh::session::{Session, SessionDeclarations};
+use zenoh::subscriber::Subscriber;
 use zenoh::value::Value;
 
 /// Open a Zenoh session via JNI.
@@ -447,26 +447,107 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     on_close: JObject,
     reliability: jint,
 ) -> *const zenoh::subscriber::Subscriber<'static, ()> {
-    match declare_subscriber(
-        &mut env,
-        key_expr_ptr,
-        key_expr_str,
-        session_ptr,
-        callback,
-        on_close,
-        reliability,
-    ) {
-        Ok(subscriber_ptr) => subscriber_ptr,
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on subscriber declaration failure: {}",
-                    err
-                )
-            });
-            null()
-        }
-    }
+    let session = Arc::from_raw(session_ptr);
+    || -> Result<*const Subscriber<'static, ()>> {
+        let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
+        let reliability = decode_reliability(reliability)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        tracing::debug!("Declaring subscriber on '{}'...", key_expr);
+
+        let result = session
+            .declare_subscriber(key_expr.to_owned())
+            .callback(move |sample| {
+                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+                let _ = || -> Result<()> {
+                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                        Error::Jni(format!("Unable to attach thread for subscriber: {}", err))
+                    })?;
+                    let byte_array = bytes_to_java_array(&env, sample.payload())?;
+
+                    let encoding_id: jint = sample.encoding().id() as jint;
+                    let encoding_schema = match sample.encoding().schema() {
+                        Some(schema) => slice_to_java_string(&env, schema)?,
+                        None => JString::default(),
+                    };
+                    let kind = sample.kind() as jint;
+                    let (timestamp, is_valid) = sample
+                        .timestamp()
+                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
+                        .unwrap_or((0, false));
+
+                    let attachment_bytes = sample
+                        .attachment()
+                        .map_or_else(
+                            || Ok(JByteArray::default()),
+                            |attachment| bytes_to_java_array(&env, attachment),
+                        )
+                        .map_err(|err| Error::Jni(format!("Error processing attachment: {err}")))?;
+
+                    let key_expr_str =
+                        env.new_string(sample.key_expr().to_string())
+                            .map_err(|err| {
+                                Error::Jni(format!("Error processing sample key expr: {err}"))
+                            })?;
+
+                    let express = sample.express();
+                    let priority = sample.priority() as jint;
+                    let cc = sample.congestion_control() as jint;
+
+                    if let Err(err) = env.call_method(
+                        &callback_global_ref,
+                        "run",
+                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+                        &[
+                            JValue::from(&key_expr_str),
+                            JValue::from(&byte_array),
+                            JValue::from(encoding_id),
+                            JValue::from(&encoding_schema),
+                            JValue::from(kind),
+                            JValue::from(timestamp as i64),
+                            JValue::from(is_valid),
+                            JValue::from(&attachment_bytes),
+                            JValue::from(express),
+                            JValue::from(priority),
+                            JValue::from(cc),
+                        ],
+                    ) {
+                        tracing::error!("On subscriber callback error: {}", err);
+                    }
+                    _ = env
+                        .delete_local_ref(key_expr_str)
+                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                    _ = env
+                        .delete_local_ref(byte_array)
+                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                    _ = env
+                        .delete_local_ref(attachment_bytes)
+                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                    Ok(())
+                }()
+                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+            })
+            .reliability(reliability)
+            .wait();
+
+        let subscriber = result
+            .map_err(|err| Error::Session(format!("Unable to declare subscriber: {}", err)))?;
+
+        tracing::debug!(
+            "Subscriber declared on '{}' with reliability '{:?}'.",
+            key_expr,
+            reliability
+        );
+        std::mem::forget(session);
+        Ok(Arc::into_raw(Arc::new(subscriber)))
+    }()
+    .unwrap_or_else(|err| {
+        let _ = throw_exception!(env, err);
+        null()
+    })
 }
 
 /// Declare a Zenoh queryable via JNI.
