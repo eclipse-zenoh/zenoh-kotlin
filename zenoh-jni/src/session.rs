@@ -265,7 +265,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
         }
     }()
     .unwrap_or_else(|err| {
-        let _ = throw_exception!(env, err);
+        throw_exception!(env, err);
         null()
     })
 }
@@ -545,7 +545,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
         Ok(Arc::into_raw(Arc::new(subscriber)))
     }()
     .unwrap_or_else(|err| {
-        let _ = throw_exception!(env, err);
+        throw_exception!(env, err);
         null()
     })
 }
