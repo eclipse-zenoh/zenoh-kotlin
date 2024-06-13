@@ -26,7 +26,7 @@ use crate::utils::decode_string;
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryFromViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryFromViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr: JString,
@@ -45,7 +45,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryF
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     key_expr: JString,
@@ -64,7 +64,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_auto
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsViaJNI(
     mut env: JNIEnv,
     _: JClass,
     key_expr_ptr_1: *const KeyExpr<'static>,
@@ -88,7 +88,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_inte
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesViaJNI(
     mut env: JNIEnv,
     _: JClass,
     key_expr_ptr_1: *const KeyExpr<'static>,
@@ -111,7 +111,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_incl
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
     ptr: *const KeyExpr<'static>,
@@ -119,7 +119,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     Arc::from_raw(ptr);
 }
 
-pub(crate) fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
+fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
     let key_expr_str = decode_string(env, key_expr).map_err(|err| {
         Error::Jni(format!(
             "Unable to get key expression string value: {}",
@@ -135,10 +135,7 @@ pub(crate) fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<Ke
     })
 }
 
-pub(crate) fn autocanonize_key_expr(
-    env: &mut JNIEnv,
-    key_expr: &JString,
-) -> Result<KeyExpr<'static>> {
+fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
     decode_string(env, key_expr)
         .map_err(|err| {
             Error::Jni(format!(
