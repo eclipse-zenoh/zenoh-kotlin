@@ -17,7 +17,10 @@ use jni::{
     JNIEnv,
 };
 
-use crate::errors::{Error, Result};
+use crate::{
+    errors::{Error, Result},
+    throw_exception,
+};
 
 /// Redirects the Rust logs either to logcat for Android systems or to the standard output (for non-Android systems).
 ///
@@ -40,39 +43,18 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
     _class: JClass,
     log_level: JString,
 ) {
-    let log_level = match parse_log_level(&mut env, log_level) {
-        Ok(level) => level,
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!("Error throwing exception on log start failure! {}", err)
-            });
-            return;
-        }
-    };
-    android_logd_logger::builder()
-        .parse_filters(log_level.as_str())
-        .tag_target_strip()
-        .prepend_module(true)
-        .init();
+    || -> Result<()> {
+        let log_level = parse_log_level(&mut env, log_level)?;
+        android_logd_logger::builder()
+            .parse_filters(log_level.as_str())
+            .tag_target_strip()
+            .prepend_module(true)
+            .init();
+        Ok(())
+    }()
+    .unwrap_or_else(|err| throw_exception!(env, err))
 }
 
-/// Parses the log level string from the JNI environment into a Rust String.
-///
-/// This function takes a mutable reference to the JNI environment (`env`) and a `log_level`
-/// indicating the desired log level as a JString. It retrieves the log level string from the JNI
-/// environment and converts it into a Rust String.
-///
-/// Parameters:
-/// - `env`: A mutable reference to the JNI environment.
-/// - `log_level`: The log level as a JString.
-///
-/// Returns:
-/// - A [Result] containing the parsed log level string as a [String].
-///
-/// Errors:
-/// - If there is an error retrieving or converting the log level string, a [Error::Jni] is returned
-///   with the error message.
-///
 fn parse_log_level(env: &mut JNIEnv, log_level: JString) -> Result<String> {
     let log_level = env
         .get_string(&log_level)
