@@ -30,6 +30,10 @@ on:
         type: string
         description: Release number of Zenoh
         required: false
+      branch:
+        type: string
+        description: Release branch
+        required: false
 
 jobs:
   tag:
@@ -45,6 +49,7 @@ jobs:
           repo: ${{ github.repository }}
           live-run: ${{ inputs.live-run || false }}
           version: ${{ inputs.version }}
+          branch: ${{ inputs.branch }}
           github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
 
       - name: Checkout this repository
