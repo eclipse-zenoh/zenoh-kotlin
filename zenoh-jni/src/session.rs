@@ -21,6 +21,7 @@ use crate::utils::*;
 use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
 use jni::sys::{jboolean, jint, jlong};
 use jni::JNIEnv;
+use std::mem;
 use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
@@ -629,11 +630,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     query_ptr
 }
 
-fn on_query(
-    mut env: JNIEnv,
-    query: Query,
-    callback_global_ref: &GlobalRef,
-) -> Result<()> {
+fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Result<()> {
     let selector = query.selector();
     let value = query.value();
 
@@ -749,18 +746,26 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
     session_ptr: *const Session,
     key_expr_str: JString,
 ) -> *const KeyExpr<'static> {
-    match declare_keyexpr(&mut env, session_ptr, key_expr_str) {
-        Ok(key_expr) => Arc::into_raw(Arc::new(key_expr)),
-        Err(err) => {
-            _ = err.throw_on_jvm(&mut env).map_err(|err| {
-                tracing::error!(
-                    "Unable to throw exception on key expr declaration failure. {}",
+    let session: Arc<Session> = Arc::from_raw(session_ptr);
+    let key_expr_ptr = || -> Result<*const KeyExpr<'static>> {
+        let key_expr_str = decode_string(&mut env, &key_expr_str)?;
+        let key_expr = session
+            .declare_keyexpr(key_expr_str.to_owned())
+            .wait()
+            .map_err(|err| {
+                Error::Session(format!(
+                    "Unable to declare key expression {key_expr_str}: {}",
                     err
-                )
-            });
-            null()
-        }
-    }
+                ))
+            })?;
+        Ok(Arc::into_raw(Arc::new(key_expr)))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        null()
+    });
+    mem::forget(session);
+    key_expr_ptr
 }
 
 /// Undeclare a [KeyExpr] through a [Session] via JNI.
@@ -768,7 +773,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
 /// The key expression must have been previously declared on the specified session, otherwise an
 /// error is thrown and propagated to the caller.
 ///
-/// This function is meant to be called from Java/Kotlin code through JNI.
+/// This functions frees the key expression pointer provided.
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
@@ -805,7 +810,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
         }
     }
     std::mem::forget(session);
-    std::mem::forget(key_expr);
+    // `key_expr` is intentionally left to be freed by Rust
 }
 
 /// Performs a `get` operation in the Zenoh session via JNI with Value.
@@ -916,23 +921,4 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
-}
-
-pub(crate) unsafe fn declare_keyexpr(
-    env: &mut JNIEnv,
-    session_ptr: *const Session,
-    key_expr: JString,
-) -> Result<KeyExpr<'static>> {
-    let key_expr = decode_string(env, &key_expr)?;
-    let session: Arc<Session> = Arc::from_raw(session_ptr);
-    let result = session.declare_keyexpr(key_expr.to_owned()).wait();
-    std::mem::forget(session);
-
-    match result {
-        Ok(key_expr) => Ok(key_expr),
-        Err(err) => Err(Error::Session(format!(
-            "Unable to declare key expression {key_expr}: {}",
-            err
-        ))),
-    }
 }

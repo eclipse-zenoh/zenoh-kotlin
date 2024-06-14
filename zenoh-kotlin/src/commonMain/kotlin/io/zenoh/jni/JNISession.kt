@@ -200,7 +200,7 @@ internal class JNISession {
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
         keyExpr.jniKeyExpr?.run {
             undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
-            keyExpr.close()
+            keyExpr.jniKeyExpr = null
         } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
     }
 
