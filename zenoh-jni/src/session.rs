@@ -14,7 +14,6 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::reply::on_reply;
 use crate::throw_exception;
 use crate::utils::*;
 
@@ -26,13 +25,13 @@ use std::ops::Deref;
 use std::ptr::null;
 use std::sync::Arc;
 use std::time::Duration;
-use zenoh::config::Config;
+use zenoh::config::{Config, ZenohId};
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::Wait;
 use zenoh::publisher::Publisher;
 use zenoh::query::Query;
 use zenoh::queryable::Queryable;
-use zenoh::sample::{QoSBuilderTrait, SampleBuilderTrait, ValueBuilderTrait};
+use zenoh::sample::{QoSBuilderTrait, Sample, SampleBuilderTrait, ValueBuilderTrait};
 use zenoh::selector::Selector;
 use zenoh::session::{Session, SessionDeclarations};
 use zenoh::subscriber::Subscriber;
@@ -885,19 +884,31 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let mut get_builder = session
             .get(selector)
             .callback(move |reply| {
-                on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
-                tracing::debug!("Receiving reply through JNI: {:?}", reply);
-                let env = match java_vm.attach_current_thread_as_daemon() {
-                    Ok(env) => env,
-                    Err(err) => {
-                        tracing::error!("Unable to attach thread for GET query callback: {}", err);
-                        return;
+                || -> Result<()> {
+                    on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
+                    tracing::debug!("Receiving reply through JNI: {:?}", reply);
+                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                        Error::Jni(format!(
+                            "Unable to attach trhead for GET query callback: {err}."
+                        ))
+                    })?;
+
+                    match reply.result() {
+                        Ok(sample) => on_reply_success(
+                            &mut env,
+                            reply.replier_id().into(),
+                            sample,
+                            &callback_global_ref,
+                        ),
+                        Err(value) => on_reply_error(
+                            &mut env,
+                            reply.replier_id().into(),
+                            value,
+                            &callback_global_ref,
+                        ),
                     }
-                };
-                match on_reply(env, &reply, &callback_global_ref) {
-                    Ok(_) => {}
-                    Err(err) => tracing::error!("{}", err),
-                }
+                }()
+                .unwrap_or_else(|err| tracing::error!("Error on get callback: {err}"));
             })
             .target(query_target)
             .timeout(timeout)
@@ -921,4 +932,143 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
+}
+
+fn on_reply_success(
+    env: &mut JNIEnv,
+    replier_id: ZenohId,
+    sample: &Sample,
+    callback_global_ref: &GlobalRef,
+) -> Result<()> {
+    let zenoh_id = env
+        .new_string(replier_id.to_string())
+        .map_err(|err| Error::Jni(err.to_string()))?;
+
+    let byte_array = bytes_to_java_array(env, sample.payload())?;
+    let encoding: jint = sample.encoding().id() as jint;
+    let encoding_schema = match sample.encoding().schema() {
+        Some(schema) => slice_to_java_string(env, schema)?,
+        None => JString::default(),
+    };
+    let kind = sample.kind() as jint;
+
+    let (timestamp, is_valid) = sample
+        .timestamp()
+        .map(|timestamp| (timestamp.get_time().as_u64(), true))
+        .unwrap_or((0, false));
+
+    let attachment_bytes = sample
+        .attachment()
+        .map_or_else(
+            || Ok(JByteArray::default()),
+            |attachment| bytes_to_java_array(env, attachment),
+        )
+        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
+
+    let key_expr_str = env
+        .new_string(sample.key_expr().to_string())
+        .map_err(|err| {
+            Error::Jni(format!(
+                "Could not create a JString through JNI for the Sample key expression. {}",
+                err
+            ))
+        })?;
+
+    let express = sample.express();
+    let priority = sample.priority() as jint;
+    let cc = sample.congestion_control() as jint;
+
+    let result = match env.call_method(
+        callback_global_ref,
+        "run",
+        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        &[
+            JValue::from(&zenoh_id),
+            JValue::from(true),
+            JValue::from(&key_expr_str),
+            JValue::from(&byte_array),
+            JValue::from(encoding),
+            JValue::from(&encoding_schema),
+            JValue::from(kind),
+            JValue::from(timestamp as i64),
+            JValue::from(is_valid),
+            JValue::from(&attachment_bytes),
+            JValue::from(express),
+            JValue::from(priority),
+            JValue::from(cc),
+        ],
+    ) {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            _ = env.exception_describe();
+            Err(Error::Jni(format!("On GET callback error: {}", err)))
+        }
+    };
+
+    _ = env
+        .delete_local_ref(key_expr_str)
+        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(zenoh_id)
+        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(byte_array)
+        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(attachment_bytes)
+        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+    result
+}
+
+fn on_reply_error(
+    env: &mut JNIEnv,
+    replier_id: ZenohId,
+    value: &Value,
+    callback_global_ref: &GlobalRef,
+) -> Result<()> {
+    let zenoh_id = env
+        .new_string(replier_id.to_string())
+        .map_err(|err| Error::Jni(err.to_string()))?;
+
+    let payload = bytes_to_java_array(env, value.payload())?;
+    let encoding_id: jint = value.encoding().id() as jint;
+    let encoding_schema = match value.encoding().schema() {
+        Some(schema) => slice_to_java_string(env, schema)?,
+        None => JString::default(),
+    };
+    let result = match env.call_method(
+        callback_global_ref,
+        "run",
+        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        &[
+            JValue::from(&zenoh_id),
+            JValue::from(false),
+            JValue::from(&JString::default()),
+            JValue::from(&payload),
+            JValue::from(encoding_id),
+            JValue::from(&encoding_schema),
+            // The remaining parameters aren't used in case of replying error, so we set them to default.
+            JValue::from(0 as jint),
+            JValue::from(0_i64),
+            JValue::from(false),
+            JValue::from(&JByteArray::default()),
+            JValue::from(false),
+            JValue::from(0 as jint),
+            JValue::from(0 as jint),
+        ],
+    ) {
+        Ok(_) => Ok(()),
+        Err(err) => {
+            _ = env.exception_describe();
+            Err(Error::Jni(format!("On GET callback error: {}", err)))
+        }
+    };
+
+    _ = env
+        .delete_local_ref(zenoh_id)
+        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+    _ = env
+        .delete_local_ref(payload)
+        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+    result
 }
