@@ -192,15 +192,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
         }
         Err(arc_session) => {
             let ref_count = Arc::strong_count(&arc_session);
-            tracing::error!("Unable to close the session.");
-            _ = Error::Session(format!(
+            throw_exception!(env, Error::Session(format!(
                 "Attempted to close the session, but at least one strong reference to it is still alive
                 (ref count: {}). All the declared publishers, subscribers, and queryables need to be
                 dropped first.",
                 ref_count
-            ))
-            .throw_on_jvm(&mut env)
-            .map_err(|err| tracing::error!("Unable to throw exception on session failure: {}", err));
+            )));
         }
     };
 }
@@ -244,8 +241,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     priority: jint,
     is_express: jboolean,
 ) -> *const Publisher<'static> {
-    || -> Result<*const Publisher<'static>> {
-        let session = Arc::from_raw(session_ptr);
+    let session = Arc::from_raw(session_ptr);
+    let publisher_ptr = || -> Result<*const Publisher<'static>> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
@@ -255,7 +252,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
             .priority(priority)
             .express(is_express != 0)
             .wait();
-        std::mem::forget(session);
         match result {
             Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
             Err(err) => Err(Error::Session(err.to_string())),
@@ -264,7 +260,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         null()
-    })
+    });
+    std::mem::forget(session);
+    publisher_ptr
 }
 
 /// Performs a `put` operation in the Zenoh session via JNI.
