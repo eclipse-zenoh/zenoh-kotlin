@@ -28,6 +28,45 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Get example"
 ) {
 
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+
+        Session.open(config).onSuccess { session ->
+            session.use {
+                selector.intoSelector().onSuccess { selector ->
+                    selector.use {
+                        session.get(selector)
+                            .consolidation(ConsolidationMode.NONE)
+                            .timeout(Duration.ofMillis(timeout))
+                            .apply {
+                                target?.let {
+                                    target(QueryTarget.valueOf(it.uppercase()))
+                                }
+                                attachment?.let {
+                                    withAttachment(it.toByteArray())
+                                }
+                                value?.let {
+                                    withValue(it)
+                                }
+                            }
+                            .res()
+                            .onSuccess { receiver ->
+                                runBlocking {
+                                    for (reply in receiver!!) {
+                                        when (reply) {
+                                            is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
+                                            is Reply.Error -> println("Received (ERROR: '${reply.error}')")
+                                            is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private val selector by option(
         "-s",
         "--selector",
@@ -68,45 +107,6 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        Session.open(config).onSuccess { session ->
-            session.use {
-                selector.intoSelector().onSuccess { selector ->
-                    selector.use {
-                        session.get(selector)
-                            .consolidation(ConsolidationMode.NONE)
-                            .timeout(Duration.ofMillis(timeout))
-                            .apply {
-                                target?.let {
-                                    target(QueryTarget.valueOf(it.uppercase()))
-                                }
-                                attachment?.let {
-                                    withAttachment(decodeAttachment(it))
-                                }
-                                value?.let {
-                                    withValue(it)
-                                }
-                            }
-                            .res()
-                            .onSuccess { receiver ->
-                                runBlocking {
-                                    for (reply in receiver!!) {
-                                        when (reply) {
-                                            is Reply.Success -> {println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")}
-                                            is Reply.Error -> println("Received (ERROR: '${reply.error}')")
-                                        }
-                                    }
-                                }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZGet(args.isEmpty()).main(args)
