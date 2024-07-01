@@ -27,15 +27,14 @@ use std::sync::Arc;
 use std::time::Duration;
 use zenoh::config::{Config, ZenohId};
 use zenoh::key_expr::KeyExpr;
-use zenoh::prelude::Wait;
+use zenoh::prelude::{Wait, EncodingBuilderTrait};
 use zenoh::publisher::Publisher;
-use zenoh::query::Query;
+use zenoh::query::{Query, ReplyError};
 use zenoh::queryable::Queryable;
-use zenoh::sample::{QoSBuilderTrait, Sample, SampleBuilderTrait, ValueBuilderTrait};
+use zenoh::sample::{QoSBuilderTrait, Sample, SampleBuilderTrait};
 use zenoh::selector::Selector;
 use zenoh::session::{Session, SessionDeclarations};
 use zenoh::subscriber::Subscriber;
-use zenoh::value::Value;
 
 /// Open a Zenoh session via JNI.
 ///
@@ -628,11 +627,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 }
 
 fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Result<()> {
-    let selector = query.selector();
-    let value = query.value();
-
     let selector_params_jstr =
-        env.new_string(selector.parameters().to_string())
+        env.new_string(query.parameters().to_string())
             .map_err(|err| {
                 Error::Jni(format!(
                     "Could not create a JString through JNI for the Query key expression. {}",
@@ -640,18 +636,19 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
                 ))
             })?;
 
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(value) = value {
-        let byte_array = bytes_to_java_array(&env, value.payload())?;
-        let encoding_id = value.encoding().id() as jint;
-        let encoding_schema = match value.encoding().schema() {
+    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload() {
+        let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
+        let encoding_id = encoding.id() as jint;
+        let encoding_schema = match encoding.schema() {
             Some(schema) => slice_to_java_string(&env, schema)?,
             None => JString::default(),
         };
+        let byte_array = bytes_to_java_array(&env, payload)?;
         (true, byte_array, encoding_id, encoding_schema)
     } else {
         (false, JByteArray::default(), 0, JString::default())
     };
-
+    
     let attachment_bytes = query
         .attachment()
         .map_or_else(
@@ -878,7 +875,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let selector_params = decode_string(&mut env, &selector_params)?;
         let timeout = Duration::from_millis(timeout_ms as u64);
         let on_close = load_on_close(&java_vm, on_close_global_ref);
-        let selector = Selector::new(&key_expr, &*selector_params);
+        let selector = Selector::owned(&key_expr, &*selector_params);
         let mut get_builder = session
             .get(selector)
             .callback(move |reply| {
@@ -887,21 +884,22 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
                     tracing::debug!("Receiving reply through JNI: {:?}", reply);
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
                         Error::Jni(format!(
-                            "Unable to attach trhead for GET query callback: {err}."
+                            "Unable to attach thread for GET query callback: {err}."
                         ))
                     })?;
 
                     match reply.result() {
-                        Ok(sample) => on_reply_success(
+                        Ok(sample) => 
+                        on_reply_success(
                             &mut env,
-                            reply.replier_id().into(),
+                            reply.replier_id(),
                             sample,
                             &callback_global_ref,
                         ),
-                        Err(value) => on_reply_error(
+                        Err(error) => on_reply_error(
                             &mut env,
-                            reply.replier_id().into(),
-                            value,
+                            reply.replier_id(),
+                            error,
                             &callback_global_ref,
                         ),
                     }
@@ -914,8 +912,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 
         if with_value != 0 {
             let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
-            let value = Value::new(decode_byte_array(&env, value_payload)?, encoding);
-            get_builder = get_builder.value(value);
+            get_builder = get_builder.encoding(encoding);
+            get_builder = get_builder.payload(decode_byte_array(&env, value_payload)?);
         }
 
         if !attachment.is_null() {
@@ -934,13 +932,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 
 fn on_reply_success(
     env: &mut JNIEnv,
-    replier_id: ZenohId,
+    replier_id: Option<ZenohId>,
     sample: &Sample,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = env
+    let zenoh_id = replier_id.map_or_else(|| Ok(JString::default()), |replier_id| {
+        env
         .new_string(replier_id.to_string())
-        .map_err(|err| Error::Jni(err.to_string()))?;
+        .map_err(|err| Error::Jni(err.to_string()))
+    })?;
 
     let byte_array = bytes_to_java_array(env, sample.payload())?;
     let encoding: jint = sample.encoding().id() as jint;
@@ -1020,17 +1020,19 @@ fn on_reply_success(
 
 fn on_reply_error(
     env: &mut JNIEnv,
-    replier_id: ZenohId,
-    value: &Value,
+    replier_id: Option<ZenohId>,
+    reply_error: &ReplyError,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = env
+    let zenoh_id = replier_id.map_or_else(|| Ok(JString::default()), |replier_id| {
+        env
         .new_string(replier_id.to_string())
-        .map_err(|err| Error::Jni(err.to_string()))?;
+        .map_err(|err| Error::Jni(err.to_string()))
+    })?;
 
-    let payload = bytes_to_java_array(env, value.payload())?;
-    let encoding_id: jint = value.encoding().id() as jint;
-    let encoding_schema = match value.encoding().schema() {
+    let payload = bytes_to_java_array(env, reply_error.payload())?;
+    let encoding_id: jint = reply_error.encoding().id() as jint;
+    let encoding_schema = match reply_error.encoding().schema() {
         Some(schema) => slice_to_java_string(env, schema)?,
         None => JString::default(),
     };

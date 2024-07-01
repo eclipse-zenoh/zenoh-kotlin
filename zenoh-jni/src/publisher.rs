@@ -22,7 +22,7 @@ use jni::{
 use zenoh::{
     prelude::Wait,
     publisher::Publisher,
-    sample::{SampleBuilderTrait, ValueBuilderTrait},
+    sample::{EncodingBuilderTrait, SampleBuilderTrait},
 };
 
 use crate::throw_exception;

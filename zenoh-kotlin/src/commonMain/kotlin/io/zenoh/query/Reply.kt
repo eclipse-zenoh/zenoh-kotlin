@@ -23,6 +23,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZenohID
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -55,7 +56,7 @@ import org.apache.commons.net.ntp.TimeStamp
  *
  * @property replierId: unique ID identifying the replier.
  */
-sealed class Reply private constructor(val replierId: String) : ZenohType {
+sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
 
     /**
      * Builder to construct a [Reply].
@@ -116,7 +117,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
      *
      * @param replierId The replierId of the remotely generated reply.
      */
-    class Success internal constructor(replierId: String, val sample: Sample) : Reply(replierId) {
+    class Success internal constructor(replierId: ZenohID?, val sample: Sample) : Reply(replierId) {
 
         /**
          * Builder for the [Success] reply.
@@ -166,7 +167,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
              */
             override fun res(): Result<Unit> {
                 val sample = Sample(keyExpr, value, kind, timeStamp, qosBuilder.build(), attachment)
-                return query.reply(Success("", sample)).res()
+                return query.reply(Success(null, sample)).res()
             }
         }
 
@@ -194,7 +195,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
      *
      * @param replierId: unique ID identifying the replier.
      */
-    class Error internal constructor(replierId: String, val error: Value) : Reply(replierId) {
+    class Error internal constructor(replierId: ZenohID?, val error: Value) : Reply(replierId) {
 
         /**
          * Builder for the [Error] reply.
@@ -208,7 +209,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
              * Triggers the error reply.
              */
             override fun res(): Result<Unit> {
-                return query.reply(Error("", value)).res()
+                return query.reply(Error(null, value)).res()
             }
         }
 
@@ -237,7 +238,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
      * @param replierId
      */
     class Delete internal constructor(
-        replierId: String,
+        replierId: ZenohID?,
         val keyExpr: KeyExpr,
         val timestamp: TimeStamp?,
         val attachment: ByteArray?,
@@ -283,7 +284,7 @@ sealed class Reply private constructor(val replierId: String) : ZenohType {
              * Triggers the delete reply.
              */
             override fun res(): Result<Unit> {
-                return query.reply(Delete("", keyExpr, timeStamp, attachment, qosBuilder.build())).res()
+                return query.reply(Delete(null, keyExpr, timeStamp, attachment, qosBuilder.build())).res()
             }
         }
     }

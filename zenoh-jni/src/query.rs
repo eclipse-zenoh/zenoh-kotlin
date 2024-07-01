@@ -23,10 +23,10 @@ use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     core::Priority,
     key_expr::KeyExpr,
-    prelude::Wait,
+    prelude::{Wait, EncodingBuilderTrait},
     publisher::CongestionControl,
     query::Query,
-    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
+    sample::{ QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait},
 };
 
 use crate::utils::{decode_byte_array, decode_encoding};
