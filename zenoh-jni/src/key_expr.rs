@@ -23,6 +23,7 @@ use zenoh::key_expr::KeyExpr;
 use crate::errors::Error;
 use crate::errors::Result;
 use crate::utils::decode_string;
+use crate::{jni_error, key_expr_error, throw_exception};
 
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -35,10 +36,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryFromViaJ
         .and_then(|key_expr| {
             env.new_string(key_expr.to_string())
                 .map(|kexp| kexp.as_raw())
-                .map_err(|err| Error::KeyExpr(err.to_string()))
+                .map_err(|err| jni_error!(err))
         })
         .unwrap_or_else(|err| {
-            let _ = err.throw_on_jvm(&mut env);
+            throw_exception!(env, err);
             JString::default().as_raw()
         })
 }
@@ -54,10 +55,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanoniz
         .and_then(|key_expr| {
             env.new_string(key_expr.to_string())
                 .map(|kexp| kexp.as_raw())
-                .map_err(|err| Error::KeyExpr(err.to_string()))
+                .map_err(|err| jni_error!(err))
         })
         .unwrap_or_else(|err| {
-            let _ = err.throw_on_jvm(&mut env);
+            throw_exception!(env, err);
             JString::default().as_raw()
         })
 }
@@ -120,35 +121,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
 }
 
 fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
-    let key_expr_str = decode_string(env, key_expr).map_err(|err| {
-        Error::Jni(format!(
-            "Unable to get key expression string value: {}",
-            err
-        ))
-    })?;
+    let key_expr_str = decode_string(env, key_expr)
+        .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))?;
 
-    KeyExpr::try_from(key_expr_str).map_err(|err| {
-        Error::Jni(format!(
-            "Unable to create key expression from string: {}",
-            err
-        ))
-    })
+    KeyExpr::try_from(key_expr_str)
+        .map_err(|err| key_expr_error!("Unable to create key expression: '{}'.", err))
 }
 
 fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
     decode_string(env, key_expr)
-        .map_err(|err| {
-            Error::Jni(format!(
-                "Unable to get key expression string value: {}",
-                err
-            ))
-        })
+        .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))
         .and_then(|key_expr_str| {
             KeyExpr::autocanonize(key_expr_str).map_err(|err| {
-                Error::Jni(format!(
-                    "Unable to create key expression from string: {}",
-                    err
-                ))
+                key_expr_error!("Unable to create key expression: '{}'", err)
             })
         })
 }
@@ -168,7 +153,7 @@ pub(crate) unsafe fn process_kotlin_key_expr(
 ) -> Result<KeyExpr<'static>> {
     if key_expr_ptr.is_null() {
         decode_key_expr(env, key_expr_str)
-            .map_err(|err| Error::Jni(format!("Unable to process key expression: {}", err)))
+            .map_err(|err| jni_error!("Unable to process key expression: '{}'.", err))
     } else {
         let key_expr = Arc::from_raw(key_expr_ptr);
         let key_expr_clone = key_expr.deref().clone();
@@ -185,11 +170,6 @@ unsafe fn process_kotlin_key_expr_or_throw(
     key_expr_ptr: *const KeyExpr<'static>,
 ) -> core::result::Result<KeyExpr<'static>, ()> {
     process_kotlin_key_expr(env, key_expr_str, key_expr_ptr).map_err(|err| {
-        let _ = err.throw_on_jvm(env).map_err(|err| {
-            tracing::error!(
-                "Unable to throw exception while processing key expression: '{}'.",
-                err
-            )
-        });
+        throw_exception!(*env, err);
     })
 }

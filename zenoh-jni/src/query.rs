@@ -23,17 +23,20 @@ use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     core::Priority,
     key_expr::KeyExpr,
-    prelude::{Wait, EncodingBuilderTrait},
+    prelude::{EncodingBuilderTrait, Wait},
     publisher::CongestionControl,
     query::Query,
-    sample::{ QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait},
+    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait},
 };
 
-use crate::utils::{decode_byte_array, decode_encoding};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
     throw_exception,
+};
+use crate::{
+    session_error,
+    utils::{decode_byte_array, decode_encoding},
 };
 
 /// Replies with success to a Zenoh query via JNI.
@@ -101,9 +104,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder
-            .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+        reply_builder.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
@@ -148,7 +149,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
             .reply_err(decode_byte_array(&env, payload)?)
             .encoding(encoding)
             .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+            .map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
@@ -186,9 +187,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder
-            .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+        reply_builder.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }

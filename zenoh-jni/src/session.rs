@@ -14,8 +14,8 @@
 
 use crate::errors::{Error, Result};
 use crate::key_expr::process_kotlin_key_expr;
-use crate::throw_exception;
-use crate::utils::*;
+use crate::{jni_error, utils::*};
+use crate::{session_error, throw_exception};
 
 use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
 use jni::sys::{jboolean, jint, jlong};
@@ -27,7 +27,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use zenoh::config::{Config, ZenohId};
 use zenoh::key_expr::KeyExpr;
-use zenoh::prelude::{Wait, EncodingBuilderTrait};
+use zenoh::prelude::{EncodingBuilderTrait, Wait};
 use zenoh::publisher::Publisher;
 use zenoh::query::{Query, ReplyError};
 use zenoh::queryable::Queryable;
@@ -64,11 +64,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
             tracing::error!("Unable to open session: {}", err);
-            _ = Error::Session(err.to_string())
-                .throw_on_jvm(&mut env)
-                .map_err(|err| {
-                    tracing::error!("Unable to throw exception on session failure: {}", err)
-                });
+            throw_exception!(env, session_error!(err));
             null()
         }
     }
@@ -102,11 +98,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
             tracing::error!("Unable to open session: {}", err);
-            _ = Error::Session(err.to_string())
-                .throw_on_jvm(&mut env)
-                .map_err(|err| {
-                    tracing::error!("Unable to throw exception on session failure: {}", err)
-                });
+            throw_exception!(env, session_error!(err));
             null()
         }
     }
@@ -125,11 +117,11 @@ fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<Session> {
     let config = if config_file_path.is_empty() {
         Config::default()
     } else {
-        Config::from_file(config_file_path).map_err(|err| Error::Session(err.to_string()))?
+        Config::from_file(config_file_path).map_err(|err| session_error!(err))?
     };
     zenoh::open(config)
         .wait()
-        .map_err(|err| Error::Session(err.to_string()))
+        .map_err(|err| session_error!(err))
 }
 
 /// Open a Zenoh session.
@@ -145,18 +137,16 @@ fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Resu
     let config = if json_config.is_empty() {
         Config::default()
     } else {
-        let mut deserializer = match json5::Deserializer::from_str(&json_config) {
-            Ok(deserializer) => Ok(deserializer),
-            Err(err) => Err(Error::Session(err.to_string())),
-        }?;
+        let mut deserializer =
+            json5::Deserializer::from_str(&json_config).map_err(|err| session_error!(err))?;
         Config::from_deserializer(&mut deserializer).map_err(|err| match err {
-            Ok(c) => Error::Session(format!("Invalid configuration: {}", c)),
-            Err(e) => Error::Session(format!("JSON error: {}", e)),
+            Ok(c) => session_error!("Invalid configuration: {}", c),
+            Err(e) => session_error!("JSON error: {}", e),
         })?
     };
     zenoh::open(config)
         .wait()
-        .map_err(|err| Error::Session(err.to_string()))
+        .map_err(|err| session_error!(err))
 }
 
 /// Closes a Zenoh session via JNI.
@@ -191,12 +181,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
         }
         Err(arc_session) => {
             let ref_count = Arc::strong_count(&arc_session);
-            throw_exception!(env, Error::Session(format!(
+            throw_exception!(env, session_error!(
                 "Attempted to close the session, but at least one strong reference to it is still alive
                 (ref count: {}). All the declared publishers, subscribers, and queryables need to be
                 dropped first.",
                 ref_count
-            )));
+            ));
         }
     };
 }
@@ -253,7 +243,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
             .wait();
         match result {
             Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
-            Err(err) => Err(Error::Session(err.to_string())),
+            Err(err) => Err(session_error!(err)),
         }
     }()
     .unwrap_or_else(|err| {
@@ -331,7 +321,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         put_builder
             .wait()
             .map(|_| tracing::trace!("Put on '{key_expr}'"))
-            .map_err(|err| Error::Session(format!("{err}")))
+            .map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -395,7 +385,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
         delete_builder
             .wait()
             .map(|_| tracing::trace!("Delete on '{key_expr}'"))
-            .map_err(|err| Error::Session(format!("{err}")))
+            .map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -458,7 +448,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> Result<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        Error::Jni(format!("Unable to attach thread for subscriber: {}", err))
+                        jni_error!("Unable to attach thread for subscriber: {}", err)
                     })?;
                     let byte_array = bytes_to_java_array(&env, sample.payload())?;
 
@@ -479,13 +469,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                             || Ok(JByteArray::default()),
                             |attachment| bytes_to_java_array(&env, attachment),
                         )
-                        .map_err(|err| Error::Jni(format!("Error processing attachment: {err}")))?;
+                        .map_err(|err| jni_error!("Error processing attachment: {}", err))?;
 
-                    let key_expr_str =
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| {
-                                Error::Jni(format!("Error processing sample key expr: {err}"))
-                            })?;
+                    let key_expr_str = env
+                        .new_string(sample.key_expr().to_string())
+                        .map_err(|err| jni_error!("Error processing sample key expr: {}", err))?;
 
                     let express = sample.express();
                     let priority = sample.priority() as jint;
@@ -527,8 +515,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
             .reliability(reliability)
             .wait();
 
-        let subscriber = result
-            .map_err(|err| Error::Session(format!("Unable to declare subscriber: {}", err)))?;
+        let subscriber =
+            result.map_err(|err| session_error!("Unable to declare subscriber: {}", err))?;
 
         tracing::debug!(
             "Subscriber declared on '{}' with reliability '{:?}'.",
@@ -615,7 +603,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 
         let queryable = builder
             .wait()
-            .map_err(|err| Error::Session(format!("Error declaring queryable: {}", err)))?;
+            .map_err(|err| session_error!("Error declaring queryable: {}", err))?;
         Ok(Arc::into_raw(Arc::new(queryable)))
     }()
     .unwrap_or_else(|err| {
@@ -627,16 +615,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 }
 
 fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Result<()> {
-    let selector_params_jstr =
-        env.new_string(query.parameters().to_string())
-            .map_err(|err| {
-                Error::Jni(format!(
-                    "Could not create a JString through JNI for the Query key expression. {}",
-                    err
-                ))
-            })?;
+    let selector_params_jstr = env
+        .new_string(query.parameters().to_string())
+        .map_err(|err| {
+            jni_error!(
+                "Could not create a JString through JNI for the Query key expression. {}",
+                err
+            )
+        })?;
 
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload() {
+    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload()
+    {
         let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
         let encoding_id = encoding.id() as jint;
         let encoding_schema = match encoding.schema() {
@@ -648,22 +637,22 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
     } else {
         (false, JByteArray::default(), 0, JString::default())
     };
-    
+
     let attachment_bytes = query
         .attachment()
         .map_or_else(
             || Ok(JByteArray::default()),
             |attachment| bytes_to_java_array(&env, attachment),
         )
-        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: '{}'.", err)))?;
+        .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(&query.key_expr().to_string())
         .map_err(|err| {
-            Error::Jni(format!(
-                "Could not create a JString through JNI for the Query key expression. {}",
+            jni_error!(
+                "Could not create a JString through JNI for the Query key expression: {}.",
                 err
-            ))
+            )
         })?;
 
     let query_ptr = Arc::into_raw(Arc::new(query));
@@ -694,7 +683,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
                 Arc::from_raw(query_ptr);
             };
             _ = env.exception_describe();
-            Error::Jni(format!("{}", err))
+            jni_error!(err)
         });
 
     _ = env
@@ -747,10 +736,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
             .declare_keyexpr(key_expr_str.to_owned())
             .wait()
             .map_err(|err| {
-                Error::Session(format!(
-                    "Unable to declare key expression {key_expr_str}: {}",
+                session_error!(
+                    "Unable to declare key expression '{}': {}",
+                    key_expr_str,
                     err
-                ))
+                )
             })?;
         Ok(Arc::into_raw(Arc::new(key_expr)))
     }()
@@ -796,11 +786,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
     match session.undeclare(key_expr_clone).wait() {
         Ok(_) => {}
         Err(err) => {
-            _ = Error::Session(format!(
-                "Unable to declare key expression {key_expr}: {}",
-                err
-            ))
-            .throw_on_jvm(&mut env)
+            throw_exception!(
+                env,
+                session_error!("Unable to declare key expression '{}': {}", key_expr, err)
+            );
         }
     }
     std::mem::forget(session);
@@ -883,14 +872,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
                     on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
                     tracing::debug!("Receiving reply through JNI: {:?}", reply);
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        Error::Jni(format!(
-                            "Unable to attach thread for GET query callback: {err}."
-                        ))
+                        jni_error!("Unable to attach thread for GET query callback: {}.", err)
                     })?;
 
                     match reply.result() {
-                        Ok(sample) => 
-                        on_reply_success(
+                        Ok(sample) => on_reply_success(
                             &mut env,
                             reply.replier_id(),
                             sample,
@@ -924,7 +910,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         get_builder
             .wait()
             .map(|_| tracing::trace!("Performing get on '{key_expr}'.",))
-            .map_err(|err| Error::Session(err.to_string()))
+            .map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -936,11 +922,13 @@ fn on_reply_success(
     sample: &Sample,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = replier_id.map_or_else(|| Ok(JString::default()), |replier_id| {
-        env
-        .new_string(replier_id.to_string())
-        .map_err(|err| Error::Jni(err.to_string()))
-    })?;
+    let zenoh_id = replier_id.map_or_else(
+        || Ok(JString::default()),
+        |replier_id| {
+            env.new_string(replier_id.to_string())
+                .map_err(|err| jni_error!(err))
+        },
+    )?;
 
     let byte_array = bytes_to_java_array(env, sample.payload())?;
     let encoding: jint = sample.encoding().id() as jint;
@@ -961,15 +949,15 @@ fn on_reply_success(
             || Ok(JByteArray::default()),
             |attachment| bytes_to_java_array(env, attachment),
         )
-        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: {}.", err)))?;
+        .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(sample.key_expr().to_string())
         .map_err(|err| {
-            Error::Jni(format!(
+            jni_error!(
                 "Could not create a JString through JNI for the Sample key expression. {}",
                 err
-            ))
+            )
         })?;
 
     let express = sample.express();
@@ -999,7 +987,7 @@ fn on_reply_success(
         Ok(_) => Ok(()),
         Err(err) => {
             _ = env.exception_describe();
-            Err(Error::Jni(format!("On GET callback error: {}", err)))
+            Err(jni_error!("On GET callback error: {}", err))
         }
     };
 
@@ -1024,11 +1012,13 @@ fn on_reply_error(
     reply_error: &ReplyError,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = replier_id.map_or_else(|| Ok(JString::default()), |replier_id| {
-        env
-        .new_string(replier_id.to_string())
-        .map_err(|err| Error::Jni(err.to_string()))
-    })?;
+    let zenoh_id = replier_id.map_or_else(
+        || Ok(JString::default()),
+        |replier_id| {
+            env.new_string(replier_id.to_string())
+                .map_err(|err| jni_error!(err))
+        },
+    )?;
 
     let payload = bytes_to_java_array(env, reply_error.payload())?;
     let encoding_id: jint = reply_error.encoding().id() as jint;
@@ -1060,7 +1050,7 @@ fn on_reply_error(
         Ok(_) => Ok(()),
         Err(err) => {
             _ = env.exception_describe();
-            Err(Error::Jni(format!("On GET callback error: {}", err)))
+            Err(jni_error!("On GET callback error: {}", err))
         }
     };
 

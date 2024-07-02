@@ -25,11 +25,11 @@ use zenoh::{
     sample::{EncodingBuilderTrait, SampleBuilderTrait},
 };
 
-use crate::throw_exception;
 use crate::{
     errors::{Error, Result},
     utils::{decode_byte_array, decode_encoding},
 };
+use crate::{session_error, throw_exception};
 
 /// Performs a put operation on a Zenoh publisher via JNI.
 ///
@@ -71,9 +71,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
             let attachment = decode_byte_array(&env, encoded_attachment)?;
             publication = publication.attachment::<Vec<u8>>(attachment)
         };
-        publication
-            .wait()
-            .map_err(|err| Error::Session(err.to_string()))
+        publication.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(publisher);
@@ -111,9 +109,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
             let attachment = decode_byte_array(&env, encoded_attachment)?;
             delete = delete.attachment::<Vec<u8>>(attachment)
         };
-        delete
-            .wait()
-            .map_err(|err| Error::Session(format!("{}", err)))
+        delete.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(publisher)

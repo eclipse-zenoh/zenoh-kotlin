@@ -25,6 +25,37 @@ macro_rules! throw_exception {
     }};
 }
 
+#[macro_export]
+macro_rules! jni_error {
+    ($arg:expr) => {
+        Error::Jni($arg.to_string())
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        Error::Jni(format!($fmt, $($arg)*))
+    };
+}
+
+#[macro_export]
+macro_rules! session_error {
+    ($arg:expr) => {
+        Error::Session($arg.to_string())
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        Error::Session(format!($fmt, $($arg)*))
+    };
+
+}
+
+#[macro_export]
+macro_rules! key_expr_error {
+    ($arg:expr) => {
+        Error::KeyExpr($arg.to_string())
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        Error::KeyExpr(format!($fmt, $($arg)*))
+    };
+}
+
 pub(crate) type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -58,8 +89,8 @@ impl Error {
         let exception_name = self.get_associated_kotlin_exception();
         let exception_class = env
             .find_class(&exception_name)
-            .map_err(|err| Error::Jni(format!("Failed to retrieve exception class: {}", err)))?;
+            .map_err(|err| jni_error!("Failed to retrieve exception class: {}", err))?;
         env.throw_new(exception_class, self.to_string())
-            .map_err(|err| Error::Jni(format!("Failed to throw exception: {}", err)))
+            .map_err(|err| jni_error!("Failed to throw exception: {}", err))
     }
 }
