@@ -18,7 +18,6 @@ mod logger;
 mod publisher;
 mod query;
 mod queryable;
-mod reply;
 mod session;
 mod subscriber;
 mod utils;
