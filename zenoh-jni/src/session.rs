@@ -450,7 +450,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
                         jni_error!("Unable to attach thread for subscriber: {}", err)
                     })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())?;
+                    let byte_array = bytes_to_java_array(&env, sample.payload())
+                        .map(|array| env.auto_local(array))?;
 
                     let encoding_id: jint = sample.encoding().id() as jint;
                     let encoding_schema = match sample.encoding().schema() {
@@ -469,17 +470,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                             || Ok(JByteArray::default()),
                             |attachment| bytes_to_java_array(&env, attachment),
                         )
+                        .map(|array| env.auto_local(array))
                         .map_err(|err| jni_error!("Error processing attachment: {}", err))?;
 
-                    let key_expr_str = env
-                        .new_string(sample.key_expr().to_string())
-                        .map_err(|err| jni_error!("Error processing sample key expr: {}", err))?;
+                    let key_expr_str =
+                        env.auto_local(env.new_string(sample.key_expr().to_string()).map_err(
+                            |err| jni_error!("Error processing sample key expr: {}", err),
+                        )?);
 
                     let express = sample.express();
                     let priority = sample.priority() as jint;
                     let cc = sample.congestion_control() as jint;
 
-                    if let Err(err) = env.call_method(
+                    env.call_method(
                         &callback_global_ref,
                         "run",
                         "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
@@ -496,18 +499,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                             JValue::from(priority),
                             JValue::from(cc),
                         ],
-                    ) {
-                        tracing::error!("On subscriber callback error: {}", err);
-                    }
-                    _ = env
-                        .delete_local_ref(key_expr_str)
-                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-                    _ = env
-                        .delete_local_ref(byte_array)
-                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-                    _ = env
-                        .delete_local_ref(attachment_bytes)
-                        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
+                    )
+                    .map_err(|err| jni_error!(err))?;
                     Ok(())
                 }()
                 .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
@@ -617,6 +610,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Result<()> {
     let selector_params_jstr = env
         .new_string(query.parameters().to_string())
+        .map(|value| env.auto_local(value))
         .map_err(|err| {
             jni_error!(
                 "Could not create a JString through JNI for the Query key expression. {}",
@@ -628,14 +622,22 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
     {
         let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
         let encoding_id = encoding.id() as jint;
-        let encoding_schema = match encoding.schema() {
-            Some(schema) => slice_to_java_string(&env, schema)?,
-            None => JString::default(),
-        };
-        let byte_array = bytes_to_java_array(&env, payload)?;
+        let encoding_schema = encoding
+            .schema()
+            .map_or_else(
+                || Ok(JString::default()),
+                |schema| slice_to_java_string(&env, schema),
+            )
+            .map(|value| env.auto_local(value))?;
+        let byte_array = bytes_to_java_array(&env, payload).map(|value| env.auto_local(value))?;
         (true, byte_array, encoding_id, encoding_schema)
     } else {
-        (false, JByteArray::default(), 0, JString::default())
+        (
+            false,
+            env.auto_local(JByteArray::default()),
+            0,
+            env.auto_local(JString::default()),
+        )
     };
 
     let attachment_bytes = query
@@ -644,10 +646,12 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             || Ok(JByteArray::default()),
             |attachment| bytes_to_java_array(&env, attachment),
         )
+        .map(|value| env.auto_local(value))
         .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(&query.key_expr().to_string())
+        .map(|key_expr| env.auto_local(key_expr))
         .map_err(|err| {
             jni_error!(
                 "Could not create a JString through JNI for the Query key expression: {}.",
@@ -685,19 +689,6 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             _ = env.exception_describe();
             jni_error!(err)
         });
-
-    _ = env
-        .delete_local_ref(key_expr_str)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(selector_params_jstr)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(payload)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(attachment_bytes)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
     result
 }
 
@@ -922,20 +913,27 @@ fn on_reply_success(
     sample: &Sample,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = replier_id.map_or_else(
-        || Ok(JString::default()),
-        |replier_id| {
-            env.new_string(replier_id.to_string())
-                .map_err(|err| jni_error!(err))
-        },
-    )?;
+    let zenoh_id = replier_id
+        .map_or_else(
+            || Ok(JString::default()),
+            |replier_id| {
+                env.new_string(replier_id.to_string())
+                    .map_err(|err| jni_error!(err))
+            },
+        )
+        .map(|value| env.auto_local(value))?;
 
-    let byte_array = bytes_to_java_array(env, sample.payload())?;
+    let byte_array =
+        bytes_to_java_array(env, sample.payload()).map(|value| env.auto_local(value))?;
     let encoding: jint = sample.encoding().id() as jint;
-    let encoding_schema = match sample.encoding().schema() {
-        Some(schema) => slice_to_java_string(env, schema)?,
-        None => JString::default(),
-    };
+    let encoding_schema = sample
+        .encoding()
+        .schema()
+        .map_or_else(
+            || Ok(JString::default()),
+            |schema| slice_to_java_string(&env, schema),
+        )
+        .map(|value| env.auto_local(value))?;
     let kind = sample.kind() as jint;
 
     let (timestamp, is_valid) = sample
@@ -949,10 +947,12 @@ fn on_reply_success(
             || Ok(JByteArray::default()),
             |attachment| bytes_to_java_array(env, attachment),
         )
+        .map(|value| env.auto_local(value))
         .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(sample.key_expr().to_string())
+        .map(|value| env.auto_local(value))
         .map_err(|err| {
             jni_error!(
                 "Could not create a JString through JNI for the Sample key expression. {}",
@@ -990,19 +990,6 @@ fn on_reply_success(
             Err(jni_error!("On GET callback error: {}", err))
         }
     };
-
-    _ = env
-        .delete_local_ref(key_expr_str)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(zenoh_id)
-        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(byte_array)
-        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(attachment_bytes)
-        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
     result
 }
 
@@ -1012,20 +999,27 @@ fn on_reply_error(
     reply_error: &ReplyError,
     callback_global_ref: &GlobalRef,
 ) -> Result<()> {
-    let zenoh_id = replier_id.map_or_else(
-        || Ok(JString::default()),
-        |replier_id| {
-            env.new_string(replier_id.to_string())
-                .map_err(|err| jni_error!(err))
-        },
-    )?;
+    let zenoh_id = replier_id
+        .map_or_else(
+            || Ok(JString::default()),
+            |replier_id| {
+                env.new_string(replier_id.to_string())
+                    .map_err(|err| jni_error!(err))
+            },
+        )
+        .map(|value| env.auto_local(value))?;
 
-    let payload = bytes_to_java_array(env, reply_error.payload())?;
+    let payload =
+        bytes_to_java_array(env, reply_error.payload()).map(|value| env.auto_local(value))?;
     let encoding_id: jint = reply_error.encoding().id() as jint;
-    let encoding_schema = match reply_error.encoding().schema() {
-        Some(schema) => slice_to_java_string(env, schema)?,
-        None => JString::default(),
-    };
+    let encoding_schema = reply_error
+        .encoding()
+        .schema()
+        .map_or_else(
+            || Ok(JString::default()),
+            |schema| slice_to_java_string(&env, schema),
+        )
+        .map(|value| env.auto_local(value))?;
     let result = match env.call_method(
         callback_global_ref,
         "run",
@@ -1053,12 +1047,5 @@ fn on_reply_error(
             Err(jni_error!("On GET callback error: {}", err))
         }
     };
-
-    _ = env
-        .delete_local_ref(zenoh_id)
-        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(payload)
-        .map_err(|err| tracing::debug!("Error deleting local ref: {}", err));
     result
 }
