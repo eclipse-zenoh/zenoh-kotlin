@@ -73,18 +73,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
     key_expr_ptr_2: *const KeyExpr<'static>,
     key_expr_str_2: JString,
 ) -> jboolean {
-    let key_expr_1 =
-        match process_kotlin_key_expr_or_throw(&mut env, &key_expr_str_1, key_expr_ptr_1) {
-            Ok(key_expr) => key_expr,
-            Err(_) => return false as jboolean,
-        };
-    let key_expr_2 =
-        match process_kotlin_key_expr_or_throw(&mut env, &key_expr_str_2, key_expr_ptr_2) {
-            Ok(key_expr) => key_expr,
-            Err(_) => return false as jboolean,
-        };
-    let intersects = key_expr_1.intersects(&key_expr_2);
-    intersects as jboolean
+    || -> Result<jboolean> {
+        let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
+        let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
+        Ok(key_expr_1.intersects(&key_expr_2) as jboolean)
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        false as jboolean
+    })
 }
 
 #[no_mangle]
@@ -97,17 +94,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
     key_expr_ptr_2: *const KeyExpr<'static>,
     key_expr_str_2: JString,
 ) -> jboolean {
-    let key_expr_1 =
-        match process_kotlin_key_expr_or_throw(&mut env, &key_expr_str_1, key_expr_ptr_1) {
-            Ok(key_expr) => key_expr,
-            Err(_) => return false as jboolean,
-        };
-    let key_expr_2 =
-        match process_kotlin_key_expr_or_throw(&mut env, &key_expr_str_2, key_expr_ptr_2) {
-            Ok(key_expr) => key_expr,
-            Err(_) => return false as jboolean,
-        };
-    key_expr_1.includes(&key_expr_2) as jboolean
+    || -> Result<jboolean> {
+        let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
+        let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
+        Ok(key_expr_1.includes(&key_expr_2) as jboolean)
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        false as jboolean
+    })
 }
 
 #[no_mangle]
@@ -132,9 +127,8 @@ fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr
     decode_string(env, key_expr)
         .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))
         .and_then(|key_expr_str| {
-            KeyExpr::autocanonize(key_expr_str).map_err(|err| {
-                key_expr_error!("Unable to create key expression: '{}'", err)
-            })
+            KeyExpr::autocanonize(key_expr_str)
+                .map_err(|err| key_expr_error!("Unable to create key expression: '{}'", err))
         })
 }
 
@@ -160,16 +154,4 @@ pub(crate) unsafe fn process_kotlin_key_expr(
         std::mem::forget(key_expr);
         Ok(key_expr_clone)
     }
-}
-
-/// Internal helper function that wraps [process_kotlin_key_expr] and throws an Exception through the JVM in
-/// case of error.
-unsafe fn process_kotlin_key_expr_or_throw(
-    env: &mut JNIEnv,
-    key_expr_str: &JString,
-    key_expr_ptr: *const KeyExpr<'static>,
-) -> core::result::Result<KeyExpr<'static>, ()> {
-    process_kotlin_key_expr(env, key_expr_str, key_expr_ptr).map_err(|err| {
-        throw_exception!(*env, err);
-    })
 }
