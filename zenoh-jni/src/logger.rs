@@ -28,12 +28,12 @@ use crate::{
 /// indicating the desired log level, which must be one of the following: "info", "debug", "warn",
 /// "trace", or "error".
 ///
-/// Parameters:
+/// # Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
 /// - `log_level`: The log level java string indicating the desired log level.
 ///
-/// Errors:
+/// # Errors:
 /// - If there is an error parsing the log level string, a `JNIException` is thrown on the JVM.
 ///
 #[no_mangle]

@@ -15,17 +15,16 @@
 use std::sync::Arc;
 
 use jni::{objects::JClass, JNIEnv};
+use zenoh::queryable::Queryable;
 
-/// Frees the memory associated with a Zenoh queryable raw pointer via JNI.
+/// Frees the [Queryable].
 ///
-/// This function is meant to be called from Java/Kotlin code through JNI.
-///
-/// Parameters:
+/// # Parameters:
 /// - `_env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `ptr`: The raw pointer to the Zenoh queryable ([Queryable]).
+/// - `queryable_ptr`: The raw pointer to the Zenoh queryable ([Queryable]).
 ///
-/// Safety:
+/// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation.
 /// - It assumes that the provided queryable pointer is valid and has not been modified or freed.
 /// - The function takes ownership of the raw pointer and releases the associated memory.
@@ -36,7 +35,7 @@ use jni::{objects::JClass, JNIEnv};
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQueryable_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    ptr: *const zenoh::queryable::Queryable<'_, ()>,
+    queryable_ptr: *const Queryable<'_, ()>,
 ) {
-    Arc::from_raw(ptr);
+    Arc::from_raw(queryable_ptr);
 }

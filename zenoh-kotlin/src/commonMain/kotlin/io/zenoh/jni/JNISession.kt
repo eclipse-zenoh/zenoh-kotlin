@@ -51,7 +51,7 @@ internal class JNISession {
         config.jsonConfig?.let { jsonConfig ->
             sessionPtr.set(openSessionWithJsonConfigViaJNI(jsonConfig.toString()))
         } ?: run {
-            sessionPtr.set(openSessionViaJNI(config.path?.toString().orEmpty()))
+            sessionPtr.set(openSessionViaJNI(config.path?.toString()))
         }
     }
 
@@ -241,10 +241,10 @@ internal class JNISession {
     }
 
     @Throws(Exception::class)
-    private external fun openSessionViaJNI(configFilePath: String): Long
+    private external fun openSessionViaJNI(configFilePath: String?): Long
 
     @Throws(Exception::class)
-    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String): Long
+    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String?): Long
 
     @Throws(Exception::class)
     private external fun closeSessionViaJNI(ptr: Long)
