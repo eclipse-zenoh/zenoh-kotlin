@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JClass, JPrimitiveArray, JString, JValue},
+    objects::{JByteArray, JClass, JString},
     sys::{jboolean, jint, jlong},
     JNIEnv,
 };
@@ -23,43 +23,45 @@ use uhlc::{Timestamp, ID, NTP64};
 use zenoh::{
     core::Priority,
     key_expr::KeyExpr,
-    prelude::Wait,
+    prelude::{EncodingBuilderTrait, Wait},
     publisher::CongestionControl,
-    query::{ConsolidationMode, Query, QueryTarget},
-    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait, ValueBuilderTrait},
+    query::Query,
+    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait},
 };
 
-use crate::utils::{bytes_to_java_array, decode_byte_array, decode_encoding, slice_to_java_string};
 use crate::{
     errors::{Error, Result},
     key_expr::process_kotlin_key_expr,
     throw_exception,
 };
+use crate::{
+    session_error,
+    utils::{decode_byte_array, decode_encoding},
+};
 
-/// Replies with success to a Zenoh query via JNI.
+/// Replies with `success` to a Zenoh [Query] via JNI, freeing the query in the process.
 ///
-/// This function is meant to be called from Java/Kotlin through JNI.
-///
-/// Parameters:
+/// # Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `ptr`: The raw pointer to the Zenoh query.
-/// - `key_expr_ptr`: The key expression pointer associated with the query result. This parameter
+/// - `query_ptr`: The raw pointer to the Zenoh query.
+/// - `key_expr_ptr`: Nullable key expression pointer associated with the query result. This parameter
 ///    is meant to be used with declared key expressions, which have a pointer associated to them.
 ///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
-/// - `key_expr_string`: The string representation of the key expression associated with the query result.
-/// - `payload`: The payload as a `JByteArray`.
+/// - `key_expr_str`: The string representation of the key expression associated with the query result.
+/// - `payload`: The payload for the reply.
 /// - `encoding_id`: The encoding id of the payload.
-/// - `encoding_schema`: Optional encoding schema, may be null.
-/// - `sample_kind`: The kind of sample.
+/// - `encoding_schema`: Nullable encoding schema.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
-/// - `attachment`: Optional user attachment encoded as a byte array. May be null.
+/// - `attachment`: Nullable user attachment encoded as a byte array.
+/// - `qos_*`: QoS parameters for the reply.
 ///
-/// Safety:
+/// # Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
 /// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
-/// - The ownership of the Zenoh query is not transferred, and it remains valid after this call.
+/// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
+///     therefore the query isn't valid anymore after that.
 /// - May throw a JNI exception in case of failure, which should be handled by the caller.
 ///
 #[no_mangle]
@@ -68,14 +70,14 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     query_ptr: *const Query,
-    key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: JString,
     payload: JByteArray,
     encoding_id: jint,
-    encoding_schema: JString,
+    encoding_schema: /*nullable*/ JString,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
-    attachment: JByteArray,
+    attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
     qos_priority: jint,
     qos_congestion_control: jint,
@@ -101,75 +103,89 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder
-            .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+        reply_builder.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
 
-/// Replies with error to a Zenoh query via JNI.
+/// Replies with `error` to a Zenoh [Query] via JNI, freeing the query in the process.
 ///
-/// This function is meant to be called from Java/Kotlin through JNI.
-///
-/// Support:
-/// - Replying with error is a feature that is not yet supported by Zenoh. This implementation is
-/// meant to prepare the API to these expected changes. Calling this function now would cause an
-/// exception.
-///
-/// Parameters:
+/// # Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `ptr`: The raw pointer to the Zenoh query.
-/// - `payload`: The payload as a `JByteArray`.
+/// - `query_ptr`: The raw pointer to the Zenoh query.
+/// - `payload`: The payload for the reply.
 /// - `encoding_id`: The encoding id of the payload.
-/// - `encoding_schema`: Optional encoding schema, may be null.
+/// - `encoding_schema`: Nullable encoding schema.
 ///
-/// Safety:
+/// # Safety:
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
 /// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
-/// - The ownership of the Zenoh query is not transferred, and it remains valid after this call.
 /// - May throw a JNI exception in case of failure, which should be handled by the caller.
+/// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
+///     therefore the query isn't valid anymore after that.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    ptr: *const Query,
+    query_ptr: *const Query,
     payload: JByteArray,
     encoding_id: jint,
-    encoding_schema: JString,
+    encoding_schema: /*nullable*/ JString,
 ) {
     let _ = || -> Result<()> {
-        let query = Arc::from_raw(ptr);
+        let query = Arc::from_raw(query_ptr);
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
         query
             .reply_err(decode_byte_array(&env, payload)?)
             .encoding(encoding)
             .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+            .map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
 
+/// Replies with `delete` to a Zenoh [Query] via JNI, freeing the query in the process.
+///
+/// # Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `query_ptr`: The raw pointer to the Zenoh query.
+/// - `key_expr_ptr`: Nullable key expression pointer associated with the query result. This parameter
+///    is meant to be used with declared key expressions, which have a pointer associated to them.
+///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
+/// - `key_expr_str`: The string representation of the key expression associated with the query result.
+/// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
+/// - `timestamp_ntp_64`: The NTP64 timestamp value.
+/// - `attachment`: Nullable user attachment encoded as a byte array.
+/// - `qos_*`: QoS parameters for the reply.
+///
+/// # Safety:
+/// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
+/// - May throw a JNI exception in case of failure, which should be handled by the caller.
+/// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
+///     therefore the query isn't valid anymore after that.
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    ptr: *const Query,
-    key_expr_ptr: *const KeyExpr<'static>,
+    query_ptr: *const Query,
+    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: JString,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
-    attachment: JByteArray,
+    attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
     qos_priority: jint,
     qos_congestion_control: jint,
 ) {
     let _ = || -> Result<()> {
-        let query = Arc::from_raw(ptr);
+        let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let mut reply_builder = query.reply_del(key_expr);
         if timestamp_enabled != 0 {
@@ -186,16 +202,12 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder
-            .wait()
-            .map_err(|err| Error::Session(format!("{err}")))
+        reply_builder.wait().map_err(|err| session_error!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
 
-/// Frees the memory associated with a Zenoh query raw pointer via JNI.
-///
-/// This function is meant to be called from Java/Kotlin code through JNI.
+/// Frees the Query via JNI.
 ///
 /// Parameters:
 /// - `_env`: The JNI environment.
@@ -213,137 +225,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    ptr: *const Query,
+    query_ptr: *const Query,
 ) {
-    Arc::from_raw(ptr);
-}
-
-/// Handles a Zenoh query callback via JNI.
-///
-/// This function is responsible for invoking the query callback function provided by the user from Java/Kotlin.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `query`: The Zenoh [Query] to be passed to the callback function.
-/// - `callback_global_ref`: A global object reference of the callback function.
-///
-/// Returns:
-/// - A [Result] indicating success or failure.
-///
-/// Note:
-/// - The callback reference `callback_global_ref` should point to the Java/Kotlin implementation
-///   of the `onQuery` function (which receives a `Query` as a parameter) from the `Callback` interface.
-///
-pub(crate) fn on_query(
-    mut env: JNIEnv,
-    query: Query,
-    callback_global_ref: &GlobalRef,
-) -> Result<()> {
-    let selector = query.selector();
-    let value = query.value();
-
-    let selector_params_jstr =
-        env.new_string(selector.parameters().to_string())
-            .map_err(|err| {
-                Error::Jni(format!(
-                    "Could not create a JString through JNI for the Query key expression. {}",
-                    err
-                ))
-            })?;
-
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(value) = value {
-        let byte_array = bytes_to_java_array(&env, value.payload())?;
-        let encoding_id = value.encoding().id() as jint;
-        let encoding_schema = match value.encoding().schema() {
-            Some(schema) => slice_to_java_string(&env, schema)?,
-            None => JString::default(),
-        };
-        (true, byte_array, encoding_id, encoding_schema)
-    } else {
-        (false, JPrimitiveArray::default(), 0, JString::default())
-    };
-
-    let attachment_bytes = query
-        .attachment()
-        .map_or_else(
-            || Ok(JByteArray::default()),
-            |attachment| bytes_to_java_array(&env, attachment),
-        )
-        .map_err(|err| Error::Jni(format!("Error processing attachment of reply: '{}'.", err)))?;
-
-    let key_expr_str = env
-        .new_string(&query.key_expr().to_string())
-        .map_err(|err| {
-            Error::Jni(format!(
-                "Could not create a JString through JNI for the Query key expression. {}",
-                err
-            ))
-        })?;
-
-    let query_ptr = Arc::into_raw(Arc::new(query));
-
-    let result = env
-        .call_method(
-            callback_global_ref,
-            "run",
-            "(Ljava/lang/String;Ljava/lang/String;Z[BILjava/lang/String;[BJ)V",
-            &[
-                JValue::from(&key_expr_str),
-                JValue::from(&selector_params_jstr),
-                JValue::from(with_value),
-                JValue::from(&payload),
-                JValue::from(encoding_id),
-                JValue::from(&encoding_schema),
-                JValue::from(&attachment_bytes),
-                JValue::from(query_ptr as jlong),
-            ],
-        )
-        .map(|_| ())
-        .map_err(|err| {
-            // The callback could not be invoked, therefore the created kotlin query object won't be
-            // used. Since `query_ptr` as well as `key_expr_ptr` was created within this function
-            // and remains unaltered, it is safe to reclaim ownership of the memory by converting
-            // the raw pointers back into an `Arc` and freeing the memory.
-            unsafe {
-                Arc::from_raw(query_ptr);
-            };
-            _ = env.exception_describe();
-            Error::Jni(format!("{}", err))
-        });
-
-    _ = env
-        .delete_local_ref(key_expr_str)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(selector_params_jstr)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(payload)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    _ = env
-        .delete_local_ref(attachment_bytes)
-        .map_err(|err| tracing::error!("Error deleting local ref: {}", err));
-    result
-}
-
-pub(crate) fn decode_query_target(target: jint) -> Result<QueryTarget> {
-    match target {
-        0 => Ok(QueryTarget::BestMatching),
-        1 => Ok(QueryTarget::All),
-        2 => Ok(QueryTarget::AllComplete),
-        value => Err(Error::Session(format!(
-            "Unable to decode QueryTarget {value}"
-        ))),
-    }
-}
-
-pub(crate) fn decode_consolidation(consolidation: jint) -> Result<ConsolidationMode> {
-    match consolidation {
-        0 => Ok(ConsolidationMode::None),
-        1 => Ok(ConsolidationMode::Monotonic),
-        2 => Ok(ConsolidationMode::Latest),
-        value => Err(Error::Session(format!(
-            "Unable to decode consolidation {value}"
-        ))),
-    }
+    Arc::from_raw(query_ptr);
 }

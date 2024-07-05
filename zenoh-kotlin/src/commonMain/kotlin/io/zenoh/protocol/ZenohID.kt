@@ -12,23 +12,9 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh.protocol
 
-internal fun interface JNIGetCallback {
-
-    fun run(
-        replierId: String?,
-        success: Boolean,
-        keyExpr: String?,
-        payload: ByteArray,
-        encodingId: Int,
-        encodingSchema: String?,
-        kind: Int,
-        timestampNTP64: Long,
-        timestampIsValid: Boolean,
-        attachment: ByteArray?,
-        express: Boolean,
-        priority: Int,
-        congestionControl: Int,
-    )
-}
+/**
+ * The global unique id of a Zenoh peer.
+ */
+class ZenohID(val id: String)

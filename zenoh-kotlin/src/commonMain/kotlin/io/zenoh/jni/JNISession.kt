@@ -25,6 +25,7 @@ import io.zenoh.jni.callbacks.JNIQueryableCallback
 import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
+import io.zenoh.protocol.ZenohID
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -50,7 +51,7 @@ internal class JNISession {
         config.jsonConfig?.let { jsonConfig ->
             sessionPtr.set(openSessionWithJsonConfigViaJNI(jsonConfig.toString()))
         } ?: run {
-            sessionPtr.set(openSessionViaJNI(config.path?.toString().orEmpty()))
+            sessionPtr.set(openSessionViaJNI(config.path?.toString()))
         }
     }
 
@@ -127,7 +128,7 @@ internal class JNISession {
         attachment: ByteArray?
     ): Result<R?> = runCatching {
         val getCallback = JNIGetCallback {
-                replierId: String,
+                replierId: String?,
                 success: Boolean,
                 keyExpr: String?,
                 payload: ByteArray,
@@ -154,12 +155,12 @@ internal class JNISession {
                             QoS(express, congestionControl, priority),
                             attachmentBytes
                         )
-                        reply = Reply.Success(replierId, sample)
+                        reply = Reply.Success(replierId?.let { ZenohID(it) }, sample)
                     }
 
                     SampleKind.DELETE -> {
                         reply = Reply.Delete(
-                            replierId,
+                            replierId?.let { ZenohID(it) },
                             KeyExpr(keyExpr!!, null),
                             timestamp,
                             attachmentBytes,
@@ -168,7 +169,7 @@ internal class JNISession {
                     }
                 }
             } else {
-                reply = Reply.Error(replierId, Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)))
+                reply = Reply.Error(replierId?.let { ZenohID(it) }, Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)))
             }
             callback.run(reply)
         }
@@ -200,7 +201,7 @@ internal class JNISession {
     fun undeclareKeyExpr(keyExpr: KeyExpr): Result<Unit> = runCatching {
         keyExpr.jniKeyExpr?.run {
             undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
-            keyExpr.close()
+            keyExpr.jniKeyExpr = null
         } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
     }
 
@@ -240,10 +241,10 @@ internal class JNISession {
     }
 
     @Throws(Exception::class)
-    private external fun openSessionViaJNI(configFilePath: String): Long
+    private external fun openSessionViaJNI(configFilePath: String?): Long
 
     @Throws(Exception::class)
-    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String): Long
+    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String?): Long
 
     @Throws(Exception::class)
     private external fun closeSessionViaJNI(ptr: Long)
