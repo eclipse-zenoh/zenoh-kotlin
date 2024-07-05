@@ -28,13 +28,11 @@ use std::time::Duration;
 use zenoh::config::{Config, ZenohId};
 use zenoh::key_expr::KeyExpr;
 use zenoh::prelude::{EncodingBuilderTrait, Wait};
-use zenoh::publisher::Publisher;
-use zenoh::query::{Query, ReplyError};
-use zenoh::queryable::Queryable;
-use zenoh::sample::{QoSBuilderTrait, Sample, SampleBuilderTrait};
-use zenoh::selector::Selector;
+use zenoh::pubsub::{Publisher, Subscriber};
+use zenoh::qos::QoSBuilderTrait;
+use zenoh::query::{Query, Queryable, ReplyError, Selector};
+use zenoh::sample::{Sample, SampleBuilderTrait};
 use zenoh::session::{Session, SessionDeclarations};
-use zenoh::subscriber::Subscriber;
 
 /// Open a Zenoh session via JNI.
 ///
@@ -401,7 +399,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     callback: JObject,
     on_close: JObject,
     reliability: jint,
-) -> *const zenoh::subscriber::Subscriber<'static, ()> {
+) -> *const Subscriber<'static, ()> {
     let session = Arc::from_raw(session_ptr);
     || -> Result<*const Subscriber<'static, ()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);

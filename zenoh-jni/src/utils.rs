@@ -23,12 +23,12 @@ use jni::{
     sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::{bytes::ZBytes, internal::buffers::ZSlice};
-use zenoh::{core::Priority, encoding::Encoding};
 use zenoh::{
-    publisher::CongestionControl,
+    bytes::{Encoding, ZBytes},
+    internal::buffers::ZSlice,
+    pubsub::Reliability,
+    qos::{CongestionControl, Priority},
     query::{ConsolidationMode, QueryTarget},
-    subscriber::Reliability,
 };
 
 /// Converts a JString into a rust String.

@@ -19,14 +19,10 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::{
-    prelude::Wait,
-    publisher::Publisher,
-    sample::{EncodingBuilderTrait, SampleBuilderTrait},
-};
+use zenoh::{bytes::EncodingBuilderTrait, pubsub::Publisher, sample::SampleBuilderTrait, Wait};
 
 use crate::{
-    errors::{Error, Result},
+    errors::Result,
     utils::{decode_byte_array, decode_encoding},
 };
 use crate::{session_error, throw_exception};
