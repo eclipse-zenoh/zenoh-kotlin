@@ -33,7 +33,7 @@ async-std = { version = "=1.12.0", default-features = false }
 clap = "3.2.23"
 jni = "0.21.1"
 flume = "0.10.14"
-uhlc = "0.7.0"
+uhlc = "0.8.0"
 json5 = "0.4.1"
 zenoh = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "dev/1.0.0", default-features = false }
 zenoh-ext = { version = "0.11.0-dev", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "dev/1.0.0", default-features = false }

@@ -38,7 +38,7 @@ macro_rules! jni_error {
 #[macro_export]
 macro_rules! session_error {
     ($arg:expr) => {
-        Error::Session($arg.to_string())
+        $crate::errors::Error::Session($arg.to_string())
     };
     ($fmt:expr, $($arg:tt)*) => {
         Error::Session(format!($fmt, $($arg)*))

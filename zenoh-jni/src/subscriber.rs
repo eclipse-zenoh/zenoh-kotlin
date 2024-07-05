@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use jni::{objects::JClass, JNIEnv};
-use zenoh::subscriber::Subscriber;
+use zenoh::pubsub::Subscriber;
 
 /// Frees the [Subscriber].
 ///

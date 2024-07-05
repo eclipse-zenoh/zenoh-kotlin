@@ -14,29 +14,24 @@
 
 use std::sync::Arc;
 
+use crate::{errors::Result, key_expr::process_kotlin_key_expr, throw_exception};
+use crate::{
+    session_error,
+    utils::{decode_byte_array, decode_encoding},
+};
 use jni::{
     objects::{JByteArray, JClass, JString},
     sys::{jboolean, jint, jlong},
     JNIEnv,
 };
-use uhlc::{Timestamp, ID, NTP64};
+use uhlc::ID;
 use zenoh::{
-    core::Priority,
     key_expr::KeyExpr,
     prelude::{EncodingBuilderTrait, Wait},
-    publisher::CongestionControl,
+    qos::{CongestionControl, Priority, QoSBuilderTrait},
     query::Query,
-    sample::{QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait},
-};
-
-use crate::{
-    errors::{Error, Result},
-    key_expr::process_kotlin_key_expr,
-    throw_exception,
-};
-use crate::{
-    session_error,
-    utils::{decode_byte_array, decode_encoding},
+    sample::{SampleBuilderTrait, TimestampBuilderTrait},
+    time::{Timestamp, NTP64},
 };
 
 /// Replies with `success` to a Zenoh [Query] via JNI, freeing the query in the process.

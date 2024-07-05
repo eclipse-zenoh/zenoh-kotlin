@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use jni::{objects::JClass, JNIEnv};
-use zenoh::queryable::Queryable;
+use zenoh::query::Queryable;
 
 /// Frees the [Queryable].
 ///
