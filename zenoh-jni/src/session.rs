@@ -896,7 +896,7 @@ fn on_reply_success(
         .schema()
         .map_or_else(
             || Ok(JString::default()),
-            |schema| slice_to_java_string(&env, schema),
+            |schema| slice_to_java_string(env, schema),
         )
         .map(|value| env.auto_local(value))?;
     let kind = sample.kind() as jint;
@@ -982,7 +982,7 @@ fn on_reply_error(
         .schema()
         .map_or_else(
             || Ok(JString::default()),
-            |schema| slice_to_java_string(&env, schema),
+            |schema| slice_to_java_string(env, schema),
         )
         .map(|value| env.auto_local(value))?;
     let result = match env.call_method(

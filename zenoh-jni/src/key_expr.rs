@@ -76,19 +76,19 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI
 }
 
 /// Returns true in case key_expr_1 intersects key_expr_2.
-/// 
+///
 /// # Params:
 /// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
 /// - `key_expr_ptr_1`: String representation of the key expression 1.
 /// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
 /// - `key_expr_ptr_2`: String representation of the key expression 2.
-/// 
+///
 /// # Safety
-/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing 
+/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
 /// key expressions that were declared from a session (in that case the key expression has a pointer associated).
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
-/// 
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsViaJNI(
@@ -111,19 +111,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
 }
 
 /// Returns true in case key_expr_1 includes key_expr_2.
-/// 
+///
 /// # Params:
 /// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
 /// - `key_expr_ptr_1`: String representation of the key expression 1.
 /// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
 /// - `key_expr_ptr_2`: String representation of the key expression 2.
-/// 
+///
 /// # Safety
-/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing 
+/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
 /// key expressions that were declared from a session (in that case the key expression has a pointer associated).
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
-/// 
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesViaJNI(
@@ -146,17 +146,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
 }
 
 /// Frees a declared key expression.
-/// 
+///
 /// # Parameters
 /// - `_env`: Unused. The JNI environment.
 /// - `_class`: Unused. The java class from which the function was called.
 /// - `key_expr_ptr`: the pointer to the key expression.
-/// 
+///
 /// # Safety
 /// - This function assumes the provided pointer is valid and points to a native key expression.
-/// - The memory associated to the pointer is freed after returning from this call, turning the 
+/// - The memory associated to the pointer is freed after returning from this call, turning the
 ///   pointer invalid after that.
-/// 
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(

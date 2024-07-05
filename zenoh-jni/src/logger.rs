@@ -56,9 +56,7 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
 }
 
 fn parse_log_level(env: &mut JNIEnv, log_level: JString) -> Result<String> {
-    let log_level = env
-        .get_string(&log_level)
-        .map_err(|err| jni_error!(err))?;
+    let log_level = env.get_string(&log_level).map_err(|err| jni_error!(err))?;
     log_level
         .to_str()
         .map(|level| Ok(level.to_string()))
