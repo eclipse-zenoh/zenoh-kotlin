@@ -107,14 +107,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             session.declarePublisher(keyExpr)
      *                 .priority(Priority.REALTIME)
      *                 .congestionControl(CongestionControl.DROP)
-     *                 .res().onSuccess { pub ->
+     *                 .wait().onSuccess { pub ->
      *                     pub.use {
      *                         println("Publisher declared on $keyExpr.")
      *                         var i = 0
      *                         while (true) {
      *                             val payload = "Hello for the ${i}th time!"
      *                             println(payload)
-     *                             pub.put(payload).res()
+     *                             pub.put(payload).wait()
      *                             Thread.sleep(1000)
      *                             i++
      *                         }
@@ -143,7 +143,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declareSubscriber(keyExpr)
      *                 .bestEffort()
-     *                 .res()
+     *                 .wait()
      *                 .onSuccess { subscriber ->
      *                     subscriber.use {
      *                         println("Declared subscriber on $keyExpr.")
@@ -177,7 +177,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Session.open().onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
-     *         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
+     *         session.declareQueryable(keyExpr).wait().onSuccess { queryable ->
      *             queryable.use {
      *                 it.receiver?.let { receiverChannel ->
      *                     runBlocking {
@@ -189,7 +189,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *                                      .success("Hello!")
      *                                      .withKind(SampleKind.PUT)
      *                                      .withTimeStamp(TimeStamp.getCurrentTime())
-     *                                      .res()
+     *                                      .wait()
      *                                      .onSuccess { println("Replied hello.") }
      *                                      .onFailure { println(it) }
      *                             }
@@ -220,9 +220,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Example:
      * ```kotlin
      * Session.open().onSuccess { session -> session.use {
-     *     session.declareKeyExpr("demo/kotlin/example").res().onSuccess { keyExpr ->
+     *     session.declareKeyExpr("demo/kotlin/example").wait().onSuccess { keyExpr ->
      *         keyExpr.use {
-     *             session.declarePublisher(it).res().onSuccess { publisher ->
+     *             session.declarePublisher(it).wait().onSuccess { publisher ->
      *                 // ...
      *             }
      *         }
@@ -268,7 +268,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             .withValue("Get value example")
      *             .with { reply -> println("Received reply $reply") }
      *             .timeout(timeout)
-     *             .res()
+     *             .wait()
      *             .onSuccess {
      *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
      *                 Thread.sleep(timeout.toMillis())
@@ -296,7 +296,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             .withValue("Get value example")
      *             .with { reply -> println("Received reply $reply") }
      *             .timeout(timeout)
-     *             .res()
+     *             .wait()
      *             .onSuccess {
      *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
      *                 Thread.sleep(timeout.toMillis())
@@ -320,7 +320,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, Value("Hello"))
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .res()
+     *         .wait()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
      * }
@@ -342,7 +342,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.put(keyExpr, "Hello")
      *         .congestionControl(CongestionControl.BLOCK)
      *         .priority(Priority.REALTIME)
-     *         .res()
+     *         .wait()
      *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
      *     }}
      * }
@@ -365,7 +365,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     session.use {
      *         "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
      *         session.delete(keyExpr)
-     *             .res()
+     *             .wait()
      *             .onSuccess {
      *                 println("Performed a delete on $keyExpr.")
      *             }

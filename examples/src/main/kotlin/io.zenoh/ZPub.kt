@@ -30,7 +30,7 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
                         println("Declaring publisher on '$keyExpr'...")
-                        session.declarePublisher(keyExpr).res().onSuccess { pub ->
+                        session.declarePublisher(keyExpr).wait().onSuccess { pub ->
                             pub.use {
                                 println("Press CTRL-C to quit...")
                                 val attachment = attachment?.toByteArray()
@@ -44,8 +44,8 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
                                         "Putting Data ('$keyExpr': '$payload')..."
                                     )
                                     attachment?.let {
-                                        pub.put(payload).withAttachment(attachment).res()
-                                    } ?: let { pub.put(payload).res() }
+                                        pub.put(payload).withAttachment(attachment).wait()
+                                    } ?: let { pub.put(payload).wait() }
                                     idx++
                                 }
                             }

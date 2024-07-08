@@ -39,7 +39,7 @@ import kotlinx.coroutines.channels.Channel
  *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
  *             session.declareSubscriber(keyExpr)
  *                 .bestEffort()
- *                 .res()
+ *                 .wait()
  *                 .onSuccess { subscriber ->
  *                     subscriber.use {
  *                         println("Declared subscriber on $keyExpr.")
@@ -175,7 +175,7 @@ class Subscriber<R> internal constructor(
          *
          * @return A [Result] with the newly created [Subscriber].
          */
-        override fun res(): Result<Subscriber<R>> = runCatching {
+        override fun wait(): Result<Subscriber<R>> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Sample -> handler?.handle(t) }
             val resolvedOnClose = fun() {

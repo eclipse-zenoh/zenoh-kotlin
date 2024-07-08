@@ -37,7 +37,7 @@ import java.time.Duration
  *             .withValue("Get value example")
  *             .with { reply -> println("Received reply $reply") }
  *             .timeout(Duration.ofMillis(1000))
- *             .res()
+ *             .wait()
  *             .onSuccess {...}
  *         }
  *     }
@@ -170,7 +170,7 @@ class Get<R> private constructor() {
          *
          * @return A [Result] with the receiver [R] from the specified [Handler] (if specified).
          */
-        fun res(): Result<R?> = runCatching {
+        fun wait(): Result<R?> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
             val resolvedOnClose = fun() {
