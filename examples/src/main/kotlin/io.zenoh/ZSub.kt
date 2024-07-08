@@ -32,7 +32,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
                         println("Declaring Subscriber on '$keyExpr'...")
-                        session.declareSubscriber(keyExpr).bestEffort().res().onSuccess { subscriber ->
+                        session.declareSubscriber(keyExpr).bestEffort().wait().onSuccess { subscriber ->
                             subscriber.use {
                                 println("Press CTRL-C to quit...")
                                 runBlocking {

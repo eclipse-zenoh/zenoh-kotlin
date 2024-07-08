@@ -18,9 +18,9 @@ class EncodingTest {
         var receivedSample: Sample? = null
         val subscriber = session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
         var value = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
-        session.put(keyExpr, value).res()
+        session.put(keyExpr, value).wait()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -30,7 +30,7 @@ class EncodingTest {
         // Testing null schema
         receivedSample = null
         value = Value("test2", Encoding(Encoding.ID.ZENOH_STRING, null))
-        session.put(keyExpr, value).res()
+        session.put(keyExpr, value).wait()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -53,17 +53,17 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr).with { query ->
             when (query.keyExpr) {
-                test1 -> query.reply(query.keyExpr).success(testValueA).res()
-                test2 -> query.reply(query.keyExpr).success(testValueB).res()
+                test1 -> query.reply(query.keyExpr).success(testValueA).wait()
+                test2 -> query.reply(query.keyExpr).success(testValueB).wait()
             }
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
 
         // Testing with null schema on a reply success scenario.
         var receivedSample: Sample? = null
         session.get(test1).with { reply ->
             assertTrue(reply is Reply.Success)
             receivedSample = reply.sample
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -75,7 +75,7 @@ class EncodingTest {
         session.get(test2).with { reply ->
             assertTrue(reply is Reply.Success)
             receivedSample = reply.sample
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -99,17 +99,17 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr).with { query ->
             when (query.keyExpr) {
-                test1 -> query.reply(query.keyExpr).error(testValueA).res()
-                test2 -> query.reply(query.keyExpr).error(testValueB).res()
+                test1 -> query.reply(query.keyExpr).error(testValueA).wait()
+                test2 -> query.reply(query.keyExpr).error(testValueB).wait()
             }
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
 
         // Testing with null schema on a reply error scenario.
         var errorValue: Value? = null
         session.get(test1).with { reply ->
             assertTrue(reply is Reply.Error)
             errorValue = reply.error
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(errorValue)
@@ -121,7 +121,7 @@ class EncodingTest {
         session.get(test2).with { reply ->
             assertTrue(reply is Reply.Error)
             errorValue = reply.error
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(errorValue)
@@ -143,10 +143,10 @@ class EncodingTest {
         val queryable = session.declareQueryable(keyExpr).with { query ->
             receivedValue = query.value
             query.close()
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
 
         // Testing with null schema
-        session.get(keyExpr).withValue(testValueA).res()
+        session.get(keyExpr).withValue(testValueA).wait()
         Thread.sleep(200)
 
         assertNotNull(receivedValue)
@@ -155,7 +155,7 @@ class EncodingTest {
 
         // Testing non-null schema
         receivedValue = null
-        session.get(keyExpr).withValue(testValueB).res()
+        session.get(keyExpr).withValue(testValueB).wait()
         Thread.sleep(200)
 
         assertNotNull(receivedValue)

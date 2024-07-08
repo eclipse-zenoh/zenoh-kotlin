@@ -46,8 +46,8 @@ import org.apache.commons.net.ntp.TimeStamp
  *     query.reply(keyExpr)
  *          .success(Value("Hello"))
  *          .withTimeStamp(TimeStamp(Date.from(Instant.now())))
- *          .res()
- *     }.res()
+ *          .wait()
+ *     }.wait()
  * ...
  * ```
  *
@@ -165,9 +165,9 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
             /**
              * Constructs the reply sample with the provided parameters and triggers the reply to the query.
              */
-            override fun res(): Result<Unit> {
+            override fun wait(): Result<Unit> {
                 val sample = Sample(keyExpr, value, kind, timeStamp, qosBuilder.build(), attachment)
-                return query.reply(Success(null, sample)).res()
+                return query.reply(Success(null, sample)).wait()
             }
         }
 
@@ -208,8 +208,8 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
             /**
              * Triggers the error reply.
              */
-            override fun res(): Result<Unit> {
-                return query.reply(Error(null, value)).res()
+            override fun wait(): Result<Unit> {
+                return query.reply(Error(null, value)).wait()
             }
         }
 
@@ -283,8 +283,8 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
             /**
              * Triggers the delete reply.
              */
-            override fun res(): Result<Unit> {
-                return query.reply(Delete(null, keyExpr, timeStamp, attachment, qosBuilder.build())).res()
+            override fun wait(): Result<Unit> {
+                return query.reply(Delete(null, keyExpr, timeStamp, attachment, qosBuilder.build())).wait()
             }
         }
     }

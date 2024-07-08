@@ -62,13 +62,13 @@ class SubscriberTest {
     fun subscriber_runsWithCallback() {
         val receivedSamples = ArrayList<Sample>()
         val subscriber =
-            session.declareSubscriber(testKeyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
+            session.declareSubscriber(testKeyExpr).with { sample -> receivedSamples.add(sample) }.wait().getOrThrow()
 
         testValues.forEach { value ->
             session.put(testKeyExpr, value)
                 .priority(TEST_PRIORITY)
                 .congestionControl(TEST_CONGESTION_CONTROL) 
-                .res() 
+                .wait()
         }
         assertEquals(receivedSamples.size, testValues.size)
 
@@ -84,13 +84,13 @@ class SubscriberTest {
     @Test
     fun subscriber_runsWithHandler() {
         val handler = QueueHandler<Sample>()
-        val subscriber = session.declareSubscriber(testKeyExpr).with(handler).res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).with(handler).wait().getOrThrow()
 
         testValues.forEach { value -> 
             session.put(testKeyExpr, value)
                 .priority(TEST_PRIORITY)
                 .congestionControl(TEST_CONGESTION_CONTROL) 
-                .res() 
+                .wait()
         }
         assertEquals(handler.queue.size, testValues.size)
 
@@ -105,7 +105,7 @@ class SubscriberTest {
 
     @Test
     fun subscriberBuilder_channelHandlerIsTheDefaultHandler() {
-        val subscriber = session.declareSubscriber(testKeyExpr).res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).wait().getOrThrow()
         assertTrue(subscriber.receiver is Channel<Sample>)
         subscriber.close()
     }
@@ -117,8 +117,8 @@ class SubscriberTest {
         val session = Session.open().getOrThrow()
 
         val receivedSamples = ArrayList<Sample>()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSamples.add(sample) }.res().getOrThrow()
-        testValues.forEach { value -> session.put(testKeyExpr, value).res() }
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSamples.add(sample) }.wait().getOrThrow()
+        testValues.forEach { value -> session.put(testKeyExpr, value).wait() }
         subscriber.close()
 
         assertEquals(receivedSamples.size, testValues.size)
@@ -132,7 +132,7 @@ class SubscriberTest {
     @Test
     fun onCloseTest() = runBlocking {
         var onCloseWasCalled = false
-        val subscriber = session.declareSubscriber(testKeyExpr).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).onClose { onCloseWasCalled = true }.wait().getOrThrow()
         subscriber.undeclare()
 
         assertTrue(onCloseWasCalled)

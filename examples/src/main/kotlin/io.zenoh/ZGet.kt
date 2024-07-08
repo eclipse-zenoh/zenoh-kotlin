@@ -49,7 +49,7 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                                     withValue(it)
                                 }
                             }
-                            .res()
+                            .wait()
                             .onSuccess { receiver ->
                                 runBlocking {
                                     for (reply in receiver!!) {

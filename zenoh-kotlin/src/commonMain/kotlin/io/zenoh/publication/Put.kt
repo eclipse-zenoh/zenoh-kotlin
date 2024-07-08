@@ -32,7 +32,7 @@ import io.zenoh.value.Value
  *     session.put(keyExpr, "Hello")
  *         .congestionControl(CongestionControl.BLOCK)
  *         .priority(Priority.REALTIME)
- *         .res()
+ *         .wait()
  *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
  *     }}
  * }
@@ -105,7 +105,7 @@ class Put private constructor(
         fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
         /** Resolves the put operation, returning a [Result]. */
-        override fun res(): Result<Unit> = runCatching {
+        override fun wait(): Result<Unit> = runCatching {
             val put = Put(keyExpr, value, qosBuilder.build(), attachment)
             session.run { resolvePut(keyExpr, put) }
         }

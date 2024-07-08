@@ -28,8 +28,8 @@ class DeleteTest {
         val session = Session.open().getOrThrow()
         var receivedSample: Sample? = null
         val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
-        session.delete(keyExpr).res()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        session.delete(keyExpr).wait()
         subscriber.close()
         session.close()
         assertNotNull(receivedSample)

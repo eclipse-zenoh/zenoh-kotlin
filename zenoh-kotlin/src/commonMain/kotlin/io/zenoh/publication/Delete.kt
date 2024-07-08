@@ -30,7 +30,7 @@ import io.zenoh.prelude.QoS
  *         session.use {
  *             "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
  *             session.delete(keyExpr)
- *                 .res()
+ *                 .wait()
  *                 .onSuccess {
  *                     println("Performed a delete on $keyExpr")
  *                 }
@@ -95,7 +95,7 @@ class Delete private constructor(
          * A successful [Result] only states the Delete request was properly sent through the network, it doesn't mean it
          * was properly executed remotely.
          */
-        override fun res(): Result<Unit> = runCatching {
+        override fun wait(): Result<Unit> = runCatching {
             val delete = Delete(this.keyExpr, qosBuilder.build(), attachment)
             session.resolveDelete(keyExpr, delete)
         }

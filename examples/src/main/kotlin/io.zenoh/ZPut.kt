@@ -41,7 +41,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
                                     withAttachment(it.toByteArray())
                                 }
                             }
-                            .res()
+                            .wait()
                             .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
                     }
                 }

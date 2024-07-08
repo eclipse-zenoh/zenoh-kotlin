@@ -43,12 +43,12 @@ import io.zenoh.value.Value
  *             .declarePublisher(keyExpr)
  *             .priority(Priority.REALTIME)
  *             .congestionControl(CongestionControl.DROP)
- *             .res()
+ *             .wait()
  *             .onSuccess { pub ->
  *                 pub.use {
  *                     var i = 0
  *                     while (true) {
- *                         pub.put("Hello for the ${i}th time!").res()
+ *                         pub.put("Hello for the ${i}th time!").wait()
  *                         Thread.sleep(1000)
  *                         i++
  *                     }
@@ -125,7 +125,7 @@ class Publisher internal constructor(
 
         fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
-        override fun res(): Result<Unit> = run {
+        override fun wait(): Result<Unit> = run {
             jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
         }
     }
@@ -137,7 +137,7 @@ class Publisher internal constructor(
 
         fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
 
-        override fun res(): Result<Unit> = run {
+        override fun wait(): Result<Unit> = run {
             jniPublisher?.delete(attachment) ?: InvalidPublisherResult
         }
     }
@@ -167,7 +167,7 @@ class Publisher internal constructor(
          */
         fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
 
-        fun res(): Result<Publisher> {
+        fun wait(): Result<Publisher> {
             return session.run { resolvePublisher(keyExpr, qosBuilder.build()) }
         }
     }

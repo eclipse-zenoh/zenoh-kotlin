@@ -19,5 +19,5 @@ package io.zenoh
  */
 fun interface Resolvable<R> {
 
-    fun res(): Result<R>
+    fun wait(): Result<R>
 }
