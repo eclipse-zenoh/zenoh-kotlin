@@ -12,65 +12,24 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+import com.nishtahir.CargoExtension
+
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
-    id("org.mozilla.rust-android-gradle.rust-android")
     `maven-publish`
 }
 
-android {
-    namespace = "io.zenoh"
-    compileSdk = 30
+val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
 
-    ndkVersion = "26.0.10792818"
+if (androidEnabled) {
+    apply(plugin = "com.android.library")
+    apply(plugin = "org.mozilla.rust-android-gradle.rust-android")
 
-    defaultConfig {
-        minSdk = 30
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-        getByName("debug") {
-            isMinifyEnabled = false
-        }
-    }
-    sourceSets {
-        getByName("main") {
-            manifest.srcFile("src/androidMain/AndroidManifest.xml")
-        }
-    }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
-}
-
-cargo {
-    pythonCommand = "python3"
-    module = "../zenoh-jni"
-    libname = "zenoh-jni"
-    targetIncludes = arrayOf("libzenoh_jni.so")
-    targetDirectory = "../zenoh-jni/target/"
-    profile = "release"
-    targets = arrayListOf(
-        "arm",
-        "arm64",
-        "x86",
-        "x86_64",
-    )
+    configureCargo()
+    configureAndroid()
 }
 
 kotlin {
@@ -84,8 +43,10 @@ kotlin {
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
-    androidTarget {
-        publishLibraryVariants("release")
+    if (androidEnabled) {
+        androidTarget {
+            publishLibraryVariants("release")
+        }
     }
 
     @Suppress("Unused")
@@ -102,9 +63,11 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val androidUnitTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
+        if (androidEnabled) {
+            val androidUnitTest by getting {
+                dependencies {
+                    implementation(kotlin("test-junit"))
+                }
             }
         }
         val jvmMain by getting {
@@ -148,5 +111,60 @@ tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
+    }
+}
+
+fun Project.configureAndroid() {
+    extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
+        namespace = "io.zenoh"
+        compileSdk = 30
+
+        ndkVersion = "27.0.11902837"
+
+        defaultConfig {
+            minSdk = 30
+        }
+
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+
+        buildTypes {
+            getByName("release") {
+                isMinifyEnabled = false
+            }
+            getByName("debug") {
+                isMinifyEnabled = false
+            }
+        }
+        sourceSets {
+            getByName("main") {
+                manifest.srcFile("src/androidMain/AndroidManifest.xml")
+            }
+        }
+        publishing {
+            singleVariant("release") {
+                withSourcesJar()
+                withJavadocJar()
+            }
+        }
+    }
+}
+
+fun Project.configureCargo() {
+    extensions.configure<CargoExtension>("cargo") {
+        pythonCommand = "python3"
+        module = "../zenoh-jni"
+        libname = "zenoh-jni"
+        targetIncludes = arrayOf("libzenoh_jni.so")
+        targetDirectory = "../zenoh-jni/target/"
+        profile = "release"
+        targets = arrayListOf(
+            "arm",
+            "arm64",
+            "x86",
+            "x86_64",
+        )
     }
 }
