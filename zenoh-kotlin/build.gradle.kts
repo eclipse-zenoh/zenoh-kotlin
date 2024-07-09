@@ -119,7 +119,7 @@ fun Project.configureAndroid() {
         namespace = "io.zenoh"
         compileSdk = 30
 
-        ndkVersion = "27.0.11902837"
+        ndkVersion = "26.0.10792818"
 
         defaultConfig {
             minSdk = 30
