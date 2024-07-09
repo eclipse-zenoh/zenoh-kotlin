@@ -73,6 +73,6 @@ jobs:
       - name: Gradle Publish Android Package
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishAndroidReleasePublicationToGithubPackagesRepository ${{ env.PUB_MODE }}
+          arguments: publishAndroidReleasePublicationToGithubPackagesRepository -Pandroid=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

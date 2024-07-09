@@ -67,7 +67,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-android:0.10.1-rc")
+implementation("io.zenoh:zenoh-kotlin-android:0.11.0")
 ```
 
 ### Platforms
@@ -122,7 +122,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-jvm:0.10.1-rc")
+implementation("io.zenoh:zenoh-kotlin-jvm:0.11.0")
 ```
 
 ### Platforms
@@ -146,7 +146,39 @@ Basically:
 * Rust ([Installation guide](https://doc.rust-lang.org/cargo/getting-started/installation.html))
 * Kotlin ([Installation guide](https://kotlinlang.org/docs/getting-started.html#backend))
 * Gradle ([Installation guide](https://gradle.org/install/))
+
+and in case of targetting Android you'll also need:
 * Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
+
+## <img src="jvm.png" alt="JVM" height="50"> JVM
+
+To publish a library for a JVM project into Maven local, run
+
+```bash
+gradle publishJvmPublicationToMavenLocal
+```
+
+This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
+as a resource that will be loaded during runtime.
+
+:warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
+for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
+
+Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.11.0`.
+
+Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
+
+```
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    testImplementation(kotlin("test"))
+    implementation("io.zenoh:zenoh-kotlin-jvm:0.11.0")
+}
+```
 
 ## <img src="android-robot.png" alt="Android" height="50"> Android
 
@@ -179,19 +211,19 @@ to install them.
 
 So, in order to publish the library onto Maven Local, run:
 ```bash
-gradle publishAndroidReleasePublicationToMavenLocal
+gradle -Pandroid=true publishAndroidReleasePublicationToMavenLocal
 ```
 
 This will first trigger the compilation of the Zenoh-JNI for the previously mentioned targets, and secondly will
 publish the library, containing the native binaries.
 
-You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.10.1-rc`
+You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.11.0`
 with the following files:
 ```
-zenoh-kotlin-android-0.10.1-rc-sources.jar
-zenoh-kotlin-android-0.10.1-rc.aar
-zenoh-kotlin-android-0.10.1-rc.module
-zenoh-kotlin-android-0.10.1-rc.pom
+zenoh-kotlin-android-0.11.0-sources.jar
+zenoh-kotlin-android-0.11.0.aar
+zenoh-kotlin-android-0.11.0.module
+zenoh-kotlin-android-0.11.0.pom
 ```
 
 Now the library is published on maven local, let's now see how to import it into an Android project.
@@ -208,7 +240,7 @@ repositories {
 
 Then in your app's `build.gradle.kts` filen add the dependency:
 ```
-implementation("io.zenoh:zenoh-kotlin-android:0.10.1-rc")
+implementation("io.zenoh:zenoh-kotlin-android:0.11.0")
 ```
 
 And finally, do not forget to add the required internet permissions on your manifest!
@@ -219,38 +251,6 @@ And finally, do not forget to add the required internet permissions on your mani
 ```
 
 And that was it! You can now import the code from the `io.zenoh` package and use it at your will.
-
-## <img src="jvm.png" alt="JVM" height="50"> JVM
-
-To publish a library for a JVM project into Maven local, run
-
-```bash
-gradle publishJvmPublicationToMavenLocal
-```
-
-This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
-as a resource that will be loaded during runtime.
-
-:warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
-for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
-This is different from Android in the fact that Android provides an in build mechanism to dynamically load native libraries depending on the CPU's architecture, while
-for JVM it's not the case and that logic must be implemented. Building against multiple targets and loading them dynamically is one of our short term goals.
-
-Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.10.1-rc`.
-
-Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
-
-```
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
-dependencies {
-    testImplementation(kotlin("test"))
-    implementation("io.zenoh:zenoh-kotlin-jvm:0.10.1-rc")
-}
-```
 
 ## Building the documentation
 
@@ -323,12 +323,8 @@ add some extra functionalities and test this library a bit further, we will only
 
 ### Potential API changes
 
-When using this library, keep in mind changes may occur, especially since this is the first version of the library. We have, however,
-aimed to make the design as stable as possible from the very beginning, so changes on the code probably won't be substantial.
+When using this library, keep in mind the api is not fully stable. Changes are to be expected, especially for version 1.0.0. 
 
-### Missing features
-
-There are some missing features we will implement soon. The most notorious is the Pull Subscriber feature.
 
 ### Performance
 

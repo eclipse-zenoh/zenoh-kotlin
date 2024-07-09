@@ -152,13 +152,6 @@ jobs:
           distribution: temurin
           java-version: 11
 
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r26
-          add-to-path: false
-          link-to-sdk: true
-
       - name: Gradle Wrapper
         run: |
           gradle wrapper
