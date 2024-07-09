@@ -18,7 +18,9 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -265,7 +267,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *         session.get(keyExpr)
      *             .consolidation(ConsolidationMode.NONE)
      *             .target(QueryTarget.BEST_MATCHING)
-     *             .withValue("Get value example")
+     *             .payload("Payload example")
      *             .with { reply -> println("Received reply $reply") }
      *             .timeout(timeout)
      *             .wait()
@@ -293,7 +295,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *         session.get(keyExpr)
      *             .consolidation(ConsolidationMode.NONE)
      *             .target(QueryTarget.BEST_MATCHING)
-     *             .withValue("Get value example")
+     *             .payload("Payload example")
      *             .with { reply -> println("Received reply $reply") }
      *             .timeout(timeout)
      *             .wait()
@@ -422,11 +424,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
-        value: Value?,
+        payload: IntoZBytes?,
+        encoding: Encoding?,
         attachment: ByteArray?,
     ): Result<R?> {
         return jniSession?.run {
-            performGet(selector, callback, onClose, receiver, timeout, target, consolidation, value, attachment)
+            performGet(selector, callback, onClose, receiver, timeout, target, consolidation, payload, encoding, attachment)
         } ?: Result.failure(sessionClosedException)
     }
 

@@ -112,6 +112,7 @@ class Encoding(val id: ID, val schema: String? = null) {
         companion object {
             private val idToEnum = entries.associateBy(ID::id)
             fun fromId(id: Int): ID? = idToEnum[id]
+            fun default() = ZENOH_BYTES
         }
     }
 }
