@@ -123,11 +123,11 @@ class QueryableTest {
     }
 
     @Test
-    fun queryWithValueTest() = runBlocking {
+    fun queryWithPayloadTest() = runBlocking {
         var receivedQuery: Query? = null
         val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.wait().getOrThrow()
 
-        session.get(testKeyExpr).withValue("Test value").wait()
+        session.get(testKeyExpr).payload("Test value").wait()
 
         delay(1000)
         queryable.close()

@@ -771,11 +771,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `target`: The query target as the ordinal of the enum.
 /// - `consolidation`: The consolidation mode as the ordinal of the enum.
 /// - `attachment`: An optional attachment encoded into a byte array.
-/// - `with_value`: Boolean value to tell if a value must be included in the get operation. If true,
-///     then the next params are valid.
-/// - `payload`: The payload of the value.
-/// - `encoding_id`: The encoding of the value payload.
-/// - `encoding_schema`: The encoding schema of the value payload, may be null.
+/// - `payload`: Optional payload for the query.
+/// - `encoding_id`: The encoding of the payload.
+/// - `encoding_schema`: The encoding schema of the payload, may be null.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -802,7 +800,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     target: jint,
     consolidation: jint,
     attachment: /*nullable*/ JByteArray,
-    with_value: jboolean,
     payload: /*nullable*/ JByteArray,
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
@@ -850,7 +847,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
             .timeout(timeout)
             .consolidation(consolidation);
 
-        if with_value != 0 {
+        if !payload.is_null() {
             let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
             get_builder = get_builder.encoding(encoding);
             get_builder = get_builder.payload(decode_byte_array(&env, payload)?);

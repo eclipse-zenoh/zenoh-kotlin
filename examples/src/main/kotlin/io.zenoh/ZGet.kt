@@ -45,8 +45,8 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                                 attachment?.let {
                                     withAttachment(it.toByteArray())
                                 }
-                                value?.let {
-                                    withValue(it)
+                                payload?.let {
+                                    payload(it)
                                 }
                             }
                             .wait()
@@ -73,8 +73,8 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
         help = "The selection of resources to query [default: demo/example/**]",
         metavar = "selector"
     ).default("demo/example/**")
-    private val value by option(
-        "-v", "--value", help = "An optional value to put in the query.", metavar = "value"
+    private val payload by option(
+        "-p", "--payload", help = "An optional payload to put in the query.", metavar = "payload"
     )
     private val target by option(
         "-t",
