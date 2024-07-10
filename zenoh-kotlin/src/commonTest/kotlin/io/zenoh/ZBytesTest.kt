@@ -15,6 +15,9 @@
 package io.zenoh
 
 import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.test.*
 
 class ZBytesTest {
@@ -52,5 +55,31 @@ class ZBytesTest {
         val bytes = ZBytes(byteArrayOf(42, 12, 3, 0, 0, 0, 0, 1))
         val deserialized = bytes.deserialize<Long>().getOrThrow()
         assertEquals(72057594038127658, deserialized) // 42 + 12*256 + 3*256^2 + 1*256^7= 72057594038127658
+    }
+
+    @Test
+    fun deserializeFloatTest() {
+        val pi = 3.141516f
+        val bytes: ZBytes = ByteBuffer.allocate(Float.SIZE_BYTES)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .putFloat(pi)
+            .array()
+            .into()
+
+        val deserialized = bytes.deserialize<Float>().getOrThrow()
+        assertEquals(pi, deserialized)
+    }
+
+    @Test
+    fun deserializeDoubleTest() {
+        val euler = 2.71828
+        val bytes: ZBytes = ByteBuffer.allocate(Double.SIZE_BYTES)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .putDouble(euler)
+            .array()
+            .into()
+
+        val deserialized = bytes.deserialize<Double>().getOrThrow()
+        assertEquals(euler, deserialized)
     }
 }
