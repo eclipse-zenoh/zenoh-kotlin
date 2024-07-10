@@ -37,9 +37,9 @@ class SubscriberTest {
         val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK;
 
         val testValues = arrayListOf(
-            Value("Test 1".encodeToByteArray(), Encoding(Encoding.ID.TEXT_PLAIN)),
-            Value("Test 2".encodeToByteArray(), Encoding(Encoding.ID.TEXT_JSON)),
-            Value("Test 3".encodeToByteArray(), Encoding(Encoding.ID.TEXT_CSV))
+            Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
+            Value("Test 2", Encoding(Encoding.ID.TEXT_JSON)),
+            Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
         )
     }
 

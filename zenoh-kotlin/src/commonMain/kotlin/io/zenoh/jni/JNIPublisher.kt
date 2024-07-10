@@ -30,7 +30,7 @@ internal class JNIPublisher(private val ptr: Long) {
      * @param attachment Optional attachment.
      */
     fun put(value: Value, attachment: ByteArray?): Result<Unit> = runCatching {
-        putViaJNI(value.payload, value.encoding.id.ordinal, value.encoding.schema, attachment, ptr)
+        putViaJNI(value.payload.bytes, value.encoding.id.ordinal, value.encoding.schema, attachment, ptr)
     }
 
     /**

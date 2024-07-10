@@ -27,6 +27,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
 import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.into
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -220,7 +221,7 @@ internal class JNISession {
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
             sessionPtr.get(),
-            put.value.payload,
+            put.value.payload.bytes,
             put.value.encoding.id.ordinal,
             put.value.encoding.schema,
             put.qos.congestionControl.value,

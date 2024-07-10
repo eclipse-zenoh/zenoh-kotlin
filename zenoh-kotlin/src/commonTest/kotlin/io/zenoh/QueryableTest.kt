@@ -155,7 +155,7 @@ class QueryableTest {
 
         assertTrue(receivedReply is Reply.Success)
         val reply = receivedReply as Reply.Success
-        assertEquals(message, reply.sample.value.payload.decodeToString())
+        assertEquals(message, reply.sample.value.payload.bytes.decodeToString())
         assertEquals(timestamp, reply.sample.timestamp)
         assertEquals(priority, reply.sample.qos.priority)
         assertEquals(express, reply.sample.qos.express)
@@ -180,7 +180,7 @@ class QueryableTest {
         assertNotNull(receivedReply)
         assertTrue(receivedReply is Reply.Error)
         val reply = receivedReply as Reply.Error
-        assertEquals(message, reply.error.payload.decodeToString())
+        assertEquals(message, reply.error.payload.bytes.decodeToString())
     }
 
     @Test
