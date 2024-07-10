@@ -143,8 +143,13 @@ class Get<R> private constructor() {
             return this
         }
 
+        fun encoding(id: Encoding.ID): Builder<R> {
+            this.encoding = Encoding(id)
+            return this
+        }
+
         /** Specify an attachment. */
-        fun withAttachment(attachment: ByteArray): Builder<R> {
+        fun attachment(attachment: ByteArray): Builder<R> {
             this.attachment = attachment
             return this
         }

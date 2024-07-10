@@ -17,11 +17,14 @@ package io.zenoh.queryable
 import io.zenoh.Resolvable
 import io.zenoh.ZenohType
 import io.zenoh.selector.Selector
-import io.zenoh.value.Value
 import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
 import io.zenoh.query.Reply
+import io.zenoh.value.Value
 
 /**
  * Represents a Zenoh Query in Kotlin.
@@ -39,13 +42,19 @@ import io.zenoh.query.Reply
 class Query internal constructor(
     val keyExpr: KeyExpr,
     val selector: Selector,
-    val value: Value?,
+    internal val value: Value?,
     val attachment: ByteArray?,
     private var jniQuery: JNIQuery?
 ) : AutoCloseable, ZenohType {
 
     /** Shortcut to the [selector]'s parameters. */
     val parameters = selector.parameters
+
+    /** Payload of the query. */
+    val payload: ZBytes? = value?.payload?.into()
+
+    /** Encoding of the payload. */
+    val encoding: Encoding? = value?.encoding
 
     /**
      * Reply to the specified key expression.

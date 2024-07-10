@@ -134,7 +134,7 @@ class UserAttachmentTest {
             query.reply(keyExpr).success("test").wait()
         }.wait().getOrThrow()
 
-        session.get(keyExpr).with {}.withAttachment(attachmentBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
+        session.get(keyExpr).with {}.attachment(attachmentBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
 
         queryable.close()
 
