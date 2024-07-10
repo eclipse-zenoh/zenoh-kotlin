@@ -27,9 +27,30 @@ class ZBytesTest {
     }
 
     @Test
+    fun deserializeByteTest() {
+        val bytes = ZBytes(byteArrayOf(42))
+        val deserialized = bytes.deserialize<Byte>().getOrThrow()
+        assertEquals(42, deserialized) // 42 + 12*256 + 3*256^2 = 199722
+    }
+
+    @Test
+    fun deserializeShortTest() {
+        val bytes = ZBytes(byteArrayOf(42, 12))
+        val deserialized = bytes.deserialize<Short>().getOrThrow()
+        assertEquals(3114, deserialized) // 42 + 12*256 = 3114
+    }
+
+    @Test
     fun deserializeIntTest() {
         val bytes = ZBytes(byteArrayOf(42, 12, 3, 0))
         val deserialized = bytes.deserialize<Int>().getOrThrow()
         assertEquals(199722, deserialized) // 42 + 12*256 + 3*256^2 = 199722
+    }
+
+    @Test
+    fun deserializeLongTest() {
+        val bytes = ZBytes(byteArrayOf(42, 12, 3, 0, 0, 0, 0, 1))
+        val deserialized = bytes.deserialize<Long>().getOrThrow()
+        assertEquals(72057594038127658, deserialized) // 42 + 12*256 + 3*256^2 + 1*256^7= 72057594038127658
     }
 }
