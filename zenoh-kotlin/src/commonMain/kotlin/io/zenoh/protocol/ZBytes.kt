@@ -14,10 +14,32 @@
 
 package io.zenoh.protocol
 
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 class ZBytes(val bytes: ByteArray) : IntoZBytes {
 
     override fun into(): ZBytes {
         return this
+    }
+
+    inline fun <reified T> deserialize(): Result<T> {
+        return try {
+            val result = when (T::class) {
+                String::class -> bytes.decodeToString() as T
+                Int::class -> {
+                    require(bytes.size == 4) { "Byte array must have exactly 4 bytes to convert to an Int" }
+                    ByteBuffer.wrap(bytes)
+                        .order(ByteOrder.LITTLE_ENDIAN)
+                        .int as T
+                }
+
+                else -> throw IllegalArgumentException("Unsupported type")
+            }
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -32,4 +54,5 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
     override fun hashCode(): Int {
         return bytes.contentHashCode()
     }
+
 }
