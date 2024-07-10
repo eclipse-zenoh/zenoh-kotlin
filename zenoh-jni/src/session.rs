@@ -587,8 +587,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
         })?;
 
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload()
-    {
+    let (payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload() {
         let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
         let encoding_id = encoding.id() as jint;
         let encoding_schema = encoding
@@ -599,10 +598,9 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
             .map(|value| env.auto_local(value))?;
         let byte_array = bytes_to_java_array(&env, payload).map(|value| env.auto_local(value))?;
-        (true, byte_array, encoding_id, encoding_schema)
+        (byte_array, encoding_id, encoding_schema)
     } else {
         (
-            false,
             env.auto_local(JByteArray::default()),
             0,
             env.auto_local(JString::default()),
@@ -634,11 +632,10 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
         .call_method(
             callback_global_ref,
             "run",
-            "(Ljava/lang/String;Ljava/lang/String;Z[BILjava/lang/String;[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;[BILjava/lang/String;[BJ)V",
             &[
                 JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
-                JValue::from(with_value),
                 JValue::from(&payload),
                 JValue::from(encoding_id),
                 JValue::from(&encoding_schema),

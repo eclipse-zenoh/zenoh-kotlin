@@ -17,10 +17,8 @@ package io.zenoh
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
-import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
+import io.zenoh.prelude.*
+import io.zenoh.prelude.Encoding.ID.ZENOH_STRING
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
@@ -116,23 +114,24 @@ class QueryableTest {
 
         session.get(testKeyExpr).wait()
 
-        delay(1000)
-        queryable.close()
+        delay(100)
         assertNotNull(receivedQuery)
-        assertNull(receivedQuery!!.value)
-    }
+        assertNull(receivedQuery!!.payload)
+        assertNull(receivedQuery!!.encoding)
+        assertNull(receivedQuery!!.attachment)
 
-    @Test
-    fun queryWithPayloadTest() = runBlocking {
-        var receivedQuery: Query? = null
-        val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.wait().getOrThrow()
+        receivedQuery = null
+        val payload = "Test value"
+        val attachment = "Attachment"
+        session.get(testKeyExpr).payload(payload).encoding(ZENOH_STRING).attachment(attachment.toByteArray()).wait()
 
-        session.get(testKeyExpr).payload("Test value").wait()
-
-        delay(1000)
-        queryable.close()
+        delay(100)
         assertNotNull(receivedQuery)
-        assertEquals(Value("Test value"), receivedQuery!!.value)
+        assertEquals(payload, receivedQuery!!.payload!!.bytes.decodeToString())
+        assertEquals(ZENOH_STRING, receivedQuery!!.encoding!!.id)
+        assertEquals(attachment, receivedQuery!!.attachment!!.decodeToString())
+
+        queryable.close()
     }
 
     @Test

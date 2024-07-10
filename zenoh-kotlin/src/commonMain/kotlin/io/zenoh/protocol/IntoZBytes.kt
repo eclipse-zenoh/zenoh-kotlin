@@ -23,3 +23,7 @@ interface IntoZBytes {
 fun String.into(): ZBytes {
     return ZBytes(this.toByteArray())
 }
+
+fun ByteArray.into(): ZBytes {
+    return ZBytes(this)
+}
