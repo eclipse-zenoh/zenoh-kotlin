@@ -43,6 +43,14 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     require(bytes.size == Long.SIZE_BYTES) { "Byte array must have exactly ${Long.SIZE_BYTES} bytes to convert to a ${Long::class.simpleName}" }
                     ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long as T
                 }
+                Float::class -> {
+                    require(bytes.size == Float.SIZE_BYTES) { "Byte array must have exactly ${Float.SIZE_BYTES} bytes to convert to a ${Float::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).float as T
+                }
+                Double::class -> {
+                    require(bytes.size == Double.SIZE_BYTES) { "Byte array must have exactly ${Double.SIZE_BYTES} bytes to convert to a ${Double::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).double as T
+                }
                 else -> throw IllegalArgumentException("Unsupported type")
             }
             Result.success(result)
