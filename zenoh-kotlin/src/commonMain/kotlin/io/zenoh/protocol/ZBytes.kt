@@ -25,15 +25,24 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
 
     inline fun <reified T> deserialize(): Result<T> {
         return try {
-            val result = when (T::class) {
+            val result: T = when (T::class) {
                 String::class -> bytes.decodeToString() as T
-                Int::class -> {
-                    require(bytes.size == 4) { "Byte array must have exactly 4 bytes to convert to an Int" }
-                    ByteBuffer.wrap(bytes)
-                        .order(ByteOrder.LITTLE_ENDIAN)
-                        .int as T
+                Byte::class -> {
+                    require(bytes.size == Byte.SIZE_BYTES) { "Byte array must have exactly ${Byte.SIZE_BYTES} bytes to convert to a ${Byte::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).get() as T
                 }
-
+                Short::class -> {
+                    require(bytes.size == Short.SIZE_BYTES) { "Byte array must have exactly ${Short.SIZE_BYTES} bytes to convert to a ${Short::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).short as T
+                }
+                Int::class -> {
+                    require(bytes.size == Int.SIZE_BYTES) { "Byte array must have exactly ${Int.SIZE_BYTES} bytes to convert to an ${Int::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).int as T
+                }
+                Long::class -> {
+                    require(bytes.size == Long.SIZE_BYTES) { "Byte array must have exactly ${Long.SIZE_BYTES} bytes to convert to a ${Long::class.simpleName}" }
+                    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long as T
+                }
                 else -> throw IllegalArgumentException("Unsupported type")
             }
             Result.success(result)
