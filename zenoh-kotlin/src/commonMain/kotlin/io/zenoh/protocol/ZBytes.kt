@@ -19,4 +19,17 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
     override fun into(): ZBytes {
         return this
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ZBytes
+
+        return bytes.contentEquals(other.bytes)
+    }
+
+    override fun hashCode(): Int {
+        return bytes.contentHashCode()
+    }
 }

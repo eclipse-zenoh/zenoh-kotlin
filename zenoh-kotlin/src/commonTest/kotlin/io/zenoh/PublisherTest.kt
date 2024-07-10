@@ -55,9 +55,9 @@ class PublisherTest {
     fun putTest() {
 
         val testValues = arrayListOf(
-            Value("Test 1".encodeToByteArray(), Encoding(Encoding.ID.TEXT_PLAIN)),
-            Value("Test 2".encodeToByteArray(), Encoding(Encoding.ID.TEXT_JSON)),
-            Value("Test 3".encodeToByteArray(), Encoding(Encoding.ID.TEXT_CSV))
+            Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
+            Value("Test 2", Encoding(Encoding.ID.TEXT_JSON)),
+            Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
         )
 
         testValues.forEach() { value -> publisher.put(value).wait() }
