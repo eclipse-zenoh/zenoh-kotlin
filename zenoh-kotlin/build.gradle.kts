@@ -23,6 +23,10 @@ plugins {
 }
 
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
+val release = project.findProperty("release")?.toString()?.toBoolean() == true
+val githubPublish = project.findProperty("githubPublish")?.toString()?.toBoolean() == true
+
+var buildMode = if (release) BuildMode.RELEASE else BuildMode.DEBUG
 
 if (androidEnabled) {
     apply(plugin = "com.android.library")
@@ -39,7 +43,7 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            val zenohPaths = "../zenoh-jni/target/debug"
+            val zenohPaths = "../zenoh-jni/target/$buildMode"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
@@ -71,13 +75,16 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
-
-            // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
-            resources.srcDir("../jni-libs").include("*/**")
+            if (githubPublish) {
+                // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
+                resources.srcDir("../jni-libs").include("*/**")
+            } else {
+                resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            }
         }
+
         val jvmTest by getting {
-            resources.srcDir("../zenoh-jni/target/debug").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
     }
 
@@ -103,7 +110,7 @@ tasks.withType<Test> {
     doFirst {
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
-        systemProperty("java.library.path", "../zenoh-jni/target/debug")
+        systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
     }
 }
 
@@ -111,6 +118,51 @@ tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
+    }
+}
+
+tasks.named("compileKotlinJvm") {
+    dependsOn("buildZenohJni")
+}
+
+tasks.register("buildZenohJni") {
+    doLast {
+        if (!githubPublish) {
+            // This is intended for local publications. For publications done through GitHub workflows,
+            // the zenoh-jni build is achieved and loaded differently from the CI
+            buildZenohJNI(buildMode)
+        }
+    }
+}
+
+fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
+    val cargoCommand = mutableListOf("cargo", "build")
+
+    if (mode == BuildMode.RELEASE) {
+        cargoCommand.add("--release")
+    }
+
+    val result = project.exec {
+        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "../zenoh-jni/Cargo.toml")
+    }
+
+    if (result.exitValue != 0) {
+        throw GradleException("Failed to build Zenoh-JNI.")
+    }
+
+    Thread.sleep(1000)
+}
+
+enum class BuildMode {
+    DEBUG {
+        override fun toString(): String {
+            return "debug"
+        }
+    },
+    RELEASE {
+        override fun toString(): String {
+            return "release"
+        }
     }
 }
 
