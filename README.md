@@ -155,10 +155,10 @@ and in case of targetting Android you'll also need:
 To publish a library for a JVM project into Maven local, run
 
 ```bash
-gradle publishJvmPublicationToMavenLocal
+gradle -Prelease=true publishJvmPublicationToMavenLocal
 ```
 
-This will first, trigger the compilation of Zenoh-JNI, and second publish the library into maven local, containing the native library
+This will first, trigger the compilation of Zenoh-JNI in release (if you want debug, specify `-Prelease=false`), and second publish the library into maven local, containing the native library
 as a resource that will be loaded during runtime.
 
 :warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
@@ -263,13 +263,7 @@ gradle zenoh-kotlin:dokkaHtml
 
 ## Running the tests
 
-To run the tests, we must first build the native library
-```bash
-cd zenoh-jni
-cargo build
-```
-
-and then run:
+To run the tests, run:
 
 ```bash
 gradle jvmTest

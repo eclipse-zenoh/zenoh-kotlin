@@ -172,6 +172,6 @@ jobs:
       - name: Gradle Publish JVM Package
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishJvmPublicationToGithubPackagesRepository ${{ env.PUB_MODE }}
+          arguments: publishJvmPublicationToGithubPackagesRepository -PgithubPublish=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
