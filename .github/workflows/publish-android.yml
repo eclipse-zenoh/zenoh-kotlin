@@ -58,7 +58,7 @@ jobs:
           gradle wrapper
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v3
 
       - name: Set pub mode env var
         # Note: This step is intended to allow publishing snapshot packages.
