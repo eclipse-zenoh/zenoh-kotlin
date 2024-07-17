@@ -25,48 +25,43 @@ class ZBytesTest {
 
     @Test
     fun deserializeStringTest() {
-        val bytes = ZBytes("Hello world".toByteArray())
+        val bytes: ZBytes = "Hello world".into()
         val deserialized = bytes.deserialize<String>().getOrThrow()
         assertEquals("Hello world", deserialized)
     }
 
     @Test
     fun deserializeByteTest() {
-        val bytes = ZBytes(byteArrayOf(42))
+        val bytes: ZBytes = 42.toByte().into()
         val deserialized = bytes.deserialize<Byte>().getOrThrow()
-        assertEquals(42, deserialized) // 42 + 12*256 + 3*256^2 = 199722
+        assertEquals(42, deserialized)
     }
 
     @Test
     fun deserializeShortTest() {
-        val bytes = ZBytes(byteArrayOf(42, 12))
+        val bytes: ZBytes = 3114.toShort().into()
         val deserialized = bytes.deserialize<Short>().getOrThrow()
-        assertEquals(3114, deserialized) // 42 + 12*256 = 3114
+        assertEquals(3114, deserialized)
     }
 
     @Test
     fun deserializeIntTest() {
-        val bytes = ZBytes(byteArrayOf(42, 12, 3, 0))
+        val bytes: ZBytes = 199722.into()
         val deserialized = bytes.deserialize<Int>().getOrThrow()
-        assertEquals(199722, deserialized) // 42 + 12*256 + 3*256^2 = 199722
+        assertEquals(199722, deserialized)
     }
 
     @Test
     fun deserializeLongTest() {
-        val bytes = ZBytes(byteArrayOf(42, 12, 3, 0, 0, 0, 0, 1))
+        val bytes: ZBytes = 72057594038127658.into()
         val deserialized = bytes.deserialize<Long>().getOrThrow()
-        assertEquals(72057594038127658, deserialized) // 42 + 12*256 + 3*256^2 + 1*256^7= 72057594038127658
+        assertEquals(72057594038127658, deserialized)
     }
 
     @Test
     fun deserializeFloatTest() {
         val pi = 3.141516f
-        val bytes: ZBytes = ByteBuffer.allocate(Float.SIZE_BYTES)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putFloat(pi)
-            .array()
-            .into()
-
+        val bytes: ZBytes = pi.into()
         val deserialized = bytes.deserialize<Float>().getOrThrow()
         assertEquals(pi, deserialized)
     }
@@ -74,12 +69,7 @@ class ZBytesTest {
     @Test
     fun deserializeDoubleTest() {
         val euler = 2.71828
-        val bytes: ZBytes = ByteBuffer.allocate(Double.SIZE_BYTES)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .putDouble(euler)
-            .array()
-            .into()
-
+        val bytes: ZBytes = euler.into()
         val deserialized = bytes.deserialize<Double>().getOrThrow()
         assertEquals(euler, deserialized)
     }
@@ -93,23 +83,21 @@ class ZBytesTest {
         assertTrue(compareByteArrayMaps(originalMap, deserializedMap))
     }
 
-
     @Test
-    fun deserializeIntoByteArrayMapViaJNITest() {
+    fun serializationAndDeserialization_byteArrayMapTest() {
         Zenoh.load()
         val originalMap = mapOf("key1".toByteArray() to "value1".toByteArray(), "key2".toByteArray() to "value2".toByteArray())
-        val zbytes: ZBytes = JNIZBytes.serializeIntoMapViaJNI(originalMap).into()
-        val deserializedMap = zbytes.deserialize<Map<ByteArray, ByteArray>>().getOrThrow()
-        assertTrue(compareByteArrayMaps(originalMap, deserializedMap))
+        val bytes = ZBytes.serialize(originalMap).getOrThrow()
+        val deserializedMap = bytes.deserialize<Map<ByteArray, ByteArray>>().getOrThrow()
+        assertTrue { compareByteArrayMaps(originalMap, deserializedMap) }
     }
 
     @Test
-    fun deserializeIntoStringMapViaJNITest() {
+    fun serializationAndDeserialization_stringMapTest() {
         Zenoh.load()
         val originalMap = mapOf("key1" to "value1", "key2" to "value2")
-        val byteArrayMap = originalMap.map { (key, value) -> key.toByteArray() to value.toByteArray() }.toMap()
-        val zbytes: ZBytes = JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
-        val deserializedMap = zbytes.deserialize<Map<String, String>>().getOrThrow()
+        val bytes = ZBytes.serialize(originalMap).getOrThrow()
+        val deserializedMap = bytes.deserialize<Map<String, String>>().getOrThrow()
         assertEquals(originalMap, deserializedMap)
     }
 

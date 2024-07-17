@@ -17,7 +17,7 @@ package io.zenoh.protocol
 import io.zenoh.jni.JNIZBytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import com.google.gson.reflect.TypeToken
+import kotlin.reflect.typeOf
 
 typealias Deserializer<T> = (ByteArray) -> T
 
@@ -25,6 +25,78 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
 
     override fun into(): ZBytes {
         return this
+    }
+
+    companion object {
+        fun from(string: String): ZBytes {
+            return ZBytes(string.toByteArray())
+        }
+
+        fun from(byteArray: ByteArray): ZBytes {
+            return ZBytes(byteArray)
+        }
+
+        fun from(number: Number): ZBytes {
+            return when (number) {
+                is Byte -> byteArrayOf(number).into()
+                is Short -> ByteBuffer.allocate(Short.SIZE_BYTES)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .putShort(number)
+                    .array()
+                    .into()
+                is Int -> ByteBuffer.allocate(Int.SIZE_BYTES)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .putInt(number)
+                    .array()
+                    .into()
+                is Long -> ByteBuffer.allocate(Long.SIZE_BYTES)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .putLong(number)
+                    .array()
+                    .into()
+                is Float -> ByteBuffer.allocate(Float.SIZE_BYTES)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .putFloat(number)
+                    .array()
+                    .into()
+                is Double -> ByteBuffer.allocate(Double.SIZE_BYTES)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                    .putDouble(number)
+                    .array()
+                    .into()
+                else -> throw IllegalArgumentException("Unsupported number type")
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        inline fun <reified T>  serialize(t: T): Result<ZBytes> = runCatching {
+            val type = typeOf<T>()
+            val serializedBytes = when (type) {
+                typeOf<Map<ByteArray, ByteArray>>() -> {
+                    JNIZBytes.serializeIntoMapViaJNI(t as Map<ByteArray, ByteArray>).into()
+                }
+
+                typeOf<Map<String, String>>() -> {
+                    val map = t as Map<String, String>
+                    val byteArrayMap = map.map { (k, v) -> k.toByteArray() to v.toByteArray() }.toMap()
+                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
+                }
+
+                typeOf<List<ByteArray>>() -> {
+                    val list = t as List<ByteArray>
+                    JNIZBytes.serializeIntoListViaJNI(list).into()
+                }
+
+                typeOf<List<String>>() -> {
+                    val list = t as List<String>
+                    val byteArrayList = list.map { it.toByteArray() }
+                    JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
+                }
+
+                else -> throw IllegalArgumentException("Unsupported type")
+            }
+            return Result.success(serializedBytes)
+        }
     }
 
     inline fun <reified T> deserialize(deserializers: Map<Class<*>, Deserializer<*>> = emptyMap()): Result<T> {
@@ -66,22 +138,22 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     }
 
                     else -> {
-                        val typeToken = object : TypeToken<T>() {}.type
-                        when (typeToken) {
-                            object : TypeToken<Map<ByteArray, ByteArray>>() {}.type -> {
+                        val type = typeOf<T>()
+                        when (type) {
+                            typeOf<Map<ByteArray, ByteArray>>() -> {
                                 JNIZBytes.deserializeIntoMapViaJNI(bytes) as T
                             }
 
-                            object : TypeToken<Map<String, String>>() {}.type -> {
+                            typeOf<Map<String, String>>() -> {
                                 JNIZBytes.deserializeIntoMapViaJNI(bytes)
                                     .map { (key, value) -> key.decodeToString() to value.decodeToString() }.toMap() as T
                             }
 
-                            object : TypeToken<List<ByteArray>>() {}.type -> {
+                            typeOf<List<ByteArray>>() -> {
                                 JNIZBytes.deserializeIntoListViaJNI(bytes) as T
                             }
 
-                            object : TypeToken<List<String>>() {}.type -> {
+                            typeOf<List<String>>() -> {
                                 JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.decodeToString() } as T
                             }
 
@@ -108,5 +180,4 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
     override fun hashCode(): Int {
         return bytes.contentHashCode()
     }
-
 }

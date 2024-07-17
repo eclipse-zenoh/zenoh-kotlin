@@ -58,7 +58,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("commons-net:commons-net:3.9.0")
-                implementation("com.google.code.gson:gson:2.8.8")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
             }

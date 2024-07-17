@@ -15,13 +15,15 @@
 package io.zenoh.protocol
 
 interface IntoZBytes {
-
     fun into(): ZBytes
+}
 
+fun Number.into(): ZBytes {
+    return ZBytes.from(this)
 }
 
 fun String.into(): ZBytes {
-    return ZBytes(this.toByteArray())
+    return ZBytes.from(this)
 }
 
 fun ByteArray.into(): ZBytes {
