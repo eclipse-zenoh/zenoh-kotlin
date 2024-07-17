@@ -12,65 +12,28 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+import com.nishtahir.CargoExtension
+
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
-    id("org.mozilla.rust-android-gradle.rust-android")
     `maven-publish`
 }
 
-android {
-    namespace = "io.zenoh"
-    compileSdk = 30
+val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
+val release = project.findProperty("release")?.toString()?.toBoolean() == true
+val githubPublish = project.findProperty("githubPublish")?.toString()?.toBoolean() == true
 
-    ndkVersion = "26.0.10792818"
+var buildMode = if (release) BuildMode.RELEASE else BuildMode.DEBUG
 
-    defaultConfig {
-        minSdk = 30
-    }
+if (androidEnabled) {
+    apply(plugin = "com.android.library")
+    apply(plugin = "org.mozilla.rust-android-gradle.rust-android")
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-        getByName("debug") {
-            isMinifyEnabled = false
-        }
-    }
-    sourceSets {
-        getByName("main") {
-            manifest.srcFile("src/androidMain/AndroidManifest.xml")
-        }
-    }
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
-}
-
-cargo {
-    pythonCommand = "python3"
-    module = "../zenoh-jni"
-    libname = "zenoh-jni"
-    targetIncludes = arrayOf("libzenoh_jni.so")
-    targetDirectory = "../zenoh-jni/target/"
-    profile = "release"
-    targets = arrayListOf(
-        "arm",
-        "arm64",
-        "x86",
-        "x86_64",
-    )
+    configureCargo()
+    configureAndroid()
 }
 
 kotlin {
@@ -80,12 +43,14 @@ kotlin {
             kotlinOptions.jvmTarget = "11"
         }
         testRuns["test"].executionTask.configure {
-            val zenohPaths = "../zenoh-jni/target/debug"
+            val zenohPaths = "../zenoh-jni/target/$buildMode"
             jvmArgs("-Djava.library.path=$zenohPaths")
         }
     }
-    androidTarget {
-        publishLibraryVariants("release")
+    if (androidEnabled) {
+        androidTarget {
+            publishLibraryVariants("release")
+        }
     }
 
     @Suppress("Unused")
@@ -102,19 +67,24 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        val androidUnitTest by getting {
-            dependencies {
-                implementation(kotlin("test-junit"))
+        if (androidEnabled) {
+            val androidUnitTest by getting {
+                dependencies {
+                    implementation(kotlin("test-junit"))
+                }
             }
         }
         val jvmMain by getting {
-            resources.srcDir("../zenoh-jni/target/release").include(arrayListOf("*.dylib", "*.so", "*.dll"))
-
-            // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
-            resources.srcDir("../jni-libs").include("*/**")
+            if (githubPublish) {
+                // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
+                resources.srcDir("../jni-libs").include("*/**")
+            } else {
+                resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            }
         }
+
         val jvmTest by getting {
-            resources.srcDir("../zenoh-jni/target/debug").include(arrayListOf("*.dylib", "*.so", "*.dll"))
+            resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
     }
 
@@ -140,7 +110,7 @@ tasks.withType<Test> {
     doFirst {
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
-        systemProperty("java.library.path", "../zenoh-jni/target/debug")
+        systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
     }
 }
 
@@ -148,5 +118,105 @@ tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
         this.inputs.dir(buildDir.resolve("rustJniLibs/android"))
+    }
+}
+
+tasks.named("compileKotlinJvm") {
+    dependsOn("buildZenohJni")
+}
+
+tasks.register("buildZenohJni") {
+    doLast {
+        if (!githubPublish) {
+            // This is intended for local publications. For publications done through GitHub workflows,
+            // the zenoh-jni build is achieved and loaded differently from the CI
+            buildZenohJNI(buildMode)
+        }
+    }
+}
+
+fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
+    val cargoCommand = mutableListOf("cargo", "build")
+
+    if (mode == BuildMode.RELEASE) {
+        cargoCommand.add("--release")
+    }
+
+    val result = project.exec {
+        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "../zenoh-jni/Cargo.toml")
+    }
+
+    if (result.exitValue != 0) {
+        throw GradleException("Failed to build Zenoh-JNI.")
+    }
+
+    Thread.sleep(1000)
+}
+
+enum class BuildMode {
+    DEBUG {
+        override fun toString(): String {
+            return "debug"
+        }
+    },
+    RELEASE {
+        override fun toString(): String {
+            return "release"
+        }
+    }
+}
+
+fun Project.configureAndroid() {
+    extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
+        namespace = "io.zenoh"
+        compileSdk = 30
+
+        ndkVersion = "26.0.10792818"
+
+        defaultConfig {
+            minSdk = 30
+        }
+
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+
+        buildTypes {
+            getByName("release") {
+                isMinifyEnabled = false
+            }
+            getByName("debug") {
+                isMinifyEnabled = false
+            }
+        }
+        sourceSets {
+            getByName("main") {
+                manifest.srcFile("src/androidMain/AndroidManifest.xml")
+            }
+        }
+        publishing {
+            singleVariant("release") {
+                withSourcesJar()
+                withJavadocJar()
+            }
+        }
+    }
+}
+
+fun Project.configureCargo() {
+    extensions.configure<CargoExtension>("cargo") {
+        pythonCommand = "python3"
+        module = "../zenoh-jni"
+        libname = "zenoh-jni"
+        targetIncludes = arrayOf("libzenoh_jni.so")
+        targetDirectory = "../zenoh-jni/target/"
+        profile = "release"
+        targets = arrayListOf(
+            "arm",
+            "arm64",
+            "x86",
+            "x86_64",
+        )
     }
 }
