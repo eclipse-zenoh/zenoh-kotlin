@@ -33,7 +33,7 @@ jobs:
           link-to-sdk: true
 
       - name: Build doc
-        run: gradle dokkaHtml
+        run: gradle -Pandroid dokkaHtml
 
       - name: Deploy doc
         if: ${{ inputs.live-run || false }}
