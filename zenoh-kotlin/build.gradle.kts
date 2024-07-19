@@ -117,7 +117,6 @@ tasks.withType<Test> {
 tasks.whenObjectAdded {
     if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
         this.dependsOn("cargoBuild")
-        this.inputs.dir(layout.buildDirectory.dir("rustJniLibs/android"))
     }
 }
 
