@@ -58,7 +58,7 @@ jobs:
           gradle wrapper
 
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v3
+        uses: gradle/actions/wrapper-validation@v3
 
       - name: Set pub mode env var
         # Note: This step is intended to allow publishing snapshot packages.
@@ -71,8 +71,6 @@ jobs:
           fi
 
       - name: Gradle Publish Android Package
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: publishAndroidReleasePublicationToGithubPackagesRepository -Pandroid=true ${{ env.PUB_MODE }}
+        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -Pandroid=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
