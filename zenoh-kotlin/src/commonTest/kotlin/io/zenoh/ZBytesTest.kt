@@ -84,12 +84,12 @@ class ZBytesTest {
     }
 
     @Test
-    fun serializationAndDeserialization_byteArrayMapTest() {
+    fun serializationAndDeserializationTest() {
         Zenoh.load()
-        val originalMap = mapOf("key1".toByteArray() to "value1".toByteArray(), "key2".toByteArray() to "value2".toByteArray())
-        val bytes = ZBytes.serialize(originalMap).getOrThrow()
-        val deserializedMap = bytes.deserialize<Map<ByteArray, ByteArray>>().getOrThrow()
-        assertTrue { compareByteArrayMaps(originalMap, deserializedMap) }
+        val originalMap = mapOf("key1" to "value1", "key2" to "value2")
+        val bytes = ZBytes.serialize(originalMap.map { (k, v) -> k.into() to v.into() }.toMap()).getOrThrow()
+        val deserializedMap = bytes.deserialize<Map<String, String>>().getOrThrow()
+        assertEquals(originalMap, deserializedMap)
     }
 
     @Test

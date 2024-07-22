@@ -28,6 +28,10 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
     }
 
     companion object {
+        fun from(intoZBytes: IntoZBytes): ZBytes {
+            return intoZBytes.into()
+        }
+
         fun from(string: String): ZBytes {
             return ZBytes(string.toByteArray())
         }
@@ -72,6 +76,19 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
         inline fun <reified T>  serialize(t: T): Result<ZBytes> = runCatching {
             val type = typeOf<T>()
             val serializedBytes = when (type) {
+
+                typeOf<Map<IntoZBytes, IntoZBytes>> () -> {
+                    val map = t as Map<IntoZBytes, IntoZBytes>
+                    val byteArrayMap = map.map { (k, v) -> k.into().bytes to v.into().bytes}.toMap()
+                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
+                }
+
+                typeOf<Map<ZBytes, ZBytes>>() -> {
+                    val map = t as Map<ZBytes, ZBytes>
+                    val byteArrayMap = map.map { (k, v) -> k.bytes to v.bytes }.toMap()
+                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
+                }
+
                 typeOf<Map<ByteArray, ByteArray>>() -> {
                     JNIZBytes.serializeIntoMapViaJNI(t as Map<ByteArray, ByteArray>).into()
                 }
@@ -81,6 +98,19 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     val byteArrayMap = map.map { (k, v) -> k.toByteArray() to v.toByteArray() }.toMap()
                     JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
                 }
+
+                typeOf<List<IntoZBytes>>() -> {
+                    val list = t as List<IntoZBytes>
+                    val byteArrayList = list.map { it.into().bytes }
+                    JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
+                }
+
+                typeOf<List<ZBytes>>() -> {
+                    val list = t as List<ZBytes>
+                    val byteArrayList = list.map { it.bytes }
+                    JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
+                }
+
 
                 typeOf<List<ByteArray>>() -> {
                     val list = t as List<ByteArray>
@@ -140,6 +170,10 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     else -> {
                         val type = typeOf<T>()
                         when (type) {
+                            typeOf<Map<ZBytes, ZBytes>>() -> {
+                                JNIZBytes.deserializeIntoMapViaJNI(bytes).map { (key, value) -> key.into() to value.into() } as T
+                            }
+
                             typeOf<Map<ByteArray, ByteArray>>() -> {
                                 JNIZBytes.deserializeIntoMapViaJNI(bytes) as T
                             }
@@ -147,6 +181,10 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                             typeOf<Map<String, String>>() -> {
                                 JNIZBytes.deserializeIntoMapViaJNI(bytes)
                                     .map { (key, value) -> key.decodeToString() to value.decodeToString() }.toMap() as T
+                            }
+
+                            typeOf<List<ZBytes>>() -> {
+                                JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.into() } as T
                             }
 
                             typeOf<List<ByteArray>>() -> {
