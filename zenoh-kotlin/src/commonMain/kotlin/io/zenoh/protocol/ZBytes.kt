@@ -17,9 +17,9 @@ package io.zenoh.protocol
 import io.zenoh.jni.JNIZBytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.reflect.KFunction1
+import kotlin.reflect.KType
 import kotlin.reflect.typeOf
-
-typealias Deserializer<T> = (ByteArray) -> T
 
 class ZBytes(val bytes: ByteArray) : IntoZBytes {
 
@@ -48,38 +48,41 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     .putShort(number)
                     .array()
                     .into()
+
                 is Int -> ByteBuffer.allocate(Int.SIZE_BYTES)
                     .order(ByteOrder.LITTLE_ENDIAN)
                     .putInt(number)
                     .array()
                     .into()
+
                 is Long -> ByteBuffer.allocate(Long.SIZE_BYTES)
                     .order(ByteOrder.LITTLE_ENDIAN)
                     .putLong(number)
                     .array()
                     .into()
+
                 is Float -> ByteBuffer.allocate(Float.SIZE_BYTES)
                     .order(ByteOrder.LITTLE_ENDIAN)
                     .putFloat(number)
                     .array()
                     .into()
+
                 is Double -> ByteBuffer.allocate(Double.SIZE_BYTES)
                     .order(ByteOrder.LITTLE_ENDIAN)
                     .putDouble(number)
                     .array()
                     .into()
+
                 else -> throw IllegalArgumentException("Unsupported number type")
             }
         }
 
         @Suppress("UNCHECKED_CAST")
-        inline fun <reified T>  serialize(t: T): Result<ZBytes> = runCatching {
-            val type = typeOf<T>()
-            val serializedBytes = when (type) {
-
-                typeOf<Map<IntoZBytes, IntoZBytes>> () -> {
+        inline fun <reified T> serialize(t: T): Result<ZBytes> = runCatching {
+            val serializedBytes = when (typeOf<T>()) {
+                typeOf<Map<IntoZBytes, IntoZBytes>>() -> {
                     val map = t as Map<IntoZBytes, IntoZBytes>
-                    val byteArrayMap = map.map { (k, v) -> k.into().bytes to v.into().bytes}.toMap()
+                    val byteArrayMap = map.map { (k, v) -> k.into().bytes to v.into().bytes }.toMap()
                     JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
                 }
 
@@ -111,7 +114,6 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
                 }
 
-
                 typeOf<List<ByteArray>>() -> {
                     val list = t as List<ByteArray>
                     JNIZBytes.serializeIntoListViaJNI(list).into()
@@ -129,81 +131,44 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
         }
     }
 
-    inline fun <reified T> deserialize(deserializers: Map<Class<*>, Deserializer<*>> = emptyMap()): Result<T> {
-        return try {
-            val deserializer = deserializers[T::class.java] as? Deserializer<T>
-            val result: T = if (deserializer != null) {
-                deserializer(bytes)
-            } else {
-                when (T::class) {
-                    String::class -> bytes.decodeToString() as T
-                    Byte::class -> {
-                        require(bytes.size == Byte.SIZE_BYTES) { "Byte array must have exactly ${Byte.SIZE_BYTES} bytes to convert to a ${Byte::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).get() as T
-                    }
-
-                    Short::class -> {
-                        require(bytes.size == Short.SIZE_BYTES) { "Byte array must have exactly ${Short.SIZE_BYTES} bytes to convert to a ${Short::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).short as T
-                    }
-
-                    Int::class -> {
-                        require(bytes.size == Int.SIZE_BYTES) { "Byte array must have exactly ${Int.SIZE_BYTES} bytes to convert to an ${Int::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).int as T
-                    }
-
-                    Long::class -> {
-                        require(bytes.size == Long.SIZE_BYTES) { "Byte array must have exactly ${Long.SIZE_BYTES} bytes to convert to a ${Long::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long as T
-                    }
-
-                    Float::class -> {
-                        require(bytes.size == Float.SIZE_BYTES) { "Byte array must have exactly ${Float.SIZE_BYTES} bytes to convert to a ${Float::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).float as T
-                    }
-
-                    Double::class -> {
-                        require(bytes.size == Double.SIZE_BYTES) { "Byte array must have exactly ${Double.SIZE_BYTES} bytes to convert to a ${Double::class.simpleName}" }
-                        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).double as T
-                    }
-
-                    else -> {
-                        val type = typeOf<T>()
-                        when (type) {
-                            typeOf<Map<ZBytes, ZBytes>>() -> {
-                                JNIZBytes.deserializeIntoMapViaJNI(bytes).map { (key, value) -> key.into() to value.into() } as T
-                            }
-
-                            typeOf<Map<ByteArray, ByteArray>>() -> {
-                                JNIZBytes.deserializeIntoMapViaJNI(bytes) as T
-                            }
-
-                            typeOf<Map<String, String>>() -> {
-                                JNIZBytes.deserializeIntoMapViaJNI(bytes)
-                                    .map { (key, value) -> key.decodeToString() to value.decodeToString() }.toMap() as T
-                            }
-
-                            typeOf<List<ZBytes>>() -> {
-                                JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.into() } as T
-                            }
-
-                            typeOf<List<ByteArray>>() -> {
-                                JNIZBytes.deserializeIntoListViaJNI(bytes) as T
-                            }
-
-                            typeOf<List<String>>() -> {
-                                JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.decodeToString() } as T
-                            }
-
-                            else -> throw IllegalArgumentException("Unsupported type")
-                        }
-                    }
-                }
-            }
-            Result.success(result)
-        } catch (e: Exception) {
-            Result.failure(e)
+    inline fun <reified T> deserialize(
+        deserializers: Map<KType, KFunction1<ByteArray, Any>> = emptyMap()
+    ): Result<T> = runCatching {
+        val deserializer = deserializers[typeOf<T>()]
+        if (deserializer != null) {
+            return@runCatching deserializer(bytes) as T
         }
+
+        when (T::class) {
+            String::class -> bytes.decodeToString() as T
+            Byte::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).get() as T
+            Short::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).short as T
+            Int::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).int as T
+            Long::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long as T
+            Float::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).float as T
+            Double::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).double as T
+            else -> handleComplexTypes<T>(bytes)
+        }
+    }
+
+    inline fun <reified T> handleComplexTypes(bytes: ByteArray): T {
+        return when (typeOf<T>()) {
+            typeOf<Map<ZBytes, ZBytes>>() -> JNIZBytes.deserializeIntoMapViaJNI(bytes)
+                .map { (key, value) -> key.into() to value.into() } as T
+
+            typeOf<Map<ByteArray, ByteArray>>() -> JNIZBytes.deserializeIntoMapViaJNI(bytes) as T
+            typeOf<Map<String, String>>() -> JNIZBytes.deserializeIntoMapViaJNI(bytes)
+                .map { (key, value) -> key.decodeToString() to value.decodeToString() }.toMap() as T
+
+            typeOf<List<ZBytes>>() -> JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.into() } as T
+            typeOf<List<ByteArray>>() -> JNIZBytes.deserializeIntoListViaJNI(bytes) as T
+            typeOf<List<String>>() -> JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.decodeToString() } as T
+            else -> throw IllegalArgumentException("Unsupported type")
+        }
+    }
+
+    override fun toString(): String {
+        return bytes.decodeToString()
     }
 
     override fun equals(other: Any?): Boolean {
