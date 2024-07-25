@@ -23,6 +23,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.ZenohID
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
@@ -131,7 +132,7 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
 
             private val kind = SampleKind.PUT
             private var timeStamp: TimeStamp? = null
-            private var attachment: ByteArray? = null
+            private var attachment: ZBytes? = null
             private var qosBuilder = QoS.Builder()
 
             /**
@@ -142,7 +143,7 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
             /**
              * Appends an attachment to the reply.
              */
-            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
+            fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
             /**
              * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
@@ -241,7 +242,7 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
         replierId: ZenohID?,
         val keyExpr: KeyExpr,
         val timestamp: TimeStamp?,
-        val attachment: ByteArray?,
+        val attachment: ZBytes?,
         val qos: QoS
     ) : Reply(replierId) {
 
@@ -249,7 +250,7 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
 
             private val kind = SampleKind.DELETE
             private var timeStamp: TimeStamp? = null
-            private var attachment: ByteArray? = null
+            private var attachment: ZBytes? = null
             private var qosBuilder = QoS.Builder()
 
             /**
@@ -260,7 +261,7 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
             /**
              * Appends an attachment to the reply.
              */
-            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
+            fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
             /**
              * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.

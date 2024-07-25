@@ -43,7 +43,7 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                                     target(QueryTarget.valueOf(it.uppercase()))
                                 }
                                 attachment?.let {
-                                    attachment(it.toByteArray())
+                                    attachment(it)
                                 }
                                 payload?.let {
                                     payload(it)

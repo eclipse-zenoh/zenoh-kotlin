@@ -39,7 +39,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                                     for (sample in subscriber.receiver!!) {
                                         println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
                                             sample.attachment?.let {
-                                                ", with attachment: " + it.decodeToString()
+                                                ", with attachment: $it"
                                             } ?: ""
                                         })")
                                     }

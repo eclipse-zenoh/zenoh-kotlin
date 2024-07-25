@@ -58,9 +58,7 @@ class Value(val payload: ZBytes, val encoding: Encoding) {
         }
     }
 
-    override fun toString(): String {
-        return payload.bytes.decodeToString()
-    }
+    override fun toString(): String = payload.toString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

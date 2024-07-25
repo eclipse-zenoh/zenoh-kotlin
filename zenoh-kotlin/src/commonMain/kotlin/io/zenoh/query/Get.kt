@@ -20,6 +20,7 @@ import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.IntoZBytes
+import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 import io.zenoh.selector.Selector
 import kotlinx.coroutines.channels.Channel
@@ -88,7 +89,7 @@ class Get<R> private constructor() {
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
         private var payload: IntoZBytes? = null
         private var encoding: Encoding? = null
-        private var attachment: ByteArray? = null
+        private var attachment: ZBytes? = null
         private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
@@ -149,8 +150,13 @@ class Get<R> private constructor() {
         }
 
         /** Specify an attachment. */
-        fun attachment(attachment: ByteArray): Builder<R> {
-            this.attachment = attachment
+        fun attachment(attachment: IntoZBytes): Builder<R> {
+            this.attachment = attachment.into()
+            return this
+        }
+
+        fun attachment(attachment: String): Builder<R> {
+            this.attachment = attachment.into()
             return this
         }
 

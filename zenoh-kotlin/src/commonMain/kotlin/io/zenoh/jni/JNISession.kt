@@ -26,6 +26,7 @@ import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
 import io.zenoh.protocol.IntoZBytes
+import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.ZenohID
 import io.zenoh.protocol.into
 import io.zenoh.publication.Delete
@@ -95,7 +96,7 @@ internal class JNISession {
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(express, congestionControl, priority),
-                    attachmentBytes
+                    attachmentBytes?.into()
                 )
                 callback.run(sample)
             }
@@ -114,7 +115,7 @@ internal class JNISession {
                 val keyExpr2 = KeyExpr(keyExpr, null)
                 val selector = Selector(keyExpr2, selectorParams)
                 val value = payload?.let { Value(it, Encoding(ID.fromId(encodingId)!!, encodingSchema)) }
-                val query = Query(keyExpr2, selector, value, attachmentBytes, jniQuery)
+                val query = Query(keyExpr2, selector, value, attachmentBytes?.into(), jniQuery)
                 callback.run(query)
             }
         val queryableRawPtr = declareQueryableViaJNI(
@@ -133,7 +134,7 @@ internal class JNISession {
         consolidation: ConsolidationMode,
         payload: IntoZBytes?,
         encoding: Encoding?,
-        attachment: ByteArray?
+        attachment: ZBytes?
     ): Result<R?> = runCatching {
         val getCallback = JNIGetCallback {
                 replierId: String?,
@@ -161,7 +162,7 @@ internal class JNISession {
                             SampleKind.fromInt(kind),
                             timestamp,
                             QoS(express, congestionControl, priority),
-                            attachmentBytes
+                            attachmentBytes?.into()
                         )
                         reply = Reply.Success(replierId?.let { ZenohID(it) }, sample)
                     }
@@ -171,7 +172,7 @@ internal class JNISession {
                             replierId?.let { ZenohID(it) },
                             KeyExpr(keyExpr!!, null),
                             timestamp,
-                            attachmentBytes,
+                            attachmentBytes?.into(),
                             QoS(express, congestionControl, priority)
                         )
                     }
@@ -192,7 +193,7 @@ internal class JNISession {
             timeout.toMillis(),
             target.ordinal,
             consolidation.ordinal,
-            attachment,
+            attachment?.bytes,
             payload?.into()?.bytes,
             encoding?.id?.ordinal ?: ID.default().id,
             encoding?.schema
@@ -227,7 +228,7 @@ internal class JNISession {
             put.qos.congestionControl.value,
             put.qos.priority.value,
             put.qos.express,
-            put.attachment
+            put.attachment?.bytes
         )
     }
 
@@ -243,7 +244,7 @@ internal class JNISession {
             delete.qos.congestionControl.value,
             delete.qos.priority.value,
             delete.qos.express,
-            delete.attachment
+            delete.attachment?.bytes
         )
     }
 

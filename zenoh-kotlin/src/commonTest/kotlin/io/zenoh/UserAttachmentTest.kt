@@ -17,6 +17,7 @@ package io.zenoh
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
@@ -32,7 +33,7 @@ class UserAttachmentTest {
         val value = Value("test", Encoding(Encoding.ID.TEXT_PLAIN))
         const val keyExprString = "example/testing/attachment"
         const val attachment = "mock_attachment"
-        val attachmentBytes = attachment.toByteArray()
+        val attachmentZBytes = ZBytes.from(attachment)
     }
 
     @BeforeTest
@@ -51,12 +52,13 @@ class UserAttachmentTest {
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
         val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
-        session.put(keyExpr, value).withAttachment(attachmentBytes).wait()
+        session.put(keyExpr, value).attachment(attachmentZBytes).wait()
 
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 
@@ -68,13 +70,14 @@ class UserAttachmentTest {
             receivedSample = sample
         }.wait().getOrThrow()
 
-        publisher.put("test").withAttachment(attachmentBytes).wait()
+        publisher.put("test").attachment(attachmentZBytes).wait()
 
         publisher.close()
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.deserialize<String>().getOrNull())
         }
     }
 
@@ -100,13 +103,14 @@ class UserAttachmentTest {
         val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
 
-        publisher.delete().withAttachment(attachmentBytes).wait()
+        publisher.delete().attachment(attachmentZBytes).wait()
 
         publisher.close()
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 
@@ -128,18 +132,18 @@ class UserAttachmentTest {
 
     @Test
     fun queryWithAttachmentTest() {
-        var receivedAttachment: ByteArray? = null
+        var receivedAttachment: ZBytes? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
             receivedAttachment = query.attachment
             query.reply(keyExpr).success("test").wait()
         }.wait().getOrThrow()
 
-        session.get(keyExpr).with {}.attachment(attachmentBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
+        session.get(keyExpr).with {}.attachment(attachmentZBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
 
         queryable.close()
 
         assertNotNull(receivedAttachment) {
-            assertEquals(attachment, it.decodeToString())
+            assertEquals(attachmentZBytes, it)
         }
     }
 
@@ -147,7 +151,7 @@ class UserAttachmentTest {
     fun queryReplyWithAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("test").attachment(attachmentBytes).wait()
+            query.reply(keyExpr).success("test").attachment(attachmentZBytes).wait()
         }.wait().getOrThrow()
 
         session.get(keyExpr).with {
@@ -159,7 +163,8 @@ class UserAttachmentTest {
         queryable.close()
 
         assertNotNull(reply) {
-            assertEquals(attachment, (it as Reply.Success).sample.attachment!!.decodeToString())
+            val receivedAttachment = (it as Reply.Success).sample.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 

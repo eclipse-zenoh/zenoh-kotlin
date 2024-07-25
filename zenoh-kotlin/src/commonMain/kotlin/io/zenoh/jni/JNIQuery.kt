@@ -40,7 +40,7 @@ internal class JNIQuery(private val ptr: Long) {
             sample.value.encoding.schema,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.attachment,
+            sample.attachment?.bytes,
             sample.qos.express,
             sample.qos.priority.value,
             sample.qos.congestionControl.value
