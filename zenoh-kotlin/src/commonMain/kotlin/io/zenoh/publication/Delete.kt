@@ -20,6 +20,7 @@ import io.zenoh.prelude.Priority
 import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZBytes
 
 /**
  * Delete operation to perform on Zenoh on a key expression.
@@ -43,7 +44,7 @@ import io.zenoh.prelude.QoS
  * specifying the sample kind to be `DELETE`.
  */
 class Delete private constructor(
-    val keyExpr: KeyExpr, val qos: QoS, val attachment: ByteArray?
+    val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?
 ) {
 
     companion object {
@@ -72,7 +73,7 @@ class Delete private constructor(
     ) : Resolvable<Unit> {
 
         private var qosBuilder: QoS.Builder = QoS.Builder()
-        private var attachment: ByteArray? = null
+        private var attachment: ZBytes? = null
 
         /** Change the [CongestionControl] to apply when routing the data. */
         fun congestionControl(congestionControl: CongestionControl) =
@@ -87,7 +88,7 @@ class Delete private constructor(
         fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
 
         /** Set an attachment to the put operation. */
-        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+        fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
         /**
          * Performs a DELETE operation on the specified [keyExpr].

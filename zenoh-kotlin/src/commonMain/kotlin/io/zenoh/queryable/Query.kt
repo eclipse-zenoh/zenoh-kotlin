@@ -42,8 +42,8 @@ import io.zenoh.value.Value
 class Query internal constructor(
     val keyExpr: KeyExpr,
     val selector: Selector,
-    internal val value: Value?,
-    val attachment: ByteArray?,
+    val value: Value?,
+    val attachment: ZBytes?,
     private var jniQuery: JNIQuery?
 ) : AutoCloseable, ZenohType {
 
@@ -95,7 +95,7 @@ class Query internal constructor(
                     replyError(reply.error)
                 }
                 is Reply.Delete -> {
-                    replyDelete(reply.keyExpr, reply.timestamp, reply.attachment, reply.qos)
+                    replyDelete(reply.keyExpr, reply.timestamp, reply.attachment?.bytes, reply.qos)
                 }
             }
             jniQuery = null

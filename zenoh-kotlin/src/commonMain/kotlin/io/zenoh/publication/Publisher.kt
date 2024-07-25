@@ -21,6 +21,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 
 /**
@@ -35,7 +36,7 @@ import io.zenoh.value.Value
  * which we can specify the [Priority], and the [CongestionControl].
  *
  * Example:
- * ```
+ * ```kotlin
  * val keyExpr = "demo/kotlin/greeting"
  * Session.open().onSuccess {
  *     it.use { session ->
@@ -120,10 +121,10 @@ class Publisher internal constructor(
     class Put internal constructor(
         private var jniPublisher: JNIPublisher?,
         val value: Value,
-        var attachment: ByteArray? = null
+        var attachment: ZBytes? = null
     ) : Resolvable<Unit> {
 
-        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+        fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
         override fun wait(): Result<Unit> = run {
             jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
@@ -132,10 +133,10 @@ class Publisher internal constructor(
 
     class Delete internal constructor(
         private var jniPublisher: JNIPublisher?,
-        var attachment: ByteArray? = null
+        var attachment: ZBytes? = null
     ) : Resolvable<Unit> {
 
-        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+        fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
         override fun wait(): Result<Unit> = run {
             jniPublisher?.delete(attachment) ?: InvalidPublisherResult

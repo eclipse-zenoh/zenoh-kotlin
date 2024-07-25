@@ -14,6 +14,7 @@
 
 package io.zenoh.jni
 
+import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 
 /**
@@ -29,8 +30,8 @@ internal class JNIPublisher(private val ptr: Long) {
      * @param value The [Value] to be put.
      * @param attachment Optional attachment.
      */
-    fun put(value: Value, attachment: ByteArray?): Result<Unit> = runCatching {
-        putViaJNI(value.payload.bytes, value.encoding.id.ordinal, value.encoding.schema, attachment, ptr)
+    fun put(value: Value, attachment: ZBytes?): Result<Unit> = runCatching {
+        putViaJNI(value.payload.bytes, value.encoding.id.ordinal, value.encoding.schema, attachment?.bytes, ptr)
     }
 
     /**
@@ -38,8 +39,8 @@ internal class JNIPublisher(private val ptr: Long) {
      *
      * @param attachment Optional attachment.
      */
-    fun delete(attachment: ByteArray?): Result<Unit> = runCatching {
-        deleteViaJNI(attachment, ptr)
+    fun delete(attachment: ZBytes?): Result<Unit> = runCatching {
+        deleteViaJNI(attachment?.bytes, ptr)
     }
 
     /**

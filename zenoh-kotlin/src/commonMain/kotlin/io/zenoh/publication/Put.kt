@@ -18,6 +18,7 @@ import io.zenoh.Resolvable
 import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
+import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 
 /**
@@ -49,7 +50,7 @@ class Put private constructor(
     val keyExpr: KeyExpr,
     val value: Value,
     val qos: QoS,
-    val attachment: ByteArray?
+    val attachment: ZBytes?
 ) {
 
     companion object {
@@ -82,7 +83,7 @@ class Put private constructor(
     ): Resolvable<Unit> {
 
         private var qosBuilder: QoS.Builder = QoS.Builder()
-        private var attachment: ByteArray? = null
+        private var attachment: ZBytes? = null
 
         /** Change the [Encoding] of the written data. */
         fun encoding(encoding: Encoding) = apply {
@@ -102,7 +103,7 @@ class Put private constructor(
         fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
 
         /** Set an attachment to the put operation. */
-        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+        fun attachment(attachment: ZBytes) = apply { this.attachment = attachment }
 
         /** Resolves the put operation, returning a [Result]. */
         override fun wait(): Result<Unit> = runCatching {

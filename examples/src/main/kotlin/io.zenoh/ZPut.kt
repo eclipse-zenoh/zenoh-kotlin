@@ -17,9 +17,9 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
+import io.zenoh.protocol.into
 
 class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Put example"
@@ -38,7 +38,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
                             .priority(Priority.REALTIME)
                             .apply {
                                 attachment?.let {
-                                    withAttachment(it.toByteArray())
+                                    attachment(it.into())
                                 }
                             }
                             .wait()

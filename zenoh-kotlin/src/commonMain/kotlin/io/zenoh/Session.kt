@@ -21,6 +21,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.IntoZBytes
+import io.zenoh.protocol.ZBytes
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -426,7 +427,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         consolidation: ConsolidationMode,
         payload: IntoZBytes?,
         encoding: Encoding?,
-        attachment: ByteArray?,
+        attachment: ZBytes?,
     ): Result<R?> {
         return jniSession?.run {
             performGet(selector, callback, onClose, receiver, timeout, target, consolidation, payload, encoding, attachment)
