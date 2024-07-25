@@ -50,7 +50,7 @@ import java.time.Duration
  */
 class Session private constructor(private val config: Config) : AutoCloseable {
 
-    private var jniSession: JNISession? = JNISession()
+    private var jniSession: JNISession? = null
 
     companion object {
 
@@ -439,7 +439,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     /** Launches the session through the jni session, returning the [Session] on success. */
     private fun launch(): Result<Session> = runCatching {
-        return jniSession!!.open(config).map { this@Session }
+        jniSession = JNISession()
+        return jniSession!!.open(config)
+            .map { this@Session }
+            .onFailure { jniSession = null }
     }
 }
 
