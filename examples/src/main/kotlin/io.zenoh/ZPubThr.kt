@@ -23,9 +23,9 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Encoding
-import io.zenoh.publication.CongestionControl
-import io.zenoh.publication.Priority
+import io.zenoh.prelude.Priority
 import io.zenoh.value.Value
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
