@@ -18,6 +18,14 @@ interface IntoZBytes {
     fun into(): ZBytes
 }
 
+interface Serializable: IntoZBytes {
+    override fun into(): ZBytes
+
+    interface From {
+        fun from(zbytes: ZBytes): Serializable
+    }
+}
+
 fun Number.into(): ZBytes {
     return ZBytes.from(this)
 }
