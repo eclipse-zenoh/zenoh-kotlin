@@ -77,7 +77,6 @@ class ZBytesTest {
 
     @Test
     fun serializeAndDeserializeMapViaJNITest() {
-        Zenoh.load()
         val originalMap =
             mapOf("key1".toByteArray() to "value1".toByteArray(), "key2".toByteArray() to "value2".toByteArray())
         val bytes = JNIZBytes.serializeIntoMapViaJNI(originalMap)
@@ -87,7 +86,6 @@ class ZBytesTest {
 
     @Test
     fun serializationAndDeserializationTest() {
-        Zenoh.load()
         val originalMap = mapOf("key1" to "value1", "key2" to "value2")
         val bytes = ZBytes.serialize(originalMap.map { (k, v) -> k.into() to v.into() }.toMap()).getOrThrow()
         val deserializedMap = bytes.deserialize<Map<String, String>>().getOrThrow()
@@ -96,7 +94,6 @@ class ZBytesTest {
 
     @Test
     fun serializationAndDeserialization_stringMapTest() {
-        Zenoh.load()
         val originalMap = mapOf("key1" to "value1", "key2" to "value2")
         val bytes = ZBytes.serialize(originalMap).getOrThrow()
         val deserializedMap = bytes.deserialize<Map<String, String>>().getOrThrow()
@@ -119,7 +116,6 @@ class ZBytesTest {
 
     @Test
     fun serializeIntoListViaJNITest() {
-        Zenoh.load()
         val list = listOf("value1", "value2", "value3")
         val zbytes: ZBytes = JNIZBytes.serializeIntoListViaJNI(list.map { it.toByteArray() }).into()
 
