@@ -78,10 +78,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         }
     }
 
-    init {
-        Zenoh.load()
-    }
-
     /** Close the session. */
     override fun close() {
         jniSession?.close()

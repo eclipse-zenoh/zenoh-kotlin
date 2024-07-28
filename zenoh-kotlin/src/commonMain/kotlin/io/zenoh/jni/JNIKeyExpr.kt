@@ -14,19 +14,21 @@
 
 package io.zenoh.jni
 
-import io.zenoh.Zenoh
+import io.zenoh.ZenohLoad
 import io.zenoh.keyexpr.KeyExpr
 
 internal class JNIKeyExpr(internal val ptr: Long) {
 
     companion object {
+        init {
+            ZenohLoad
+        }
+
         fun tryFrom(keyExpr: String): Result<KeyExpr> = runCatching {
-            Zenoh.load() // It may happen the zenoh library is not yet loaded when creating a key expression.
             KeyExpr(tryFromViaJNI(keyExpr))
         }
 
         fun autocanonize(keyExpr: String): Result<KeyExpr> = runCatching {
-            Zenoh.load()
             KeyExpr(autocanonizeViaJNI(keyExpr))
         }
 
