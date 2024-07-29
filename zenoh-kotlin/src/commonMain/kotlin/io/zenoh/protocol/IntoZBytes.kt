@@ -14,6 +14,9 @@
 
 package io.zenoh.protocol
 
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+
 interface IntoZBytes {
     fun into(): ZBytes
 }
@@ -36,6 +39,30 @@ fun String.into(): ZBytes {
 
 fun ByteArray.into(): ZBytes {
     return ZBytes(this)
+}
+
+fun ByteArray.toByte(): Byte {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).get()
+}
+
+fun ByteArray.toShort(): Short {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).short
+}
+
+fun ByteArray.toInt(): Int {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).int
+}
+
+fun ByteArray.toLong(): Long {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).long
+}
+
+fun ByteArray.toFloat(): Float {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).float
+}
+
+fun ByteArray.toDouble(): Double {
+    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).double
 }
 
 @Throws
