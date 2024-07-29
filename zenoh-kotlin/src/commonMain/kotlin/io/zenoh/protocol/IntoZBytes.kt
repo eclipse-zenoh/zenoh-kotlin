@@ -37,3 +37,14 @@ fun String.into(): ZBytes {
 fun ByteArray.into(): ZBytes {
     return ZBytes(this)
 }
+
+@Throws
+fun Any?.into(): ZBytes {
+    return when (this) {
+        is String -> this.into()
+        is Number -> this.into()
+        is ByteArray -> this.into()
+        is Serializable -> this.into()
+        else -> throw IllegalArgumentException("Unsupported type")
+    }
+}

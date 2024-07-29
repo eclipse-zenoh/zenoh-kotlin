@@ -31,7 +31,6 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes, Serializable {
         fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
         fun from(string: String) = ZBytes(string.toByteArray())
         fun from(byteArray: ByteArray) = ZBytes(byteArray)
-
         fun from(number: Number): ZBytes {
             val byteArray = when (number) {
                 is Byte -> byteArrayOf(number)
@@ -65,51 +64,23 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes, Serializable {
             return ZBytes(byteArray)
         }
 
-        @Suppress("UNCHECKED_CAST")
         inline fun <reified T> serialize(t: T): Result<ZBytes> = runCatching {
             when {
-                typeOf<Serializable>().isSupertypeOf(typeOf<T>()) -> {
-                    return Result.success((t as Serializable).into())
-                }
-                typeOf<List<Serializable>>().isSupertypeOf(typeOf<T>()) -> {
-                    val list = t as List<Serializable>
+                typeOf<List<*>>().isSupertypeOf(typeOf<T>()) -> {
+                    val list = t as List<*>
                     val byteArrayList = list.map { it.into().bytes }
                     return Result.success(JNIZBytes.serializeIntoListViaJNI(byteArrayList).into())
                 }
                 typeOf<Map<*, *>>().isSupertypeOf(typeOf<T>()) -> {
                     val map = t as Map<*, *>
-                    if (map.keys.all { it is Serializable } && map.values.all { it is Serializable }) {
-                        val serializableMap = map as Map<Serializable, Serializable>
-                        val byteArrayMap = serializableMap.map { (k, v) -> k.into().bytes to v.into().bytes }.toMap()
-                        return Result.success(JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into())
-                    }
+                    val byteArrayMap = map.map { (k, v) -> k.into().bytes to v.into().bytes }.toMap()
+                    return Result.success(JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into())
                 }
-            }
-            val serializedBytes = when (typeOf<T>()) {
-                typeOf<Map<ByteArray, ByteArray>>() -> {
-                    JNIZBytes.serializeIntoMapViaJNI(t as Map<ByteArray, ByteArray>).into()
+                typeOf<Any>().isSupertypeOf(typeOf<T>()) -> {
+                    return Result.success((t as Any).into())
                 }
-
-                typeOf<Map<String, String>>() -> {
-                    val map = t as Map<String, String>
-                    val byteArrayMap = map.map { (k, v) -> k.toByteArray() to v.toByteArray() }.toMap()
-                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
-                }
-
-                typeOf<List<ByteArray>>() -> {
-                    val list = t as List<ByteArray>
-                    JNIZBytes.serializeIntoListViaJNI(list).into()
-                }
-
-                typeOf<List<String>>() -> {
-                    val list = t as List<String>
-                    val byteArrayList = list.map { it.toByteArray() }
-                    JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
-                }
-
                 else -> throw IllegalArgumentException("Unsupported type")
             }
-            return Result.success(serializedBytes)
         }
     }
 
