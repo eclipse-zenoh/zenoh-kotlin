@@ -14,7 +14,6 @@
 
 package io.zenoh.protocol
 
-import io.zenoh.Zenoh
 import io.zenoh.jni.JNIZBytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -24,64 +23,46 @@ import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
-class ZBytes(val bytes: ByteArray) : IntoZBytes {
+class ZBytes(val bytes: ByteArray) : IntoZBytes, Serializable {
 
-    init {
-        Zenoh.load()
-    }
-
-    override fun into(): ZBytes {
-        return this
-    }
+    override fun into() = this
 
     companion object {
-        fun from(intoZBytes: IntoZBytes): ZBytes {
-            return intoZBytes.into()
-        }
-
-        fun from(string: String): ZBytes {
-            return ZBytes(string.toByteArray())
-        }
-
-        fun from(byteArray: ByteArray): ZBytes {
-            return ZBytes(byteArray)
-        }
+        fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
+        fun from(string: String) = ZBytes(string.toByteArray())
+        fun from(byteArray: ByteArray) = ZBytes(byteArray)
 
         fun from(number: Number): ZBytes {
-            return when (number) {
-                is Byte -> byteArrayOf(number).into()
-                is Short -> ByteBuffer.allocate(Short.SIZE_BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putShort(number)
-                    .array()
-                    .into()
+            val byteArray = when (number) {
+                is Byte -> byteArrayOf(number)
+                is Short -> ByteBuffer.allocate(Short.SIZE_BYTES).apply {
+                    order(ByteOrder.LITTLE_ENDIAN)
+                    putShort(number)
+                }.array()
 
-                is Int -> ByteBuffer.allocate(Int.SIZE_BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putInt(number)
-                    .array()
-                    .into()
+                is Int -> ByteBuffer.allocate(Int.SIZE_BYTES).apply {
+                    order(ByteOrder.LITTLE_ENDIAN)
+                    putInt(number)
+                }.array()
 
-                is Long -> ByteBuffer.allocate(Long.SIZE_BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putLong(number)
-                    .array()
-                    .into()
+                is Long -> ByteBuffer.allocate(Long.SIZE_BYTES).apply {
+                    order(ByteOrder.LITTLE_ENDIAN)
+                    putLong(number)
+                }.array()
 
-                is Float -> ByteBuffer.allocate(Float.SIZE_BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putFloat(number)
-                    .array()
-                    .into()
+                is Float -> ByteBuffer.allocate(Float.SIZE_BYTES).apply {
+                    order(ByteOrder.LITTLE_ENDIAN)
+                    putFloat(number)
+                }.array()
 
-                is Double -> ByteBuffer.allocate(Double.SIZE_BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putDouble(number)
-                    .array()
-                    .into()
+                is Double -> ByteBuffer.allocate(Double.SIZE_BYTES).apply {
+                    order(ByteOrder.LITTLE_ENDIAN)
+                    putDouble(number)
+                }.array()
 
                 else -> throw IllegalArgumentException("Unsupported number type")
             }
+            return ZBytes(byteArray)
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -95,20 +76,16 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     val byteArrayList = list.map { it.into().bytes }
                     return Result.success(JNIZBytes.serializeIntoListViaJNI(byteArrayList).into())
                 }
+                typeOf<Map<*, *>>().isSupertypeOf(typeOf<T>()) -> {
+                    val map = t as Map<*, *>
+                    if (map.keys.all { it is Serializable } && map.values.all { it is Serializable }) {
+                        val serializableMap = map as Map<Serializable, Serializable>
+                        val byteArrayMap = serializableMap.map { (k, v) -> k.into().bytes to v.into().bytes }.toMap()
+                        return Result.success(JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into())
+                    }
+                }
             }
             val serializedBytes = when (typeOf<T>()) {
-                typeOf<Map<IntoZBytes, IntoZBytes>>() -> {
-                    val map = t as Map<IntoZBytes, IntoZBytes>
-                    val byteArrayMap = map.map { (k, v) -> k.into().bytes to v.into().bytes }.toMap()
-                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
-                }
-
-                typeOf<Map<ZBytes, ZBytes>>() -> {
-                    val map = t as Map<ZBytes, ZBytes>
-                    val byteArrayMap = map.map { (k, v) -> k.bytes to v.bytes }.toMap()
-                    JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
-                }
-
                 typeOf<Map<ByteArray, ByteArray>>() -> {
                     JNIZBytes.serializeIntoMapViaJNI(t as Map<ByteArray, ByteArray>).into()
                 }
@@ -117,12 +94,6 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     val map = t as Map<String, String>
                     val byteArrayMap = map.map { (k, v) -> k.toByteArray() to v.toByteArray() }.toMap()
                     JNIZBytes.serializeIntoMapViaJNI(byteArrayMap).into()
-                }
-
-                typeOf<List<ZBytes>>() -> {
-                    val list = t as List<ZBytes>
-                    val byteArrayList = list.map { it.bytes }
-                    JNIZBytes.serializeIntoListViaJNI(byteArrayList).into()
                 }
 
                 typeOf<List<ByteArray>>() -> {
@@ -159,14 +130,14 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
             Long::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long as T
             Float::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).float as T
             Double::class -> ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).double as T
-            else -> handleComplexTypes<T>(bytes)
+            else -> deserializeComplexTypes<T>(bytes)
         }
     }
 
-    inline fun <reified T> handleComplexTypes(bytes: ByteArray): T {
+    inline fun <reified T> deserializeComplexTypes(bytes: ByteArray): T {
         when {
             typeOf<Serializable>().isSupertypeOf(typeOf<T>()) -> {
-                val function=  T::class.companionObject?.declaredMemberFunctions?.find { it.name == "from" }!!
+                val function = T::class.companionObject?.declaredMemberFunctions?.find { it.name == "from" }!!
                 return function.call(T::class.companionObjectInstance, bytes.into()) as T
             }
             typeOf<List<Serializable>>().isSupertypeOf(typeOf<T>()) -> {
@@ -176,6 +147,27 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
                     val function = companion?.declaredMemberFunctions?.find { it.name == "from" }!!
                     return JNIZBytes.deserializeIntoListViaJNI(bytes).map { it.into() }
                         .map { function.call(elementType.companionObjectInstance, it) } as T
+                }
+            }
+            typeOf<Map<*, *>>().isSupertypeOf(typeOf<T>()) -> {
+                val keyType = typeOf<T>().arguments[0].type?.jvmErasure
+                val valueType = typeOf<T>().arguments[1].type?.jvmErasure
+                if (keyType != null && valueType != null &&
+                    Serializable::class.java.isAssignableFrom(keyType.java) &&
+                    Serializable::class.java.isAssignableFrom(valueType.java)) {
+
+                    val keyCompanion = keyType.companionObject
+                    val keyFromFunction = keyCompanion?.declaredMemberFunctions?.find { it.name == "from" }!!
+                    val valueCompanion = valueType.companionObject
+                    val valueFromFunction = valueCompanion?.declaredMemberFunctions?.find { it.name == "from" }!!
+
+                    val byteArrayMap = JNIZBytes.deserializeIntoMapViaJNI(bytes)
+                    val deserializedMap = byteArrayMap.map { (k, v) ->
+                        val key = keyFromFunction.call(keyType.companionObjectInstance, k.into())
+                        val value = valueFromFunction.call(valueType.companionObjectInstance, v.into())
+                        key to value
+                    }.toMap()
+                    return deserializedMap as T
                 }
             }
         }
@@ -194,20 +186,9 @@ class ZBytes(val bytes: ByteArray) : IntoZBytes {
         }
     }
 
-    override fun toString(): String {
-        return bytes.decodeToString()
-    }
+    override fun toString() = bytes.decodeToString()
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+    override fun equals(other: Any?) = other is ZBytes && bytes.contentEquals(other.bytes)
 
-        other as ZBytes
-
-        return bytes.contentEquals(other.bytes)
-    }
-
-    override fun hashCode(): Int {
-        return bytes.contentHashCode()
-    }
+    override fun hashCode() = bytes.contentHashCode()
 }
