@@ -37,9 +37,10 @@ import java.time.Duration
  * A Zenoh Session, the core interaction point with a Zenoh network.
  *
  * A session is typically associated with declarations such as [Publisher]s, [Subscriber]s, or [Queryable]s, which are
- * declared using [declarePublisher], [declareSubscriber], and [declareQueryable], respectively.
+ * declared using [declarePublisher], [declareSubscriber], and [declareQueryable], respectively. It is also possible to
+ * declare key expressions ([KeyExpr]) as well with [declareKeyExpr] for optimization purposes.
+ *
  * Other operations such as simple Put, Get or Delete can be performed from a session using [put], [get] and [delete].
- * Finally, it's possible to declare key expressions ([KeyExpr]) as well.
  *
  * Sessions are open upon creation and can be closed manually by calling [close]. Alternatively, the session will be
  * automatically closed when used with Java's try-with-resources statement or its Kotlin counterpart, [use].
@@ -51,6 +52,8 @@ import java.time.Duration
 class Session private constructor(private val config: Config) : AutoCloseable {
 
     private var jniSession: JNISession? = JNISession()
+
+    private var declarations = mutableListOf<SessionDeclaration>()
 
     companion object {
 
@@ -80,13 +83,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     /** Close the session. */
     override fun close() {
+        declarations.removeIf {
+            it.undeclare()
+            true
+        }
+
         jniSession?.close()
         jniSession = null
     }
 
-    @Suppress("removal")
     protected fun finalize() {
-        jniSession?.close()
+        close()
     }
 
     /**
@@ -228,7 +235,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareKeyExpr(keyExpr: String): Resolvable<KeyExpr> = Resolvable {
         return@Resolvable jniSession?.run {
-            declareKeyExpr(keyExpr)
+            declareKeyExpr(keyExpr).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -379,7 +386,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     internal fun resolvePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(keyExpr, qos)
+            declarePublisher(keyExpr, qos).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -391,7 +398,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         reliability: Reliability
     ): Result<Subscriber<R>> {
         return jniSession?.run {
-            declareSubscriber(keyExpr, callback, onClose, receiver, reliability)
+            declareSubscriber(keyExpr, callback, onClose, receiver, reliability).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -403,7 +410,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         complete: Boolean
     ): Result<Queryable<R>> {
         return jniSession?.run {
-            declareQueryable(keyExpr, callback, onClose, receiver, complete)
+            declareQueryable(keyExpr, callback, onClose, receiver, complete).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 

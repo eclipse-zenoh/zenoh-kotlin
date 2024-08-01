@@ -127,14 +127,4 @@ class KeyExprTest {
         keyExpr.close()
         keyExpr2.close()
     }
-
-    @Test
-    fun keyExprIsValidAfterClosingSession() {
-        val session = Session.open().getOrThrow()
-        val keyExpr = session.declareKeyExpr("a/b/c").res().getOrThrow()
-        session.close()
-
-        assertTrue(keyExpr.isValid())
-        assertFalse(keyExpr.toString().isEmpty()) // An operation such as toString that goes through JNI is still valid.
-    }
 }
