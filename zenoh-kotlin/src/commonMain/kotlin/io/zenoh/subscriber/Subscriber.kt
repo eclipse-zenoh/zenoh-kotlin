@@ -25,6 +25,8 @@ import io.zenoh.sample.Sample
 import kotlinx.coroutines.channels.Channel
 
 /**
+ * # Subscriber
+ *
  * A subscriber that allows listening to updates on a key expression and reacting to changes.
  *
  * Its main purpose is to keep the subscription active as long as it exists.
@@ -56,6 +58,12 @@ import kotlinx.coroutines.channels.Channel
  * }
  * ```
  *
+ * ## Lifespan
+ *
+ * Internally, the [Session] from which the [Subscriber] was declared keeps a reference to it, therefore keeping it alive
+ * until the session is closed. For the cases where we want to stop the subscriber earlier, it's necessary
+ * to keep a reference to it in order to undeclare it later.
+ *
  * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, R will be [Unit].
  * @property keyExpr The [KeyExpr] to which the subscriber is associated.
  * @property receiver Optional [R] that is provided when specifying a [Handler] for the subscriber.
@@ -67,7 +75,7 @@ class Subscriber<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R?, private var jniSubscriber: JNISubscriber?
 ) : AutoCloseable, SessionDeclaration {
 
-    override fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return jniSubscriber != null
     }
 
@@ -78,10 +86,6 @@ class Subscriber<R> internal constructor(
 
     override fun close() {
         undeclare()
-    }
-
-    protected fun finalize() {
-        jniSubscriber?.close()
     }
 
     companion object {
