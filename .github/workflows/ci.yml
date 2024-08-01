@@ -84,6 +84,7 @@ jobs:
       packages: write
     with:
       snapshot: true
+      branch: ${{ github.ref_name }}
 
   publish_android_snapshot_package:
     name: Publish Android snapshot package
@@ -95,3 +96,4 @@ jobs:
       packages: write
     with:
       snapshot: true
+      branch: ${{ github.ref_name }}
