@@ -44,6 +44,12 @@ import java.util.concurrent.atomic.AtomicLong
 /** Adapter class to handle the communication with the Zenoh JNI code for a [Session]. */
 internal class JNISession {
 
+    companion object {
+        init {
+            ZenohLoad
+        }
+    }
+
     /* Pointer to the underlying Rust zenoh session. */
     private var sessionPtr: AtomicLong = AtomicLong(0)
 

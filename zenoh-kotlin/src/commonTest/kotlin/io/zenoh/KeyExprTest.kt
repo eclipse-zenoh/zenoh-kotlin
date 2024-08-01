@@ -21,10 +21,6 @@ import kotlin.test.*
 
 class KeyExprTest {
 
-    init {
-        Zenoh.load()
-    }
-
     @Test
     fun creation_TryFromTest() {
         // A couple of examples of valid and invalid key expressions.
