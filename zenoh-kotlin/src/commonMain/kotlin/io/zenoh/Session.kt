@@ -83,13 +83,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     /** Close the session. */
     override fun close() {
+        declarations.removeIf {
+            it.undeclare()
+            true
+        }
+
         jniSession?.close()
         jniSession = null
     }
 
     protected fun finalize() {
-        declarations.forEach { it.undeclare() }
-        jniSession?.close()
+        close()
     }
 
     /**

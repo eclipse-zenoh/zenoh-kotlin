@@ -56,23 +56,17 @@ class SessionTest {
     }
 
     @Test
-    fun sessionClose_declarationsAreAliveAfterClosingSessionTest() = runBlocking {
+    fun sessionClose_declarationsAreUndeclaredAfterClosingSessionTest() = runBlocking {
         val session = Session.open().getOrThrow()
-        var receivedSample: Sample? = null
 
         val publisher = session.declarePublisher(testKeyExpr).res().getOrThrow()
-        val subscriber = session.declareSubscriber(testKeyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).res().getOrThrow()
         session.close()
 
-        assertTrue(publisher.isValid())
-        assertTrue(subscriber.isValid())
+        assertFalse(publisher.isValid())
+        assertFalse(subscriber.isValid())
 
-        publisher.put("Test").res()
-        assertNotNull(receivedSample)
-        assertEquals("Test", receivedSample!!.value.payload.decodeToString())
-
-        subscriber.close()
-        publisher.close()
+        assertTrue(publisher.put("Test").res().isFailure)
     }
 
     @Test
