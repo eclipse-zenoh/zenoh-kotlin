@@ -19,7 +19,6 @@ import io.zenoh.Session
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 import io.zenoh.selector.Selector
@@ -87,7 +86,7 @@ class Get<R> private constructor() {
         private var timeout = Duration.ofMillis(10000)
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
-        private var payload: IntoZBytes? = null
+        private var payload: ZBytes? = null
         private var encoding: Encoding? = null
         private var attachment: ZBytes? = null
         private var onClose: (() -> Unit)? = null
@@ -129,7 +128,7 @@ class Get<R> private constructor() {
             return this
         }
 
-        fun payload(payload: IntoZBytes): Builder<R> {
+        fun payload(payload: ZBytes): Builder<R> {
             this.payload = payload
             return this
         }
@@ -150,8 +149,8 @@ class Get<R> private constructor() {
         }
 
         /** Specify an attachment. */
-        fun attachment(attachment: IntoZBytes): Builder<R> {
-            this.attachment = attachment.into()
+        fun attachment(attachment: ZBytes): Builder<R> {
+            this.attachment = attachment
             return this
         }
 

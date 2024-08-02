@@ -17,6 +17,11 @@ fun main() {
     var intOutput = payload.deserialize<Int>().getOrThrow()
     check(intInput == intOutput)
 
+    // Alternatively you can serialize into the type.
+    payload = ZBytes.serialize(intInput).getOrThrow()
+    intOutput = payload.deserialize<Int>().getOrThrow()
+    check(intInput == intOutput)
+
     // Alternatively, `Numeric.into()`: ZBytes can be used
     payload = intInput.into()
     intOutput = payload.deserialize<Int>().getOrThrow()
@@ -76,7 +81,7 @@ fun main() {
      */
     val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
     payload = ZBytes.serialize(inputMap).getOrThrow()
-    val outputMap = payload.deserialize<Map<String, String>>().getOrThrow()
+    val outputMap = payload.deserialize<Map<String, String>>(/*keyType = String.javaClass, valueType = String.javaClass*/).getOrThrow()
     check(inputMap == outputMap)
 
     val combinedInputMap = mapOf("key1" to ZBytes.from("zbytes1"), "key2" to ZBytes.from("zbytes2"))
@@ -113,6 +118,11 @@ fun main() {
     payload = ZBytes.serialize<Map<MyZBytes, MyZBytes>>(inputMapMyZBytes).getOrThrow()
     val outputMapMyZBytes = payload.deserialize<Map<MyZBytes, MyZBytes>>().getOrThrow()
     check(inputMapMyZBytes == outputMapMyZBytes)
+
+    val combinedMap = mapOf(MyZBytes("foo") to 1, MyZBytes("bar") to 2)
+    payload = ZBytes.serialize<Map<MyZBytes, Int>>(combinedMap).getOrThrow()
+    val combinedOutput = payload.deserialize<Map<MyZBytes, Int>>().getOrThrow()
+    check(combinedMap == combinedOutput)
 
     /**
      * Providing a map of deserializers.
