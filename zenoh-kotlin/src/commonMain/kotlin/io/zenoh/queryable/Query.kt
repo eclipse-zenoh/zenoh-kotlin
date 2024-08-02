@@ -51,7 +51,7 @@ class Query internal constructor(
     val parameters = selector.parameters
 
     /** Payload of the query. */
-    val payload: ZBytes? = value?.payload?.into()
+    val payload: ZBytes? = value?.payload
 
     /** Encoding of the payload. */
     val encoding: Encoding? = value?.encoding

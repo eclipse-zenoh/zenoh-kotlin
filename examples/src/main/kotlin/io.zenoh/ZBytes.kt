@@ -81,7 +81,7 @@ fun main() {
      */
     val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
     payload = ZBytes.serialize(inputMap).getOrThrow()
-    val outputMap = payload.deserialize<Map<String, String>>(/*keyType = String.javaClass, valueType = String.javaClass*/).getOrThrow()
+    val outputMap = payload.deserialize<Map<String, String>>().getOrThrow()
     check(inputMap == outputMap)
 
     val combinedInputMap = mapOf("key1" to ZBytes.from("zbytes1"), "key2" to ZBytes.from("zbytes2"))
