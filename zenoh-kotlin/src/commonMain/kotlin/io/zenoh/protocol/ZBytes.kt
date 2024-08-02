@@ -98,7 +98,7 @@ class ZBytes(internal val bytes: ByteArray) : Serializable {
         if (deserializer != null) {
             return Result.success(deserializer(this) as T)
         }
-        deserializer = DefaultMapDeserializer.deserializationMap[typeOf<T>()]
+        deserializer = DeserializationUtils.deserializationMap[typeOf<T>()]
         if (deserializer != null) {
             return Result.success(deserializer(this) as T)
         }
@@ -133,7 +133,8 @@ class ZBytes(internal val bytes: ByteArray) : Serializable {
     override fun hashCode() = bytes.contentHashCode()
 }
 
-object DeserializationUtils {
+@PublishedApi
+internal object DeserializationUtils {
     fun handleDeserializable(bytes: ZBytes, type: KType): Result<Any?> {
         return type::class.companionObject?.declaredMemberFunctions?.find { it.name == "from" }
             ?.let {
@@ -186,9 +187,7 @@ object DeserializationUtils {
         }
         return Result.failure(Exception("Key type or map type are do not implement the ${Serializable::class} interface."))
     }
-}
 
-object DefaultMapDeserializer {
     val deserializationMap: Map<KType, KFunction1<ZBytes, Any>> = mapOf(
         // Raw type deserialization methods
         typeOf<String>() to ::string_deserialize,
