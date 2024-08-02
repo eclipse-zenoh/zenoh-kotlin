@@ -27,9 +27,226 @@ import kotlin.reflect.full.*
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
-class ZBytes(internal val bytes: ByteArray) : Serializable {
-
-    override fun into() = this
+/**
+ * The ZBytes class (Zenoh bytes) represents the bytes received through the Zenoh network.
+ *
+ * It provides many utilities to serialize an object into a ZBytes, as well as to deserialize from a ZBytes instance.
+ *
+ * # Serialization
+ *
+ * Supported types:
+ *
+ * ## Raw types
+ *
+ * * Numeric: Byte, Short, Int, Long, Float and Double.**
+ * * String
+ * * ByteArray
+ *
+ * For the raw types, there are basically three ways to serialize them into a ZBytes, for instance let's suppose
+ * we want to serialize an `Int`, we could achieve it by::
+ * * using the `into()` syntax:
+ *  ```kotlin
+ *  val exampleInt: Int = 256
+ *  val zbytes: ZBytes = exampleInt.into()
+ *  ```
+ *
+ * * using the `from()` syntax:
+ *  ```kotlin
+ *  val exampleInt: Int = 256
+ *  val zbytes: ZBytes = ZBytes.from(exampleInt)
+ *  ```
+ *
+ * * using the serialize syntax:
+ * ```kotlin
+ * val exampleInt: Int = 256
+ * val zbytes: ZBytes = ZBytes.serialize<Int>(exampleInt).getOrThrow()
+ * ```
+ * This approach works as well for the other mentioned types.
+ *
+ * ## Lists
+ *
+ * Lists are supported, but they must be either:
+ * - List of [Number] (Byte, Short, Int, Long, Float or Double)
+ * - List of [String]
+ * - List of [ByteArray]
+ * - List of [Serializable]
+ *
+ * The serialize syntax must be used:
+ * ```kotlin
+ * val myList = listOf(1, 2, 5, 8, 13, 21)
+ * val zbytes = ZBytes.serialize<List<Int>>(myList).getOrThrow()
+ * ```
+ *
+ * ## Maps
+ *
+ * Maps are supported as well, with the restriction that their inner types must be either:
+ * - [Number]
+ * - [String]
+ * - [ByteArray]
+ * - [Serializable]
+ *
+ * ```kotlin
+ * val myMap: Map<String, Int> = mapOf("foo" to 1, "bar" to 2)
+ * val zbytes = ZBytes.serialize<Map<String, Int>>(myMap).getOrThrow()
+ * ```
+ *
+ * # Deserialization
+ *
+ * ## Raw types
+ *
+ * * Numeric: Byte, Short, Int, Long, Float and Double
+ * * String
+ * * ByteArray
+ *
+ * Example:
+ *
+ * For these raw types, you can use the functions `to<Type>`, that is
+ * - [toByte]
+ * - [toShort]
+ * - [toInt]
+ * - [toLong]
+ * - [toDouble]
+ * - [toString]
+ * - [toByteArray]
+ *
+ * For instance, for an Int:
+ * ```kotlin
+ * val example: Int = 256
+ * val zbytes: ZBytes = exampleInt.into()
+ * val deserializedInt = zbytes.toInt()
+ * ```
+ *
+ * Alternatively, the deserialize syntax can be used as well:
+ * ```kotlin
+ * val exampleInt: Int = 256
+ * val zbytes: ZBytes = exampleInt.into()
+ * val deserializedInt = zbytes.deserialize<Int>().getOrThrow()
+ * ```
+ *
+ * ## Lists
+ *
+ * Lists are supported, but they must be deserialized either into a:
+ * - List of [Number] (Byte, Short, Int, Long, Float or Double)
+ * - List of [String]
+ * - List of [ByteArray]
+ * - List of [Deserializable]
+ *
+ * To deserialize into a list, we need to use the deserialize syntax as follows:
+ * ```kotlin
+ * val inputList = listOf("sample1", "sample2", "sample3")
+ * payload = ZBytes.serialize(inputList).getOrThrow()
+ * val outputList = payload.deserialize<List<String>>().getOrThrow()
+ * ```
+ *
+ * ## Maps
+ *
+ * Maps are supported as well, with the restriction that their inner types must be either:
+ * - [Number]
+ * - [String]
+ * - [ByteArray]
+ * - [Deserializable]
+ *
+ * ```kotlin
+ * val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
+ * payload = ZBytes.serialize(inputMap).getOrThrow()
+ * val outputMap = payload.deserialize<Map<String, String>>().getOrThrow()
+ * check(inputMap == outputMap)
+ * ```
+ *
+ * # Custom serialization and deserialization
+ *
+ * ## Serialization
+ *
+ * For custom serialization, classes to be serialized need to implement the [Serializable] interface.
+ * For instance:
+ *
+ * ```kotlin
+ * class Foo(val content: String) : Serializable {
+ *
+ *   /*Inherits: Serializable*/
+ *   override fun into(): ZBytes = content.into()
+ * }
+ * ```
+ *
+ * This way, we can do:
+ * ```kotlin
+ * val foo = Foo("bar")
+ * val serialization = ZBytes.serialize<Foo>(foo).getOrThrow()
+ * ```
+ *
+ * Implementing the [Serializable] interface on a class enables the possibility of serializing lists and maps
+ * of that type, for instance:
+ * ```kotlin
+ * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
+ * val zbytes = ZBytes.serialize<List<Foo>>(list)
+ * ```
+ *
+ * ## Deserialization
+ *
+ * For custom deserialization, classes to be serialized need to implement the [Deserializable] interface, and
+ * their companion object need to implement the [Deserializable.From] interface, for instance, let's make the
+ * `Foo` class (defined in the previous section) implement these interfaces:
+ *
+ * ```kotlin
+ * class Foo(val content: String) : Serializable, Deserializable {
+ *
+ *   /*Inherits: Serializable*/
+ *   override fun into(): ZBytes = content.into()
+ *
+ *   companion object: Deserializable.From {
+ *      override fun from(zbytes: ZBytes): Foo {
+ *          return Foo(zbytes.toString())
+ *      }
+ *   }
+ * }
+ * ```
+ *
+ * With this implementation, then the deserialization works as follows with the deserialization syntax:
+ * ```kotlin
+ * val foo = Foo("bar")
+ * val zbytes = ZBytes.serialize<Foo>(foo).getOrThrow()
+ * val deserialization = zbytes.deserialize<Foo>().getOrThrow()
+ * ```
+ *
+ * Analogous to the serialization, we can deserialize into lists and maps of the type implementing
+ * the [Deserializable] interface:
+ *
+ * ```kotlin
+ * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
+ * val zbytes = ZBytes.serialize<List<Foo>>(list)
+ * val deserializedList = zbytes.deserialize<List<Foo>>().getOrThrow()
+ * ```
+ *
+ * ### Deserialization functions:
+ *
+ * The [deserialize] function admits an argument which by default is an emptyMap, consisting
+ * of a `Map<KType, KFunction1<ZBytes, Any>>` map. This allows to specify types in a map, associating
+ * functions for deserialization for each of the types in the map.
+ *
+ * For instance, let's stick to the previous implementation of our example Foo class, when it
+ * only implemented the [Serializable] class:
+ * ```kotlin
+ * class Foo(val content: String) : Serializable {
+ *
+ *   /*Inherits: Serializable*/
+ *   override fun into(): ZBytes = content.into()
+ * }
+ * ```
+ *
+ * Instead of making it implement the [Deserializable] interface as explained previously,
+ * we could provide directly the deserialization function as follows:
+ *
+ * ```kotlin
+ * fun deserializeFoo(zbytes: ZBytes): Foo {
+ *   return Foo(zbytes.toString())
+ * }
+ *
+ * val foo = Foo("bar")
+ * val zbytes = ZBytes.serialize<Foo>(foo)
+ * val deserialization = zbytes.deserialize<Foo>(mapOf(typeOf<Foo>() to ::deserializeFoo)).getOrThrow()
+ * ```
+ */
+class ZBytes internal constructor(internal val bytes: ByteArray) {
 
     companion object {
         fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
@@ -91,6 +308,38 @@ class ZBytes(internal val bytes: ByteArray) : Serializable {
         }
     }
 
+    fun toByteArray() = bytes
+
+    fun toByte(): Byte {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).get()
+    }
+
+    fun toShort(): Short {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).short
+    }
+
+    fun toInt(): Int {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).int
+    }
+
+    fun toLong(): Long {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).long
+    }
+
+    fun toFloat(): Float {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).float
+    }
+
+    fun toDouble(): Double {
+        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).double
+    }
+
+    override fun toString() = bytes.decodeToString()
+
+    override fun equals(other: Any?) = other is ZBytes && bytes.contentEquals(other.bytes)
+
+    override fun hashCode() = bytes.contentHashCode()
+
     inline fun <reified T> deserialize(
         deserializers: Map<KType, KFunction1<ZBytes, Any>> = emptyMap()
     ): Result<T> {
@@ -124,13 +373,6 @@ class ZBytes(internal val bytes: ByteArray) : Serializable {
         throw IllegalArgumentException("Unsupported type.")
     }
 
-    fun toByteArray() = bytes
-
-    override fun toString() = bytes.decodeToString()
-
-    override fun equals(other: Any?) = other is ZBytes && bytes.contentEquals(other.bytes)
-
-    override fun hashCode() = bytes.contentHashCode()
 }
 
 @PublishedApi
@@ -151,7 +393,7 @@ internal object DeserializationUtils {
         val companion = elementType?.companionObject
         val function = companion?.declaredMemberFunctions?.find { it.name == "from" }
         return if (function != null) {
-            Result.success(JNIZBytes.deserializeIntoList(bytes).map { it.into() }
+            Result.success(JNIZBytes.deserializeIntoList(bytes)
                 .map { function.call(elementType.companionObjectInstance, it) })
         } else {
             Result.failure(Exception("Implementation of 'from' method from the ${Serializable::class} interface on the list type not found."))
@@ -307,7 +549,7 @@ internal object DeserializationUtils {
     }
 
     private fun list_zbytes_deserialize(zbytes: ZBytes): List<ZBytes> {
-        return JNIZBytes.deserializeIntoList(zbytes).map { it.into() }
+        return JNIZBytes.deserializeIntoList(zbytes)
     }
 
     private fun list_int_deserialize(zbytes: ZBytes): List<Int> {
@@ -347,7 +589,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_string_zbytes_deserialize(zbytes: ZBytes): Map<String, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toString() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toString() to v }.toMap()
     }
 
     private fun map_string_int_deserialize(zbytes: ZBytes): Map<String, Int> {
@@ -384,7 +626,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_byte_zbytes_deserialize(zbytes: ZBytes): Map<Byte, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toByte() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toByte() to v }.toMap()
     }
 
     private fun map_byte_int_deserialize(zbytes: ZBytes): Map<Byte, Int> {
@@ -421,7 +663,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_short_zbytes_deserialize(zbytes: ZBytes): Map<Short, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toShort() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toShort() to v }.toMap()
     }
 
     private fun map_short_int_deserialize(zbytes: ZBytes): Map<Short, Int> {
@@ -458,7 +700,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_int_zbytes_deserialize(zbytes: ZBytes): Map<Int, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toInt() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toInt() to v }.toMap()
     }
 
     private fun map_int_int_deserialize(zbytes: ZBytes): Map<Int, Int> {
@@ -495,7 +737,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_long_zbytes_deserialize(zbytes: ZBytes): Map<Long, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toLong() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toLong() to v }.toMap()
     }
 
     private fun map_long_int_deserialize(zbytes: ZBytes): Map<Long, Int> {
@@ -532,7 +774,7 @@ internal object DeserializationUtils {
     }
 
     private fun map_float_zbytes_deserialize(zbytes: ZBytes): Map<Float, ZBytes> {
-        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toFloat() to v.into() }.toMap()
+        return JNIZBytes.deserializeIntoMap(zbytes).map { (k, v) -> k.toFloat() to v }.toMap()
     }
 
     private fun map_float_int_deserialize(zbytes: ZBytes): Map<Float, Int> {

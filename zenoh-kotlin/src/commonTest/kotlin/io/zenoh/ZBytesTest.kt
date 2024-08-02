@@ -111,8 +111,7 @@ class ZBytesTest {
         val zbytesListOfPairs = stringMap.map { (k, v) -> k.into() to v.into() }
         val intMap = mapOf(1 to 10, 2 to 20, 3 to 30)
         val zbytesList = listOf(1.into(), 2.into(), 3.into())
-        val serializedMap = serializeZBytesMap(zbytesMap)
-        val bytes: ZBytes = serializedMap.into()
+        val bytes = serializeZBytesMap(zbytesMap)
 
         val customDeserializers = mapOf(
             typeOf<Map<ZBytes, ZBytes>>() to ::deserializeIntoZBytesMap,
@@ -128,15 +127,15 @@ class ZBytesTest {
         val deserializedMap2 = bytes.deserialize<Map<String, String>>(customDeserializers).getOrThrow()
         assertEquals(stringMap, deserializedMap2)
 
-        val intMapBytes = serializeIntoIntMap(intMap).into()
+        val intMapBytes = serializeIntoIntMap(intMap)
         val deserializedMap3 = intMapBytes.deserialize<Map<Int, Int>>(customDeserializers).getOrThrow()
         assertEquals(intMap, deserializedMap3)
 
-        val serializedZBytesList = serializeZBytesList(zbytesList).into()
+        val serializedZBytesList = serializeZBytesList(zbytesList)
         val deserializedList = serializedZBytesList.deserialize<List<ZBytes>>(customDeserializers).getOrThrow()
         assertEquals(zbytesList, deserializedList)
 
-        val serializedZBytesPairList = serializeZBytesMap(zbytesListOfPairs.toMap()).into()
+        val serializedZBytesPairList = serializeZBytesMap(zbytesListOfPairs.toMap())
         val deserializedZBytesPairList =
             serializedZBytesPairList.deserialize<List<Pair<ZBytes, ZBytes>>>(customDeserializers).getOrThrow()
         assertEquals(zbytesListOfPairs, deserializedZBytesPairList)
