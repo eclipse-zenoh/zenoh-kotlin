@@ -55,11 +55,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeIntoMapViaJNI(
     })
 }
 
-fn java_map_to_zbytes(mut env: &mut JNIEnv, map: &JObject) -> jni::errors::Result<ZBytes> {
-    let jmap = JMap::from_env(&mut env, &map)?;
-    let mut iterator = jmap.iter(&mut env)?;
+fn java_map_to_zbytes(env: &mut JNIEnv, map: &JObject) -> jni::errors::Result<ZBytes> {
+    let jmap = JMap::from_env(env, map)?;
+    let mut iterator = jmap.iter(env)?;
     let mut rust_map: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
-    while let Some((key, value)) = iterator.next(&mut env)? {
+    while let Some((key, value)) = iterator.next(env)? {
         let key_bytes = env.convert_byte_array(env.auto_local(JByteArray::from(key)))?;
         let value_bytes = env.convert_byte_array(env.auto_local(JByteArray::from(value)))?;
         rust_map.insert(key_bytes, value_bytes);
@@ -90,7 +90,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoMapViaJNI(
         let deserialization: HashMap<Vec<u8>, Vec<u8>> = zbytes
             .deserialize::<HashMap<Vec<u8>, Vec<u8>>>()
             .map_err(|err| session_error!(err))?;
-        Ok(hashmap_to_java_map(&mut env, &deserialization).map_err(|err| jni_error!(err))?)
+        hashmap_to_java_map(&mut env, &deserialization).map_err(|err| jni_error!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -99,16 +99,16 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoMapViaJNI(
 }
 
 fn hashmap_to_java_map(
-    mut env: &mut JNIEnv,
+    env: &mut JNIEnv,
     hashmap: &HashMap<Vec<u8>, Vec<u8>>,
 ) -> jni::errors::Result<jobject> {
     let map = env.new_object("java/util/HashMap", "()V", &[])?;
-    let jmap = JMap::from_env(&mut env, &map)?;
+    let jmap = JMap::from_env(env, &map)?;
 
-    for (k, v) in hashmap.into_iter() {
+    for (k, v) in hashmap.iter() {
         let key = env.byte_array_from_slice(k.as_slice())?;
         let value = env.byte_array_from_slice(v.as_slice())?;
-        jmap.put(&mut env, &key, &value)?;
+        jmap.put(env, &key, &value)?;
     }
     Ok(map.as_raw())
 }
@@ -145,11 +145,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeIntoListViaJNI(
     })
 }
 
-fn java_list_to_zbytes(mut env: &mut JNIEnv, list: &JObject) -> jni::errors::Result<ZBytes> {
-    let jmap = JList::from_env(&mut env, &list)?;
-    let mut iterator = jmap.iter(&mut env)?;
+fn java_list_to_zbytes(env: &mut JNIEnv, list: &JObject) -> jni::errors::Result<ZBytes> {
+    let jmap = JList::from_env(env, list)?;
+    let mut iterator = jmap.iter(env)?;
     let mut rust_vec: Vec<Vec<u8>> = Vec::new();
-    while let Some(value) = iterator.next(&mut env)? {
+    while let Some(value) = iterator.next(env)? {
         let value_bytes = env.auto_local(JByteArray::from(value));
         let value_bytes = env.convert_byte_array(value_bytes)?;
         rust_vec.push(value_bytes);
@@ -186,12 +186,12 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoListViaJNI(
     })
 }
 
-fn zbytes_to_java_list(mut env: &mut JNIEnv, zbytes: &ZBytes) -> jni::errors::Result<jobject> {
+fn zbytes_to_java_list(env: &mut JNIEnv, zbytes: &ZBytes) -> jni::errors::Result<jobject> {
     let array_list = env.new_object("java/util/ArrayList", "()V", &[])?;
-    let jlist = JList::from_env(&mut env, &array_list)?;
-    for (_idx, value) in zbytes.iter::<Vec<u8>>().enumerate() {
+    let jlist = JList::from_env(env, &array_list)?;
+    for value in zbytes.iter::<Vec<u8>>() {
         let value = &mut env.byte_array_from_slice(value.unwrap().as_slice())?; //The unwrap is unfallible.
-        jlist.add(&mut env, value)?;
+        jlist.add(env, value)?;
     }
     Ok(array_list.as_raw())
 }
