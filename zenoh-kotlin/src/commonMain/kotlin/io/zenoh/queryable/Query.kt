@@ -22,7 +22,6 @@ import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.ZBytes
-import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.value.Value
 
