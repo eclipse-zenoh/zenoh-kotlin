@@ -41,28 +41,28 @@ fun ByteArray.into(): ZBytes {
     return ZBytes(this)
 }
 
-fun ByteArray.toByte(): Byte {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).get()
+fun ZBytes.toByte(): Byte {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).get()
 }
 
-fun ByteArray.toShort(): Short {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).short
+fun ZBytes.toShort(): Short {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).short
 }
 
-fun ByteArray.toInt(): Int {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).int
+fun ZBytes.toInt(): Int {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).int
 }
 
-fun ByteArray.toLong(): Long {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).long
+fun ZBytes.toLong(): Long {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).long
 }
 
-fun ByteArray.toFloat(): Float {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).float
+fun ZBytes.toFloat(): Float {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).float
 }
 
-fun ByteArray.toDouble(): Double {
-    return ByteBuffer.wrap(this).order(ByteOrder.LITTLE_ENDIAN).double
+fun ZBytes.toDouble(): Double {
+    return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).double
 }
 
 @Throws

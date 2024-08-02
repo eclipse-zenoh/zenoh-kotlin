@@ -1,6 +1,8 @@
 package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
+import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
 
 object JNIZBytes {
 
@@ -8,11 +10,27 @@ object JNIZBytes {
         ZenohLoad
     }
 
-    external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>): ByteArray
+    fun serializeIntoList(list: List<ZBytes>): ZBytes {
+        return serializeIntoListViaJNI(list.map { it.bytes }).into()
+    }
 
-    external fun deserializeIntoMapViaJNI(payload: ByteArray): Map<ByteArray, ByteArray>
+    fun deserializeIntoList(zbytes: ZBytes): List<ZBytes> {
+        return deserializeIntoListViaJNI(zbytes.bytes).map { it.into() }.toList()
+    }
 
-    external fun serializeIntoListViaJNI(list: List<ByteArray>): ByteArray
+    fun serializeIntoMap(map: Map<ZBytes, ZBytes>): ZBytes {
+        return serializeIntoMapViaJNI(map.map { (k, v) -> k.bytes to v.bytes }.toMap()).into()
+    }
 
-    external fun deserializeIntoListViaJNI(payload: ByteArray): List<ByteArray>
+    fun deserializeIntoMap(bytes: ZBytes): Map<ZBytes, ZBytes> {
+        return deserializeIntoMapViaJNI(bytes.bytes).map { (k, v) -> k.into() to v.into() }.toMap()
+    }
+
+    private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>): ByteArray
+
+    private external fun serializeIntoListViaJNI(list: List<ByteArray>): ByteArray
+
+    private external fun deserializeIntoMapViaJNI(payload: ByteArray): Map<ByteArray, ByteArray>
+
+    private external fun deserializeIntoListViaJNI(payload: ByteArray): List<ByteArray>
 }
