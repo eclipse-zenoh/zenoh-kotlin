@@ -82,20 +82,6 @@ class ZBytesTest {
         assertEquals(originalMap, deserializedMap)
     }
 
-    fun compareByteArrayMaps(
-        map1: Map<ByteArray, ByteArray>,
-        map2: Map<ByteArray, ByteArray>
-    ): Boolean {
-        if (map1.size != map2.size) return false
-
-        for ((key1, value1) in map1) {
-            val key2 = map2.keys.find { it.contentEquals(key1) }
-            if (key2 == null) return false
-            if (!map2[key2]!!.contentEquals(value1)) return false
-        }
-        return true
-    }
-
     @Test
     fun serializeIntoListViaJNITest() {
         val list = listOf("value1", "value2", "value3")

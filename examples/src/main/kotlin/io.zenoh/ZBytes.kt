@@ -98,7 +98,7 @@ fun main() {
      *
      * In order for the serialization and deserialization to be successful on a custom class,
      * the class itself must override the `into(): ZBytes` function, but also the companion
-     * object must implement the [Serializable.From] interface.
+     * object must implement the [Deserializable.From] interface.
      *
      * @see MyZBytes
      */
