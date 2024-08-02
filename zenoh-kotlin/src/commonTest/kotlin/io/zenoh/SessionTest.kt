@@ -66,7 +66,7 @@ class SessionTest {
         val session = Session.open().getOrThrow()
 
         val publisher = session.declarePublisher(testKeyExpr).wait().getOrThrow()
-        val subscriber = session.declareSubscriber(testKeyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).wait().getOrThrow()
         session.close()
 
         assertFalse(publisher.isValid())
