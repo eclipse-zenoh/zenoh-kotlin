@@ -28,7 +28,7 @@ macro_rules! throw_exception {
 #[macro_export]
 macro_rules! jni_error {
     ($arg:expr) => {
-        crate::errors::Error::Jni($arg.to_string())
+        $crate::errors::Error::Jni($arg.to_string())
     };
     ($fmt:expr, $($arg:tt)*) => {
         Error::Jni(format!($fmt, $($arg)*))
@@ -38,7 +38,7 @@ macro_rules! jni_error {
 #[macro_export]
 macro_rules! session_error {
     ($arg:expr) => {
-        crate::errors::Error::Session($arg.to_string())
+        $crate::errors::Error::Session($arg.to_string())
     };
     ($fmt:expr, $($arg:tt)*) => {
         Error::Session(format!($fmt, $($arg)*))
