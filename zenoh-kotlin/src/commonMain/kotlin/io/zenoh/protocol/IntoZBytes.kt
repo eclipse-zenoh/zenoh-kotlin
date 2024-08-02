@@ -23,7 +23,9 @@ interface IntoZBytes {
 
 interface Serializable: IntoZBytes {
     override fun into(): ZBytes
+}
 
+interface Deserializable {
     interface From {
         fun from(zbytes: ZBytes): Serializable
     }

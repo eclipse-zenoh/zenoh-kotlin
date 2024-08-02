@@ -52,7 +52,7 @@ fun main() {
     var byteArrayOutput = payload.deserialize<ByteArray>().getOrThrow()
     check(byteArrayInput.contentEquals(byteArrayOutput))
     // Alternatively, we can directly access the bytes of property of ZBytes:
-    byteArrayOutput = payload.bytes
+    byteArrayOutput = payload.toByteArray()
     check(byteArrayInput.contentEquals(byteArrayOutput))
 
     /** List serialization and deserialization.
@@ -141,11 +141,11 @@ fun main() {
     check(fooMap == deserializedFooMap)
 }
 
-class MyZBytes(val content: String) : Serializable {
+class MyZBytes(val content: String) : Serializable, Deserializable {
 
     override fun into(): ZBytes = content.into()
 
-    companion object : Serializable.From {
+    companion object : Deserializable.From {
         override fun from(zbytes: ZBytes): MyZBytes {
             return MyZBytes(zbytes.toString())
         }
@@ -194,24 +194,25 @@ private fun serializeFooMap(testMap: Map<Foo, Foo>): ByteArray {
     }.reduce { acc, bytes -> acc + bytes }
 }
 
-private fun deserializeFooMap(serializedMap: ByteArray): Map<Foo, Foo> {
+private fun deserializeFooMap(serializedMap: ZBytes): Map<Foo, Foo> {
     var idx = 0
     var sliceSize: Int
+    val bytes = serializedMap.toByteArray()
     val decodedMap = mutableMapOf<Foo, Foo>()
-    while (idx < serializedMap.size) {
-        sliceSize = ByteBuffer.wrap(serializedMap.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1)))
+    while (idx < bytes.size) {
+        sliceSize = ByteBuffer.wrap(bytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1)))
             .order(ByteOrder.LITTLE_ENDIAN).int
         idx += Int.SIZE_BYTES
 
-        val key = serializedMap.sliceArray(IntRange(idx, idx + sliceSize - 1))
+        val key = bytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
         idx += sliceSize
 
-        sliceSize = ByteBuffer.wrap(serializedMap.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1))).order(
+        sliceSize = ByteBuffer.wrap(bytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1))).order(
             ByteOrder.LITTLE_ENDIAN
         ).int
         idx += Int.SIZE_BYTES
 
-        val value = serializedMap.sliceArray(IntRange(idx, idx + sliceSize - 1))
+        val value = bytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
         idx += sliceSize
 
         decodedMap[Foo(key.decodeToString())] = Foo(value.decodeToString())
