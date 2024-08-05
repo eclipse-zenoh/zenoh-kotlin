@@ -17,8 +17,8 @@ package io.zenoh
 import io.zenoh.exceptions.SessionException
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.sample.Sample
 import kotlinx.coroutines.runBlocking
+import java.nio.file.Path
 import kotlin.test.*
 
 class SessionTest {
@@ -40,6 +40,12 @@ class SessionTest {
         assertTrue(session.isOpen())
         session.close()
         assertFalse(session.isOpen())
+    }
+
+    @Test
+    fun sessionOpeningFailure() {
+        val invalidConfig = Config.from(Path.of("invalid"))
+        assertFailsWith<SessionException> { Session.open(invalidConfig).getOrThrow() }
     }
 
     @Test
