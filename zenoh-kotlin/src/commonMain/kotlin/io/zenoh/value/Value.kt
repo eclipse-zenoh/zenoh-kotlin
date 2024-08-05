@@ -15,7 +15,7 @@
 package io.zenoh.value
 
 import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.IntoZBytes
+import io.zenoh.protocol.Serializable
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 
@@ -47,7 +47,7 @@ class Value(val payload: ZBytes, val encoding: Encoding) {
     /**
      * Constructs a value with the provided payload and encoding.
      */
-    constructor(payload: IntoZBytes, encoding: Encoding): this(payload.into(), encoding)
+    constructor(payload: Serializable, encoding: Encoding): this(payload.into(), encoding)
 
 
     companion object {
