@@ -421,46 +421,16 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : Serializable 
     override fun hashCode() = bytes.contentHashCode()
 }
 
-/**
- * Serializable interface.
- *
- * Classes implementing this interface can be serialized into a ZBytes object.
- *
- * Example:
- * ```kotlin
- * class Foo(val content: String) : Serializable {
- *
- *   override fun into(): ZBytes = content.into()
- * }
- * ```
- */
-interface Serializable {
-    fun into(): ZBytes
+fun Number.into(): ZBytes {
+    return ZBytes.from(this)
 }
 
-/**
- * Deserializable interface.
- *
- * Classes implementing these two nested interfaces can be deserialized into a ZBytes object.
- *
- * The class must be declared as [Deserializable], but it's also necessary to make the companion
- * object of the class implement the [Deserializable.From], as shown in the example below:
- *
- * ```kotlin
- * class Foo(val content: String) : Deserializable {
- *
- *   companion object: Deserializable.From {
- *      override fun from(zbytes: ZBytes): Foo {
- *          return Foo(zbytes.toString())
- *      }
- *   }
- * }
- * ```
- */
-interface Deserializable {
-    interface From {
-        fun from(zbytes: ZBytes): Serializable
-    }
+fun String.into(): ZBytes {
+    return ZBytes.from(this)
+}
+
+fun ByteArray.into(): ZBytes {
+    return ZBytes(this)
 }
 
 @Throws
@@ -510,16 +480,4 @@ internal fun ZBytes.intoAny(type: KType): Any {
 
         }
     }
-}
-
-fun Number.into(): ZBytes {
-    return ZBytes.from(this)
-}
-
-fun String.into(): ZBytes {
-    return ZBytes.from(this)
-}
-
-fun ByteArray.into(): ZBytes {
-    return ZBytes(this)
 }
