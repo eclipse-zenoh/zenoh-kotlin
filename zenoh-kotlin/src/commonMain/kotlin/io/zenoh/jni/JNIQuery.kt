@@ -35,12 +35,12 @@ internal class JNIQuery(private val ptr: Long) {
             ptr,
             sample.keyExpr.jniKeyExpr?.ptr ?: 0,
             sample.keyExpr.keyExpr,
-            sample.value.payload,
+            sample.value.payload.bytes,
             sample.value.encoding.id.ordinal,
             sample.value.encoding.schema,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.attachment,
+            sample.attachment?.bytes,
             sample.qos.express,
             sample.qos.priority.value,
             sample.qos.congestionControl.value
@@ -48,7 +48,7 @@ internal class JNIQuery(private val ptr: Long) {
     }
 
     fun replyError(errorValue: Value): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, errorValue.payload, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
+        replyErrorViaJNI(ptr, errorValue.payload.bytes, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
     }
 
     fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ByteArray?, qos: QoS): Result<Unit> =

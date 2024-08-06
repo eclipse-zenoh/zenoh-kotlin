@@ -46,7 +46,7 @@ import io.zenoh.ZenohType
  * val handler = QueueHandler<Sample>()
  * val receiver = session.declareSubscriber(keyExpr)
  *         .with(handler)
- *         .res()
+ *         .wait()
  *         .onSuccess { ... }
  * ```
  *

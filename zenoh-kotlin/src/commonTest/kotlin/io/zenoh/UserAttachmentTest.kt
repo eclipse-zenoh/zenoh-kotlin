@@ -17,6 +17,7 @@ package io.zenoh
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
@@ -32,7 +33,7 @@ class UserAttachmentTest {
         val value = Value("test", Encoding(Encoding.ID.TEXT_PLAIN))
         const val keyExprString = "example/testing/attachment"
         const val attachment = "mock_attachment"
-        val attachmentBytes = attachment.toByteArray()
+        val attachmentZBytes = ZBytes.from(attachment)
     }
 
     @BeforeTest
@@ -50,41 +51,43 @@ class UserAttachmentTest {
     @Test
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
-        session.put(keyExpr, value).withAttachment(attachmentBytes).res()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        session.put(keyExpr, value).attachment(attachmentZBytes).wait()
 
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 
     @Test
     fun publisherPutWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr).with { sample ->
             receivedSample = sample
-        }.res().getOrThrow()
+        }.wait().getOrThrow()
 
-        publisher.put("test").withAttachment(attachmentBytes).res()
+        publisher.put("test").attachment(attachmentZBytes).wait()
 
         publisher.close()
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.deserialize<String>().getOrNull())
         }
     }
 
     @Test
     fun publisherPutWithoutAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
 
-        publisher.put("test").res()
+        publisher.put("test").wait()
 
         publisher.close()
         subscriber.close()
@@ -97,26 +100,27 @@ class UserAttachmentTest {
     @Test
     fun publisherDeleteWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
 
-        publisher.delete().withAttachment(attachmentBytes).res()
+        publisher.delete().attachment(attachmentZBytes).wait()
 
         publisher.close()
         subscriber.close()
 
         assertNotNull(receivedSample) {
-            assertEquals(attachment, it.attachment!!.decodeToString())
+            val receivedAttachment = it.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 
     @Test
     fun publisherDeleteWithoutAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).res().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.res().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
 
-        publisher.delete().res()
+        publisher.delete().wait()
 
         publisher.close()
         subscriber.close()
@@ -128,18 +132,18 @@ class UserAttachmentTest {
 
     @Test
     fun queryWithAttachmentTest() {
-        var receivedAttachment: ByteArray? = null
+        var receivedAttachment: ZBytes? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
             receivedAttachment = query.attachment
-            query.reply(keyExpr).success("test").res()
-        }.res().getOrThrow()
+            query.reply(keyExpr).success("test").wait()
+        }.wait().getOrThrow()
 
-        session.get(keyExpr).with {}.withAttachment(attachmentBytes).timeout(Duration.ofMillis(1000)).res().getOrThrow()
+        session.get(keyExpr).with {}.attachment(attachmentZBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
 
         queryable.close()
 
         assertNotNull(receivedAttachment) {
-            assertEquals(attachment, it.decodeToString())
+            assertEquals(attachmentZBytes, it)
         }
     }
 
@@ -147,19 +151,20 @@ class UserAttachmentTest {
     fun queryReplyWithAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("test").attachment(attachmentBytes).res()
-        }.res().getOrThrow()
+            query.reply(keyExpr).success("test").attachment(attachmentZBytes).wait()
+        }.wait().getOrThrow()
 
         session.get(keyExpr).with {
             if (it is Reply.Success) {
                 reply = it
             }
-        }.timeout(Duration.ofMillis(1000)).res().getOrThrow()
+        }.timeout(Duration.ofMillis(1000)).wait().getOrThrow()
 
         queryable.close()
 
         assertNotNull(reply) {
-            assertEquals(attachment, (it as Reply.Success).sample.attachment!!.decodeToString())
+            val receivedAttachment = (it as Reply.Success).sample.attachment!!
+            assertEquals(attachment, receivedAttachment.toString())
         }
     }
 
@@ -167,12 +172,12 @@ class UserAttachmentTest {
     fun queryReplyWithoutAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(keyExpr).success("test").res()
-        }.res().getOrThrow()
+            query.reply(keyExpr).success("test").wait()
+        }.wait().getOrThrow()
 
         session.get(keyExpr).with {
             reply = it
-        }.timeout(Duration.ofMillis(1000)).res().getOrThrow()
+        }.timeout(Duration.ofMillis(1000)).wait().getOrThrow()
 
         queryable.close()
 

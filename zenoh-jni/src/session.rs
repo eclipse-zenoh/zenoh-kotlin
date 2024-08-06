@@ -587,8 +587,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
         })?;
 
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload()
-    {
+    let (payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload() {
         let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
         let encoding_id = encoding.id() as jint;
         let encoding_schema = encoding
@@ -599,10 +598,9 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
             .map(|value| env.auto_local(value))?;
         let byte_array = bytes_to_java_array(&env, payload).map(|value| env.auto_local(value))?;
-        (true, byte_array, encoding_id, encoding_schema)
+        (byte_array, encoding_id, encoding_schema)
     } else {
         (
-            false,
             env.auto_local(JByteArray::default()),
             0,
             env.auto_local(JString::default()),
@@ -634,11 +632,10 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
         .call_method(
             callback_global_ref,
             "run",
-            "(Ljava/lang/String;Ljava/lang/String;Z[BILjava/lang/String;[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;[BILjava/lang/String;[BJ)V",
             &[
                 JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
-                JValue::from(with_value),
                 JValue::from(&payload),
                 JValue::from(encoding_id),
                 JValue::from(&encoding_schema),
@@ -771,11 +768,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `target`: The query target as the ordinal of the enum.
 /// - `consolidation`: The consolidation mode as the ordinal of the enum.
 /// - `attachment`: An optional attachment encoded into a byte array.
-/// - `with_value`: Boolean value to tell if a value must be included in the get operation. If true,
-///     then the next params are valid.
-/// - `payload`: The payload of the value.
-/// - `encoding_id`: The encoding of the value payload.
-/// - `encoding_schema`: The encoding schema of the value payload, may be null.
+/// - `payload`: Optional payload for the query.
+/// - `encoding_id`: The encoding of the payload.
+/// - `encoding_schema`: The encoding schema of the payload, may be null.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -802,7 +797,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     target: jint,
     consolidation: jint,
     attachment: /*nullable*/ JByteArray,
-    with_value: jboolean,
     payload: /*nullable*/ JByteArray,
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
@@ -850,7 +844,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
             .timeout(timeout)
             .consolidation(consolidation);
 
-        if with_value != 0 {
+        if !payload.is_null() {
             let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
             get_builder = get_builder.encoding(encoding);
             get_builder = get_builder.payload(decode_byte_array(&env, payload)?);

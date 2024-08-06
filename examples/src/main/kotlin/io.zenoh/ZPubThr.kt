@@ -45,7 +45,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                 session.declarePublisher("test/thr".intoKeyExpr().getOrThrow())
                     .congestionControl(CongestionControl.BLOCK).apply {
                         priorityInput?.let { priority(Priority.entries[it]) }
-                    }.res().onSuccess { pub ->
+                    }.wait().onSuccess { pub ->
                         pub.use {
                             println("Publisher declared on test/thr.")
                             var count: Long = 0
@@ -53,7 +53,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                             val number = number.toLong()
                             println("Press CTRL-C to quit...")
                             while (true) {
-                                pub.put(value).res().getOrThrow()
+                                pub.put(value).wait().getOrThrow()
                                 if (statsPrint) {
                                     if (count < number) {
                                         count++

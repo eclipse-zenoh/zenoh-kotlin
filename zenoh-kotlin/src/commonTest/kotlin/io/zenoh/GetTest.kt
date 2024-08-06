@@ -47,8 +47,8 @@ class GetTest {
             query.reply(query.keyExpr)
                 .success(value)
                 .timestamp(timestamp)
-                .res()
-        }.res().getOrThrow()
+                .wait()
+        }.wait().getOrThrow()
     }
 
     @AfterTest
@@ -63,7 +63,7 @@ class GetTest {
         var reply: Reply? = null
         session.get(keyExpr).with {
             reply = it
-        }.timeout(Duration.ofMillis(1000)).res()
+        }.timeout(Duration.ofMillis(1000)).wait()
 
         assertTrue(reply is Reply.Success)
         val sample = (reply as Reply.Success).sample
@@ -76,7 +76,7 @@ class GetTest {
     @Test
     fun get_runsWithHandler() {
         val receiver: ArrayList<Reply> = session.get(keyExpr).with(TestHandler())
-            .timeout(Duration.ofMillis(1000)).res().getOrThrow()!!
+            .timeout(Duration.ofMillis(1000)).wait().getOrThrow()!!
 
         for (reply in receiver) {
             reply as Reply.Success
@@ -94,12 +94,12 @@ class GetTest {
         val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
             receivedParams = query.parameters
             receivedParamsMap = query.selector.parametersStringMap().getOrThrow()
-        }}.res().getOrThrow()
+        }}.wait().getOrThrow()
 
         val params = "arg1=val1&arg2=val2&arg3"
         val paramsMap = mapOf("arg1" to "val1", "arg2" to "val2", "arg3" to "")
         val selector = Selector(keyExpr, params)
-        session.get(selector).with {}.timeout(Duration.ofMillis(1000)).res()
+        session.get(selector).with {}.timeout(Duration.ofMillis(1000)).wait()
 
         queryable.close()
 

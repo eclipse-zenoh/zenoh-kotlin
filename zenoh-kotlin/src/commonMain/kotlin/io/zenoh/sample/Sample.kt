@@ -18,6 +18,7 @@ import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.QoS
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -40,7 +41,7 @@ class Sample(
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,
-    val attachment: ByteArray? = null
+    val attachment: ZBytes? = null
 ): ZenohType {
     override fun toString(): String {
         return if (kind == SampleKind.DELETE) "$kind($keyExpr)" else "$kind($keyExpr: $value)"

@@ -34,7 +34,7 @@ import kotlinx.coroutines.channels.Channel
  * Session.open().onSuccess { session -> session.use {
  *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
  *         println("Declaring Queryable")
- *         session.declareQueryable(keyExpr).res().onSuccess { queryable ->
+ *         session.declareQueryable(keyExpr).wait().onSuccess { queryable ->
  *             queryable.use {
  *                 it.receiver?.let { receiverChannel ->
  *                     runBlocking {
@@ -46,7 +46,7 @@ import kotlinx.coroutines.channels.Channel
  *                                      .success("Hello!")
  *                                      .withKind(SampleKind.PUT)
  *                                      .withTimeStamp(TimeStamp.getCurrentTime())
- *                                      .res()
+ *                                      .wait()
  *                                      .onSuccess { println("Replied hello.") }
  *                                      .onFailure { println(it) }
  *                             }
@@ -161,7 +161,7 @@ class Queryable<R> internal constructor(
          *
          * @return A [Result] with the newly created [Queryable].
          */
-        override fun res(): Result<Queryable<R>> = runCatching {
+        override fun wait(): Result<Queryable<R>> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Query -> handler?.handle(t) }
             val resolvedOnClose = fun() {

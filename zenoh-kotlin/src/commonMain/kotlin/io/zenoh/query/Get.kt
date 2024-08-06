@@ -18,8 +18,10 @@ import io.zenoh.handlers.Callback
 import io.zenoh.Session
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
+import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
 import io.zenoh.selector.Selector
-import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 
@@ -34,10 +36,10 @@ import java.time.Duration
  *         session.get(selector)
  *             .consolidation(ConsolidationMode.NONE)
  *             .target(QueryTarget.BEST_MATCHING)
- *             .withValue("Get value example")
+ *             .payload("Payload example")
  *             .with { reply -> println("Received reply $reply") }
  *             .timeout(Duration.ofMillis(1000))
- *             .res()
+ *             .wait()
  *             .onSuccess {...}
  *         }
  *     }
@@ -84,8 +86,9 @@ class Get<R> private constructor() {
         private var timeout = Duration.ofMillis(10000)
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
         private var consolidation: ConsolidationMode = ConsolidationMode.NONE
-        private var value: Value? = null
-        private var attachment: ByteArray? = null
+        private var payload: ZBytes? = null
+        private var encoding: Encoding? = null
+        private var attachment: ZBytes? = null
         private var onClose: (() -> Unit)? = null
 
         private constructor(other: Builder<*>, handler: Handler<Reply, R>?) : this(other.session, other.selector) {
@@ -102,7 +105,7 @@ class Get<R> private constructor() {
             this.timeout = other.timeout
             this.target = other.target
             this.consolidation = other.consolidation
-            this.value = other.value
+            this.payload = other.payload
             this.attachment = other.attachment
             this.onClose = other.onClose
         }
@@ -125,24 +128,34 @@ class Get<R> private constructor() {
             return this
         }
 
-        /**
-         * Specify a string value. A [Value] is generated with the provided message, therefore
-         * this method is equivalent to calling `withValue(Value(message))`.
-         */
-        fun withValue(message: String): Builder<R> {
-            this.value = Value(message)
+        fun payload(payload: ZBytes): Builder<R> {
+            this.payload = payload
             return this
         }
 
-        /** Specify a [Value]. */
-        fun withValue(value: Value): Builder<R> {
-            this.value = value
+        fun payload(payload: String): Builder<R> {
+            this.payload = payload.into()
+            return this
+        }
+
+        fun encoding(encoding: Encoding): Builder<R> {
+            this.encoding = encoding
+            return this
+        }
+
+        fun encoding(id: Encoding.ID): Builder<R> {
+            this.encoding = Encoding(id)
             return this
         }
 
         /** Specify an attachment. */
-        fun withAttachment(attachment: ByteArray): Builder<R> {
+        fun attachment(attachment: ZBytes): Builder<R> {
             this.attachment = attachment
+            return this
+        }
+
+        fun attachment(attachment: String): Builder<R> {
+            this.attachment = attachment.into()
             return this
         }
 
@@ -170,7 +183,7 @@ class Get<R> private constructor() {
          *
          * @return A [Result] with the receiver [R] from the specified [Handler] (if specified).
          */
-        fun res(): Result<R?> = runCatching {
+        fun wait(): Result<R?> = runCatching {
             require(callback != null || handler != null) { "Either a callback or a handler must be provided." }
             val resolvedCallback = callback ?: Callback { t: Reply -> handler?.handle(t) }
             val resolvedOnClose = fun() {
@@ -186,7 +199,8 @@ class Get<R> private constructor() {
                     timeout,
                     target,
                     consolidation,
-                    value,
+                    payload,
+                    encoding,
                     attachment
                 )
             }
