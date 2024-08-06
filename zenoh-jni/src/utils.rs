@@ -107,9 +107,10 @@ pub(crate) fn decode_query_target(target: jint) -> Result<QueryTarget> {
 
 pub(crate) fn decode_consolidation(consolidation: jint) -> Result<ConsolidationMode> {
     match consolidation {
-        0 => Ok(ConsolidationMode::None),
-        1 => Ok(ConsolidationMode::Monotonic),
-        2 => Ok(ConsolidationMode::Latest),
+        0 => Ok(ConsolidationMode::Auto),
+        1 => Ok(ConsolidationMode::None),
+        2 => Ok(ConsolidationMode::Monotonic),
+        3 => Ok(ConsolidationMode::Latest),
         value => Err(session_error!("Unable to decode consolidation '{}'", value)),
     }
 }

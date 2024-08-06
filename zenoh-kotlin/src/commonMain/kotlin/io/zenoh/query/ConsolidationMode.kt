@@ -16,6 +16,9 @@ package io.zenoh.query
 
 /** The kind of consolidation. */
 enum class ConsolidationMode {
+    /** Apply automatic consolidation based on queryable's preferences. */
+    AUTO,
+
     /** No consolidation applied: multiple samples may be received for the same key-timestamp.*/
     NONE,
 
