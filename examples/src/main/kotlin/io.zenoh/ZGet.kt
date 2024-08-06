@@ -36,7 +36,6 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                 selector.intoSelector().onSuccess { selector ->
                     selector.use {
                         session.get(selector)
-                            .consolidation(ConsolidationMode.NONE)
                             .timeout(Duration.ofMillis(timeout))
                             .apply {
                                 target?.let {
