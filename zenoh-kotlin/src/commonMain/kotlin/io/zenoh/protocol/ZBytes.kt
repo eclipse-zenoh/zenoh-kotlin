@@ -17,6 +17,7 @@ package io.zenoh.protocol
 import io.zenoh.jni.JNIZBytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KType
 import kotlin.reflect.full.*
@@ -294,25 +295,34 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : Serializable 
          * @see ZBytes
          * @return a [Result] with the serialized [ZBytes].
          */
-        inline fun <reified T> serialize(t: T): Result<ZBytes> = runCatching {
+        inline fun <reified T: Any> serialize(t: T): Result<ZBytes> = runCatching {
+            return serialize(t, T::class)
+        }
+
+        fun <T: Any> serialize(t: T, clazz: KClass<T>): Result<ZBytes> = runCatching {
+            val type: KType = when (clazz) {
+                List::class -> typeOf<List<*>>()
+                Map::class -> typeOf<Map<*, *>>()
+                else -> clazz.createType()
+            }
             when {
-                typeOf<List<*>>().isSupertypeOf(typeOf<T>()) -> {
+                typeOf<List<*>>().isSupertypeOf(type) -> {
                     val list = t as List<*>
                     val zbytesList = list.map { it.into() }
                     return Result.success(JNIZBytes.serializeIntoList(zbytesList))
                 }
 
-                typeOf<Map<*, *>>().isSupertypeOf(typeOf<T>()) -> {
+                typeOf<Map<*, *>>().isSupertypeOf(type) -> {
                     val map = t as Map<*, *>
                     val zbytesMap = map.map { (k, v) -> k.into() to v.into() }.toMap()
                     return Result.success(JNIZBytes.serializeIntoMap(zbytesMap))
                 }
 
-                typeOf<Any>().isSupertypeOf(typeOf<T>()) -> {
+                typeOf<Any>().isSupertypeOf(type) -> {
                     return Result.success((t as Any).into())
                 }
 
-                else -> throw IllegalArgumentException("Unsupported type '${typeOf<T>()}' for serialization.")
+                else -> throw IllegalArgumentException("Unsupported type '$type' for serialization.")
             }
         }
     }
@@ -348,40 +358,101 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : Serializable 
      * @see Deserializable
      * @return a [Result] with the deserialization.
      */
-    inline fun <reified T> deserialize(
+    inline fun <reified T: Any> deserialize(
         deserializers: Map<KType, KFunction1<ZBytes, Any>> = emptyMap()
     ): Result<T> {
-        val deserializer = deserializers[typeOf<T>()]
+        val type = typeOf<T>()
+        val deserializer = deserializers[type]
         if (deserializer != null) {
             return Result.success(deserializer(this) as T)
         }
+        when {
+            typeOf<List<*>>().isSupertypeOf(type) -> {
+                val itemsClass = type.arguments.firstOrNull()?.type?.jvmErasure
+                return deserialize(T::class, arg1clazz = itemsClass)
+            }
+            typeOf<Map<*, *>>().isSupertypeOf(type) -> {
+                val keyClass = type.arguments.getOrNull(0)?.type?.jvmErasure
+                val valueClass = type.arguments.getOrNull(1)?.type?.jvmErasure
+                return deserialize(T::class, arg1clazz = keyClass, arg2clazz = valueClass)
+            }
+            typeOf<Any>().isSupertypeOf(type) -> {
+                return deserialize(T::class)
+            }
+        }
+        throw IllegalArgumentException("Unsupported type for deserialization: '$type'.")
+    }
+
+    /**
+     * Deserialize the [ZBytes] into an element of class [clazz].
+     *
+     * It's generally preferable to use the [ZBytes.deserialize] function with reification, however
+     * this function is exposed for cases when reification needs to be avoided.
+     *
+     * Example:
+     * ```kotlin
+     * val list = listOf("value1", "value2", "value3")
+     * val zbytes = ZBytes.serialize(list).getOrThrow()
+     * val deserializedList = zbytes.deserialize(clazz = List::class, arg1clazz = String::class).getOrThrow()
+     * check(list == deserializedList)
+     * ```
+     *
+     * Supported types:
+     * - [Number]: Byte, Short, Int, Long, Float, Double
+     * - [String]
+     * - [ByteArray]
+     * - [Deserializable]
+     * - Lists and Maps of the above-mentioned types.
+     *
+     * @see [ZBytes.deserialize]
+     *
+     *
+     * @param clazz: the [KClass] of the type to be serialized.
+     * @param arg1clazz Optional first nested parameter of the provided clazz, for instance when trying to deserialize
+     *  into a `List<String>`, arg1clazz should be set to `String::class`, when trying to deserialize into a
+     *  `Map<Int, String>`, arg1clazz should be set to `Int::class`. Can be null if providing a basic type.
+     * @param arg2clazz Optional second nested parameter of the provided clazz, to be used for the cases of maps.
+     *  For instance, when trying to deserialize into a `Map<Int, String>`, arg2clazz should be set to `String::class`.
+     *  Can be null if providing a basic type.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun <T: Any> deserialize(
+        clazz: KClass<T>,
+        arg1clazz: KClass<*>? = null,
+        arg2clazz: KClass<*>? = null,
+    ): Result<T> {
+        val type: KType = when (clazz) {
+            List::class -> typeOf<List<*>>()
+            Map::class -> typeOf<Map<*, *>>()
+            else -> clazz.createType()
+        }
         return when {
-            typeOf<List<*>>().isSupertypeOf(typeOf<T>()) -> {
-                val type = typeOf<T>().arguments.firstOrNull()?.type
-                if (type != null) {
-                    Result.success(JNIZBytes.deserializeIntoList(this).map { it.intoAny(type) } as T)
+            typeOf<List<*>>().isSupertypeOf(type) -> {
+                val typeElement = arg1clazz?.createType()
+                if (typeElement != null) {
+                    Result.success(JNIZBytes.deserializeIntoList(this).map { it.intoAny(typeElement) } as T)
                 } else {
-                    Result.failure(IllegalArgumentException("Unsupported list type for deserialization: ${typeOf<T>()}"))
+                    Result.failure(IllegalArgumentException("Unsupported list type for deserialization: $type"))
                 }
             }
 
-            typeOf<Map<*, *>>().isSupertypeOf(typeOf<T>()) -> {
-                val keyType = typeOf<T>().arguments.getOrNull(0)?.type
-                val valueType = typeOf<T>().arguments.getOrNull(1)?.type
+            typeOf<Map<*, *>>().isSupertypeOf(type) -> {
+                val keyType = arg1clazz?.createType()
+                val valueType = arg2clazz?.createType()
                 if (keyType != null && valueType != null) {
                     Result.success(JNIZBytes.deserializeIntoMap(this)
                         .map { (k, v) -> k.intoAny(keyType) to v.intoAny(valueType) }.toMap() as T
                     )
                 } else {
-                    Result.failure(IllegalArgumentException("Unsupported map type for deserialization: ${typeOf<T>()}"))
+                    Result.failure(IllegalArgumentException("Unsupported map type for deserialization: $type"))
                 }
             }
 
-            typeOf<Any>().isSupertypeOf(typeOf<T>()) -> {
-                Result.success(this.intoAny(typeOf<T>()) as T)
+            typeOf<Any>().isSupertypeOf(type) -> {
+                Result.success(this.intoAny(type) as T)
             }
 
-            else -> Result.failure(IllegalArgumentException("Unsupported type for deserialization: ${typeOf<T>()}"))
+            else -> Result.failure(IllegalArgumentException("Unsupported type for deserialization: $type"))
         }
     }
 
@@ -433,8 +504,7 @@ fun ByteArray.into(): ZBytes {
     return ZBytes(this)
 }
 
-@Throws
-@PublishedApi
+@Throws(Exception::class)
 internal fun Any?.into(): ZBytes {
     return when (this) {
         is String -> this.into()
@@ -445,8 +515,7 @@ internal fun Any?.into(): ZBytes {
     }
 }
 
-@Throws
-@PublishedApi
+@Throws(Exception::class)
 internal fun ZBytes.intoAny(type: KType): Any {
     return when (type) {
         typeOf<String>() -> this.toString()
@@ -475,8 +544,7 @@ internal fun ZBytes.intoAny(type: KType): Any {
                     }
                 }
 
-                else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization. " +
-                        "If you are providing a generic, try using reification.")
+                else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization.")
             }
 
         }
