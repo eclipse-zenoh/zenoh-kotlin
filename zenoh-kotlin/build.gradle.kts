@@ -66,6 +66,9 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+                implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
             }
         }
         if (androidEnabled) {
@@ -106,13 +109,13 @@ kotlin {
         }
     }
 }
-
 tasks.withType<Test> {
     doFirst {
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
         systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
     }
+    useJUnitPlatform()
 }
 
 tasks.whenObjectAdded {

@@ -475,7 +475,8 @@ internal fun ZBytes.intoAny(type: KType): Any {
                     }
                 }
 
-                else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization.")
+                else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization. " +
+                        "If you are providing a generic, try using reification.")
             }
 
         }
