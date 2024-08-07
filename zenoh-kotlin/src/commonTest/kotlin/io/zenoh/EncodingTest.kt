@@ -16,9 +16,9 @@ class EncodingTest {
 
         // Testing non null schema
         var receivedSample: Sample? = null
-        val subscriber = session.declareSubscriber(keyExpr).with { sample ->
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSample = sample
-        }.wait().getOrThrow()
+        }).getOrThrow()
         var value = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
         session.put(keyExpr, value).wait()
         Thread.sleep(200)

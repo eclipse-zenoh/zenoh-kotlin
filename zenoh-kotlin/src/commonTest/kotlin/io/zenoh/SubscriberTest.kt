@@ -62,7 +62,7 @@ class SubscriberTest {
     fun subscriber_runsWithCallback() {
         val receivedSamples = ArrayList<Sample>()
         val subscriber =
-            session.declareSubscriber(testKeyExpr).with { sample -> receivedSamples.add(sample) }.wait().getOrThrow()
+            session.declareSubscriber(testKeyExpr, callback = { sample -> receivedSamples.add(sample)}).getOrThrow()
 
         testValues.forEach { value ->
             session.put(testKeyExpr, value)
@@ -84,7 +84,7 @@ class SubscriberTest {
     @Test
     fun subscriber_runsWithHandler() {
         val handler = QueueHandler<Sample>()
-        val subscriber = session.declareSubscriber(testKeyExpr).with(handler).wait().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr, handler = handler).getOrThrow()
 
         testValues.forEach { value -> 
             session.put(testKeyExpr, value)
@@ -104,20 +104,13 @@ class SubscriberTest {
     }
 
     @Test
-    fun subscriberBuilder_channelHandlerIsTheDefaultHandler() {
-        val subscriber = session.declareSubscriber(testKeyExpr).wait().getOrThrow()
-        assertTrue(subscriber.receiver is Channel<Sample>)
-        subscriber.close()
-    }
-
-    @Test
     fun subscriber_isDeclaredWithNonDeclaredKeyExpression() {
         // Declaring a subscriber with an undeclared key expression and verifying it properly receives samples.
         val keyExpr = KeyExpr("example/**")
         val session = Session.open().getOrThrow()
 
         val receivedSamples = ArrayList<Sample>()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSamples.add(sample) }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSamples.add(sample) }).getOrThrow()
         testValues.forEach { value -> session.put(testKeyExpr, value).wait() }
         subscriber.close()
 
@@ -132,7 +125,7 @@ class SubscriberTest {
     @Test
     fun onCloseTest() = runBlocking {
         var onCloseWasCalled = false
-        val subscriber = session.declareSubscriber(testKeyExpr).onClose { onCloseWasCalled = true }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr, channel = Channel(), onClose = { onCloseWasCalled = true }).getOrThrow()
         subscriber.undeclare()
 
         assertTrue(onCloseWasCalled)
