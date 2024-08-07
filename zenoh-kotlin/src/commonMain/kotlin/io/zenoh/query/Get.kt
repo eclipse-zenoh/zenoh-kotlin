@@ -83,7 +83,7 @@ class Get<R> private constructor() {
 
         private var timeout = Duration.ofMillis(10000)
         private var target: QueryTarget = QueryTarget.BEST_MATCHING
-        private var consolidation: ConsolidationMode = ConsolidationMode.NONE
+        private var consolidation: ConsolidationMode = ConsolidationMode.AUTO
         private var value: Value? = null
         private var attachment: ByteArray? = null
         private var onClose: (() -> Unit)? = null
