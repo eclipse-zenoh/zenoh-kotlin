@@ -37,9 +37,9 @@ class PublisherTest {
         session = Session.open().getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
-        subscriber = session.declareSubscriber(keyExpr).with { sample ->
+        subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSamples.add(sample)
-        }.wait().getOrThrow()
+        }).getOrThrow()
         receivedSamples = ArrayList()
     }
 

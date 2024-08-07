@@ -51,7 +51,7 @@ class UserAttachmentTest {
     @Test
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
         session.put(keyExpr, value).attachment(attachmentZBytes).wait()
 
         subscriber.close()
@@ -66,9 +66,9 @@ class UserAttachmentTest {
     fun publisherPutWithAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample ->
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSample = sample
-        }.wait().getOrThrow()
+        }).getOrThrow()
 
         publisher.put("test").attachment(attachmentZBytes).wait()
 
@@ -85,7 +85,7 @@ class UserAttachmentTest {
     fun publisherPutWithoutAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.put("test").wait()
 
@@ -101,7 +101,7 @@ class UserAttachmentTest {
     fun publisherDeleteWithAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.delete().attachment(attachmentZBytes).wait()
 
@@ -118,7 +118,7 @@ class UserAttachmentTest {
     fun publisherDeleteWithoutAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr).with { sample -> receivedSample = sample }.wait().getOrThrow()
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.delete().wait()
 

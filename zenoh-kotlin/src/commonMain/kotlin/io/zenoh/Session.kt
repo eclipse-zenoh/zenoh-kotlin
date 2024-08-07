@@ -16,6 +16,8 @@ package io.zenoh
 
 import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
+import io.zenoh.handlers.ChannelHandler
+import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
@@ -133,6 +135,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun declarePublisher(keyExpr: KeyExpr): Publisher.Builder = Publisher.Builder(this, keyExpr)
 
     /**
+     * TODO: Update documentation
+     *
      * Declare a [Subscriber] on the session.
      *
      * The default receiver is a [Channel], but can be changed with the [Subscriber.Builder.with] functions.
@@ -167,7 +171,33 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
      * @return A [Subscriber.Builder] with a [Channel] receiver.
      */
-    fun declareSubscriber(keyExpr: KeyExpr): Subscriber.Builder<Channel<Sample>> = Subscriber.newBuilder(this, keyExpr)
+
+
+    fun declareSubscriber(keyExpr: KeyExpr, callback: Callback<Sample>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<Unit>> {
+        val resolvedOnClose = fun() {
+            onClose?.invoke()
+        }
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
+    }
+
+    fun <R> declareSubscriber(keyExpr: KeyExpr, handler: Handler<Sample, R>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<R>> {
+        val resolvedOnClose = fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> handler.handle(t) }
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
+    }
+
+    fun declareSubscriber(keyExpr: KeyExpr, channel: Channel<Sample>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<Channel<Sample>>> {
+        val channelHandler = ChannelHandler(channel)
+        val resolvedOnClose = fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> channelHandler.handle(t) }
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, channelHandler.receiver(), reliability)
+    }
 
     /**
      * Declare a [Queryable] on the session.
@@ -396,7 +426,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
         onClose: () -> Unit,
-        receiver: R?,
+        receiver: R? = null,
         reliability: Reliability
     ): Result<Subscriber<R>> {
         return jniSession?.run {
