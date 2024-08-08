@@ -35,6 +35,33 @@ Alternatively, you can build it locally as [explained below](#building-the-docum
 ----
 # How to import
 
+:warning: Note nº1: **Breaking changes incoming** 
+
+We are currently releasing a series of alpha versions, the latests one being currently the 
+[1.0.0-alpha.6](https://github.com/eclipse-zenoh/zenoh-kotlin/releases/tag/1.0.0-alpha.6). 
+We are currently working to provide an upgraded API across all the languages supported by  the Zenoh ecosystem.
+This last alpha release still offers an 'old-fashioned' API, although it's fully
+compatible with the other 1.0.0 alpha releases of Zenoh. You must take into consideration when importing this library
+that the API is about to be modified with some considerable breaking changes. A migration guide will be provided when
+the time comes.
+
+:warning: Note nº2: **Using the `dev/1.0.0` branch**
+
+The `main` branch contains the codebase for the `0.11.0` version of Zenoh-Kotlin,
+compatible with the same version of Zenoh. We are currently working with the `dev/1.0.0` branch. So in case you want 
+to build the project with the latest changes being implemented, switch to that branch!
+
+:warning: Note nº3: **About the released packages**
+
+The released packages can be found in the "packages" section of this repository, or in the links below:
+* [Android packages](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034/versions)
+* [JVM packages](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/2016733/versions)
+
+These are 'nightly' packages that need to be imported as explained in the following sections of this README.
+We plan to publish our packages into Maven central for the `1.0.0` stable release.
+
+
+
 ## <img src="android-robot.png" alt="Android" height="50"> Android
 
 For this first version we have published a [Github package](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034) with the library which can be imported on your projects.
