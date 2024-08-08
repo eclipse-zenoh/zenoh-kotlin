@@ -32,7 +32,7 @@ enum class Reliability {
      *
      * Informs the network that this subscriber wishes for all publications to reliably reach it.
      *
-     * Note that if a publisher puts a sample with the [io.zenoh.publication.CongestionControl.DROP] option,
+     * Note that if a publisher puts a sample with the [io.zenoh.prelude.CongestionControl.DROP] option,
      * this reliability requirement may be infringed to prevent slow readers from blocking the network.
      */
     RELIABLE,
