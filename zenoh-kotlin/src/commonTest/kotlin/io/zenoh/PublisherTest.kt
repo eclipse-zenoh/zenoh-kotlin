@@ -36,7 +36,7 @@ class PublisherTest {
     fun setUp() {
         session = Session.open().getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        publisher = session.declarePublisher(keyExpr).getOrThrow()
         subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSamples.add(sample)
         }).getOrThrow()
@@ -60,7 +60,7 @@ class PublisherTest {
             Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
         )
 
-        testValues.forEach() { value -> publisher.put(value).wait() }
+        testValues.forEach() { value -> publisher.put(value) }
 
         assertEquals(receivedSamples.size, testValues.size)
         for ((index, sample) in receivedSamples.withIndex()) {
@@ -70,7 +70,7 @@ class PublisherTest {
 
     @Test
     fun deleteTest() {
-        publisher.delete().wait()
+        publisher.delete()
         assertEquals(1, receivedSamples.size)
         assertEquals(SampleKind.DELETE, receivedSamples[0].kind)
     }

@@ -53,7 +53,7 @@ class SessionTest {
         val session = Session.open().getOrThrow()
         val queryable = session.declareQueryable(testKeyExpr).with {}.wait().getOrThrow()
         val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
-        val publisher = session.declarePublisher(testKeyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
         session.close()
 
         queryable.close()
@@ -65,21 +65,21 @@ class SessionTest {
     fun sessionClose_declarationsAreUndeclaredAfterClosingSessionTest() = runBlocking {
         val session = Session.open().getOrThrow()
 
-        val publisher = session.declarePublisher(testKeyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
         session.close()
 
         assertFalse(publisher.isValid())
         assertFalse(subscriber.isValid())
 
-        assertTrue(publisher.put("Test").wait().isFailure)
+        assertTrue(publisher.put("Test").isFailure)
     }
 
     @Test
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
         val session = Session.open().getOrThrow()
         session.close()
-        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).wait().getOrThrow() }
+        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).getOrThrow() }
         assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }
         assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr).with {}.wait().getOrThrow() }
     }

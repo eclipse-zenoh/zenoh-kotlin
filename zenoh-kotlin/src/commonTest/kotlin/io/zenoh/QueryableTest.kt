@@ -64,7 +64,7 @@ class QueryableTest {
             Value(testPayload),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS.default()
+            QoS()
         )
         val queryable = session.declareQueryable(testKeyExpr).with { query ->
             query.reply(testKeyExpr).success(sample.value).timestamp(sample.timestamp!!).wait()
@@ -248,7 +248,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             Value(payload),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS.default()
+            QoS()
         )
         performedReplies.add(sample)
         query.reply(query.keyExpr).success(sample.value).timestamp(sample.timestamp!!).wait()
