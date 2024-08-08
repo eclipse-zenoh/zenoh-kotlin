@@ -17,19 +17,15 @@ package io.zenoh.prelude
 /**
  * Quality of service settings used to send zenoh message.
  *
- * @property express If true, the message is not batched in order to reduce the latency.
  * @property congestionControl [CongestionControl] policy used for the message.
  * @property priority [Priority] policy used for the message.
+ * @property express If true, the message is not batched in order to reduce the latency.
  */
 class QoS internal constructor(
-    internal val express: Boolean,
-    internal val congestionControl: CongestionControl,
-    internal val priority: Priority
+    val congestionControl: CongestionControl = CongestionControl.DROP,
+    val priority: Priority = Priority.DATA,
+    val express: Boolean = false
 ) {
-
-    internal constructor(express: Boolean, congestionControl: Int, priority: Int) : this(
-        express, CongestionControl.fromInt(congestionControl), Priority.fromInt(priority)
-    )
 
     /**
      * Returns priority of the message.
@@ -46,10 +42,6 @@ class QoS internal constructor(
      */
     fun isExpress(): Boolean = express
 
-    companion object {
-        fun default() = QoS(false, CongestionControl.default(), Priority.default())
-    }
-
     internal class Builder(
         private var express: Boolean = false,
         private var congestionControl: CongestionControl = CongestionControl.default(),
@@ -63,6 +55,6 @@ class QoS internal constructor(
         fun congestionControl(congestionControl: CongestionControl) =
             apply { this.congestionControl = congestionControl }
 
-        fun build() = QoS(express, congestionControl, priority)
+        fun build() = QoS(congestionControl, priority, express)
     }
 }

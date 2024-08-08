@@ -94,7 +94,7 @@ internal class JNISession {
                     Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
                     SampleKind.fromInt(kind),
                     timestamp,
-                    QoS(express, congestionControl, priority),
+                    QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
                     attachmentBytes?.into()
                 )
                 callback.run(sample)
@@ -160,7 +160,7 @@ internal class JNISession {
                             Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
                             SampleKind.fromInt(kind),
                             timestamp,
-                            QoS(express, congestionControl, priority),
+                            QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
                             attachmentBytes?.into()
                         )
                         reply = Reply.Success(replierId?.let { ZenohID(it) }, sample)
@@ -172,7 +172,7 @@ internal class JNISession {
                             KeyExpr(keyExpr!!, null),
                             timestamp,
                             attachmentBytes?.into(),
-                            QoS(express, congestionControl, priority)
+                            QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express)
                         )
                     }
                 }

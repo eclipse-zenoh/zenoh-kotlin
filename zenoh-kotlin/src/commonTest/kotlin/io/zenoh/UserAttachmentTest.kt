@@ -65,12 +65,12 @@ class UserAttachmentTest {
     @Test
     fun publisherPutWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSample = sample
         }).getOrThrow()
 
-        publisher.put("test").attachment(attachmentZBytes).wait()
+        publisher.put("test", attachment = attachmentZBytes)
 
         publisher.close()
         subscriber.close()
@@ -84,10 +84,10 @@ class UserAttachmentTest {
     @Test
     fun publisherPutWithoutAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
-        publisher.put("test").wait()
+        publisher.put("test")
 
         publisher.close()
         subscriber.close()
@@ -100,10 +100,10 @@ class UserAttachmentTest {
     @Test
     fun publisherDeleteWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
-        publisher.delete().attachment(attachmentZBytes).wait()
+        publisher.delete(attachment = attachmentZBytes)
 
         publisher.close()
         subscriber.close()
@@ -117,10 +117,10 @@ class UserAttachmentTest {
     @Test
     fun publisherDeleteWithoutAttachmentTest() {
         var receivedSample: Sample? = null
-        val publisher = session.declarePublisher(keyExpr).wait().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
-        publisher.delete().wait()
+        publisher.delete()
 
         publisher.close()
         subscriber.close()

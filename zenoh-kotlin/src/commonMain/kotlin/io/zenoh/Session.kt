@@ -108,17 +108,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Session.open().onSuccess {
      *     it.use { session ->
      *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.declarePublisher(keyExpr)
-     *                 .priority(Priority.REALTIME)
-     *                 .congestionControl(CongestionControl.DROP)
-     *                 .wait().onSuccess { pub ->
+     *             session.declarePublisher(keyExpr).onSuccess { pub ->
      *                     pub.use {
      *                         println("Publisher declared on $keyExpr.")
      *                         var i = 0
      *                         while (true) {
      *                             val payload = "Hello for the ${i}th time!"
      *                             println(payload)
-     *                             pub.put(payload).wait()
+     *                             pub.put(payload)
      *                             Thread.sleep(1000)
      *                             i++
      *                         }
@@ -130,9 +127,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * ```
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
-     * @return A resolvable [Publisher.Builder]
+     * @return The result of the declaration, returning the publisher in case of success.
      */
-    fun declarePublisher(keyExpr: KeyExpr): Publisher.Builder = Publisher.Builder(this, keyExpr)
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS()): Result<Publisher> {
+        return resolvePublisher(keyExpr, qos)
+    }
 
     /**
      * TODO: Update documentation
@@ -416,7 +415,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
-    internal fun resolvePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> {
+    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> {
         return jniSession?.run {
             declarePublisher(keyExpr, qos).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
