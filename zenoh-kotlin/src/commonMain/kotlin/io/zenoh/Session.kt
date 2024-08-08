@@ -134,52 +134,77 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * TODO: Update documentation
-     *
-     * Declare a [Subscriber] on the session.
-     *
-     * The default receiver is a [Channel], but can be changed with the [Subscriber.Builder.with] functions.
+     * Declare a [Subscriber] on the session, specifying a callback to handle incoming samples.
      *
      * Example:
-     *
      * ```kotlin
      * Session.open().onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.declareSubscriber(keyExpr)
-     *                 .bestEffort()
-     *                 .wait()
-     *                 .onSuccess { subscriber ->
-     *                     subscriber.use {
-     *                         println("Declared subscriber on $keyExpr.")
-     *                         runBlocking {
-     *                             val receiver = subscriber.receiver!!
-     *                             val iterator = receiver.iterator()
-     *                             while (iterator.hasNext()) {
-     *                                 val sample = iterator.next()
-     *                                 println(sample)
-     *                             }
-     *                         }
-     *                 }
-     *            }
+     *             session.declareSubscriber(keyExpr, callback = { sample -> println(sample) }).onSuccess {
+     *                 println("Declared subscriber on $keyExpr.")
+     *             }
      *         }
      *     }
      * }
      * ```
      *
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
-     * @return A [Subscriber.Builder] with a [Channel] receiver.
+     * @param callback Callback to handle the received samples.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @param reliability The reliability the subscriber wishes to obtain from the network.
+     * @return A result with the [Subscriber] in case of success.
      */
-
-
-    fun declareSubscriber(keyExpr: KeyExpr, callback: Callback<Sample>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<Unit>> {
+    fun declareSubscriber(
+        keyExpr: KeyExpr,
+        callback: Callback<Sample>,
+        onClose: (() -> Unit)? = null,
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Subscriber<Unit>> {
         val resolvedOnClose = fun() {
             onClose?.invoke()
         }
         return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
     }
 
-    fun <R> declareSubscriber(keyExpr: KeyExpr, handler: Handler<Sample, R>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<R>> {
+    /**
+     * Declare a [Subscriber] on the session, specifying a handler to handle incoming samples.
+     *
+     * Example:
+     * ```kotlin
+     *
+     * class ExampleHandler: Handler<Sample, Unit> {
+     *     override fun handle(t: Sample) = println(t)
+     *
+     *     override fun receiver() = Unit
+     *
+     *     override fun onClose() = println("Closing handler")
+     * }
+     *
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.declareSubscriber(keyExpr, handler = ExampleHandler())
+     *                 .onSuccess {
+     *                     println("Declared subscriber on $keyExpr.")
+     *                 }
+     *             }
+     *         }
+     *     }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be associated to.
+     * @param handler [Handler] implementation to handle the received samples.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @param reliability The reliability the subscriber wishes to obtain from the network.
+     * @return A result with the [Subscriber] in case of success.
+     */
+    fun <R> declareSubscriber(
+        keyExpr: KeyExpr,
+        handler: Handler<Sample, R>,
+        onClose: (() -> Unit)? = null,
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Subscriber<R>> {
         val resolvedOnClose = fun() {
             handler.onClose()
             onClose?.invoke()
@@ -188,7 +213,37 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
     }
 
-    fun declareSubscriber(keyExpr: KeyExpr, channel: Channel<Sample>, onClose: (() -> Unit)? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Subscriber<Channel<Sample>>> {
+    /**
+     * Declare a [Subscriber] on the session, specifying a handler to handle incoming samples.
+     *
+     * Example:
+     * ```kotlin
+     *
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.declareSubscriber(keyExpr, channel = Channel())
+     *                 .onSuccess {
+     *                     println("Declared subscriber on $keyExpr.")
+     *                 }
+     *             }
+     *         }
+     *     }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be associated to.
+     * @param channel [Channel] instance through which the received samples will be piped. Once the subscriber is
+     *  closed, the channel is closed as well.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @param reliability The reliability the subscriber wishes to obtain from the network.
+     * @return A result with the [Subscriber] in case of success.
+     */
+    fun declareSubscriber(
+        keyExpr: KeyExpr,
+        channel: Channel<Sample>,
+        onClose: (() -> Unit)? = null,
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Subscriber<Channel<Sample>>> {
         val channelHandler = ChannelHandler(channel)
         val resolvedOnClose = fun() {
             channelHandler.onClose()
@@ -458,7 +513,18 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: ZBytes?,
     ): Result<R?> {
         return jniSession?.run {
-            performGet(selector, callback, onClose, receiver, timeout, target, consolidation, payload, encoding, attachment)
+            performGet(
+                selector,
+                callback,
+                onClose,
+                receiver,
+                timeout,
+                target,
+                consolidation,
+                payload,
+                encoding,
+                attachment
+            )
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -466,7 +532,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         jniSession?.run { performPut(keyExpr, put) }
     }
 
-    internal fun resolveDelete(keyExpr:KeyExpr, delete: Delete): Result<Unit> = runCatching {
+    internal fun resolveDelete(keyExpr: KeyExpr, delete: Delete): Result<Unit> = runCatching {
         jniSession?.run { performDelete(keyExpr, delete) }
     }
 
