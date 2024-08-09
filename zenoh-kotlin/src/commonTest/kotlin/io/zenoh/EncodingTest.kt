@@ -51,12 +51,12 @@ class EncodingTest {
         val testValueA = Value("test", Encoding(Encoding.ID.TEXT_CSV, null))
         val testValueB = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
 
-        val queryable = session.declareQueryable(keyExpr).with { query ->
+        val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
                 test1 -> query.reply(query.keyExpr).success(testValueA).wait()
                 test2 -> query.reply(query.keyExpr).success(testValueB).wait()
             }
-        }.wait().getOrThrow()
+        }).getOrThrow()
 
         // Testing with null schema on a reply success scenario.
         var receivedSample: Sample? = null
@@ -97,12 +97,12 @@ class EncodingTest {
         val testValueA = Value("test", Encoding(Encoding.ID.TEXT_CSV, null))
         val testValueB = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
 
-        val queryable = session.declareQueryable(keyExpr).with { query ->
+        val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
                 test1 -> query.reply(query.keyExpr).error(testValueA).wait()
                 test2 -> query.reply(query.keyExpr).error(testValueB).wait()
             }
-        }.wait().getOrThrow()
+        }).getOrThrow()
 
         // Testing with null schema on a reply error scenario.
         var errorValue: Value? = null
@@ -140,10 +140,10 @@ class EncodingTest {
         val encodingB = Encoding(Encoding.ID.TEXT_CSV, "test_schema")
 
         var receivedEncoding: Encoding? = null
-        val queryable = session.declareQueryable(keyExpr).with { query ->
+        val queryable = session.declareQueryable(keyExpr, callback = { query ->
             receivedEncoding = query.encoding
             query.close()
-        }.wait().getOrThrow()
+        }).getOrThrow()
 
         // Testing with null schema
         session.get(keyExpr).payload("test").encoding(encodingA).wait()

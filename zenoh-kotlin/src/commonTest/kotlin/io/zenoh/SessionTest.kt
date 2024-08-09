@@ -51,7 +51,7 @@ class SessionTest {
     @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
         val session = Session.open().getOrThrow()
-        val queryable = session.declareQueryable(testKeyExpr).with {}.wait().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr, callback = {}).getOrThrow()
         val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
         val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
         session.close()
@@ -81,7 +81,7 @@ class SessionTest {
         session.close()
         assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).getOrThrow() }
         assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }
-        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr).with {}.wait().getOrThrow() }
+        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr, callback = {}).getOrThrow() }
     }
 
 }

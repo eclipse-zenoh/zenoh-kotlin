@@ -194,7 +194,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * ```
      *
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
-     * @param handler [Handler] implementation to handle the received samples.
+     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called
+     *  upon closing the session.
      * @param onClose Callback function to be called when the subscriber is closed.
      * @param reliability The reliability the subscriber wishes to obtain from the network.
      * @return A result with the [Subscriber] in case of success.
@@ -214,7 +215,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Subscriber] on the session, specifying a handler to handle incoming samples.
+     * Declare a [Subscriber] on the session, specifying a channel pipe the received samples.
      *
      * Example:
      * ```kotlin
@@ -222,11 +223,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Session.open().onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.declareSubscriber(keyExpr, channel = Channel())
+     *             val samplesChannel = Channel()
+     *             session.declareSubscriber(keyExpr, channel = samplesChannel)
      *                 .onSuccess {
      *                     println("Declared subscriber on $keyExpr.")
      *                 }
      *             }
+     *             // ...
      *         }
      *     }
      * ```
@@ -234,7 +237,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
      * @param channel [Channel] instance through which the received samples will be piped. Once the subscriber is
      *  closed, the channel is closed as well.
-     * @param onClose Callback function to be called when the subscriber is closed.
+     * @param onClose Callback function to be called when the subscriber is closed. [Handler.onClose] will be called
+     *  upon closing the session.
      * @param reliability The reliability the subscriber wishes to obtain from the network.
      * @return A result with the [Subscriber] in case of success.
      */
@@ -254,45 +258,128 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Queryable] on the session.
-     *
-     * The default receiver is a [Channel], but can be changed with the [Queryable.Builder.with] functions.
+     * Declare a [Queryable] on the session with a callback.
      *
      * Example:
      * ```kotlin
      * Session.open().onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
-     *         session.declareQueryable(keyExpr).wait().onSuccess { queryable ->
-     *             queryable.use {
-     *                 it.receiver?.let { receiverChannel ->
-     *                     runBlocking {
-     *                         val iterator = receiverChannel.iterator()
-     *                         while (iterator.hasNext()) {
-     *                             iterator.next().use { query ->
-     *                                 println("Received query at ${query.keyExpr}")
-     *                                 query.reply(keyExpr)
-     *                                      .success("Hello!")
-     *                                      .withKind(SampleKind.PUT)
-     *                                      .withTimeStamp(TimeStamp.getCurrentTime())
-     *                                      .wait()
-     *                                      .onSuccess { println("Replied hello.") }
-     *                                      .onFailure { println(it) }
-     *                             }
-     *                         }
+     *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
+     *              query.reply(keyExpr)
+     *                   .success("Hello!")
+     *                   .withKind(SampleKind.PUT)
+     *                   .withTimeStamp(TimeStamp.getCurrentTime())
+     *                   .wait()
+     *                   .onSuccess { println("Replied hello.") }
+     *                   .onFailure { println(it) }
+     *         }).getOrThrow()
+     *     }
+     * }}
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the queryable will be associated to.
+     * @param callback The callback to handle the received queries.
+     * @param onClose Callback to be run upon closing the queryable.
+     * @param complete The queryable completeness.
+     * @return A result with the queryable.
+     */
+    fun declareQueryable(
+        keyExpr: KeyExpr,
+        callback: Callback<Query>,
+        onClose: (() -> Unit)? = null,
+        complete: Boolean = false
+    ): Result<Queryable<Unit>> {
+        return resolveQueryable(keyExpr, callback, fun() { onClose?.invoke() }, null, complete)
+    }
+
+    /**
+     * Declare a [Queryable] on the session with a [Handler].
+     *
+     * Example:
+     * ```kotlin
+     *
+     * class ExampleHandler: Handler<Query, Unit> {
+     *     override fun handle(t: Query) = query.reply(query.keyExpr).success("Hello").wait()
+     *
+     *     override fun receiver() = Unit
+     *
+     *     override fun onClose() = println("Closing handler")
+     * }
+     *
+     * Session.open().onSuccess { session -> session.use {
+     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
+     *         println("Declaring Queryable")
+     *         val exampleHandler = ExampleHandler()
+     *         val queryable = session.declareQueryable(keyExpr, handler = exampleHandler).getOrThrow()
+     *         // ...
+     *     }
+     * }}
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the queryable will be associated to.
+     * @param handler The [Handler] to handle the incoming queries. [Handler.onClose] will be called upon
+     *  closing the queryable.
+     * @param onClose Callback to be run upon closing the queryable.
+     * @param complete The completeness of the queryable.
+     * @return A result with the queryable.
+     */
+    fun <R> declareQueryable(
+        keyExpr: KeyExpr,
+        handler: Handler<Query, R>,
+        onClose: (() -> Unit)? = null,
+        complete: Boolean = false
+    ): Result<Queryable<R>> {
+        return resolveQueryable(keyExpr, { t: Query -> handler.handle(t) }, fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }, handler.receiver(), complete)
+    }
+
+    /**
+     * Declare a [Queryable] with a [Channel] to pipe the incoming queries.
+     *
+     * Example:
+     * ```kotlin
+     * Session.open(config).onSuccess { session ->
+     *     session.use {
+     *         key.intoKeyExpr().onSuccess { keyExpr ->
+     *             keyExpr.use {
+     *                 println("Declaring Queryable on $key...")
+     *                 val channel: Channel<Query> = Channel()
+     *                 session.declareQueryable(keyExpr, channel).getOrThrow()
+     *                 runBlocking {
+     *                     for (query in channel) {
+     *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+     *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+     *                         query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
+     *                             .wait().onFailure { println(">> [Queryable ] Error sending reply: $it") }
      *                     }
      *                 }
      *             }
      *         }
      *     }
-     * }}
+     * }
      * ```
      *
-     *
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
-     * @return A [Queryable.Builder] with a [Channel] receiver.
+     * @param channel The [Channel] to receive the incoming queries. It will be closed upon closing the queryable.
+     * @param onClose Callback to be run upon closing the queryable.
+     * @param complete The completeness of the queryable.
+     * @return A result with the queryable.
      */
-    fun declareQueryable(keyExpr: KeyExpr): Queryable.Builder<Channel<Query>> = Queryable.newBuilder(this, keyExpr)
+    fun declareQueryable(
+        keyExpr: KeyExpr,
+        channel: Channel<Query>,
+        onClose: (() -> Unit)? = null,
+        complete: Boolean = false
+    ): Result<Queryable<Channel<Query>>> {
+        val handler = ChannelHandler(channel)
+        return resolveQueryable(keyExpr, { t: Query -> handler.handle(t) }, fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }, handler.receiver(), complete)
+    }
 
     /**
      * Declare a [KeyExpr].

@@ -43,12 +43,12 @@ class GetTest {
     fun setUp() {
         session = Session.open().getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        queryable = session.declareQueryable(keyExpr).with { query ->
+        queryable = session.declareQueryable(keyExpr, callback = { query ->
             query.reply(query.keyExpr)
                 .success(value)
                 .timestamp(timestamp)
                 .wait()
-        }.wait().getOrThrow()
+        }).getOrThrow()
     }
 
     @AfterTest
@@ -91,10 +91,10 @@ class GetTest {
     fun getWithSelectorParamsTest() {
         var receivedParams = String()
         var receivedParamsMap = mapOf<String, String?>()
-        val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
+        val queryable = session.declareQueryable(keyExpr, callback = { query ->
             receivedParams = query.parameters
             receivedParamsMap = query.selector.parametersStringMap().getOrThrow()
-        }}.wait().getOrThrow()
+        }).getOrThrow()
 
         val params = "arg1=val1&arg2=val2&arg3"
         val paramsMap = mapOf("arg1" to "val1", "arg2" to "val2", "arg3" to "")
