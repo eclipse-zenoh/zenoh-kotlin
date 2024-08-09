@@ -115,9 +115,9 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Undeclare the key expression if it was previously declared on the specified [session].
      *
      * @param session The session from which the key expression was previously declared.
-     * @return An empty [Resolvable].
+     * @return A [Result] with the operation status.
      */
-    fun undeclare(session: Session): Resolvable<Unit> {
+    fun undeclare(session: Session): Result<Unit> {
         return session.undeclare(this)
     }
 

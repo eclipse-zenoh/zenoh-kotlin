@@ -298,29 +298,36 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [KeyExpr].
      *
      * Informs Zenoh that you intend to use the provided Key Expression repeatedly.
+     * Also, declared key expression provide additional optimizations by associating
+     * it with a native key expression representation, minimizing the amount of operations
+     * performed between the JVM and the Rust layer of this library.
      *
-     * It is generally not needed to declare key expressions, as declaring a subscriber,
-     * a queryable, or a publisher will also inform Zenoh of your intent to use their
-     * key expressions repeatedly.
+     * A declared key expression is associated to the session from which it was declared.
+     * It can be undeclared with the function [undeclare], or alternatively when closing
+     * the session it will be automatically undeclared. Undeclaring a key expression causes
+     * it to be downgraded to a regular key expression without optimizations, this means
+     * that operations can still be performed with it.
+     *
+     * When declaring a subscriber, a queryable, or a publisher, it is not necessary
+     * to declare the key expression beforehand, since Zenoh is already informed of your
+     * intent to use their key expressions repeatedly. It can be handy when doing instead
+     * many repeated puts or reply operations.
      *
      * Example:
      * ```kotlin
      * Session.open().onSuccess { session -> session.use {
-     *     session.declareKeyExpr("demo/kotlin/example").wait().onSuccess { keyExpr ->
-     *         keyExpr.use {
-     *             session.declarePublisher(it).wait().onSuccess { publisher ->
-     *                 // ...
-     *             }
-     *         }
+     *     val keyExpr = session.declareKeyExpr("demo/kotlin/example").getOrThrow()
+     *     for (i in 0..999) {
+     *         put(keyExpr, "Put number $i!")
      *     }
      * }}
      * ```
      *
-     * @param keyExpr The intended Key expression.
-     * @return A resolvable returning an optimized representation of the passed `keyExpr`.
+     * @param keyExpr The intended key expression.
+     * @return A result with the declared key expression.
      */
-    fun declareKeyExpr(keyExpr: String): Resolvable<KeyExpr> = Resolvable {
-        return@Resolvable jniSession?.run {
+    fun declareKeyExpr(keyExpr: String): Result<KeyExpr> {
+        return jniSession?.run {
             declareKeyExpr(keyExpr).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
@@ -334,8 +341,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The key expression to undeclare.
      * @return A resolvable returning the status of the undeclare operation.
      */
-    fun undeclare(keyExpr: KeyExpr): Resolvable<Unit> = Resolvable {
-        return@Resolvable jniSession?.run {
+    fun undeclare(keyExpr: KeyExpr): Result<Unit> {
+        return jniSession?.run {
             undeclareKeyExpr(keyExpr)
         } ?: Result.failure(sessionClosedException)
     }
