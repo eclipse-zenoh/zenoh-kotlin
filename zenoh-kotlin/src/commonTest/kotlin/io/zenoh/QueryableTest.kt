@@ -73,7 +73,7 @@ class QueryableTest {
         var reply: Reply? = null
         val delay = Duration.ofMillis(1000)
         withTimeout(delay) {
-            session.get(testKeyExpr).with { reply = it }.timeout(delay).wait()
+            session.get(testKeyExpr.intoSelector(), callback = { reply = it }, timeout = delay)
         }
 
         assertTrue(reply is Reply.Success)
@@ -90,9 +90,9 @@ class QueryableTest {
         delay(500)
 
         val receivedReplies = ArrayList<Reply>()
-        session.get(testKeyExpr).with { reply: Reply ->
+        session.get(testKeyExpr.intoSelector(), callback = { reply: Reply ->
             receivedReplies.add(reply)
-        }.wait()
+        })
 
         delay(500)
 
@@ -107,7 +107,7 @@ class QueryableTest {
         val queryable =
             session.declareQueryable(testKeyExpr, callback = { query -> receivedQuery = query }).getOrThrow()
 
-        session.get(testKeyExpr).wait()
+        session.get(testKeyExpr.intoSelector(), callback = {})
 
         delay(100)
         assertNotNull(receivedQuery)
@@ -118,7 +118,7 @@ class QueryableTest {
         receivedQuery = null
         val payload = "Test value"
         val attachment = "Attachment".into()
-        session.get(testKeyExpr).payload(payload).encoding(ZENOH_STRING).attachment(attachment).wait()
+        session.get(testKeyExpr.intoSelector(), callback = {}, value = Value(payload, ZENOH_STRING), attachment = attachment)
 
         delay(100)
         assertNotNull(receivedQuery)
@@ -142,7 +142,7 @@ class QueryableTest {
         }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).wait()
+        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 
@@ -163,7 +163,7 @@ class QueryableTest {
         }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).wait()
+        session.get(testKeyExpr.intoSelector(), callback =  { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         Thread.sleep(1000)
         queryable.close()
@@ -186,7 +186,7 @@ class QueryableTest {
         }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).wait()
+        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 

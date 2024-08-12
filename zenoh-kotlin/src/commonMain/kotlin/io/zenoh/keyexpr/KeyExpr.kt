@@ -14,10 +14,10 @@
 
 package io.zenoh.keyexpr
 
-import io.zenoh.Resolvable
 import io.zenoh.Session
 import io.zenoh.SessionDeclaration
 import io.zenoh.jni.JNIKeyExpr
+import io.zenoh.selector.Selector
 
 /**
  * # Address space
@@ -126,6 +126,10 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      */
     fun isValid(): Boolean {
         return jniKeyExpr != null
+    }
+
+    fun intoSelector(): Selector {
+        return Selector(this)
     }
 
     override fun toString(): String {

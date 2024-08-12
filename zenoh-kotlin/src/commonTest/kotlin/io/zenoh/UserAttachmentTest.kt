@@ -138,7 +138,7 @@ class UserAttachmentTest {
             query.reply(keyExpr).success("test").wait()
         }).getOrThrow()
 
-        session.get(keyExpr).with {}.attachment(attachmentZBytes).timeout(Duration.ofMillis(1000)).wait().getOrThrow()
+        session.get(keyExpr.intoSelector(), callback = {}, attachment = attachmentZBytes, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
 
@@ -154,11 +154,11 @@ class UserAttachmentTest {
             query.reply(keyExpr).success("test").attachment(attachmentZBytes).wait()
         }).getOrThrow()
 
-        session.get(keyExpr).with {
+        session.get(keyExpr.intoSelector(), callback = {
             if (it is Reply.Success) {
                 reply = it
             }
-        }.timeout(Duration.ofMillis(1000)).wait().getOrThrow()
+        }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
 
@@ -175,9 +175,9 @@ class UserAttachmentTest {
             query.reply(keyExpr).success("test").wait()
         }).getOrThrow()
 
-        session.get(keyExpr).with {
+        session.get(keyExpr.intoSelector(), callback = {
             reply = it
-        }.timeout(Duration.ofMillis(1000)).wait().getOrThrow()
+        }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
 

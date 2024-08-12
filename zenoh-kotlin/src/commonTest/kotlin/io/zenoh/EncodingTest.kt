@@ -4,6 +4,7 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
+import io.zenoh.selector.intoSelector
 import io.zenoh.value.Value
 import kotlin.test.*
 
@@ -45,25 +46,25 @@ class EncodingTest {
     fun encoding_replySuccessTest() {
         val session = Session.open().getOrThrow()
         val keyExpr = "example/testing/**".intoKeyExpr().getOrThrow()
-        val test1 = "example/testing/reply_success".intoKeyExpr().getOrThrow()
-        val test2 = "example/testing/reply_success_with_schema".intoKeyExpr().getOrThrow()
+        val test1 = "example/testing/reply_success".intoSelector().getOrThrow()
+        val test2 = "example/testing/reply_success_with_schema".intoSelector().getOrThrow()
 
         val testValueA = Value("test", Encoding(Encoding.ID.TEXT_CSV, null))
         val testValueB = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1 -> query.reply(query.keyExpr).success(testValueA).wait()
-                test2 -> query.reply(query.keyExpr).success(testValueB).wait()
+                test1.keyExpr -> query.reply(query.keyExpr).success(testValueA).wait()
+                test2.keyExpr -> query.reply(query.keyExpr).success(testValueB).wait()
             }
         }).getOrThrow()
 
         // Testing with null schema on a reply success scenario.
         var receivedSample: Sample? = null
-        session.get(test1).with { reply ->
+        session.get(test1, callback = { reply ->
             assertTrue(reply is Reply.Success)
             receivedSample = reply.sample
-        }.wait().getOrThrow()
+        }).getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -72,10 +73,10 @@ class EncodingTest {
 
         // Testing with non-null schema on a reply success scenario.
         receivedSample = null
-        session.get(test2).with { reply ->
+        session.get(test2, callback = { reply ->
             assertTrue(reply is Reply.Success)
             receivedSample = reply.sample
-        }.wait().getOrThrow()
+        }).getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -91,25 +92,25 @@ class EncodingTest {
         val session = Session.open().getOrThrow()
         val keyExpr = "example/testing/**".intoKeyExpr().getOrThrow()
 
-        val test1 = "example/testing/reply_error".intoKeyExpr().getOrThrow()
-        val test2 = "example/testing/reply_error_with_schema".intoKeyExpr().getOrThrow()
+        val test1 = "example/testing/reply_error".intoSelector().getOrThrow()
+        val test2 = "example/testing/reply_error_with_schema".intoSelector().getOrThrow()
 
         val testValueA = Value("test", Encoding(Encoding.ID.TEXT_CSV, null))
         val testValueB = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1 -> query.reply(query.keyExpr).error(testValueA).wait()
-                test2 -> query.reply(query.keyExpr).error(testValueB).wait()
+                test1.keyExpr -> query.reply(query.keyExpr).error(testValueA).wait()
+                test2.keyExpr -> query.reply(query.keyExpr).error(testValueB).wait()
             }
         }).getOrThrow()
 
         // Testing with null schema on a reply error scenario.
         var errorValue: Value? = null
-        session.get(test1).with { reply ->
+        session.get(test1, callback = { reply ->
             assertTrue(reply is Reply.Error)
             errorValue = reply.error
-        }.wait().getOrThrow()
+        }).getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(errorValue)
@@ -118,10 +119,10 @@ class EncodingTest {
 
         // Testing with non-null schema on a reply error scenario.
         errorValue = null
-        session.get(test2).with { reply ->
+        session.get(test2, callback = { reply ->
             assertTrue(reply is Reply.Error)
             errorValue = reply.error
-        }.wait().getOrThrow()
+        }).getOrThrow()
         Thread.sleep(200)
 
         assertNotNull(errorValue)
@@ -135,18 +136,18 @@ class EncodingTest {
     @Test
     fun encoding_queryTest() {
         val session = Session.open().getOrThrow()
-        val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
+        val selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         val encodingA = Encoding(Encoding.ID.TEXT_CSV, null)
         val encodingB = Encoding(Encoding.ID.TEXT_CSV, "test_schema")
 
         var receivedEncoding: Encoding? = null
-        val queryable = session.declareQueryable(keyExpr, callback = { query ->
+        val queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             receivedEncoding = query.encoding
             query.close()
         }).getOrThrow()
 
         // Testing with null schema
-        session.get(keyExpr).payload("test").encoding(encodingA).wait()
+        session.get(selector, callback = {}, value = Value("test", encodingA))
         Thread.sleep(200)
 
         assertNotNull(receivedEncoding)
@@ -155,7 +156,7 @@ class EncodingTest {
 
         // Testing non-null schema
         receivedEncoding = null
-        session.get(keyExpr).payload("test").encoding(encodingB).wait()
+        session.get(selector, callback = {}, value = Value("test", encodingB))
         Thread.sleep(200)
 
         assertNotNull(receivedEncoding)
