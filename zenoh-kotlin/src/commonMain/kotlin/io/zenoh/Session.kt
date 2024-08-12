@@ -546,25 +546,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      *
-     * ```kotlin
-     * println("Opening Session")
-     * Session.open().onSuccess { session ->
-     *     session.use {
-     *         "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.delete(keyExpr)
-     *             .wait()
-     *             .onSuccess {
-     *                 println("Performed a delete on $keyExpr.")
-     *             }
-     *         }
-     *     }
-     * }
-     * ```
+     * TODO Add example
      *
      * @param keyExpr The [KeyExpr] to be used for the delete operation.
      * @return a resolvable [Delete.Builder].
      */
-    fun delete(keyExpr: KeyExpr): Delete.Builder = Delete.newBuilder(this, keyExpr)
+    fun delete(keyExpr: KeyExpr, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
+        val delete = Delete(keyExpr, qos, attachment)
+        return resolveDelete(keyExpr, delete)
+    }
 
     /** Returns if session is open or has been closed. */
     fun isOpen(): Boolean {

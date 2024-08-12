@@ -43,7 +43,7 @@ import io.zenoh.protocol.ZBytes
  * A delete operation is a special case of a Put operation, it is analogous to perform a Put with an empty value and
  * specifying the sample kind to be `DELETE`.
  */
-class Delete private constructor(
+internal class Delete (
     val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?
 ) {
 
