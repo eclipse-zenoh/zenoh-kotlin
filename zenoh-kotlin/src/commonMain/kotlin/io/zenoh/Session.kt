@@ -20,7 +20,6 @@ import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.publication.Delete
@@ -434,61 +433,84 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    /**
-     * Declare a [Get] with a [Channel] receiver.
-     *
-     * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.get(keyExpr)
-     *             .consolidation(ConsolidationMode.NONE)
-     *             .target(QueryTarget.BEST_MATCHING)
-     *             .payload("Payload example")
-     *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
-     *             .wait()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
-     *         }
-     *     }
-     * }
-     * ```
-     * @param selector The [KeyExpr] to be used for the get operation.
-     * @return a resolvable [Get.Builder] with a [Channel] receiver.
-     */
-    fun get(selector: Selector): Get.Builder<Channel<Reply>> = Get.newBuilder(this, selector)
+    //TODO: add documentation
+    fun get(
+        selector: Selector,
+        callback: Callback<Reply>,
+        value: Value? = null,
+        attachment: ZBytes? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        onClose: (() -> Unit)? = null
+    ) : Result<Unit> {
+        return resolveGet (
+            selector = selector,
+            callback = callback,
+            onClose = fun() { onClose?.invoke() },
+            receiver = Unit,
+            timeout = timeout,
+            target = target,
+            consolidation = consolidation,
+            value = value,
+            attachment = attachment
+        )
+    }
 
-    /**
-     * Declare a [Get] with a [Channel] receiver.
-     *
-     * ```kotlin
-     * val timeout = Duration.ofMillis(10000)
-     * println("Opening Session")
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
-     *         session.get(keyExpr)
-     *             .consolidation(ConsolidationMode.NONE)
-     *             .target(QueryTarget.BEST_MATCHING)
-     *             .payload("Payload example")
-     *             .with { reply -> println("Received reply $reply") }
-     *             .timeout(timeout)
-     *             .wait()
-     *             .onSuccess {
-     *                 // Leaving the session alive the same duration as the timeout for the sake of this example.
-     *                 Thread.sleep(timeout.toMillis())
-     *             }
-     *         }
-     *     }
-     * }
-     * ```
-     * @param keyExpr The [KeyExpr] to be used for the get operation.
-     * @return a resolvable [Get.Builder] with a [Channel] receiver.
-     */
-    fun get(keyExpr: KeyExpr): Get.Builder<Channel<Reply>> = Get.newBuilder(this, Selector(keyExpr))
+    //TODO: add documentation
+    fun <R> get(
+        selector: Selector,
+        handler: Handler<Reply, R>,
+        value: Value? = null,
+        attachment: ZBytes? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        onClose: (() -> Unit)? = null
+    ) : Result<R> {
+        return resolveGet(
+            selector = selector,
+            callback = { r: Reply -> handler.handle(r) },
+            onClose = fun() {
+                handler.onClose()
+                onClose?.invoke()
+            },
+            receiver = handler.receiver(),
+            timeout = timeout,
+            target = target,
+            consolidation = consolidation,
+            value = value,
+            attachment = attachment
+        )
+    }
+
+    //TODO: add documentation
+    fun get(
+        selector: Selector,
+        channel: Channel<Reply>,
+        value: Value? = null,
+        attachment: ZBytes? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        onClose: (() -> Unit)? = null
+    ) : Result<Channel<Reply>> {
+        val channelHandler = ChannelHandler(channel)
+        return resolveGet(
+            selector = selector,
+            callback = { r: Reply -> channelHandler.handle(r) },
+            onClose = fun() {
+                channelHandler.onClose()
+                onClose?.invoke()
+            },
+            receiver = channelHandler.receiver(),
+            timeout = timeout,
+            target = target,
+            consolidation = consolidation,
+            value = value,
+            attachment = attachment
+        )
+    }
 
     /**
      * Declare a [Put] with the provided value on the specified key expression.
@@ -598,14 +620,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         callback: Callback<Reply>,
         onClose: () -> Unit,
-        receiver: R?,
+        receiver: R,
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
-        payload: ZBytes?,
-        encoding: Encoding?,
+        value: Value?,
         attachment: ZBytes?,
-    ): Result<R?> {
+    ): Result<R> {
         return jniSession?.run {
             performGet(
                 selector,
@@ -615,8 +636,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 timeout,
                 target,
                 consolidation,
-                payload,
-                encoding,
+                value?.payload,
+                value?.encoding,
                 attachment
             )
         } ?: Result.failure(sessionClosedException)

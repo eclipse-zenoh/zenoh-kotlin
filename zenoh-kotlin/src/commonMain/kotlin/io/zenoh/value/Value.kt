@@ -49,6 +49,34 @@ class Value(val payload: ZBytes, val encoding: Encoding) {
      */
     constructor(payload: Serializable, encoding: Encoding): this(payload.into(), encoding)
 
+    /**
+     * Constructs a value with the provided message
+     *
+     * @param message The message for the value.
+     * @param encoding The [Encoding.ID]
+     * @param schema Optional [Encoding.schema]
+     */
+    constructor(message: String, encoding: Encoding.ID, schema: String? = null): this(message.toByteArray().into(), Encoding(encoding, schema))
+
+
+    /**
+     * Constructs a value with the provided [payload]
+     *
+     * @param payload The payload of the value.
+     * @param encoding The [Encoding.ID]
+     * @param schema Optional [Encoding.schema]
+     */
+    constructor(payload: ByteArray, encoding: Encoding.ID, schema: String? = null): this(payload.into(), Encoding(encoding, schema))
+
+    /**
+     * Constructs a value with the provided [payload]
+     *
+     * @param payload The payload of the value.
+     * @param encoding The [Encoding.ID]
+     * @param schema Optional [Encoding.schema]
+     */
+    constructor(payload: Serializable, encoding: Encoding.ID, schema: String? = null): this(payload.into(), Encoding(encoding, schema))
+
 
     companion object {
 

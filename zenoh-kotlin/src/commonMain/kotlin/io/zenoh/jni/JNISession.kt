@@ -127,14 +127,14 @@ internal class JNISession {
         selector: Selector,
         callback: Callback<Reply>,
         onClose: () -> Unit,
-        receiver: R?,
+        receiver: R,
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
         payload: ZBytes?,
         encoding: Encoding?,
         attachment: ZBytes?
-    ): Result<R?> = runCatching {
+    ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
                 replierId: String?,
                 success: Boolean,
