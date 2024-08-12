@@ -29,7 +29,7 @@ class DeleteTest {
         var receivedSample: Sample? = null
         val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback =  { sample -> receivedSample = sample }).getOrThrow()
-        session.delete(keyExpr).wait()
+        session.delete(keyExpr)
         subscriber.close()
         session.close()
         assertNotNull(receivedSample)
