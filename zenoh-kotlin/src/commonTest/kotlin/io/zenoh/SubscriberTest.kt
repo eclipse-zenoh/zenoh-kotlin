@@ -22,6 +22,7 @@ import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
+import io.zenoh.prelude.QoS
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -65,10 +66,7 @@ class SubscriberTest {
             session.declareSubscriber(testKeyExpr, callback = { sample -> receivedSamples.add(sample)}).getOrThrow()
 
         testValues.forEach { value ->
-            session.put(testKeyExpr, value)
-                .priority(TEST_PRIORITY)
-                .congestionControl(TEST_CONGESTION_CONTROL) 
-                .wait()
+            session.put(testKeyExpr, value, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
         }
         assertEquals(receivedSamples.size, testValues.size)
 
@@ -86,11 +84,8 @@ class SubscriberTest {
         val handler = QueueHandler<Sample>()
         val subscriber = session.declareSubscriber(testKeyExpr, handler = handler).getOrThrow()
 
-        testValues.forEach { value -> 
-            session.put(testKeyExpr, value)
-                .priority(TEST_PRIORITY)
-                .congestionControl(TEST_CONGESTION_CONTROL) 
-                .wait()
+        testValues.forEach { value ->
+            session.put(testKeyExpr, value, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
         }
         assertEquals(handler.queue.size, testValues.size)
 
@@ -111,7 +106,7 @@ class SubscriberTest {
 
         val receivedSamples = ArrayList<Sample>()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSamples.add(sample) }).getOrThrow()
-        testValues.forEach { value -> session.put(testKeyExpr, value).wait() }
+        testValues.forEach { value -> session.put(testKeyExpr, value) }
         subscriber.close()
 
         assertEquals(receivedSamples.size, testValues.size)

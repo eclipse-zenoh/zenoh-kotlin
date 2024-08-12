@@ -46,7 +46,7 @@ import io.zenoh.value.Value
  * @property qos The [QoS] configuration.
  * @property attachment An optional user attachment.
  */
-class Put private constructor(
+internal class Put (
     val keyExpr: KeyExpr,
     val value: Value,
     val qos: QoS,

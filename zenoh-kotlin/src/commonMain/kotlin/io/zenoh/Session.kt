@@ -516,45 +516,30 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Put] with the provided value on the specified key expression.
      *
      * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *     session.put(keyExpr, Value("Hello"))
-     *         .congestionControl(CongestionControl.BLOCK)
-     *         .priority(Priority.REALTIME)
-     *         .wait()
-     *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
-     *     }}
-     * }
-     * ```
+     * TODO: add example
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
      * @param value The [Value] to be put.
      * @return A resolvable [Put.Builder].
      */
-    fun put(keyExpr: KeyExpr, value: Value): Put.Builder = Put.newBuilder(this, keyExpr, value)
+    fun put(keyExpr: KeyExpr, value: Value, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
+        val put = Put(keyExpr, value, qos, attachment)
+        return resolvePut(keyExpr, put)
+    }
 
     /**
      * Declare a [Put] with the provided value on the specified key expression.
      *
-     * Example:
-     * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
-     *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
-     *     session.put(keyExpr, "Hello")
-     *         .congestionControl(CongestionControl.BLOCK)
-     *         .priority(Priority.REALTIME)
-     *         .wait()
-     *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
-     *     }}
-     * }
-     * ```
+     * TODO: add example
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
      * @param message The message to be put.
      * @return A resolvable [Put.Builder].
      */
-    fun put(keyExpr: KeyExpr, message: String): Put.Builder = Put.newBuilder(this, keyExpr, Value(message))
+    fun put(keyExpr: KeyExpr, message: String, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
+        val put = Put(keyExpr, Value(message), qos, attachment)
+        return resolvePut(keyExpr, put)
+    }
 
     /**
      * Declare a [Delete].

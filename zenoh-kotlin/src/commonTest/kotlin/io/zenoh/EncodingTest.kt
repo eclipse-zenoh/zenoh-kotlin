@@ -21,7 +21,7 @@ class EncodingTest {
             receivedSample = sample
         }).getOrThrow()
         var value = Value("test", Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
-        session.put(keyExpr, value).wait()
+        session.put(keyExpr, value)
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
@@ -31,7 +31,7 @@ class EncodingTest {
         // Testing null schema
         receivedSample = null
         value = Value("test2", Encoding(Encoding.ID.ZENOH_STRING, null))
-        session.put(keyExpr, value).wait()
+        session.put(keyExpr, value)
         Thread.sleep(200)
 
         assertNotNull(receivedSample)

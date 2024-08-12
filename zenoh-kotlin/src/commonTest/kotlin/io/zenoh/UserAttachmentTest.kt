@@ -52,7 +52,7 @@ class UserAttachmentTest {
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
-        session.put(keyExpr, value).attachment(attachmentZBytes).wait()
+        session.put(keyExpr, value, attachment = attachmentZBytes)
 
         subscriber.close()
 
