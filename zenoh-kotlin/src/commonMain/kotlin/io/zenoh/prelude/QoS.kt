@@ -27,6 +27,12 @@ class QoS (
     val express: Boolean = false
 ) {
 
+    companion object {
+        private val defaultQoS = QoS()
+
+        fun default() = defaultQoS
+    }
+
     /**
      * Returns priority of the message.
      */
