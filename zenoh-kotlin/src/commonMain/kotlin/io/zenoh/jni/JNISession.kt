@@ -112,7 +112,11 @@ internal class JNISession {
             JNIQueryableCallback { keyExpr: String, selectorParams: String, payload: ByteArray?, encodingId: Int, encodingSchema: String?, attachmentBytes: ByteArray?, queryPtr: Long ->
                 val jniQuery = JNIQuery(queryPtr)
                 val keyExpr2 = KeyExpr(keyExpr, null)
-                val selector = Selector(keyExpr2, selectorParams)
+                val selector = if (selectorParams.isEmpty()) {
+                    Selector(keyExpr2)
+                } else {
+                    Selector(keyExpr2, selectorParams)
+                }
                 val value = payload?.let { Value(it, Encoding(ID.fromId(encodingId)!!, encodingSchema)) }
                 val query = Query(keyExpr2, selector, value, attachmentBytes?.into(), jniQuery)
                 callback.run(query)
@@ -296,7 +300,7 @@ internal class JNISession {
     private external fun getViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
-        selectorParams: String,
+        selectorParams: String?,
         sessionPtr: Long,
         callback: JNIGetCallback,
         onClose: JNIOnCloseCallback,

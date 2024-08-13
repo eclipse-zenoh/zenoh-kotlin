@@ -209,7 +209,7 @@ class QueryableTest {
         queryable.undeclare()
 
         assertTrue(onCloseWasCalled)
-        assertTrue(queryable.receiver!!.isClosedForReceive)
+        assertTrue(queryable.receiver.isClosedForReceive)
     }
 }
 
