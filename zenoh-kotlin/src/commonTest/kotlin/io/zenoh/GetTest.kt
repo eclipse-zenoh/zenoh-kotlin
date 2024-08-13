@@ -43,10 +43,7 @@ class GetTest {
         session = Session.open().getOrThrow()
         selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
-            query.reply(query.keyExpr)
-                .success(value)
-                .timestamp(timestamp)
-                .wait()
+            query.replySuccess(query.keyExpr, value, timestamp = timestamp)
         }).getOrThrow()
     }
 

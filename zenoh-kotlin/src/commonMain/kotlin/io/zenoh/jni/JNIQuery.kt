@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZBytes
 import io.zenoh.sample.Sample
 import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
@@ -51,7 +52,7 @@ internal class JNIQuery(private val ptr: Long) {
         replyErrorViaJNI(ptr, errorValue.payload.bytes, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
     }
 
-    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ByteArray?, qos: QoS): Result<Unit> =
+    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ZBytes?, qos: QoS): Result<Unit> =
         runCatching {
             val timestampEnabled = timestamp != null
             replyDeleteViaJNI(
@@ -60,7 +61,7 @@ internal class JNIQuery(private val ptr: Long) {
                 keyExpr.keyExpr,
                 timestampEnabled,
                 if (timestampEnabled) timestamp!!.ntpValue() else 0,
-                attachment,
+                attachment?.bytes,
                 qos.express,
                 qos.priority.value,
                 qos.congestionControl.value
