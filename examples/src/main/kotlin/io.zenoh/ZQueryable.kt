@@ -33,14 +33,14 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     println("Declaring Queryable on $key...")
-                    val channel: Channel<Query> = Channel()
-                    session.declareQueryable(keyExpr, channel).getOrThrow()
-                    runBlocking {
-                        for (query in channel) {
-                            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-                            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                            query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
-                                .wait().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+                    session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
+                        runBlocking {
+                            for (query in queryable.receiver) {
+                                val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+                                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+                                query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
+                                    .wait().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+                            }
                         }
                     }
                 }

@@ -37,7 +37,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                         session.declareSubscriber(keyExpr, Channel()).onSuccess {
                             subscriber ->
                             runBlocking {
-                                for (sample in subscriber.receiver!!) {
+                                for (sample in subscriber.receiver) {
                                     println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
                                         sample.attachment?.let {
                                             ", with attachment: $it"

@@ -84,7 +84,7 @@ internal class JNISession {
     }
 
     fun <R> declareSubscriber(
-        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R?, reliability: Reliability
+        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R, reliability: Reliability
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
             JNISubscriberCallback { keyExpr, payload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
@@ -106,7 +106,7 @@ internal class JNISession {
     }
 
     fun <R> declareQueryable(
-        keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R?, complete: Boolean
+        keyExpr: KeyExpr, callback: Callback<Query>, onClose: () -> Unit, receiver: R, complete: Boolean
     ): Result<Queryable<R>> = runCatching {
         val queryCallback =
             JNIQueryableCallback { keyExpr: String, selectorParams: String, payload: ByteArray?, encodingId: Int, encodingSchema: String?, attachmentBytes: ByteArray?, queryPtr: Long ->

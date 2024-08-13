@@ -163,7 +163,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         val resolvedOnClose = fun() {
             onClose?.invoke()
         }
-        return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, Unit, reliability)
     }
 
     /**
@@ -210,7 +210,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             onClose?.invoke()
         }
         val callback = Callback { t: Sample -> handler.handle(t) }
-        return resolveSubscriber(keyExpr, callback, resolvedOnClose, null, reliability)
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, handler.receiver(), reliability)
     }
 
     /**
@@ -289,7 +289,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         onClose: (() -> Unit)? = null,
         complete: Boolean = false
     ): Result<Queryable<Unit>> {
-        return resolveQueryable(keyExpr, callback, fun() { onClose?.invoke() }, null, complete)
+        return resolveQueryable(keyExpr, callback, fun() { onClose?.invoke() }, Unit, complete)
     }
 
     /**
@@ -571,7 +571,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
         onClose: () -> Unit,
-        receiver: R? = null,
+        receiver: R,
         reliability: Reliability
     ): Result<Subscriber<R>> {
         return jniSession?.run {
@@ -579,11 +579,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    internal fun <R> resolveQueryable(
+    private fun <R> resolveQueryable(
         keyExpr: KeyExpr,
         callback: Callback<Query>,
         onClose: () -> Unit,
-        receiver: R?,
+        receiver: R,
         complete: Boolean
     ): Result<Queryable<R>> {
         return jniSession?.run {
