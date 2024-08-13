@@ -87,11 +87,11 @@ class GetTest {
 
     @Test
     fun getWithSelectorParamsTest() {
-        var receivedParams = String()
-        var receivedParamsMap = mapOf<String, String?>()
+        var receivedParams: String? = null
+        var receivedParamsMap : Map<String, String>? = null
         val queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             receivedParams = query.parameters
-            receivedParamsMap = query.selector.parametersStringMap().getOrThrow()
+            receivedParamsMap = query.selector.parametersStringMap()?.getOrThrow()
         }).getOrThrow()
 
         val params = "arg1=val1&arg2=val2&arg3"

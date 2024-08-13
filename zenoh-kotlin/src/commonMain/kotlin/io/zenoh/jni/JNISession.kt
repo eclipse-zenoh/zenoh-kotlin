@@ -296,7 +296,7 @@ internal class JNISession {
     private external fun getViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
-        selectorParams: String,
+        selectorParams: String?,
         sessionPtr: Long,
         callback: JNIGetCallback,
         onClose: JNIOnCloseCallback,
