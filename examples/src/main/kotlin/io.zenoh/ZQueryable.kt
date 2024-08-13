@@ -17,7 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.queryable.Query
+import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
@@ -38,8 +38,11 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                             for (query in queryable.receiver) {
                                 val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
                                 println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                                query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
-                                    .wait().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+                                query.replySuccess(
+                                    keyExpr,
+                                    value = Value(value),
+                                    timestamp = TimeStamp.getCurrentTime()
+                                ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
                             }
                         }
                     }

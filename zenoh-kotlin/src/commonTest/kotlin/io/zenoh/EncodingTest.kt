@@ -54,8 +54,8 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.reply(query.keyExpr).success(testValueA).wait()
-                test2.keyExpr -> query.reply(query.keyExpr).success(testValueB).wait()
+                test1.keyExpr -> query.replySuccess(query.keyExpr, value = testValueA)
+                test2.keyExpr -> query.replySuccess(query.keyExpr, value = testValueB)
             }
         }).getOrThrow()
 
@@ -100,8 +100,8 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.reply(query.keyExpr).error(testValueA).wait()
-                test2.keyExpr -> query.reply(query.keyExpr).error(testValueB).wait()
+                test1.keyExpr -> query.replyError(testValueA)
+                test2.keyExpr -> query.replyError(testValueB)
             }
         }).getOrThrow()
 

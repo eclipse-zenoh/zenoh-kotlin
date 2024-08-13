@@ -67,7 +67,7 @@ class QueryableTest {
             QoS()
         )
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr).success(sample.value).timestamp(sample.timestamp!!).wait()
+            query.replySuccess(testKeyExpr, value = sample.value, timestamp = sample.timestamp)
         }).getOrThrow()
 
         var reply: Reply? = null
@@ -133,12 +133,12 @@ class QueryableTest {
     fun queryReplySuccessTest() {
         val message = "Test message"
         val timestamp = TimeStamp.getCurrentTime()
+        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
         val priority = Priority.DATA_HIGH
         val express = true
         val congestionControl = CongestionControl.DROP
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr).success(message).timestamp(timestamp).priority(priority).express(express)
-                .congestionControl(congestionControl).wait()
+            query.replySuccess(testKeyExpr, value = Value(message), timestamp = timestamp, qos = qos)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -159,7 +159,7 @@ class QueryableTest {
     fun queryReplyErrorTest() {
         val message = "Error message"
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr).error(Value(message)).wait()
+            query.replyError(error = Value(message))
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -180,11 +180,11 @@ class QueryableTest {
         val priority = Priority.DATA_HIGH
         val express = true
         val congestionControl = CongestionControl.DROP
-        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr).delete().timestamp(timestamp).priority(priority).express(express)
-                .congestionControl(congestionControl).wait()
-        }).getOrThrow()
+        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
 
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            query.replyDelete(testKeyExpr, timestamp = timestamp, qos = qos)
+        }).getOrThrow()
         var receivedReply: Reply? = null
         session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
@@ -241,6 +241,6 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             QoS()
         )
         performedReplies.add(sample)
-        query.reply(query.keyExpr).success(sample.value).timestamp(sample.timestamp!!).wait()
+        query.replySuccess(query.keyExpr, value = sample.value, timestamp = sample.timestamp)
     }
 }
