@@ -29,27 +29,23 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
         Session.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring publisher on '$keyExpr'...")
-                        session.declarePublisher(keyExpr).wait().onSuccess { pub ->
-                            pub.use {
-                                println("Press CTRL-C to quit...")
-                                val attachment = attachment?.toByteArray()
-                                var idx = 0
-                                while (true) {
-                                    Thread.sleep(1000)
-                                    val payload = "[${
-                                        idx.toString().padStart(4, ' ')
-                                    }] $value"
-                                    println(
-                                        "Putting Data ('$keyExpr': '$payload')..."
-                                    )
-                                    attachment?.let {
-                                        pub.put(payload).attachment(it.into()).wait()
-                                    } ?: let { pub.put(payload).wait() }
-                                    idx++
-                                }
-                            }
+                    println("Declaring publisher on '$keyExpr'...")
+                    session.declarePublisher(keyExpr).onSuccess { pub ->
+                        println("Press CTRL-C to quit...")
+                        val attachment = attachment?.toByteArray()
+                        var idx = 0
+                        while (true) {
+                            Thread.sleep(1000)
+                            val payload = "[${
+                                idx.toString().padStart(4, ' ')
+                            }] $value"
+                            println(
+                                "Putting Data ('$keyExpr': '$payload')..."
+                            )
+                            attachment?.let {
+                                pub.put(payload, attachment = it.into())
+                            } ?: let { pub.put(payload) }
+                            idx++
                         }
                     }
                 }

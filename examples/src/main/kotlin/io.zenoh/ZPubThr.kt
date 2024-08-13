@@ -25,6 +25,7 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.Priority
+import io.zenoh.prelude.QoS
 import io.zenoh.value.Value
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
@@ -38,35 +39,35 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         }
         val value = Value(data, Encoding(Encoding.ID.ZENOH_BYTES))
 
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        val qos = QoS(
+            congestionControl = CongestionControl.BLOCK,
+            priority = priorityInput?.let { Priority.entries[it] } ?: Priority.default(),
+        )
 
         Session.open(config).onSuccess {
             it.use { session ->
-                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow())
-                    .congestionControl(CongestionControl.BLOCK).apply {
-                        priorityInput?.let { priority(Priority.entries[it]) }
-                    }.wait().onSuccess { pub ->
-                        pub.use {
-                            println("Publisher declared on test/thr.")
-                            var count: Long = 0
-                            var start = System.currentTimeMillis()
-                            val number = number.toLong()
-                            println("Press CTRL-C to quit...")
-                            while (true) {
-                                pub.put(value).wait().getOrThrow()
-                                if (statsPrint) {
-                                    if (count < number) {
-                                        count++
-                                    } else {
-                                        val throughput = count * 1000 / (System.currentTimeMillis() - start)
-                                        println("$throughput msgs/s")
-                                        count = 0
-                                        start = System.currentTimeMillis()
-                                    }
-                                }
+                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow(), qos = qos).onSuccess { pub ->
+                    println("Publisher declared on test/thr.")
+                    var count: Long = 0
+                    var start = System.currentTimeMillis()
+                    val number = number.toLong()
+                    println("Press CTRL-C to quit...")
+                    while (true) {
+                        pub.put(value).getOrThrow()
+                        if (statsPrint) {
+                            if (count < number) {
+                                count++
+                            } else {
+                                val throughput = count * 1000 / (System.currentTimeMillis() - start)
+                                println("$throughput msgs/s")
+                                count = 0
+                                start = System.currentTimeMillis()
                             }
                         }
                     }
+                }
             }
         }
     }
