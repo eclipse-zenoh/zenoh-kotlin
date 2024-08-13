@@ -17,6 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 
 class ZSub(private val emptyArgs: Boolean) : CliktCommand(
@@ -24,7 +25,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
 ) {
 
     override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         println("Opening session...")
         Session.open(config).onSuccess { session ->
@@ -32,17 +33,16 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
                         println("Declaring Subscriber on '$keyExpr'...")
-                        session.declareSubscriber(keyExpr).bestEffort().wait().onSuccess { subscriber ->
-                            subscriber.use {
-                                println("Press CTRL-C to quit...")
-                                runBlocking {
-                                    for (sample in subscriber.receiver!!) {
-                                        println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
-                                            sample.attachment?.let {
-                                                ", with attachment: $it"
-                                            } ?: ""
-                                        })")
-                                    }
+
+                        session.declareSubscriber(keyExpr, Channel()).onSuccess {
+                            subscriber ->
+                            runBlocking {
+                                for (sample in subscriber.receiver!!) {
+                                    println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${
+                                        sample.attachment?.let {
+                                            ", with attachment: $it"
+                                        } ?: ""
+                                    })")
                                 }
                             }
                         }

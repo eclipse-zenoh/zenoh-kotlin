@@ -17,10 +17,12 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
-import io.zenoh.query.ConsolidationMode
+import io.zenoh.protocol.into
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
 import io.zenoh.selector.intoSelector
+import io.zenoh.value.Value
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
@@ -29,39 +31,28 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
 ) {
 
     override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         Session.open(config).onSuccess { session ->
             session.use {
                 selector.intoSelector().onSuccess { selector ->
-                    selector.use {
-                        session.get(selector)
-                            .consolidation(ConsolidationMode.NONE)
-                            .timeout(Duration.ofMillis(timeout))
-                            .apply {
-                                target?.let {
-                                    target(QueryTarget.valueOf(it.uppercase()))
-                                }
-                                attachment?.let {
-                                    attachment(it)
-                                }
-                                payload?.let {
-                                    payload(it)
-                                }
-                            }
-                            .wait()
-                            .onSuccess { receiver ->
-                                runBlocking {
-                                    for (reply in receiver!!) {
-                                        when (reply) {
-                                            is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
-                                            is Reply.Error -> println("Received (ERROR: '${reply.error}')")
-                                            is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
-                                        }
+                    session.get(selector,
+                        channel = Channel(),
+                        value = payload?.let { Value(it) },
+                        target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
+                        attachment = attachment?.into(),
+                        timeout = Duration.ofMillis(timeout))
+                        .onSuccess { channelReceiver ->
+                            runBlocking {
+                                for (reply in channelReceiver) {
+                                    when (reply) {
+                                        is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
+                                        is Reply.Error -> println("Received (ERROR: '${reply.error}')")
+                                        is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
                                     }
                                 }
+                            }
                         }
-                    }
                 }
             }
         }
