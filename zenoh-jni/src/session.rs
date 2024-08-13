@@ -760,7 +760,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 ///     of using a non declared key expression, in which case the `key_expr_str` parameter will be used instead.
 /// - `key_expr_str`: String representation of the key expression to be used to declare the query. It is not
 ///     considered if a `key_expr_ptr` is provided.
-/// - `selector_params`: Parameters of the selector.
+/// - `selector_params`: Optional parameters of the selector.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session].
 /// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when no more replies will be received.
@@ -789,7 +789,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     _class: JClass,
     key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: JString,
-    selector_params: JString,
+    selector_params: /*nullable*/ JString,
     session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
@@ -809,10 +809,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
         let query_target = decode_query_target(target)?;
         let consolidation = decode_consolidation(consolidation)?;
-        let selector_params = decode_string(&mut env, &selector_params)?;
         let timeout = Duration::from_millis(timeout_ms as u64);
         let on_close = load_on_close(&java_vm, on_close_global_ref);
-        let selector = Selector::owned(&key_expr, &*selector_params);
+        let selector_params = if selector_params.is_null() {
+            String::new()
+        } else {
+            decode_string(&mut env, &selector_params)?
+        };
+        let selector = Selector::owned(&key_expr, selector_params);
         let mut get_builder = session
             .get(selector)
             .callback(move |reply| {

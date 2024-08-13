@@ -34,8 +34,8 @@ import kotlin.test.*
 class SubscriberTest {
 
     companion object {
-        val TEST_PRIORITY = Priority.DATA_HIGH;
-        val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK;
+        val TEST_PRIORITY = Priority.DATA_HIGH
+        val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK
 
         val testValues = arrayListOf(
             Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
@@ -124,7 +124,7 @@ class SubscriberTest {
         subscriber.undeclare()
 
         assertTrue(onCloseWasCalled)
-        assertTrue(subscriber.receiver!!.isClosedForReceive)
+        assertTrue(subscriber.receiver.isClosedForReceive)
     }
 }
 
