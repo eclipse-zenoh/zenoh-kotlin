@@ -72,8 +72,8 @@ class SubscriberTest {
 
         receivedSamples.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.value, value)
-            assertEquals(sample.qos.priority(), TEST_PRIORITY)
-            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
+            assertEquals(sample.qos.priority, TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }
 
         subscriber.close()
@@ -91,8 +91,8 @@ class SubscriberTest {
 
         handler.queue.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.value, value)
-            assertEquals(sample.qos.priority(), TEST_PRIORITY)
-            assertEquals(sample.qos.congestionControl(), TEST_CONGESTION_CONTROL)
+            assertEquals(sample.qos.priority, TEST_PRIORITY)
+            assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }
 
         subscriber.close()

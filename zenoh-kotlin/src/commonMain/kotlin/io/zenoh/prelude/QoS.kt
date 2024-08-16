@@ -32,35 +32,4 @@ class QoS (
 
         fun default() = defaultQoS
     }
-
-    /**
-     * Returns priority of the message.
-     */
-    fun priority(): Priority = priority
-
-    /**
-     * Returns congestion control setting of the message.
-     */
-    fun congestionControl(): CongestionControl = congestionControl
-
-    /**
-     * Returns express flag. If it is true, the message is not batched to reduce the latency.
-     */
-    fun isExpress(): Boolean = express
-
-    internal class Builder(
-        private var express: Boolean = false,
-        private var congestionControl: CongestionControl = CongestionControl.default(),
-        private var priority: Priority = Priority.default(),
-    ) {
-
-        fun express(value: Boolean) = apply { this.express = value }
-
-        fun priority(priority: Priority) = apply { this.priority = priority }
-
-        fun congestionControl(congestionControl: CongestionControl) =
-            apply { this.congestionControl = congestionControl }
-
-        fun build() = QoS(congestionControl, priority, express)
-    }
 }
