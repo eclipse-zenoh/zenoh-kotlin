@@ -181,7 +181,10 @@ internal class JNISession {
                     }
                 }
             } else {
-                reply = Reply.Error(replierId?.let { ZenohID(it) }, Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)))
+                reply = Reply.Error(
+                    replierId?.let { ZenohID(it) },
+                    Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema))
+                )
             }
             callback.run(reply)
         }
