@@ -40,7 +40,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_tryFromViaJNI(
     _class: JClass,
     key_expr: JString,
 ) -> jstring {
-    decode_key_expr(&mut env, &key_expr)
+    validate_key_expr(&mut env, &key_expr)
         .map(|_| **key_expr)
         .unwrap_or_else(|err| {
             throw_exception!(env, err);
@@ -167,7 +167,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     Arc::from_raw(key_expr_ptr);
 }
 
-fn decode_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
+fn validate_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
     let key_expr_str = decode_string(env, key_expr)
         .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))?;
 
@@ -192,14 +192,20 @@ fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr
 /// If the pointer is valid, the key expression returned is the key expression the pointer pointed to.
 /// Otherwise, a key expression created from the string representation of the key expression is returned.
 ///
+/// # Safety:
+///
+/// The key_expr_str argument provided should already have been validated upon creation of the
+/// KeyExpr instance on Kotlin.
+///
 pub(crate) unsafe fn process_kotlin_key_expr(
     env: &mut JNIEnv,
     key_expr_str: &JString,
     key_expr_ptr: *const KeyExpr<'static>,
 ) -> Result<KeyExpr<'static>> {
     if key_expr_ptr.is_null() {
-        decode_key_expr(env, key_expr_str)
-            .map_err(|err| jni_error!("Unable to process key expression: '{}'.", err))
+        let key_expr = decode_string(env, key_expr_str)
+            .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))?;
+        Ok(KeyExpr::from_string_unchecked(key_expr))
     } else {
         let key_expr = Arc::from_raw(key_expr_ptr);
         let key_expr_clone = key_expr.deref().clone();
