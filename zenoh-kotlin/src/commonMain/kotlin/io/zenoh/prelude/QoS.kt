@@ -21,7 +21,7 @@ package io.zenoh.prelude
  * @property priority [Priority] policy used for the message.
  * @property express If true, the message is not batched in order to reduce the latency.
  */
-class QoS (
+data class QoS (
     val congestionControl: CongestionControl = CongestionControl.DROP,
     val priority: Priority = Priority.DATA,
     val express: Boolean = false
