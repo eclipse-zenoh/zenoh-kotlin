@@ -25,12 +25,12 @@ import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
- * Class to represent a Zenoh Reply to a [Get] operation and to a remote [Query].
+ * Class to represent a Zenoh Reply to a get query and to a remote [Query].
  *
  * A reply can be either successful ([Success]) or an error ([Error]), both having different information. For instance,
  * the successful reply will contain a [Sample] while the error reply will only contain a [Value] with the error information.
  *
- * Replies can either be automatically created when receiving a remote reply after performing a [Get] (in which case the
+ * Replies can either be automatically created when receiving a remote reply after performing a get (in which case the
  * [replierId] shows the id of the replier) or created through the builders while answering to a remote [Query] (in that
  * case the replier ID is automatically added by Zenoh).
  *

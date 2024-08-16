@@ -67,8 +67,7 @@ interface Handler<T: ZenohType, R> {
      *
      * For instances of [io.zenoh.queryable.Queryable] and [io.zenoh.subscriber.Subscriber],
      * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
-     * (see [io.zenoh.query.Get]), it is invoked when no more elements of type [T] are expected
-     * to be received.
+     * it is invoked when no more elements of type [T] are expected to be received.
      */
     fun onClose()
 }

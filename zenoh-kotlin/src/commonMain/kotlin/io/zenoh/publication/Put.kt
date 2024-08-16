@@ -14,39 +14,20 @@
 
 package io.zenoh.publication
 
-import io.zenoh.Resolvable
-import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.*
+import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 
 /**
  * Put operation.
  *
- * A put puts a [io.zenoh.sample.Sample] into the specified key expression.
- *
- * Example:
- * ```kotlin
- * Session.open().onSuccess { session -> session.use {
- *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
- *     session.put(keyExpr, "Hello")
- *         .congestionControl(CongestionControl.BLOCK)
- *         .priority(Priority.REALTIME)
- *         .wait()
- *         .onSuccess { println("Put 'Hello' on $keyExpr.") }
- *     }}
- * }
- * ```
- *
- * This class is an open class for the sake of the [Delete] operation, which is a special case of [Put] operation.
- *
  * @property keyExpr The [KeyExpr] to which the put operation will be performed.
  * @property value The [Value] to put.
  * @property qos The [QoS] configuration.
  * @property attachment An optional user attachment.
  */
-internal class Put (
+internal data class Put (
     val keyExpr: KeyExpr,
     val value: Value,
     val qos: QoS,
