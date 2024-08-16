@@ -14,34 +14,16 @@
 
 package io.zenoh.publication
 
-import io.zenoh.Resolvable
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
-import io.zenoh.Session
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 
 /**
- * Delete operation to perform on Zenoh on a key expression.
+ * Delete operation.
  *
- * Example:
- * ```kotlin
- * Session.open().onSuccess { session ->
- *         session.use {
- *             "demo/kotlin/example".intoKeyExpr().onSuccess { keyExpr ->
- *             session.delete(keyExpr)
- *                 .wait()
- *                 .onSuccess {
- *                     println("Performed a delete on $keyExpr")
- *                 }
- *             }
- *         }
- *     }
- * ```
- *
- * A delete operation is a special case of a Put operation, it is analogous to perform a Put with an empty value and
- * specifying the sample kind to be `DELETE`.
+ * @property keyExpr The [KeyExpr] for the delete operation.
+ * @property qos The [QoS] configuration.
+ * @property attachment Optional attachment.
  */
 internal class Delete (
     val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?
