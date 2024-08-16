@@ -108,27 +108,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     it.use { session ->
      *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declarePublisher(keyExpr).onSuccess { pub ->
-     *                     pub.use {
-     *                         println("Publisher declared on $keyExpr.")
-     *                         var i = 0
-     *                         while (true) {
-     *                             val payload = "Hello for the ${i}th time!"
-     *                             println(payload)
-     *                             pub.put(payload)
-     *                             Thread.sleep(1000)
-     *                             i++
-     *                         }
+     *                 pub.use {
+     *                     println("Publisher declared on $keyExpr.")
+     *                     var i = 0
+     *                     while (true) {
+     *                         val payload = "Hello for the ${i}th time!"
+     *                         println(payload)
+     *                         pub.put(payload)
+     *                         Thread.sleep(1000)
+     *                         i++
      *                     }
      *                 }
+     *             }
      *         }
      *     }
      * }
      * ```
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
+     * @param qos The [QoS] configuration of the publisher.
      * @return The result of the declaration, returning the publisher in case of success.
      */
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS()): Result<Publisher> {
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS.default()): Result<Publisher> {
         return resolvePublisher(keyExpr, qos)
     }
 
@@ -265,11 +266,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-     *              query.reply(keyExpr)
-     *                   .success("Hello!")
-     *                   .withKind(SampleKind.PUT)
-     *                   .withTimeStamp(TimeStamp.getCurrentTime())
-     *                   .wait()
+     *              query.replySuccess(keyExpr, value = Value("Hello!"))
      *                   .onSuccess { println("Replied hello.") }
      *                   .onFailure { println(it) }
      *         }).getOrThrow()
@@ -282,6 +279,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param onClose Callback to be run upon closing the queryable.
      * @param complete The queryable completeness.
      * @return A result with the queryable.
+     * @see Query
      */
     fun declareQueryable(
         keyExpr: KeyExpr,
@@ -295,17 +293,21 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     /**
      * Declare a [Queryable] on the session with a [Handler].
      *
-     * Example:
-     * ```kotlin
+     * Example: we create a class `ExampleHandler` that implements the [Handler] interface to reply
+     * to the incoming queries:
      *
+     * ```kotlin
      * class ExampleHandler: Handler<Query, Unit> {
-     *     override fun handle(t: Query) = query.reply(query.keyExpr).success("Hello").wait()
+     *     override fun handle(t: Query) = query.replySuccess(query.keyExpr, value = Value("Hello!"))
      *
      *     override fun receiver() = Unit
      *
      *     override fun onClose() = println("Closing handler")
      * }
+     * ```
      *
+     * Then we'd use it as follows:
+     * ```kotlin
      * Session.open().onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
@@ -340,20 +342,18 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * /// TODO: update code
      * Session.open(config).onSuccess { session ->
      *     session.use {
      *         key.intoKeyExpr().onSuccess { keyExpr ->
-     *             keyExpr.use {
-     *                 println("Declaring Queryable on $key...")
-     *                 val channel: Channel<Query> = Channel()
-     *                 session.declareQueryable(keyExpr, channel).getOrThrow()
+     *             println("Declaring Queryable on $key...")
+     *             session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
      *                 runBlocking {
-     *                     for (query in channel) {
+     *                     for (query in queryable.receiver) {
      *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
      *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-     *                         query.reply(keyExpr).success(value).timestamp(TimeStamp.getCurrentTime())
-     *                             .wait().onFailure { println(">> [Queryable ] Error sending reply: $it") }
+     *                         query.replySuccess(keyExpr, value = Value("Example reply"))
+     *                             .onSuccess { println(">> [Queryable ] Performed reply...") }
+     *                             .onFailure { println(">> [Queryable ] Error sending reply: $it") }
      *                     }
      *                 }
      *             }
@@ -366,7 +366,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param channel The [Channel] to receive the incoming queries. It will be closed upon closing the queryable.
      * @param onClose Callback to be run upon closing the queryable.
      * @param complete The completeness of the queryable.
-     * @return A result with the queryable.
+     * @return A result with the queryable, where the [Queryable.receiver] is the provided [Channel].
      */
     fun declareQueryable(
         keyExpr: KeyExpr,
