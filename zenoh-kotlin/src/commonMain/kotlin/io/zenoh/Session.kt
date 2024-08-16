@@ -340,6 +340,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
+     * /// TODO: update code
      * Session.open(config).onSuccess { session ->
      *     session.use {
      *         key.intoKeyExpr().onSuccess { keyExpr ->
@@ -433,7 +434,58 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    //TODO: add documentation
+    /**
+     * Performs a Get query on the [selector], handling the replies with a callback.
+     *
+     * A callback must be provided to handle the incoming replies. A basic query can be achieved
+     * as follows:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *             session.get(selector, callback = { reply -> println(reply) })
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * Additionally, other optional parameters to the query can be specified, and the result
+     * of the operation can be checked as well:
+     *
+     * Example:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *             session.get(
+     *                 selector,
+     *                 callback = { reply -> println(reply) },
+     *                 value = Value("Example value"),
+     *                 target = QueryTarget.BEST_MATCHING,
+     *                 attachment = ZBytes.from("Example attachment"),
+     *                 timeout = Duration.ofMillis(1000),
+     *                 onClose = { println("Query terminated.") }
+     *             ).onSuccess {
+     *                 println("Get query launched...")
+     *             }.onFailure {
+     *                 println("Error: $it")
+     *             }
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param selector The [Selector] on top of which the get query will be performed.
+     * @param callback [Callback] to handle the replies.
+     * @param value Optional [Value] for the query.
+     * @param attachment Optional attachment.
+     * @param target The [QueryTarget] of the query.
+     * @param consolidation The [ConsolidationMode] configuration.
+     * @param onClose Callback to be executed when the query is terminated.
+     * @return A [Result] with the status of the query. When [Result.success] is returned, that means
+     *   the query was properly launched and not that it has received all the possible replies (this
+     *   can't be known from the perspective of the query).
+     */
     fun get(
         selector: Selector,
         callback: Callback<Reply>,
@@ -457,7 +509,87 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         )
     }
 
-    //TODO: add documentation
+    /**
+     * Performs a Get query on the [selector], handling the replies with a [Handler].
+     *
+     * A handler must be provided to handle the incoming replies. For instance, imagine we implement
+     * a `QueueHandler`:
+     * ```kotlin
+     * class QueueHandler<T : ZenohType> : Handler<T, ArrayDeque<T>> {
+     *     private val queue: ArrayDeque<T> = ArrayDeque()
+     *
+     *     override fun handle(t: T) {
+     *         queue.add(t)
+     *     }
+     *
+     *     override fun receiver(): ArrayDeque<T> {
+     *         return queue
+     *     }
+     *
+     *     override fun onClose() {
+     *         println("Received in total ${queue.size} elements.")
+     *     }
+     * }
+     * ```
+     *
+     * then we could use it as follows:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *               val handler = QueueHandler<Reply>()
+     *               val receiver = session.get(selector, handler).getOrThrow()
+     *               // ...
+     *               for (reply in receiver) {
+     *                   println(reply)
+     *               }
+     *          }
+     *     }
+     * }
+     * ```
+     *
+     * Additionally, other optional parameters to the query can be specified, and the result
+     * of the operation can be checked as well:
+     *
+     * Example:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *             val handler = QueueHandler<Reply>()
+     *             session.get(
+     *                 selector,
+     *                 handler,
+     *                 value = Value("Example value"),
+     *                 target = QueryTarget.BEST_MATCHING,
+     *                 attachment = ZBytes.from("Example attachment"),
+     *                 timeout = Duration.ofMillis(1000),
+     *                 onClose = { println("Query terminated.") }
+     *             ).onSuccess { receiver ->
+     *                 println("Get query launched...")
+     *                 // ...
+     *                 for (reply in receiver) {
+     *                     println(reply)
+     *                 }
+     *             }.onFailure {
+     *                 println("Error: $it")
+     *             }
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param selector The [Selector] on top of which the get query will be performed.
+     * @param handler [Handler] to handle the replies.
+     * @param value Optional [Value] for the query.
+     * @param attachment Optional attachment.
+     * @param target The [QueryTarget] of the query.
+     * @param consolidation The [ConsolidationMode] configuration.
+     * @param onClose Callback to be executed when the query is terminated.
+     * @return A [Result] with the [handler]'s receiver of type [R]. When [Result.success] is returned, that means
+     *   the query was properly launched and not that it has received all the possible replies (this
+     *   can't be known from the perspective of the query).
+     */
     fun <R> get(
         selector: Selector,
         handler: Handler<Reply, R>,
@@ -484,7 +616,69 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         )
     }
 
-    //TODO: add documentation
+    /**
+     * Performs a Get query on the [selector], handling the replies with a blocking [Channel].
+     *
+     * Example:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *               session.get(selector, channel = Channel()).onSuccess { channel ->
+     *                   runBlocking {
+     *                       for (reply in channel) {
+     *                           println("Received $reply")
+     *                       }
+     *                   }
+     *               }.onFailure {
+     *                    println("Error: $it")
+     *               }
+     *          }
+     *     }
+     * }
+     * ```
+     *
+     * Additionally, other optional parameters to the query can be specified, and the result
+     * of the operation can be checked as well:
+     *
+     * Example:
+     *
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoSelector().onSuccess { selector ->
+     *               session.get(selector,
+     *                   channel = Channel(),
+     *                   value = Value("Example value"),
+     *                   target = QueryTarget.BEST_MATCHING,
+     *                   attachment = ZBytes.from("Example attachment"),
+     *                   timeout = Duration.ofMillis(1000),
+     *                   onClose = { println("Query terminated.") }
+     *               ).onSuccess { channel ->
+     *                   runBlocking {
+     *                       for (reply in channel) {
+     *                           println("Received $reply")
+     *                       }
+     *                   }
+     *               }.onFailure {
+     *                    println("Error: $it")
+     *               }
+     *          }
+     *     }
+     * }
+     * ```
+     *
+     * @param selector The [Selector] on top of which the get query will be performed.
+     * @param channel Blocking [Channel] to handle the replies.
+     * @param value Optional [Value] for the query.
+     * @param attachment Optional attachment.
+     * @param target The [QueryTarget] of the query.
+     * @param consolidation The [ConsolidationMode] configuration.
+     * @param onClose Callback to be executed when the query is terminated.
+     * @return A [Result] with the [channel] on success. When [Result.success] is returned, that means
+     *   the query was properly launched and not that it has received all the possible replies (this
+     *   can't be known from the perspective of the query).
+     */
     fun get(
         selector: Selector,
         channel: Channel<Reply>,
