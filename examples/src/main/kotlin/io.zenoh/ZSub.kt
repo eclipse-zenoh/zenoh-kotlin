@@ -34,8 +34,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                     keyExpr.use {
                         println("Declaring Subscriber on '$keyExpr'...")
 
-                        session.declareSubscriber(keyExpr, Channel()).onSuccess {
-                            subscriber ->
+                        session.declareSubscriber(keyExpr, Channel()).onSuccess { subscriber ->
                             runBlocking {
                                 for (sample in subscriber.receiver) {
                                     println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.value}'" + "${

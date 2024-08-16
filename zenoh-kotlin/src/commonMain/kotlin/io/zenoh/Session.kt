@@ -710,11 +710,43 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Declare a [Put] with the provided value on the specified key expression.
      *
      * Example:
-     * TODO: add example
+     * ```kotlin
+     * Session.open(config).onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.put(keyExpr, value = Value("Example value")).getOrThrow()
+     *         }
+     *         // ...
+     *     }
+     * }
+     * ```
+     *
+     * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
+     *             val exampleQoS = QoS(
+     *                  congestionControl = CongestionControl.DROP,
+     *                  express = true,
+     *                  priority = Priority.DATA_HIGH)
+     *             val exampleAttachment = "exampleAttachment".into()
+     *             session.put(
+     *                  keyExpr,
+     *                  value = Value("Example value"),
+     *                  qos = exampleQoS,
+     *                  attachment = exampleAttachment).getOrThrow()
+     *         }
+     *         // ...
+     *     }
+     * }
+     * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
      * @param value The [Value] to be put.
-     * @return A resolvable [Put.Builder].
+     * @param qos The [QoS] configuration.
+     * @param attachment Optional attachment.
+     * @return A [Result] with the status of the put operation.
      */
     fun put(keyExpr: KeyExpr, value: Value, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
         val put = Put(keyExpr, value, qos, attachment)
@@ -722,13 +754,46 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Put] with the provided value on the specified key expression.
+     * Declare a [Put] with the provided message on the specified key expression.
      *
-     * TODO: add example
+     * Example:
+     * ```kotlin
+     * Session.open(config).onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.put(keyExpr, "Example message").getOrThrow()
+     *         }
+     *         // ...
+     *     }
+     * }
+     * ```
+     *
+     * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
+     * ```kotlin
+     * Session.open().onSuccess { session ->
+     *     session.use {
+     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
+     *             val exampleQoS = QoS(
+     *                  congestionControl = CongestionControl.DROP,
+     *                  express = true,
+     *                  priority = Priority.DATA_HIGH)
+     *             val exampleAttachment = "exampleAttachment".into()
+     *             session.put(
+     *                  keyExpr,
+     *                  message = "Example message",
+     *                  qos = exampleQoS,
+     *                  attachment = exampleAttachment).getOrThrow()
+     *         }
+     *         // ...
+     *     }
+     * }
+     * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
-     * @param message The message to be put.
-     * @return A resolvable [Put.Builder].
+     * @param message The [String] message to put.
+     * @param qos The [QoS] configuration.
+     * @param attachment Optional attachment.
+     * @return A [Result] with the status of the put operation.
      */
     fun put(keyExpr: KeyExpr, message: String, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
         val put = Put(keyExpr, Value(message), qos, attachment)
@@ -736,14 +801,24 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Delete].
+     * Perform a delete operation.
      *
      * Example:
-     *
-     * TODO Add example
+     * ```kotlin
+     * Session.open(config).onSuccess { session ->
+     *     session.use {
+     *         key.intoKeyExpr().onSuccess { keyExpr ->
+     *             println("Deleting resources matching '$keyExpr'...")
+     *             session.delete(keyExpr)
+     *         }
+     *     }
+     * }
+     * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the delete operation.
-     * @return a resolvable [Delete.Builder].
+     * @param qos The [QoS] configuration.
+     * @param attachment Optional [ZBytes] attachment.
+     * @return a [Result] with the status of the operation.
      */
     fun delete(keyExpr: KeyExpr, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
         val delete = Delete(keyExpr, qos, attachment)
