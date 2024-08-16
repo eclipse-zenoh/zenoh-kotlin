@@ -27,24 +27,38 @@ import org.apache.commons.net.ntp.TimeStamp
 /**
  * Class to represent a Zenoh Reply to a get query and to a remote [Query].
  *
- * A reply can be either successful ([Success]) or an error ([Error]), both having different information. For instance,
- * the successful reply will contain a [Sample] while the error reply will only contain a [Value] with the error information.
- *
- * Replies can either be automatically created when receiving a remote reply after performing a get (in which case the
- * [replierId] shows the id of the replier) or created through the builders while answering to a remote [Query] (in that
- * case the replier ID is automatically added by Zenoh).
+ * A reply can be either successful ([Success]), an error ([Error]) or a delete request ([Delete]), both having different
+ * information.
+ * For instance, the successful reply will contain a [Sample] while the error reply will only contain a [Value]
+ * with the error information.
  *
  * Example:
  * ```kotlin
- * TODO: provide example and update documentation
+ * Session.open(config).onSuccess { session ->
+ *     session.use {
+ *         key.intoKeyExpr().onSuccess { keyExpr ->
+ *             session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
+ *                 runBlocking {
+ *                     for (query in queryable.receiver) {
+ *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
+ *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+ *                         query.replySuccess(
+ *                             keyExpr,
+ *                             value = Value("Example value"),
+ *                             timestamp = TimeStamp.getCurrentTime()
+ *                         ).getOrThrow()
+ *                     }
+ *                 }
+ *             }
+ *         }
+ *     }
+ * }
  * ```
  *
- * **IMPORTANT: Error replies are not yet fully supported by Zenoh, but the code for the error replies below has been
- * added for the sake of future compatibility.** TODO: double check
- *
- * @property replierId: unique ID identifying the replier.
+ * @property replierId: unique ID identifying the replier, may be null in case the network cannot provide it
+ *   (@see https://github.com/eclipse-zenoh/zenoh/issues/709#issuecomment-2202763630).
  */
-sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
+sealed class Reply private constructor(open val replierId: ZenohID?) : ZenohType {
 
     /**
      * A successful [Reply].
@@ -55,21 +69,10 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
      *
      * @param replierId The replierId of the remotely generated reply.
      */
-    class Success internal constructor(replierId: ZenohID? = null, val sample: Sample) : Reply(replierId) {
+    data class Success internal constructor(override val replierId: ZenohID? = null, val sample: Sample) : Reply(replierId) {
 
         override fun toString(): String {
             return "Success(sample=$sample)"
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Success) return false
-
-            return sample == other.sample
-        }
-
-        override fun hashCode(): Int {
-            return sample.hashCode()
         }
     }
 
@@ -79,21 +82,10 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
      * @property error: value with the error information.*
      * @param replierId: unique ID identifying the replier.
      */
-    class Error internal constructor(replierId: ZenohID? = null, val error: Value) : Reply(replierId) {
+    data class Error internal constructor(override val replierId: ZenohID? = null, val error: Value) : Reply(replierId) {
 
         override fun toString(): String {
             return "Error(error=$error)"
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Error) return false
-
-            return error == other.error
-        }
-
-        override fun hashCode(): Int {
-            return error.hashCode()
         }
     }
 
@@ -106,25 +98,13 @@ sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
      * @property attachment Optional attachment for the delete reply.
      * @property qos QoS for the reply.
      */
-    class Delete internal constructor(
-        replierId: ZenohID? = null,
+    data class Delete internal constructor(
+        override val replierId: ZenohID? = null,
         val keyExpr: KeyExpr,
         val timestamp: TimeStamp?,
         val attachment: ZBytes?,
         val qos: QoS
     ) : Reply(replierId) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Delete) return false
-            return (keyExpr == other.keyExpr
-                    && timestamp == other.timestamp
-                    && attachment == other.attachment
-                    && qos == other.qos)
-        }
-
-        override fun hashCode(): Int {
-            return keyExpr.hashCode()
-        }
 
         override fun toString(): String {
             return "Delete(keyexpr=$keyExpr)"
