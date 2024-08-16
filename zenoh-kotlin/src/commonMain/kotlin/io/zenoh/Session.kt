@@ -567,7 +567,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    internal fun <R> resolveSubscriber(
+    private fun <R> resolveSubscriber(
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
         onClose: () -> Unit,
@@ -591,7 +591,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    internal fun <R> resolveGet(
+    private fun <R> resolveGet(
         selector: Selector,
         callback: Callback<Reply>,
         onClose: () -> Unit,
@@ -618,11 +618,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    internal fun resolvePut(keyExpr: KeyExpr, put: Put): Result<Unit> = runCatching {
+    private fun resolvePut(keyExpr: KeyExpr, put: Put): Result<Unit> = runCatching {
         jniSession?.run { performPut(keyExpr, put) }
     }
 
-    internal fun resolveDelete(keyExpr: KeyExpr, delete: Delete): Result<Unit> = runCatching {
+    private fun resolveDelete(keyExpr: KeyExpr, delete: Delete): Result<Unit> = runCatching {
         jniSession?.run { performDelete(keyExpr, delete) }
     }
 
