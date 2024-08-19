@@ -587,8 +587,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
         })?;
 
-    let (with_value, payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload()
-    {
+    let (payload, encoding_id, encoding_schema) = if let Some(payload) = query.payload() {
         let encoding = query.encoding().unwrap(); //If there is payload, there is encoding.
         let encoding_id = encoding.id() as jint;
         let encoding_schema = encoding
@@ -599,10 +598,9 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             )
             .map(|value| env.auto_local(value))?;
         let byte_array = bytes_to_java_array(&env, payload).map(|value| env.auto_local(value))?;
-        (true, byte_array, encoding_id, encoding_schema)
+        (byte_array, encoding_id, encoding_schema)
     } else {
         (
-            false,
             env.auto_local(JByteArray::default()),
             0,
             env.auto_local(JString::default()),
@@ -634,11 +632,10 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
         .call_method(
             callback_global_ref,
             "run",
-            "(Ljava/lang/String;Ljava/lang/String;Z[BILjava/lang/String;[BJ)V",
+            "(Ljava/lang/String;Ljava/lang/String;[BILjava/lang/String;[BJ)V",
             &[
                 JValue::from(&key_expr_str),
                 JValue::from(&selector_params_jstr),
-                JValue::from(with_value),
                 JValue::from(&payload),
                 JValue::from(encoding_id),
                 JValue::from(&encoding_schema),
@@ -763,7 +760,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 ///     of using a non declared key expression, in which case the `key_expr_str` parameter will be used instead.
 /// - `key_expr_str`: String representation of the key expression to be used to declare the query. It is not
 ///     considered if a `key_expr_ptr` is provided.
-/// - `selector_params`: Parameters of the selector.
+/// - `selector_params`: Optional parameters of the selector.
 /// - `session_ptr`: A raw pointer to the Zenoh [Session].
 /// - `callback`: A Java/Kotlin callback to be called upon receiving a reply.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called when no more replies will be received.
@@ -771,11 +768,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `target`: The query target as the ordinal of the enum.
 /// - `consolidation`: The consolidation mode as the ordinal of the enum.
 /// - `attachment`: An optional attachment encoded into a byte array.
-/// - `with_value`: Boolean value to tell if a value must be included in the get operation. If true,
-///     then the next params are valid.
-/// - `payload`: The payload of the value.
-/// - `encoding_id`: The encoding of the value payload.
-/// - `encoding_schema`: The encoding schema of the value payload, may be null.
+/// - `payload`: Optional payload for the query.
+/// - `encoding_id`: The encoding of the payload.
+/// - `encoding_schema`: The encoding schema of the payload, may be null.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -794,7 +789,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     _class: JClass,
     key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: JString,
-    selector_params: JString,
+    selector_params: /*nullable*/ JString,
     session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
@@ -802,7 +797,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     target: jint,
     consolidation: jint,
     attachment: /*nullable*/ JByteArray,
-    with_value: jboolean,
     payload: /*nullable*/ JByteArray,
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
@@ -815,10 +809,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
         let query_target = decode_query_target(target)?;
         let consolidation = decode_consolidation(consolidation)?;
-        let selector_params = decode_string(&mut env, &selector_params)?;
         let timeout = Duration::from_millis(timeout_ms as u64);
         let on_close = load_on_close(&java_vm, on_close_global_ref);
-        let selector = Selector::owned(&key_expr, &*selector_params);
+        let selector_params = if selector_params.is_null() {
+            String::new()
+        } else {
+            decode_string(&mut env, &selector_params)?
+        };
+        let selector = Selector::owned(&key_expr, selector_params);
         let mut get_builder = session
             .get(selector)
             .callback(move |reply| {
@@ -850,7 +848,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
             .timeout(timeout)
             .consolidation(consolidation);
 
-        if with_value != 0 {
+        if !payload.is_null() {
             let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
             get_builder = get_builder.encoding(encoding);
             get_builder = get_builder.payload(decode_byte_array(&env, payload)?);

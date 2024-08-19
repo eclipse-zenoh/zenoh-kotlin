@@ -17,10 +17,9 @@ package io.zenoh
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
-import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
+import io.zenoh.prelude.*
+import io.zenoh.prelude.Encoding.ID.ZENOH_STRING
+import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
@@ -65,16 +64,16 @@ class QueryableTest {
             Value(testPayload),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS.default()
+            QoS()
         )
-        val queryable = session.declareQueryable(testKeyExpr).with { query ->
-            query.reply(testKeyExpr).success(sample.value).timestamp(sample.timestamp!!).res()
-        }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            query.replySuccess(testKeyExpr, value = sample.value, timestamp = sample.timestamp)
+        }).getOrThrow()
 
         var reply: Reply? = null
         val delay = Duration.ofMillis(1000)
         withTimeout(delay) {
-            session.get(testKeyExpr).with { reply = it }.timeout(delay).res()
+            session.get(testKeyExpr.intoSelector(), callback = { reply = it }, timeout = delay)
         }
 
         assertTrue(reply is Reply.Success)
@@ -86,14 +85,14 @@ class QueryableTest {
     @Test
     fun queryable_runsWithHandler() = runBlocking {
         val handler = QueryHandler()
-        val queryable = session.declareQueryable(testKeyExpr).with(handler).res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr, handler = handler).getOrThrow()
 
         delay(500)
 
         val receivedReplies = ArrayList<Reply>()
-        session.get(testKeyExpr).with { reply: Reply ->
+        session.get(testKeyExpr.intoSelector(), callback = { reply: Reply ->
             receivedReplies.add(reply)
-        }.res()
+        })
 
         delay(500)
 
@@ -103,60 +102,53 @@ class QueryableTest {
     }
 
     @Test
-    fun queryableBuilder_channelHandlerIsTheDefaultHandler() = runBlocking {
-        val queryable = session.declareQueryable(testKeyExpr).res().getOrThrow()
-        assertTrue(queryable.receiver is Channel<Query>)
-        queryable.close()
-    }
-
-    @Test
     fun queryTest() = runBlocking {
         var receivedQuery: Query? = null
-        val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.res().getOrThrow()
+        val queryable =
+            session.declareQueryable(testKeyExpr, callback = { query -> receivedQuery = query }).getOrThrow()
 
-        session.get(testKeyExpr).res()
+        session.get(testKeyExpr.intoSelector(), callback = {})
 
-        delay(1000)
-        queryable.close()
+        delay(100)
         assertNotNull(receivedQuery)
-        assertNull(receivedQuery!!.value)
-    }
+        assertNull(receivedQuery!!.payload)
+        assertNull(receivedQuery!!.encoding)
+        assertNull(receivedQuery!!.attachment)
 
-    @Test
-    fun queryWithValueTest() = runBlocking {
-        var receivedQuery: Query? = null
-        val queryable = session.declareQueryable(testKeyExpr).with { query -> receivedQuery = query }.res().getOrThrow()
+        receivedQuery = null
+        val payload = "Test value"
+        val attachment = "Attachment".into()
+        session.get(testKeyExpr.intoSelector(), callback = {}, value = Value(payload, ZENOH_STRING), attachment = attachment)
 
-        session.get(testKeyExpr).withValue("Test value").res()
-
-        delay(1000)
-        queryable.close()
+        delay(100)
         assertNotNull(receivedQuery)
-        assertEquals(Value("Test value"), receivedQuery!!.value)
+        assertEquals(payload, receivedQuery!!.payload!!.bytes.decodeToString())
+        assertEquals(ZENOH_STRING, receivedQuery!!.encoding!!.id)
+        assertEquals(attachment, receivedQuery!!.attachment)
+
+        queryable.close()
     }
 
     @Test
     fun queryReplySuccessTest() {
         val message = "Test message"
         val timestamp = TimeStamp.getCurrentTime()
+        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
         val priority = Priority.DATA_HIGH
         val express = true
         val congestionControl = CongestionControl.DROP
-        val queryable = session.declareQueryable(testKeyExpr).with {
-            it.use { query ->
-                query.reply(testKeyExpr).success(message).timestamp(timestamp).priority(priority).express(express)
-                    .congestionControl(congestionControl).res()
-            }
-        }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            query.replySuccess(testKeyExpr, value = Value(message), timestamp = timestamp, qos = qos)
+        }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 
         assertTrue(receivedReply is Reply.Success)
         val reply = receivedReply as Reply.Success
-        assertEquals(message, reply.sample.value.payload.decodeToString())
+        assertEquals(message, reply.sample.value.payload.bytes.decodeToString())
         assertEquals(timestamp, reply.sample.timestamp)
         assertEquals(priority, reply.sample.qos.priority)
         assertEquals(express, reply.sample.qos.express)
@@ -166,14 +158,12 @@ class QueryableTest {
     @Test
     fun queryReplyErrorTest() {
         val message = "Error message"
-        val queryable = session.declareQueryable(testKeyExpr).with {
-            it.use { query ->
-                query.reply(testKeyExpr).error(Value(message)).res()
-            }
-        }.res().getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            query.replyError(error = Value(message))
+        }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+        session.get(testKeyExpr.intoSelector(), callback =  { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         Thread.sleep(1000)
         queryable.close()
@@ -181,7 +171,7 @@ class QueryableTest {
         assertNotNull(receivedReply)
         assertTrue(receivedReply is Reply.Error)
         val reply = receivedReply as Reply.Error
-        assertEquals(message, reply.error.payload.decodeToString())
+        assertEquals(message, reply.error.payload.bytes.decodeToString())
     }
 
     @Test
@@ -190,15 +180,13 @@ class QueryableTest {
         val priority = Priority.DATA_HIGH
         val express = true
         val congestionControl = CongestionControl.DROP
-        val queryable = session.declareQueryable(testKeyExpr).with {
-            it.use { query ->
-                query.reply(testKeyExpr).delete().timestamp(timestamp).priority(priority).express(express)
-                    .congestionControl(congestionControl).res()
-            }
-        }.res().getOrThrow()
+        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
 
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            query.replyDelete(testKeyExpr, timestamp = timestamp, qos = qos)
+        }).getOrThrow()
         var receivedReply: Reply? = null
-        session.get(testKeyExpr).with { receivedReply = it }.timeout(Duration.ofMillis(10)).res()
+        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 
@@ -215,11 +203,13 @@ class QueryableTest {
     @Test
     fun onCloseTest() = runBlocking {
         var onCloseWasCalled = false
-        val queryable = session.declareQueryable(testKeyExpr).onClose { onCloseWasCalled = true }.res().getOrThrow()
+        val channel = Channel<Query>()
+        val queryable =
+            session.declareQueryable(testKeyExpr, channel = channel, onClose = { onCloseWasCalled = true }).getOrThrow()
         queryable.undeclare()
 
         assertTrue(onCloseWasCalled)
-        assertTrue(queryable.receiver!!.isClosedForReceive)
+        assertTrue(queryable.receiver.isClosedForReceive)
     }
 }
 
@@ -248,9 +238,9 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             Value(payload),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS.default()
+            QoS()
         )
         performedReplies.add(sample)
-        query.reply(query.keyExpr).success(sample.value).timestamp(sample.timestamp!!).res()
+        query.replySuccess(query.keyExpr, value = sample.value, timestamp = sample.timestamp)
     }
 }

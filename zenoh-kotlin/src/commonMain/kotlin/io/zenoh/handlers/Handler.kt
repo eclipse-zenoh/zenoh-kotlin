@@ -23,7 +23,6 @@ import io.zenoh.ZenohType
  * **Example**:
  * ```kotlin
  * class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
- *
  *     private val queue: ArrayDeque<T> = ArrayDeque()
  *
  *     override fun handle(t: T) {
@@ -43,11 +42,7 @@ import io.zenoh.ZenohType
  *
  * That `QueueHandler` could then be used as follows, for instance for a subscriber:
  * ```kotlin
- * val handler = QueueHandler<Sample>()
- * val receiver = session.declareSubscriber(keyExpr)
- *         .with(handler)
- *         .res()
- *         .onSuccess { ... }
+ * val subscriber = session.declareSubscriber(keyExpr, handler = QueueHandler<Sample>()).getOrThrow()
  * ```
  *
  * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.queryable.Query].
@@ -72,8 +67,7 @@ interface Handler<T: ZenohType, R> {
      *
      * For instances of [io.zenoh.queryable.Queryable] and [io.zenoh.subscriber.Subscriber],
      * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
-     * (see [io.zenoh.query.Get]), it is invoked when no more elements of type [T] are expected
-     * to be received.
+     * it is invoked when no more elements of type [T] are expected to be received.
      */
     fun onClose()
 }

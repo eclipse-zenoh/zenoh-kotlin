@@ -18,6 +18,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import kotlin.system.exitProcess
 
@@ -79,7 +80,11 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
                     session.use {
                         println("Press CTRL-C to quit...")
                         subscriber =
-                            session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()
+                            session.declareSubscriber(
+                                keyExpr,
+                                callback = { listener(number) },
+                                reliability = Reliability.RELIABLE
+                            ).getOrThrow()
                         while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
                             Thread.sleep(1000)
                         }
