@@ -62,11 +62,11 @@ import kotlinx.coroutines.channels.Channel
  * until the session is closed. For the cases where we want to stop the queryable earlier, it's necessary
  * to keep a reference to it in order to undeclare it later.
  *
- * @param R Receiver type of the [Handler] implementation. If no handler is provided to the builder, [R] will be [Unit].
+ * @param R Receiver type of the [Handler] implementation.
  * @property keyExpr The [KeyExpr] to which the subscriber is associated.
  * @property receiver Optional [R] that is provided when specifying a [Handler] for the subscriber.
  * @property jniQueryable Delegate object in charge of communicating with the underlying native code.
- * @constructor Internal constructor.
+ * @see Session.declareQueryable
  */
 class Queryable<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R, private var jniQueryable: JNIQueryable?

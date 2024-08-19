@@ -32,10 +32,7 @@ import io.zenoh.value.Value
  * A publisher is automatically dropped when using it with the 'try-with-resources' statement (i.e. 'use' in Kotlin).
  * The session from which it was declared will also keep a reference to it and undeclare it once the session is closed.
  *
- * In order to declare a publisher, [Session.declarePublisher] must be called, which returns a [Publisher.Builder] from
- * which we can specify the [Priority], and the [CongestionControl].
- *
- * Example:
+ * Example of a publisher declaration:
  * ```kotlin
  * val keyExpr = "demo/kotlin/greeting"
  * Session.open().onSuccess {
@@ -54,8 +51,6 @@ import io.zenoh.value.Value
  * }
  * ```
  *
- * The publisher configuration parameters can be later changed using the setter functions.
- *
  * ## Lifespan
  *
  * Internally, the [Session] from which the [Publisher] was declared keeps a reference to it, therefore keeping it alive
@@ -66,6 +61,7 @@ import io.zenoh.value.Value
  * @property qos [QoS] configuration of the publisher.
  * @property jniPublisher Delegate class handling the communication with the native code.
  * @constructor Create empty Publisher with the default configuration.
+ * @see Session.declarePublisher
  */
 class Publisher internal constructor(
     val keyExpr: KeyExpr,
