@@ -18,7 +18,6 @@ import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.QoS
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
@@ -35,11 +34,35 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property qos The Quality of Service settings used to deliver the sample.
  * @property attachment Optional attachment.
  */
-data class Sample(
+class Sample(
     val keyExpr: KeyExpr,
     val value: Value,
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,
-    val attachment: ZBytes? = null
-): ZenohType
+    val attachment: ByteArray? = null
+): ZenohType {
+    override fun toString(): String {
+        return if (kind == SampleKind.DELETE) "$kind($keyExpr)" else "$kind($keyExpr: $value)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Sample
+
+        if (keyExpr != other.keyExpr) return false
+        if (value != other.value) return false
+        if (kind != other.kind) return false
+        return timestamp == other.timestamp
+    }
+
+    override fun hashCode(): Int {
+        var result = keyExpr.hashCode()
+        result = 31 * result + value.hashCode()
+        result = 31 * result + kind.hashCode()
+        result = 31 * result + (timestamp?.hashCode() ?: 0)
+        return result
+    }
+}

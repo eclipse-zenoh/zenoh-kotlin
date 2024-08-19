@@ -12,15 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh
 
-internal fun interface JNIQueryableCallback {
-    fun run(keyExpr: String,
-            selectorParams: String,
-            withValue: Boolean,
-            payload: ByteArray?,
-            encodingId: Int,
-            encodingSchema: String?,
-            attachmentBytes: ByteArray?,
-            queryPtr: Long)
+/**
+ * A resolvable function interface meant to be used by Zenoh builders.
+ */
+fun interface Resolvable<R> {
+
+    fun res(): Result<R>
 }

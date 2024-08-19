@@ -17,7 +17,10 @@ use jni::{
     JNIEnv,
 };
 
-use crate::{errors::Result, jni_error, throw_exception};
+use crate::{
+    errors::{Error, Result},
+    jni_error, throw_exception,
+};
 
 /// Redirects the Rust logs either to logcat for Android systems or to the standard output (for non-Android systems).
 ///

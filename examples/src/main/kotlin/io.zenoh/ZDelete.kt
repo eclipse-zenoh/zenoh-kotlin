@@ -28,8 +28,10 @@ class ZDelete(private val emptyArgs: Boolean) : CliktCommand(
         Session.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
-                    println("Deleting resources matching '$keyExpr'...")
-                    session.delete(keyExpr)
+                    keyExpr.use {
+                        println("Deleting resources matching '$keyExpr'...")
+                        session.delete(keyExpr).res()
+                    }
                 }
             }
         }

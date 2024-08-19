@@ -51,9 +51,9 @@ class SessionTest {
     @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
         val session = Session.open().getOrThrow()
-        val queryable = session.declareQueryable(testKeyExpr, callback = {}).getOrThrow()
-        val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
-        val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
+        val queryable = session.declareQueryable(testKeyExpr).with {}.res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).with {}.res().getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).res().getOrThrow()
         session.close()
 
         queryable.close()
@@ -65,23 +65,23 @@ class SessionTest {
     fun sessionClose_declarationsAreUndeclaredAfterClosingSessionTest() = runBlocking {
         val session = Session.open().getOrThrow()
 
-        val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
-        val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
+        val publisher = session.declarePublisher(testKeyExpr).res().getOrThrow()
+        val subscriber = session.declareSubscriber(testKeyExpr).res().getOrThrow()
         session.close()
 
         assertFalse(publisher.isValid())
         assertFalse(subscriber.isValid())
 
-        assertTrue(publisher.put("Test").isFailure)
+        assertTrue(publisher.put("Test").res().isFailure)
     }
 
     @Test
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
         val session = Session.open().getOrThrow()
         session.close()
-        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).getOrThrow() }
-        assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }
-        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr, callback = {}).getOrThrow() }
+        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr).with {}.res().getOrThrow() }
+        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr).with {}.res().getOrThrow() }
     }
 
 }

@@ -17,7 +17,6 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.protocol.into
 
 class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Pub example"
@@ -29,23 +28,27 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
         Session.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
-                    println("Declaring publisher on '$keyExpr'...")
-                    session.declarePublisher(keyExpr).onSuccess { pub ->
-                        println("Press CTRL-C to quit...")
-                        val attachment = attachment?.toByteArray()
-                        var idx = 0
-                        while (true) {
-                            Thread.sleep(1000)
-                            val payload = "[${
-                                idx.toString().padStart(4, ' ')
-                            }] $value"
-                            println(
-                                "Putting Data ('$keyExpr': '$payload')..."
-                            )
-                            attachment?.let {
-                                pub.put(payload, attachment = it.into())
-                            } ?: let { pub.put(payload) }
-                            idx++
+                    keyExpr.use {
+                        println("Declaring publisher on '$keyExpr'...")
+                        session.declarePublisher(keyExpr).res().onSuccess { pub ->
+                            pub.use {
+                                println("Press CTRL-C to quit...")
+                                val attachment = attachment?.toByteArray()
+                                var idx = 0
+                                while (true) {
+                                    Thread.sleep(1000)
+                                    val payload = "[${
+                                        idx.toString().padStart(4, ' ')
+                                    }] $value"
+                                    println(
+                                        "Putting Data ('$keyExpr': '$payload')..."
+                                    )
+                                    attachment?.let {
+                                        pub.put(payload).withAttachment(attachment).res()
+                                    } ?: let { pub.put(payload).res() }
+                                    idx++
+                                }
+                            }
                         }
                     }
                 }
