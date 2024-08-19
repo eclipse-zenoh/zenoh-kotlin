@@ -78,7 +78,11 @@ class Query internal constructor(
         attachment: ZBytes? = null
     ): Result<Unit> {
         val sample = Sample(keyExpr, value, SampleKind.PUT, timestamp, qos, attachment)
-        return jniQuery?.replySuccess(sample) ?: Result.failure(SessionException("Query is invalid"))
+        return jniQuery?.let {
+            val result = it.replySuccess(sample)
+            jniQuery = null
+            result
+        } ?: Result.failure(SessionException("Query is invalid"))
     }
 
     /**
@@ -90,7 +94,11 @@ class Query internal constructor(
      * @param error [Value] with the error information.
      */
     fun replyError(error: Value): Result<Unit> {
-        return jniQuery?.replyError(error) ?: Result.failure(SessionException("Query is invalid"))
+        return jniQuery?.let {
+            val result = it.replyError(error)
+            jniQuery = null
+            result
+        } ?: Result.failure(SessionException("Query is invalid"))
     }
 
     /**
@@ -111,8 +119,11 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: ZBytes? = null
     ): Result<Unit> {
-        return jniQuery?.replyDelete(keyExpr, timestamp, attachment, qos)
-            ?: Result.failure(SessionException("Query is invalid"))
+        return jniQuery?.let {
+            val result = it.replyDelete(keyExpr, timestamp, attachment, qos)
+            jniQuery = null
+            result
+        } ?: Result.failure(SessionException("Query is invalid"))
     }
 
     override fun close() {
@@ -120,9 +131,5 @@ class Query internal constructor(
             this.close()
             jniQuery = null
         }
-    }
-
-    protected fun finalize() {
-        close()
     }
 }
