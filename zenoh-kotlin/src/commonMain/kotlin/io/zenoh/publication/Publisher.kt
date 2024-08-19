@@ -21,7 +21,6 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.QoS
-import io.zenoh.protocol.ZBytes
 import io.zenoh.value.Value
 
 /**
@@ -36,18 +35,23 @@ import io.zenoh.value.Value
  * which we can specify the [Priority], and the [CongestionControl].
  *
  * Example:
- * ```kotlin
+ * ```
  * val keyExpr = "demo/kotlin/greeting"
  * Session.open().onSuccess {
  *     it.use { session ->
  *         session
  *             .declarePublisher(keyExpr)
+ *             .priority(Priority.REALTIME)
+ *             .congestionControl(CongestionControl.DROP)
+ *             .res()
  *             .onSuccess { pub ->
- *                 var i = 0
- *                 while (true) {
- *                     pub.put("Hello for the ${i}th time!")
- *                     Thread.sleep(1000)
- *                     i++
+ *                 pub.use {
+ *                     var i = 0
+ *                     while (true) {
+ *                         pub.put("Hello for the ${i}th time!").res()
+ *                         Thread.sleep(1000)
+ *                         i++
+ *                     }
  *                 }
  *             }
  *     }
@@ -69,7 +73,7 @@ import io.zenoh.value.Value
  */
 class Publisher internal constructor(
     val keyExpr: KeyExpr,
-    val qos: QoS,
+    private var qos: QoS,
     private var jniPublisher: JNIPublisher?,
 ) : SessionDeclaration, AutoCloseable {
 
@@ -77,21 +81,28 @@ class Publisher internal constructor(
         private val InvalidPublisherResult = Result.failure<Unit>(SessionException("Publisher is not valid."))
     }
 
-    val congestionControl = qos.congestionControl
-    val priority = qos.priority
-    val express = qos.express
-
     /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
-    fun put(value: Value, attachment: ZBytes? = null) = jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
-
+    fun put(value: Value) = Put(jniPublisher, value)
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
-    fun put(value: String, attachment: ZBytes? = null) = jniPublisher?.put(Value(value), attachment) ?: InvalidPublisherResult
+    fun put(value: String) = Put(jniPublisher, Value(value))
 
     /**
      * Performs a DELETE operation on the specified [keyExpr]
+     *
+     * @return A [Resolvable] operation.
      */
-    fun delete(attachment: ZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+    fun delete() = Delete(jniPublisher)
+
+    /** Get congestion control policy. */
+    fun getCongestionControl(): CongestionControl {
+        return qos.congestionControl()
+    }
+
+    /** Get priority policy. */
+    fun getPriority(): Priority {
+        return qos.priority()
+    }
 
     fun isValid(): Boolean {
         return jniPublisher != null
@@ -104,6 +115,61 @@ class Publisher internal constructor(
     override fun undeclare() {
         jniPublisher?.close()
         jniPublisher = null
+    }
+
+    class Put internal constructor(
+        private var jniPublisher: JNIPublisher?,
+        val value: Value,
+        var attachment: ByteArray? = null
+    ) : Resolvable<Unit> {
+
+        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+
+        override fun res(): Result<Unit> = run {
+            jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
+        }
+    }
+
+    class Delete internal constructor(
+        private var jniPublisher: JNIPublisher?,
+        var attachment: ByteArray? = null
+    ) : Resolvable<Unit> {
+
+        fun withAttachment(attachment: ByteArray) = apply { this.attachment = attachment }
+
+        override fun res(): Result<Unit> = run {
+            jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+        }
+    }
+
+    /**
+     * Publisher Builder.
+     *
+     * @property session The [Session] from which the publisher is declared.
+     * @property keyExpr The key expression the publisher will be associated to.
+     * @constructor Create empty Builder.
+     */
+    class Builder internal constructor(
+        internal val session: Session,
+        internal val keyExpr: KeyExpr,
+    ) {
+        private var qosBuilder: QoS.Builder = QoS.Builder()
+
+        /** Change the [CongestionControl] to apply when routing the data. */
+        fun congestionControl(congestionControl: CongestionControl) =
+            apply { this.qosBuilder.congestionControl(congestionControl) }
+
+        /** Change the [Priority] of the written data. */
+        fun priority(priority: Priority) = apply { this.qosBuilder.priority(priority) }
+
+        /**
+         * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+         */
+        fun express(isExpress: Boolean) = apply { this.qosBuilder.express(isExpress) }
+
+        fun res(): Result<Publisher> {
+            return session.run { resolvePublisher(keyExpr, qosBuilder.build()) }
+        }
     }
 }
 

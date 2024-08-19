@@ -60,15 +60,11 @@ kotlin {
                 implementation("commons-net:commons-net:3.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                implementation("org.jetbrains.kotlin:kotlin-reflect")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-                implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
             }
         }
         if (androidEnabled) {
@@ -109,13 +105,13 @@ kotlin {
         }
     }
 }
+
 tasks.withType<Test> {
     doFirst {
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
         systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
     }
-    useJUnitPlatform()
 }
 
 tasks.whenObjectAdded {

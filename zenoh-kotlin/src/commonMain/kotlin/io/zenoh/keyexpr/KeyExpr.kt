@@ -14,10 +14,10 @@
 
 package io.zenoh.keyexpr
 
+import io.zenoh.Resolvable
 import io.zenoh.Session
 import io.zenoh.SessionDeclaration
 import io.zenoh.jni.JNIKeyExpr
-import io.zenoh.selector.Selector
 
 /**
  * # Address space
@@ -115,9 +115,9 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Undeclare the key expression if it was previously declared on the specified [session].
      *
      * @param session The session from which the key expression was previously declared.
-     * @return A [Result] with the operation status.
+     * @return An empty [Resolvable].
      */
-    fun undeclare(session: Session): Result<Unit> {
+    fun undeclare(session: Session): Resolvable<Unit> {
         return session.undeclare(this)
     }
 
@@ -126,10 +126,6 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      */
     fun isValid(): Boolean {
         return jniKeyExpr != null
-    }
-
-    fun intoSelector(): Selector {
-        return Selector(this)
     }
 
     override fun toString(): String {

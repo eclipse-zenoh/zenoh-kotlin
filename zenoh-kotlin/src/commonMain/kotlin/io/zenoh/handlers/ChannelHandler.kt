@@ -21,13 +21,15 @@ import kotlinx.coroutines.runBlocking
 /**
  * Channel handler
  *
- * Implementation of a [Handler] with a [Channel] receiver.
+ * Implementation of a [Handler] with a [Channel] receiver. This handler is intended to be used
+ * as the default handler by the [io.zenoh.queryable.Queryable], [io.zenoh.subscriber.Subscriber] and [io.zenoh.query.Get],
+ * allowing us to send the incoming elements through a [Channel] within the context of a Kotlin coroutine.
  *
  * @param T
  * @property channel
  * @constructor Create empty Channel handler
  */
-internal class ChannelHandler<T: ZenohType>(private val channel: Channel<T>) : Handler<T, Channel<T>> {
+class ChannelHandler<T: ZenohType>(private val channel: Channel<T>) : Handler<T, Channel<T>> {
 
     override fun handle(t: T) {
         runBlocking { channel.send(t) }
