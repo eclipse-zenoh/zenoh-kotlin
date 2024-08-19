@@ -14,51 +14,99 @@
 
 package io.zenoh.query
 
+import io.zenoh.Resolvable
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
+import io.zenoh.prelude.SampleKind
 import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
-import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.ZenohID
 import io.zenoh.queryable.Query
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
- * Class to represent a Zenoh Reply to a get query and to a remote [Query].
+ * Class to represent a Zenoh Reply to a [Get] operation and to a remote [Query].
  *
- * A reply can be either successful ([Success]), an error ([Error]) or a delete request ([Delete]), both having different
- * information.
- * For instance, the successful reply will contain a [Sample] while the error reply will only contain a [Value]
- * with the error information.
+ * A reply can be either successful ([Success]) or an error ([Error]), both having different information. For instance,
+ * the successful reply will contain a [Sample] while the error reply will only contain a [Value] with the error information.
+ *
+ * Replies can either be automatically created when receiving a remote reply after performing a [Get] (in which case the
+ * [replierId] shows the id of the replier) or created through the builders while answering to a remote [Query] (in that
+ * case the replier ID is automatically added by Zenoh).
+ *
+ * Generating a reply only makes sense within the context of a [Query], therefore builders below are meant to only
+ * be accessible from [Query.reply].
  *
  * Example:
  * ```kotlin
- * Session.open(config).onSuccess { session ->
- *     session.use {
- *         key.intoKeyExpr().onSuccess { keyExpr ->
- *             session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
- *                 runBlocking {
- *                     for (query in queryable.receiver) {
- *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
- *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
- *                         query.replySuccess(
- *                             keyExpr,
- *                             value = Value("Example value"),
- *                             timestamp = TimeStamp.getCurrentTime()
- *                         ).getOrThrow()
- *                     }
- *                 }
- *             }
- *         }
- *     }
- * }
+ * session.declareQueryable(keyExpr).with { query ->
+ *     query.reply(keyExpr)
+ *          .success(Value("Hello"))
+ *          .withTimeStamp(TimeStamp(Date.from(Instant.now())))
+ *          .res()
+ *     }.res()
+ * ...
  * ```
  *
- * @property replierId: unique ID identifying the replier, may be null in case the network cannot provide it
- *   (@see https://github.com/eclipse-zenoh/zenoh/issues/709#issuecomment-2202763630).
+ * **IMPORTANT: Error replies are not yet fully supported by Zenoh, but the code for the error replies below has been
+ * added for the sake of future compatibility.**
+ *
+ * @property replierId: unique ID identifying the replier.
  */
-sealed class Reply private constructor(open val replierId: ZenohID?) : ZenohType {
+sealed class Reply private constructor(val replierId: ZenohID?) : ZenohType {
+
+    /**
+     * Builder to construct a [Reply].
+     *
+     * This builder allows you to construct [Success] and [Error] replies.
+     *
+     * @property query The received [Query] to reply to.
+     * @property keyExpr The [KeyExpr] from the queryable, which is at least an intersection of the query's key expression.
+     * @constructor Create empty Builder
+     */
+    class Builder internal constructor(val query: Query, val keyExpr: KeyExpr) {
+
+        /**
+         * Returns a [Success.Builder] with the provided [value].
+         *
+         * @param value The [Value] of the reply.
+         */
+        fun success(value: Value) = Success.Builder(query, keyExpr, value)
+
+        /**
+         * Returns a [Success.Builder] with a [Value] containing the provided [message].
+         *
+         * It is equivalent to calling `success(Value(message))`.
+         *
+         * @param message A string message for the reply.
+         */
+        fun success(message: String) = success(Value(message))
+
+        /**
+         * Returns an [Error.Builder] with the provided [value].
+         *
+         * @param value The [Value] of the error reply.
+         */
+        fun error(value: Value) = Error.Builder(query, value)
+
+        /**
+         * Returns an [Error.Builder] with a [Value] containing the provided [message].
+         *
+         * It is equivalent to calling `error(Value(message))`.
+         *
+         * @param message A string message for the error reply.
+         */
+        fun error(message: String) = error(Value(message))
+
+        /**
+         * Returns a [Delete.Builder].
+         */
+        fun delete() = Delete.Builder(query, keyExpr)
+
+    }
 
     /**
      * A successful [Reply].
@@ -69,45 +117,175 @@ sealed class Reply private constructor(open val replierId: ZenohID?) : ZenohType
      *
      * @param replierId The replierId of the remotely generated reply.
      */
-    data class Success internal constructor(override val replierId: ZenohID? = null, val sample: Sample) : Reply(replierId) {
+    class Success internal constructor(replierId: ZenohID?, val sample: Sample) : Reply(replierId) {
+
+        /**
+         * Builder for the [Success] reply.
+         *
+         * @property query The [Query] to reply to.
+         * @property keyExpr The [KeyExpr] of the queryable.
+         * @property value The [Value] with the reply information.
+         */
+        class Builder internal constructor(val query: Query, val keyExpr: KeyExpr, val value: Value) :
+            Resolvable<Unit> {
+
+            private val kind = SampleKind.PUT
+            private var timeStamp: TimeStamp? = null
+            private var attachment: ByteArray? = null
+            private var qosBuilder = QoS.Builder()
+
+            /**
+             * Sets the [TimeStamp] of the replied [Sample].
+             */
+            fun timestamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
+
+            /**
+             * Appends an attachment to the reply.
+             */
+            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
+
+            /**
+             * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+             */
+            fun express(express: Boolean) = apply { qosBuilder.express(express) }
+
+            /**
+             * Sets the [Priority] of the reply.
+             */
+            fun priority(priority: Priority) = apply { qosBuilder.priority(priority) }
+
+            /**
+             * Sets the [CongestionControl] of the reply.
+             *
+             * @param congestionControl
+             */
+            fun congestionControl(congestionControl: CongestionControl) =
+                apply { qosBuilder.congestionControl(congestionControl) }
+
+            /**
+             * Constructs the reply sample with the provided parameters and triggers the reply to the query.
+             */
+            override fun res(): Result<Unit> {
+                val sample = Sample(keyExpr, value, kind, timeStamp, qosBuilder.build(), attachment)
+                return query.reply(Success(null, sample)).res()
+            }
+        }
 
         override fun toString(): String {
             return "Success(sample=$sample)"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Success) return false
+
+            return sample == other.sample
+        }
+
+        override fun hashCode(): Int {
+            return sample.hashCode()
         }
     }
 
     /**
      * An Error reply.
      *
-     * @property error: value with the error information.*
+     * @property error: value with the error information.
+     * @constructor The constructor is private since reply instances are created through JNI when receiving a reply to a query.
+     *
      * @param replierId: unique ID identifying the replier.
      */
-    data class Error internal constructor(override val replierId: ZenohID? = null, val error: Value) : Reply(replierId) {
+    class Error internal constructor(replierId: ZenohID?, val error: Value) : Reply(replierId) {
+
+        /**
+         * Builder for the [Error] reply.
+         *
+         * @property query The [Query] to reply to.
+         * @property value The [Value] with the reply information.
+         */
+        class Builder internal constructor(val query: Query, val value: Value) : Resolvable<Unit> {
+
+            /**
+             * Triggers the error reply.
+             */
+            override fun res(): Result<Unit> {
+                return query.reply(Error(null, value)).res()
+            }
+        }
 
         override fun toString(): String {
             return "Error(error=$error)"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Error) return false
+
+            return error == other.error
+        }
+
+        override fun hashCode(): Int {
+            return error.hashCode()
         }
     }
 
     /**
      * A Delete reply.
      *
-     * @property replierId Unique ID identifying the replier.
-     * @property keyExpr Key expression to reply to. This parameter must not be necessarily the same
-     * as the key expression from the Query, however it must intersect with the query key.
-     * @property attachment Optional attachment for the delete reply.
-     * @property qos QoS for the reply.
+     * @property keyExpr
+     * @constructor
+     *
+     * @param replierId
      */
-    data class Delete internal constructor(
-        override val replierId: ZenohID? = null,
+    class Delete internal constructor(
+        replierId: ZenohID?,
         val keyExpr: KeyExpr,
         val timestamp: TimeStamp?,
-        val attachment: ZBytes?,
+        val attachment: ByteArray?,
         val qos: QoS
     ) : Reply(replierId) {
 
-        override fun toString(): String {
-            return "Delete(keyexpr=$keyExpr)"
+        class Builder internal constructor(val query: Query, val keyExpr: KeyExpr) : Resolvable<Unit> {
+
+            private val kind = SampleKind.DELETE
+            private var timeStamp: TimeStamp? = null
+            private var attachment: ByteArray? = null
+            private var qosBuilder = QoS.Builder()
+
+            /**
+             * Sets the [TimeStamp] of the replied [Sample].
+             */
+            fun timestamp(timeStamp: TimeStamp) = apply { this.timeStamp = timeStamp }
+
+            /**
+             * Appends an attachment to the reply.
+             */
+            fun attachment(attachment: ByteArray) = apply { this.attachment = attachment }
+
+            /**
+             * Sets the express flag. If true, the reply won't be batched in order to reduce the latency.
+             */
+            fun express(express: Boolean) = apply { qosBuilder.express(express) }
+
+            /**
+             * Sets the [Priority] of the reply.
+             */
+            fun priority(priority: Priority) = apply { qosBuilder.priority(priority) }
+
+            /**
+             * Sets the [CongestionControl] of the reply.
+             *
+             * @param congestionControl
+             */
+            fun congestionControl(congestionControl: CongestionControl) =
+                apply { qosBuilder.congestionControl(congestionControl) }
+
+            /**
+             * Triggers the delete reply.
+             */
+            override fun res(): Result<Unit> {
+                return query.reply(Delete(null, keyExpr, timeStamp, attachment, qosBuilder.build())).res()
+            }
         }
     }
 }

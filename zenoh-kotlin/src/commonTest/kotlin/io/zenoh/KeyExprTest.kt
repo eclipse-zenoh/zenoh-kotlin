@@ -97,7 +97,7 @@ class KeyExprTest {
     @Test
     fun sessionDeclarationTest() {
         val session = Session.open().getOrThrow()
-        val keyExpr = session.declareKeyExpr("a/b/c").getOrThrow()
+        val keyExpr = session.declareKeyExpr("a/b/c").res().getOrThrow()
         assertEquals("a/b/c", keyExpr.toString())
         session.close()
         keyExpr.close()
@@ -106,20 +106,20 @@ class KeyExprTest {
     @Test
     fun sessionUnDeclarationTest() {
         val session = Session.open().getOrThrow()
-        val keyExpr = session.declareKeyExpr("a/b/c").getOrThrow()
+        val keyExpr = session.declareKeyExpr("a/b/c").res().getOrThrow()
         assertEquals("a/b/c", keyExpr.toString())
 
-        val undeclare1 = session.undeclare(keyExpr)
+        val undeclare1 = session.undeclare(keyExpr).res()
         assertTrue(undeclare1.isSuccess)
 
         // Undeclaring twice a key expression shall fail.
-        val undeclare2 = session.undeclare(keyExpr)
+        val undeclare2 = session.undeclare(keyExpr).res()
         assertTrue(undeclare2.isFailure)
         assertTrue(undeclare2.exceptionOrNull() is SessionException)
 
         // Undeclaring a key expr that was not declared through a session.
         val keyExpr2 = "x/y/z".intoKeyExpr().getOrThrow()
-        val undeclare3 = session.undeclare(keyExpr2)
+        val undeclare3 = session.undeclare(keyExpr2).res()
         assertTrue(undeclare3.isFailure)
         assertTrue(undeclare3.exceptionOrNull() is SessionException)
 

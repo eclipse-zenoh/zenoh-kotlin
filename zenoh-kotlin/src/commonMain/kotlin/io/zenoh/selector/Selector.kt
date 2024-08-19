@@ -28,28 +28,23 @@ import java.net.URLDecoder
  * @property keyExpr The [KeyExpr] of the selector.
  * @property parameters The parameters of the selector.
  */
-class Selector(val keyExpr: KeyExpr, val parameters: String? = null) : AutoCloseable {
+class Selector(val keyExpr: KeyExpr, val parameters: String = "") : AutoCloseable {
 
-    /**
-     * If the [parameters] argument is defined, this function extracts its name-value pairs into a map,
-     * returning an error in case of duplicated parameters.
-     */
-    fun parametersStringMap(): Result<Map<String, String>>? {
-        return parameters?.let {
-            it.split('&').fold<String, Map<String, String>>(mapOf()) { parametersMap, parameter ->
-                val keyValuePair = parameter.split('=')
-                val key = keyValuePair[0]
-                if (parametersMap.containsKey(key)) {
-                    throw IllegalArgumentException("Duplicated parameter `$key` detected.")
-                }
-                val value = keyValuePair.getOrNull(1)?.let { URLDecoder.decode(it, Charsets.UTF_8.name()) } ?: ""
-                parametersMap + (key to value)
-            }.let { map -> Result.success(map) }
+    /** Extracts the selector [parameters]' name-value pairs into a map, returning an error in case of duplicated parameters. */
+    fun parametersStringMap(): Result<Map<String, String>> = runCatching {
+        parameters.split('&').fold(mapOf()) { parametersMap, parameter ->
+            val keyValuePair = parameter.split('=')
+            val key = keyValuePair[0]
+            if (parametersMap.containsKey(key)) {
+                throw IllegalArgumentException("Duplicated parameter `$key` detected.")
+            }
+            val value = keyValuePair.getOrNull(1)?.let { URLDecoder.decode(it, Charsets.UTF_8.name()) } ?: ""
+            parametersMap + (key to value)
         }
     }
 
     override fun toString(): String {
-        return parameters?.let { "$keyExpr?$parameters" } ?: keyExpr.toString()
+        return if (parameters.isEmpty()) "$keyExpr" else "$keyExpr?$parameters"
     }
 
     /** Closes the selector's [KeyExpr]. */
