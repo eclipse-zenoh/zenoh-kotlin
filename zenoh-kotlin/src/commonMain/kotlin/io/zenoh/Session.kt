@@ -426,7 +426,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * otherwise the operation will result in a failure.
      *
      * @param keyExpr The key expression to undeclare.
-     * @return A resolvable returning the status of the undeclare operation.
+     * @return A result with the status of the undeclare operation.
      */
     fun undeclare(keyExpr: KeyExpr): Result<Unit> {
         return jniSession?.run {
