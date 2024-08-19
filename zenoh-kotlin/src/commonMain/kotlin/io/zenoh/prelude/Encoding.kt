@@ -26,23 +26,7 @@ package io.zenoh.prelude
  * This is particularly useful in helping Zenoh to perform additional network optimizations.
  *
  */
-class Encoding(val id: ID, val schema: String? = null) {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Encoding
-
-        if (id != other.id) return false
-        return schema == other.schema
-    }
-
-    override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + schema.hashCode()
-        return result
-    }
+data class Encoding(val id: ID, val schema: String? = null) {
 
     /**
      * The ID of the encoding.
@@ -111,7 +95,8 @@ class Encoding(val id: ID, val schema: String? = null) {
 
         companion object {
             private val idToEnum = entries.associateBy(ID::id)
-            fun fromId(id: Int): ID? = idToEnum[id]
+            internal fun fromId(id: Int): ID? = idToEnum[id]
+            internal fun default() = ZENOH_BYTES
         }
     }
 }

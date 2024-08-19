@@ -31,6 +31,7 @@ dependencies {
 
 tasks {
     val examples = listOf(
+        "ZBytes",
         "ZDelete",
         "ZGet",
         "ZPub",

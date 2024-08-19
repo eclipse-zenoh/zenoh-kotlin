@@ -36,10 +36,10 @@ class PublisherTest {
     fun setUp() {
         session = Session.open().getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        publisher = session.declarePublisher(keyExpr).res().getOrThrow()
-        subscriber = session.declareSubscriber(keyExpr).with { sample ->
+        publisher = session.declarePublisher(keyExpr).getOrThrow()
+        subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSamples.add(sample)
-        }.res().getOrThrow()
+        }).getOrThrow()
         receivedSamples = ArrayList()
     }
 
@@ -55,12 +55,12 @@ class PublisherTest {
     fun putTest() {
 
         val testValues = arrayListOf(
-            Value("Test 1".encodeToByteArray(), Encoding(Encoding.ID.TEXT_PLAIN)),
-            Value("Test 2".encodeToByteArray(), Encoding(Encoding.ID.TEXT_JSON)),
-            Value("Test 3".encodeToByteArray(), Encoding(Encoding.ID.TEXT_CSV))
+            Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
+            Value("Test 2", Encoding(Encoding.ID.TEXT_JSON)),
+            Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
         )
 
-        testValues.forEach() { value -> publisher.put(value).res() }
+        testValues.forEach() { value -> publisher.put(value) }
 
         assertEquals(receivedSamples.size, testValues.size)
         for ((index, sample) in receivedSamples.withIndex()) {
@@ -70,7 +70,7 @@ class PublisherTest {
 
     @Test
     fun deleteTest() {
-        publisher.delete().res()
+        publisher.delete()
         assertEquals(1, receivedSamples.size)
         assertEquals(SampleKind.DELETE, receivedSamples[0].kind)
     }
