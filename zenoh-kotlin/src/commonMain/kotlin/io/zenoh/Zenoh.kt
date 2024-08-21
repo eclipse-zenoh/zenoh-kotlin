@@ -37,7 +37,7 @@ object Zenoh {
         config: Config = Config.default()
     ): Scout<Unit> {
         ZenohLoad
-        return JNIScout.scout(what = whatAmI, callback = callback, receiver = Unit, config = config)
+        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, config = config)
     }
 
     fun <R> scout(
@@ -47,7 +47,7 @@ object Zenoh {
     ): Scout<R> {
         ZenohLoad
         return JNIScout.scout(
-            what = whatAmI,
+            whatAmI = whatAmI,
             callback = { hello -> handler.handle(hello) },
             receiver = handler.receiver(),
             config = config
@@ -62,7 +62,7 @@ object Zenoh {
         ZenohLoad
         val handler = ChannelHandler(channel)
         return JNIScout.scout(
-            what = whatAmI,
+            whatAmI = whatAmI,
             callback = { hello -> handler.handle(hello) },
             receiver = handler.receiver(),
             config = config

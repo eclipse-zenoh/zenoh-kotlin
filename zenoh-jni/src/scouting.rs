@@ -19,8 +19,8 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::prelude::Wait;
-use zenoh::{config::WhatAmI, scouting::Scout, Config};
+use zenoh::{config::WhatAmIMatcher, prelude::Wait};
+use zenoh::{scouting::Scout, Config};
 
 use crate::{errors::Result, throw_exception};
 use crate::{
@@ -33,15 +33,17 @@ use crate::{
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    _whatami: JString,
+    whatAmI: jint,
     callback: JObject,
     _config: JString,
 ) -> *const Scout<()> {
     || -> Result<*const Scout<()>> {
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
-        zenoh::scout(WhatAmI::Peer, Config::default())
+        let whatAmIMatcher: WhatAmIMatcher = (whatAmI as u8).try_into().unwrap(); // The validity of the operation is guaranteed on the kotlin layer.
+        zenoh::scout(whatAmIMatcher, Config::default())
             .callback(move |hello| {
+                tracing::debug!("Received hello: {hello}");
                 let _ = || -> jni::errors::Result<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon()?;
                     let whatami = hello.whatami() as jint;

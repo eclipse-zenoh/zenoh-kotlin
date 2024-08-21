@@ -15,6 +15,7 @@
 package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
+import io.zenoh.scouting.WhatAmI
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 
@@ -25,7 +26,7 @@ class ZScout : CliktCommand(
 
         println("Scouting...")
 
-        val scout = Zenoh.scout(channel = Channel())
+        val scout = Zenoh.scout(channel = Channel(), whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router))
         runBlocking {
             for (hello in scout.receiver) {
                 println(hello)

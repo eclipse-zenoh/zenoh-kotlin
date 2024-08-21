@@ -16,20 +16,21 @@ class JNIScout(private val ptr: Long) {
 
     companion object {
         fun <R> scout(
-            what: Set<WhatAmI>,
+            whatAmI: Set<WhatAmI>,
             callback: Callback<Hello>,
             config: Config,
             receiver: R
         ): Scout<R> {
-            val scoutCallback = JNIScoutCallback { whatAmI: Int, id: String, locators: List<String> ->
-                callback.run(Hello(WhatAmI.fromInt(whatAmI), ZenohID(id), locators))
+            val scoutCallback = JNIScoutCallback { whatAmI2: Int, id: String, locators: List<String> ->
+                callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohID(id), locators))
             }
-            val ptr = scoutViaJNI(what.toString(), scoutCallback, config.jsonConfig.toString())
+            val binaryWhatAmI : Int = whatAmI.map {it.value}.reduce {acc, it -> acc or it}
+            val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config.jsonConfig.toString())
             return Scout(receiver, JNIScout(ptr))
         }
 
         @Throws(Exception::class)
-        private external fun scoutViaJNI(what: String, callback: JNIScoutCallback, config: String): Long
+        private external fun scoutViaJNI(whatAmI: Int, callback: JNIScoutCallback, config: String): Long
 
         @Throws(Exception::class)
         external fun freePtrViaJNI(ptr: Long)
