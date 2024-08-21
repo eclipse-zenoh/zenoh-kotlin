@@ -31,7 +31,7 @@ macro_rules! jni_error {
         $crate::errors::Error::Jni($arg.to_string())
     };
     ($fmt:expr, $($arg:tt)*) => {
-        Error::Jni(format!($fmt, $($arg)*))
+        $crate::errors::Error::Jni(format!($fmt, $($arg)*))
     };
 }
 

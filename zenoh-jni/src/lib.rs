@@ -18,6 +18,7 @@ mod logger;
 mod publisher;
 mod query;
 mod queryable;
+mod scouting;
 mod session;
 mod subscriber;
 mod utils;
