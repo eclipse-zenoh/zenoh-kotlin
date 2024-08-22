@@ -55,11 +55,13 @@ internal fun loadConfig(
     listenEndpoints: List<String>,
     noMulticastScouting: Boolean,
     mode: String?
-): Config {
-    val config = if (emptyArgs) {
-        Config.default()
+): Config? {
+    return if (emptyArgs) {
+        null
     } else {
-        configFile?.let { Config.from(Path(it)) } ?: run {
+        configFile?.let {
+            Config.from(path = Path(it))
+        } ?: run {
             val connect = Connect(connectEndpoints)
             val listen = Listen(listenEndpoints)
             val scouting = Scouting(Multicast(!noMulticastScouting))
@@ -68,6 +70,5 @@ internal fun loadConfig(
             Config.from(jsonConfig)
         }
     }
-    return config
 }
 

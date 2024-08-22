@@ -16,26 +16,95 @@ package io.zenoh
 
 import java.io.File
 import java.nio.file.Path
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
-
 /**
+ * # Config
+ *
  * Config class to set the Zenoh configuration to be used through a [Session].
  *
- * @property path The path to the configuration file.
- * @constructor Create empty Config
+ * The configuration can be specified in two different ways:
+ * - By providing a file or a path to a file with the configuration
+ * - By providing a raw string configuration.
+ *
+ * Either way, the supported formats are `yaml`, `json` and `json5`.
+ *
+ * ## Example:
+ * - Json5
+ * ```kotlin
+ * val json5config = """
+ *     {
+ *         mode: "peer",
+ *         connect: {
+ *             endpoints: ["tcp/localhost:7450"],
+ *         },
+ *         scouting: {
+ *             multicast: {
+ *                 enabled: false,
+ *             }
+ *         }
+ *     }
+ *     """.trimIndent()
+ * val config = Config(config = json5Config, format = Config.Format.JSON5)
+ * Session.open(config).onSuccess {
+ *     // ...
+ * }
+ * ```
+ *
+ * - Json
+ * ```kotlin
+ * val jsonConfig = """
+ *     {
+ *         mode: "peer",
+ *         listen: {
+ *             endpoints: ["tcp/localhost:7450"],
+ *         },
+ *         scouting: {
+ *             multicast: {
+ *                 enabled: false,
+ *             }
+ *         }
+ *     }
+ *     """.trimIndent()
+ * val config = Config(config = json5Config, format = Config.Format.JSON)
+ * Session.open(config).onSuccess {
+ *     // ...
+ * }
+ * ```
+ *
+ * - Yaml
+ * ```kotlin
+ * val yamlConfig = """
+ *     mode: peer
+ *     connect:
+ *       endpoints:
+ *         - tcp/localhost:7450
+ *     scouting:
+ *       multicast:
+ *         enabled: false
+ *     """.trimIndent()
+ * val config = Config(config = yamlConfig, format = Config.Format.YAML)
+ * Session.open(config).onSuccess {
+ *     // ...
+ * }
+ * ```
+ *
+ * Visit the [default configuration](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) for more
+ * information on the Zenoh config parameters.
+ *
+ * @property path The path to the configuration file (supported types: JSON5, JSON and YAML).
+ * @property config Raw string configuration, (supported types: JSON5, JSON and YAML).
+ * @property format [Format] of the configuration.
  */
-class Config private constructor(internal val path: Path? = null, internal val jsonConfig: JsonElement? = null) {
+class Config private constructor(internal val path: Path? = null, internal val config: String? = null, val format: Format? = null) {
+
+    enum class Format {
+        YAML,
+        JSON,
+        JSON5
+    }
 
     companion object {
-
-        /**
-         * Loads the default zenoh configuration.
-         */
-        fun default(): Config {
-            return Config()
-        }
 
         /**
          * Loads the configuration from the [File] specified.
@@ -43,7 +112,7 @@ class Config private constructor(internal val path: Path? = null, internal val j
          * @param file The zenoh config file.
          */
         fun from(file: File): Config {
-            return Config(file.toPath())
+            return Config(path = file.toPath())
         }
 
         /**
@@ -56,12 +125,10 @@ class Config private constructor(internal val path: Path? = null, internal val j
         }
 
         /**
-         * Loads the configuration from the [json] specified.
-         *
-         * @param json The raw zenoh config.
+         * Loads the configuration from the [config] param. The [Format] needs to be specified explicitly.
          */
-        fun from(json: String): Config {
-            return Config(jsonConfig = Json.decodeFromString(json))
+        fun from(config: String, format: Format): Config {
+            return Config(config = config, format = format)
         }
 
         /**
@@ -69,8 +136,6 @@ class Config private constructor(internal val path: Path? = null, internal val j
          *
          * @param jsonElement The zenoh config as a [JsonElement].
          */
-        fun from(jsonElement: JsonElement) = Config(jsonElement)
+        fun from(jsonElement: JsonElement) = Config(config = jsonElement.toString(), format = Format.JSON)
     }
-
-    private constructor(jsonConfig: JsonElement) : this(null, jsonConfig = jsonConfig)
 }
