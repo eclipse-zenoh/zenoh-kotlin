@@ -55,12 +55,18 @@ internal class JNISession {
     /* Pointer to the underlying Rust zenoh session. */
     private var sessionPtr: AtomicLong = AtomicLong(0)
 
-    fun open(config: Config): Result<Unit> = runCatching {
-        config.jsonConfig?.let { jsonConfig ->
-            sessionPtr.set(openSessionWithJsonConfigViaJNI(jsonConfig.toString()))
-        } ?: run {
-            sessionPtr.set(openSessionViaJNI(config.path?.toString()))
+    fun open(config: Config?): Result<Unit> = runCatching {
+        val session = when {
+            config == null -> openSessionViaJNI(null)
+            config.config != null -> {
+                when (config.format) {
+                    Config.Format.YAML -> openSessionWithYamlConfigViaJNI(config.config)
+                    else -> openSessionWithJsonConfigViaJNI(config.config)
+                }
+            }
+            else -> openSessionViaJNI(config.path?.toString())
         }
+        sessionPtr.set(session)
     }
 
     fun close(): Result<Unit> = runCatching {
@@ -258,7 +264,10 @@ internal class JNISession {
     private external fun openSessionViaJNI(configFilePath: String?): Long
 
     @Throws(Exception::class)
-    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String?): Long
+    private external fun openSessionWithJsonConfigViaJNI(jsonConfig: String): Long
+
+    @Throws(Exception::class)
+    private external fun openSessionWithYamlConfigViaJNI(yamlConfig: String): Long
 
     @Throws(Exception::class)
     private external fun closeSessionViaJNI(ptr: Long)

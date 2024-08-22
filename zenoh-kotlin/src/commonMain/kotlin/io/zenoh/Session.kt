@@ -52,7 +52,7 @@ import java.time.Duration
  * is sufficient for most use cases. You should _never_ construct one session per publisher/subscriber, as this will
  * significantly increase the size of your Zenoh network, while preventing potential locality-based optimizations.
  */
-class Session private constructor(private val config: Config) : AutoCloseable {
+class Session private constructor(private val config: Config? = null) : AutoCloseable {
 
     private var jniSession: JNISession? = null
 
@@ -68,7 +68,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
          * @return a [Result] with the [Session] on success.
          */
         fun open(): Result<Session> {
-            val session = Session(Config.default())
+            val session = Session()
             return session.launch()
         }
 

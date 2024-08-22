@@ -44,7 +44,7 @@ class SessionTest {
 
     @Test
     fun sessionOpeningFailure() {
-        val invalidConfig = Config.from(Path.of("invalid"))
+        val invalidConfig = Config.from(path = Path.of("invalid"))
         assertFailsWith<SessionException> { Session.open(invalidConfig).getOrThrow() }
     }
 
