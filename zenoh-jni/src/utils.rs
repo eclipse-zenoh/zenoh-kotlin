@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use crate::{
-    errors::{Error, Result},
+    errors::{Result},
     jni_error, session_error, throw_exception,
 };
 use jni::{

@@ -34,7 +34,7 @@ object Zenoh {
     fun scout(
         callback: Callback<Hello>,
         whatAmI: Set<WhatAmI> = setOf(WhatAmI.Peer),
-        config: Config = Config.default()
+        config: Config? = null
     ): Scout<Unit> {
         ZenohLoad
         return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, config = config)
@@ -43,7 +43,7 @@ object Zenoh {
     fun <R> scout(
         handler: Handler<Hello, R>,
         whatAmI: Set<WhatAmI> = setOf(WhatAmI.Peer),
-        config: Config = Config.default()
+        config: Config? = null
     ): Scout<R> {
         ZenohLoad
         return JNIScout.scout(
@@ -57,7 +57,7 @@ object Zenoh {
     fun scout(
         channel: Channel<Hello>,
         whatAmI: Set<WhatAmI> = setOf(WhatAmI.Peer),
-        config: Config = Config.default()
+        config: Config? = null
     ): Scout<Channel<Hello>> {
         ZenohLoad
         val handler = ChannelHandler(channel)
