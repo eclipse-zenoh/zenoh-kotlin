@@ -78,7 +78,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
          * @param config The configuration for the session.
          * @return A [Result] with the [Session] on success.
          */
-        fun open(config: Config): Result<Session> {
+        fun open(config: Config?): Result<Session> {
             val session = Session(config)
             return session.launch()
         }
@@ -903,4 +903,3 @@ class Session private constructor(private val config: Config? = null) : AutoClos
             .onFailure { jniSession = null }
     }
 }
-
