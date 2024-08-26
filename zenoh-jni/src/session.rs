@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::errors::{Result};
+use crate::errors::Result;
 use crate::key_expr::process_kotlin_key_expr;
 use crate::{jni_error, utils::*};
 use crate::{session_error, throw_exception};

@@ -29,19 +29,19 @@ use crate::{
 };
 
 /// Start a scout.
-/// 
+///
 /// # Params
 /// - `whatAmI`: Ordinal value of the WhatAmI enum.
 /// - `callback`: Callback to be executed whenever a hello message is received.
 /// - `config_string`: Optional embedded configuration as a string.
 /// - `format`: format of the `config_string` param.
 /// - `config_path`: Optional path to a config file.
-/// 
+///
 /// Note: Either the config_string or the config_path or None can be provided.
 /// If none is provided, then the default configuration is loaded. Otherwise
 /// it's the config_string or the config_path that are loaded. This consistency
 /// logic is granted by the kotlin layer.
-/// 
+///
 /// Returns a pointer to the scout, which must be freed afterwards.
 /// If starting the scout fails, an exception is thrown on the JVM, and a null pointer is returned.
 ///
@@ -60,7 +60,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let whatAmIMatcher: WhatAmIMatcher = (whatAmI as u8).try_into().unwrap(); // The validity of the operation is guaranteed on the kotlin layer.
-        
         let config = if config_string.is_null() && config_path.is_null() {
             Config::default()
         } else if !config_string.is_null() {
