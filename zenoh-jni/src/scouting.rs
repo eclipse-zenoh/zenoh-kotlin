@@ -103,7 +103,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
                         .map(|it| env.auto_local(it))?;
                     let jlist = JList::from_env(&mut env, &locators)?;
                     for value in hello.locators() {
-                        let locator = env.new_string(value.as_str()).unwrap();
+                        let locator = env.new_string(value.as_str())?;
                         jlist.add(&mut env, &locator)?;
                     }
                     env.call_method(
