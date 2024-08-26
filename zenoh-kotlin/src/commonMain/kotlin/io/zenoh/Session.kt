@@ -52,7 +52,7 @@ import java.time.Duration
  * is sufficient for most use cases. You should _never_ construct one session per publisher/subscriber, as this will
  * significantly increase the size of your Zenoh network, while preventing potential locality-based optimizations.
  */
-class Session private constructor(private val config: Config? = null) : AutoCloseable {
+class Session private constructor(private val config: Config) : AutoCloseable {
 
     private var jniSession: JNISession? = null
 
@@ -61,16 +61,6 @@ class Session private constructor(private val config: Config? = null) : AutoClos
     companion object {
 
         private val sessionClosedException = SessionException("Session is closed.")
-
-        /**
-         * Open a [Session] with the default [Config].
-         *
-         * @return a [Result] with the [Session] on success.
-         */
-        fun open(): Result<Session> {
-            val session = Session()
-            return session.launch()
-        }
 
         /**
          * Open a [Session] with the provided [Config].
@@ -104,7 +94,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess {
+     * Session.open(Config.default()).onSuccess {
      *     it.use { session ->
      *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declarePublisher(keyExpr).onSuccess { pub ->
@@ -138,7 +128,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declareSubscriber(keyExpr, callback = { sample -> println(sample) }).onSuccess {
@@ -181,7 +171,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *     override fun onClose() = println("Closing handler")
      * }
      *
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declareSubscriber(keyExpr, handler = ExampleHandler())
@@ -220,7 +210,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      * Example:
      * ```kotlin
      *
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             val samplesChannel = Channel()
@@ -262,7 +252,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
+     * Session.open(Config.default()).onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
@@ -308,7 +298,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Then we'd use it as follows:
      * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
+     * Session.open(Config.default()).onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val exampleHandler = ExampleHandler()
@@ -402,7 +392,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session -> session.use {
+     * Session.open(Config.default()).onSuccess { session -> session.use {
      *     val keyExpr = session.declareKeyExpr("demo/kotlin/example").getOrThrow()
      *     for (i in 0..999) {
      *         put(keyExpr, "Put number $i!")
@@ -440,7 +430,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      * A callback must be provided to handle the incoming replies. A basic query can be achieved
      * as follows:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             session.get(selector, callback = { reply -> println(reply) })
@@ -454,7 +444,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             session.get(
@@ -534,7 +524,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * then we could use it as follows:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               val handler = QueueHandler<Reply>()
@@ -553,7 +543,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             val handler = QueueHandler<Reply>()
@@ -621,7 +611,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Example:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               session.get(selector, channel = Channel()).onSuccess { channel ->
@@ -644,7 +634,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      * Example:
      *
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               session.get(selector,
@@ -723,7 +713,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
      *             val exampleQoS = QoS(
@@ -770,7 +760,7 @@ class Session private constructor(private val config: Config? = null) : AutoClos
      *
      * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
      * ```kotlin
-     * Session.open().onSuccess { session ->
+     * Session.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
      *             val exampleQoS = QoS(
@@ -903,4 +893,3 @@ class Session private constructor(private val config: Config? = null) : AutoClos
             .onFailure { jniSession = null }
     }
 }
-

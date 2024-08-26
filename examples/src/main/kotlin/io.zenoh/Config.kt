@@ -55,9 +55,9 @@ internal fun loadConfig(
     listenEndpoints: List<String>,
     noMulticastScouting: Boolean,
     mode: String?
-): Config? {
+): Config {
     return if (emptyArgs) {
-        null
+        Config.default()
     } else {
         configFile?.let {
             Config.from(path = Path(it))
@@ -71,4 +71,3 @@ internal fun loadConfig(
         }
     }
 }
-

@@ -38,7 +38,7 @@ class UserAttachmentTest {
 
     @BeforeTest
     fun setup() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         keyExpr = keyExprString.intoKeyExpr().getOrThrow()
     }
 

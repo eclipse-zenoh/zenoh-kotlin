@@ -96,7 +96,7 @@ class KeyExprTest {
 
     @Test
     fun sessionDeclarationTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val keyExpr = session.declareKeyExpr("a/b/c").getOrThrow()
         assertEquals("a/b/c", keyExpr.toString())
         session.close()
@@ -105,7 +105,7 @@ class KeyExprTest {
 
     @Test
     fun sessionUnDeclarationTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val keyExpr = session.declareKeyExpr("a/b/c").getOrThrow()
         assertEquals("a/b/c", keyExpr.toString())
 

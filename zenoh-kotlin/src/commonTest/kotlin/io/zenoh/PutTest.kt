@@ -31,7 +31,7 @@ class PutTest {
 
     @Test
     fun putTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         var receivedSample: Sample? = null
         val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()

@@ -36,7 +36,7 @@ class SessionTest {
 
     @Test
     fun sessionStartCloseTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         assertTrue(session.isOpen())
         session.close()
         assertFalse(session.isOpen())
@@ -50,7 +50,7 @@ class SessionTest {
 
     @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val queryable = session.declareQueryable(testKeyExpr, callback = {}).getOrThrow()
         val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
         val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
@@ -63,7 +63,7 @@ class SessionTest {
 
     @Test
     fun sessionClose_declarationsAreUndeclaredAfterClosingSessionTest() = runBlocking {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
 
         val publisher = session.declarePublisher(testKeyExpr).getOrThrow()
         val subscriber = session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow()
@@ -77,7 +77,7 @@ class SessionTest {
 
     @Test
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         session.close()
         assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).getOrThrow() }
         assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }

@@ -12,7 +12,7 @@ class EncodingTest {
 
     @Test
     fun encoding_subscriberTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
 
         // Testing non null schema
@@ -44,7 +44,7 @@ class EncodingTest {
 
     @Test
     fun encoding_replySuccessTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val keyExpr = "example/testing/**".intoKeyExpr().getOrThrow()
         val test1 = "example/testing/reply_success".intoSelector().getOrThrow()
         val test2 = "example/testing/reply_success_with_schema".intoSelector().getOrThrow()
@@ -89,7 +89,7 @@ class EncodingTest {
 
     @Test
     fun encoding_replyErrorTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val keyExpr = "example/testing/**".intoKeyExpr().getOrThrow()
 
         val test1 = "example/testing/reply_error".intoSelector().getOrThrow()
@@ -135,7 +135,7 @@ class EncodingTest {
 
     @Test
     fun encoding_queryTest() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         val selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         val encodingA = Encoding(Encoding.ID.TEXT_CSV, null)
         val encodingB = Encoding(Encoding.ID.TEXT_CSV, "test_schema")

@@ -40,7 +40,7 @@ class GetTest {
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             query.replySuccess(query.keyExpr, value, timestamp = timestamp)

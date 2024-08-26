@@ -46,7 +46,7 @@ class QueryableTest {
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         testKeyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
     }
 
