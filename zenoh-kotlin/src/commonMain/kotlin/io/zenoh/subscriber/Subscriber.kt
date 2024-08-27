@@ -26,7 +26,7 @@ import io.zenoh.keyexpr.KeyExpr
  *
  * Simple example using a callback to handle the received samples:
  * ```kotlin
- * val session = Session.open().getOrThrow()
+ * val session = Session.open(Config.default()).getOrThrow()
  * val keyexpr = "a/b/c".intoKeyExpr().getOrThrow()
  * session.declareSubscriber(keyexpr, callback = { sample ->
  *     println(">> [Subscriber] Received $sample")

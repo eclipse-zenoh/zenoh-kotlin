@@ -107,6 +107,13 @@ class Config private constructor(internal val path: Path? = null, internal val c
     companion object {
 
         /**
+         * Returns the default config.
+         */
+        fun default(): Config {
+            return Config()
+        }
+
+        /**
          * Loads the configuration from the [File] specified.
          *
          * @param file The zenoh config file.

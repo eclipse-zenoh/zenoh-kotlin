@@ -25,7 +25,7 @@ class DeleteTest {
 
     @Test
     fun delete_isProperlyReceivedBySubscriber() {
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
         var receivedSample: Sample? = null
         val keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback =  { sample -> receivedSample = sample }).getOrThrow()

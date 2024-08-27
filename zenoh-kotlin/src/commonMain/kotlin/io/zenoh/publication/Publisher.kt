@@ -35,7 +35,7 @@ import io.zenoh.value.Value
  * Example of a publisher declaration:
  * ```kotlin
  * val keyExpr = "demo/kotlin/greeting"
- * Session.open().onSuccess {
+ * Session.open(Config.default()).onSuccess {
  *     it.use { session ->
  *         session
  *             .declarePublisher(keyExpr)
@@ -102,4 +102,3 @@ class Publisher internal constructor(
         jniPublisher = null
     }
 }
-

@@ -49,7 +49,7 @@ class SubscriberTest {
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         testKeyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
     }
 
@@ -102,7 +102,7 @@ class SubscriberTest {
     fun subscriber_isDeclaredWithNonDeclaredKeyExpression() {
         // Declaring a subscriber with an undeclared key expression and verifying it properly receives samples.
         val keyExpr = KeyExpr("example/**")
-        val session = Session.open().getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
 
         val receivedSamples = ArrayList<Sample>()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSamples.add(sample) }).getOrThrow()

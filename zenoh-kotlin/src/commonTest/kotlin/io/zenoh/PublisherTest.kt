@@ -34,7 +34,7 @@ class PublisherTest {
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
         publisher = session.declarePublisher(keyExpr).getOrThrow()
         subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
