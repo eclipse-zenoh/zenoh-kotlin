@@ -18,10 +18,10 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
+import io.zenoh.protocol.into
 import io.zenoh.publication.Publisher
 import io.zenoh.sample.Sample
 import io.zenoh.subscriber.Subscriber
-import io.zenoh.value.Value
 import kotlin.test.*
 
 class PublisherTest {
@@ -54,17 +54,18 @@ class PublisherTest {
     @Test
     fun putTest() {
 
-        val testValues = arrayListOf(
-            Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
-            Value("Test 2", Encoding(Encoding.ID.TEXT_JSON)),
-            Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
+        val testPayloads = arrayListOf(
+            Pair("Test 1".into(), Encoding.ID.TEXT_PLAIN),
+            Pair("Test 2".into(), Encoding.ID.TEXT_JSON),
+            Pair("Test 3".into(), Encoding.ID.TEXT_CSV),
         )
 
-        testValues.forEach() { value -> publisher.put(value) }
+        testPayloads.forEach() { value -> publisher.put(value.first, encoding = value.second) }
 
-        assertEquals(receivedSamples.size, testValues.size)
+        assertEquals(receivedSamples.size, testPayloads.size)
         for ((index, sample) in receivedSamples.withIndex()) {
-            assertEquals(sample.value, testValues[index])
+            assertEquals(sample.payload, testPayloads[index].first)
+            assertEquals(sample.encoding, testPayloads[index].second.into())
         }
     }
 

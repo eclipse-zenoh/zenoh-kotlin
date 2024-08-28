@@ -15,21 +15,23 @@
 package io.zenoh.publication
 
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
-import io.zenoh.value.Value
 
 /**
  * Put operation.
  *
  * @property keyExpr The [KeyExpr] to which the put operation will be performed.
- * @property value The [Value] to put.
+ * @property payload The [ZBytes] to put.
+ * @property encoding The [Encoding] of the payload.
  * @property qos The [QoS] configuration.
  * @property attachment An optional user attachment.
  */
 internal data class Put (
     val keyExpr: KeyExpr,
-    val value: Value,
+    val payload: ZBytes,
+    val encoding: Encoding,
     val qos: QoS,
     val attachment: ZBytes?
 )

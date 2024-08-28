@@ -20,6 +20,8 @@ import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
+import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.publication.Delete
@@ -32,7 +34,6 @@ import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
-import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 
@@ -256,7 +257,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-     *              query.replySuccess(keyExpr, value = Value("Hello!"))
+     *              query.replySuccess(keyExpr, payload = "Hello!".into())
      *                   .onSuccess { println("Replied hello.") }
      *                   .onFailure { println(it) }
      *         }).getOrThrow()
@@ -288,7 +289,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * ```kotlin
      * class ExampleHandler: Handler<Query, Unit> {
-     *     override fun handle(t: Query) = query.replySuccess(query.keyExpr, value = Value("Hello!"))
+     *     override fun handle(t: Query) = query.replySuccess(query.keyExpr, "Hello!".into())
      *
      *     override fun receiver() = Unit
      *
@@ -341,7 +342,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *                     for (query in queryable.receiver) {
      *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
      *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-     *                         query.replySuccess(keyExpr, value = Value("Example reply"))
+     *                         query.replySuccess(keyExpr, payload = "Example reply".into())
      *                             .onSuccess { println(">> [Queryable ] Performed reply...") }
      *                             .onFailure { println(">> [Queryable ] Error sending reply: $it") }
      *                     }
@@ -450,7 +451,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             session.get(
      *                 selector,
      *                 callback = { reply -> println(reply) },
-     *                 value = Value("Example value"),
+     *                 payload = "Example payload".into(),
+     *                 encoding = Encoding(TEXT_PLAIN),
      *                 target = QueryTarget.BEST_MATCHING,
      *                 attachment = ZBytes.from("Example attachment"),
      *                 timeout = Duration.ofMillis(1000),
@@ -467,7 +469,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param callback [Callback] to handle the replies.
-     * @param value Optional [Value] for the query.
+     * @param payload Optional [ZBytes] payload for the query.
+     * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
@@ -479,14 +482,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun get(
         selector: Selector,
         callback: Callback<Reply>,
-        value: Value? = null,
+        payload: ZBytes? = null,
+        encoding: IntoEncoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.NONE,
         onClose: (() -> Unit)? = null
-    ) : Result<Unit> {
-        return resolveGet (
+    ): Result<Unit> {
+        return resolveGet(
             selector = selector,
             callback = callback,
             onClose = fun() { onClose?.invoke() },
@@ -494,7 +498,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             timeout = timeout,
             target = target,
             consolidation = consolidation,
-            value = value,
+            payload = payload,
+            encoding = encoding?.into(),
             attachment = attachment
         )
     }
@@ -550,7 +555,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             session.get(
      *                 selector,
      *                 handler,
-     *                 value = Value("Example value"),
+     *                 payload = "Example payload".into(),
+     *                 encoding = Encoding.ID.TEXT_PLAIN,
      *                 target = QueryTarget.BEST_MATCHING,
      *                 attachment = ZBytes.from("Example attachment"),
      *                 timeout = Duration.ofMillis(1000),
@@ -571,7 +577,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param handler [Handler] to handle the replies.
-     * @param value Optional [Value] for the query.
+     * @param payload Optional [ZBytes] payload for the query.
+     * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
@@ -583,13 +590,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun <R> get(
         selector: Selector,
         handler: Handler<Reply, R>,
-        value: Value? = null,
+        payload: ZBytes? = null,
+        encoding: IntoEncoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.NONE,
         onClose: (() -> Unit)? = null
-    ) : Result<R> {
+    ): Result<R> {
         return resolveGet(
             selector = selector,
             callback = { r: Reply -> handler.handle(r) },
@@ -601,7 +609,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             timeout = timeout,
             target = target,
             consolidation = consolidation,
-            value = value,
+            payload = payload,
+            encoding = encoding?.into(),
             attachment = attachment
         )
     }
@@ -639,7 +648,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               session.get(selector,
      *                   channel = Channel(),
-     *                   value = Value("Example value"),
+     *                   payload = "Example payload".into(),
+     *                   encoding = Encoding.ID.TEXT_PLAIN,
      *                   target = QueryTarget.BEST_MATCHING,
      *                   attachment = ZBytes.from("Example attachment"),
      *                   timeout = Duration.ofMillis(1000),
@@ -660,7 +670,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param channel Blocking [Channel] to handle the replies.
-     * @param value Optional [Value] for the query.
+     * @param payload Optional [ZBytes] payload for the query.
+     * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
@@ -672,27 +683,29 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun get(
         selector: Selector,
         channel: Channel<Reply>,
-        value: Value? = null,
+        payload: ZBytes? = null,
+        encoding: IntoEncoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.NONE,
         onClose: (() -> Unit)? = null
-    ) : Result<Channel<Reply>> {
+    ): Result<Channel<Reply>> {
         val channelHandler = ChannelHandler(channel)
         return resolveGet(
-            selector = selector,
+            selector,
             callback = { r: Reply -> channelHandler.handle(r) },
             onClose = fun() {
                 channelHandler.onClose()
                 onClose?.invoke()
             },
             receiver = channelHandler.receiver(),
-            timeout = timeout,
-            target = target,
-            consolidation = consolidation,
-            value = value,
-            attachment = attachment
+            timeout,
+            target,
+            consolidation,
+            payload,
+            encoding?.into(),
+            attachment
         )
     }
 
@@ -704,7 +717,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Session.open(config).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.put(keyExpr, value = Value("Example value")).getOrThrow()
+     *             session.put(keyExpr, payload = "Example payload".into()).getOrThrow()
      *         }
      *         // ...
      *     }
@@ -723,7 +736,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             val exampleAttachment = "exampleAttachment".into()
      *             session.put(
      *                  keyExpr,
-     *                  value = Value("Example value"),
+     *                  payload = "Example payload".into(),
+     *                  encoding = Encoding.ID.TEXT_PLAIN,
      *                  qos = exampleQoS,
      *                  attachment = exampleAttachment).getOrThrow()
      *         }
@@ -733,60 +747,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
-     * @param value The [Value] to be put.
+     * @param payload The [ZBytes] to be put.
      * @param qos The [QoS] configuration.
      * @param attachment Optional attachment.
      * @return A [Result] with the status of the put operation.
      */
-    fun put(keyExpr: KeyExpr, value: Value, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
-        val put = Put(keyExpr, value, qos, attachment)
-        return resolvePut(keyExpr, put)
-    }
-
-    /**
-     * Declare a [Put] with the provided message on the specified key expression.
-     *
-     * Example:
-     * ```kotlin
-     * Session.open(config).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.put(keyExpr, "Example message").getOrThrow()
-     *         }
-     *         // ...
-     *     }
-     * }
-     * ```
-     *
-     * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
-     * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
-     *             val exampleQoS = QoS(
-     *                  congestionControl = CongestionControl.DROP,
-     *                  express = true,
-     *                  priority = Priority.DATA_HIGH)
-     *             val exampleAttachment = "exampleAttachment".into()
-     *             session.put(
-     *                  keyExpr,
-     *                  message = "Example message",
-     *                  qos = exampleQoS,
-     *                  attachment = exampleAttachment).getOrThrow()
-     *         }
-     *         // ...
-     *     }
-     * }
-     * ```
-     *
-     * @param keyExpr The [KeyExpr] to be used for the put operation.
-     * @param message The [String] message to put.
-     * @param qos The [QoS] configuration.
-     * @param attachment Optional attachment.
-     * @return A [Result] with the status of the put operation.
-     */
-    fun put(keyExpr: KeyExpr, message: String, qos: QoS = QoS.default(), attachment: ZBytes? = null) : Result<Unit> {
-        val put = Put(keyExpr, Value(message), qos, attachment)
+    fun put(keyExpr: KeyExpr, payload: ZBytes, encoding: IntoEncoding? = null, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
+        val put = Put(keyExpr, payload, encoding?.into() ?: Encoding.default(), qos, attachment)
         return resolvePut(keyExpr, put)
     }
 
@@ -858,7 +825,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
-        value: Value?,
+        payload: ZBytes?,
+        encoding: Encoding?,
         attachment: ZBytes?,
     ): Result<R> {
         return jniSession?.run {
@@ -870,8 +838,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 timeout,
                 target,
                 consolidation,
-                value?.payload,
-                value?.encoding,
+                payload,
+                encoding,
                 attachment
             )
         } ?: Result.failure(sessionClosedException)

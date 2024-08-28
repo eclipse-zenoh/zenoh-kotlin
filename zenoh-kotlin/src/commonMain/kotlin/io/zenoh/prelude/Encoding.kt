@@ -26,7 +26,8 @@ package io.zenoh.prelude
  * This is particularly useful in helping Zenoh to perform additional network optimizations.
  *
  */
-data class Encoding(val id: ID, val schema: String? = null) {
+data class Encoding(val id: ID, val schema: String? = null) : IntoEncoding {
+    //TODO: Refactor encoding, try to remove ID
 
     /**
      * The ID of the encoding.
@@ -34,7 +35,7 @@ data class Encoding(val id: ID, val schema: String? = null) {
      * @property id The id of the encoding.
      * @property encoding The encoding name.
      */
-    enum class ID(val id: Int, val encoding: String) {
+    enum class ID(val id: Int, val encoding: String) : IntoEncoding {
         ZENOH_BYTES(0, "zenoh/bytes"),
         ZENOH_INT(1, "zenoh/int"),
         ZENOH_UINT(2, "zenoh/uint"),
@@ -98,7 +99,21 @@ data class Encoding(val id: ID, val schema: String? = null) {
             internal fun fromId(id: Int): ID? = idToEnum[id]
             internal fun default() = ZENOH_BYTES
         }
+
+        override fun into(): Encoding {
+            return Encoding(this)
+        }
+    }
+
+    companion object {
+        internal fun default() = Encoding(ID.default())
+    }
+
+    override fun into(): Encoding {
+        return this
     }
 }
 
-
+interface IntoEncoding {
+    fun into(): Encoding
+}

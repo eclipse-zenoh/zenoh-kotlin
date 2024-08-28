@@ -38,7 +38,6 @@ import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
-import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
@@ -97,7 +96,8 @@ internal class JNISession {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val sample = Sample(
                     KeyExpr(keyExpr, null),
-                    Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
+                    payload.into(),
+                    Encoding(ID.fromId(encodingId)!!, encodingSchema),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
@@ -123,8 +123,13 @@ internal class JNISession {
                 } else {
                     Selector(keyExpr2, selectorParams)
                 }
-                val value = payload?.let { Value(it, Encoding(ID.fromId(encodingId)!!, encodingSchema)) }
-                val query = Query(keyExpr2, selector, value, attachmentBytes?.into(), jniQuery)
+                val query = Query(
+                    keyExpr2,
+                    selector,
+                    payload?.into(),
+                    payload?.let { Encoding(ID.fromId(encodingId)!!, encodingSchema) },
+                    attachmentBytes?.into(),
+                    jniQuery)
                 callback.run(query)
             }
         val queryableRawPtr = declareQueryableViaJNI(
@@ -167,7 +172,8 @@ internal class JNISession {
                     SampleKind.PUT -> {
                         val sample = Sample(
                             KeyExpr(keyExpr!!, null),
-                            Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema)),
+                            payload.into(),
+                            Encoding(ID.fromId(encodingId)!!, encodingSchema),
                             SampleKind.fromInt(kind),
                             timestamp,
                             QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
@@ -189,7 +195,8 @@ internal class JNISession {
             } else {
                 reply = Reply.Error(
                     replierId?.let { ZenohID(it) },
-                    Value(payload, Encoding(ID.fromId(encodingId)!!, encodingSchema))
+                    payload.into(),
+                    Encoding(ID.fromId(encodingId)!!, encodingSchema)
                 )
             }
             callback.run(reply)
@@ -234,9 +241,9 @@ internal class JNISession {
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
             sessionPtr.get(),
-            put.value.payload.bytes,
-            put.value.encoding.id.ordinal,
-            put.value.encoding.schema,
+            put.payload.bytes,
+            put.encoding.id.ordinal,
+            put.encoding.schema,
             put.qos.congestionControl.value,
             put.qos.priority.value,
             put.qos.express,

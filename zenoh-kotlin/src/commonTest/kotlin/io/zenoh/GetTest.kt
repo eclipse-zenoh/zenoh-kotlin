@@ -16,11 +16,11 @@ package io.zenoh
 
 import io.zenoh.handlers.Handler
 import io.zenoh.prelude.SampleKind
+import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
 import io.zenoh.selector.Selector
 import io.zenoh.selector.intoSelector
-import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.*
@@ -29,7 +29,7 @@ import kotlin.test.*
 class GetTest {
 
     companion object {
-        val value = Value("Test")
+        val payload = "Test".into()
         val timestamp = TimeStamp.getCurrentTime()
         val kind = SampleKind.PUT
     }
@@ -43,7 +43,7 @@ class GetTest {
         session = Session.open(Config.default()).getOrThrow()
         selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
-            query.replySuccess(query.keyExpr, value, timestamp = timestamp)
+            query.replySuccess(query.keyExpr, payload, timestamp = timestamp)
         }).getOrThrow()
     }
 
@@ -63,7 +63,7 @@ class GetTest {
 
         assertTrue(reply is Reply.Success)
         val sample = (reply as Reply.Success).sample
-        assertEquals(value, sample.value)
+        assertEquals(payload, sample.payload)
         assertEquals(kind, sample.kind)
         assertEquals(selector.keyExpr, sample.keyExpr)
         assertEquals(timestamp, sample.timestamp)
@@ -76,7 +76,7 @@ class GetTest {
         for (reply in receiver) {
             reply as Reply.Success
             val receivedSample = reply.sample
-            assertEquals(value, receivedSample.value)
+            assertEquals(payload, receivedSample.payload)
             assertEquals(SampleKind.PUT, receivedSample.kind)
             assertEquals(timestamp, receivedSample.timestamp)
         }

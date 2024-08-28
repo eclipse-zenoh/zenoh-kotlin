@@ -15,10 +15,10 @@
 package io.zenoh.jni
 
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -36,9 +36,9 @@ internal class JNIQuery(private val ptr: Long) {
             ptr,
             sample.keyExpr.jniKeyExpr?.ptr ?: 0,
             sample.keyExpr.keyExpr,
-            sample.value.payload.bytes,
-            sample.value.encoding.id.ordinal,
-            sample.value.encoding.schema,
+            sample.payload.bytes,
+            sample.encoding.id.ordinal,
+            sample.encoding.schema,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
             sample.attachment?.bytes,
@@ -48,8 +48,8 @@ internal class JNIQuery(private val ptr: Long) {
         )
     }
 
-    fun replyError(errorValue: Value): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, errorValue.payload.bytes, errorValue.encoding.id.ordinal, errorValue.encoding.schema)
+    fun replyError(error: ZBytes, encoding: IntoEncoding): Result<Unit> = runCatching {
+        replyErrorViaJNI(ptr, error.bytes, encoding.into().id.ordinal, encoding.into().schema)
     }
 
     fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ZBytes?, qos: QoS): Result<Unit> =

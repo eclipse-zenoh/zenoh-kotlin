@@ -23,10 +23,9 @@ import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
-import io.zenoh.value.Value
+import io.zenoh.protocol.into
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"
@@ -37,7 +36,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         for (i in 0..<payloadSize) {
             data[i] = (i % 10).toByte()
         }
-        val value = Value(data, Encoding(Encoding.ID.ZENOH_BYTES))
+        val payload = data.into()
 
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
@@ -55,7 +54,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
                     val number = number.toLong()
                     println("Press CTRL-C to quit...")
                     while (true) {
-                        pub.put(value).getOrThrow()
+                        pub.put(payload).getOrThrow()
                         if (statsPrint) {
                             if (count < number) {
                                 count++

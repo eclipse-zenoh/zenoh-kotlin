@@ -18,11 +18,10 @@ import io.zenoh.*
 import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Priority
-import io.zenoh.prelude.CongestionControl
+import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
-import io.zenoh.value.Value
+import io.zenoh.protocol.into
 
 /**
  * # Publisher
@@ -77,12 +76,12 @@ class Publisher internal constructor(
     val priority = qos.priority
     val express = qos.express
 
-    /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
-    fun put(value: Value, attachment: ZBytes? = null) = jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
+    /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
+    fun put(payload: ZBytes, encoding: IntoEncoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(payload, encoding, attachment) ?: InvalidPublisherResult
 
 
-    /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
-    fun put(value: String, attachment: ZBytes? = null) = jniPublisher?.put(Value(value), attachment) ?: InvalidPublisherResult
+    /** Performs a PUT operation on the specified [keyExpr] with the specified string [message]. */
+    fun put(message: String, encoding: IntoEncoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(message.into(), encoding, attachment) ?: InvalidPublisherResult
 
     /**
      * Performs a DELETE operation on the specified [keyExpr]

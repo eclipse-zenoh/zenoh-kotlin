@@ -20,11 +20,11 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
+import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.prelude.SampleKind
 import io.zenoh.protocol.ZBytes
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -34,7 +34,8 @@ import org.apache.commons.net.ntp.TimeStamp
  *
  * @property keyExpr The key expression to which the query is associated.
  * @property selector The selector
- * @property value Optional value in case the received query was declared using "with query".
+ * @property payload Optional payload in case the received query was declared using "with query".
+ * @property encoding Encoding of the [payload].
  * @property attachment Optional attachment.
  * @property jniQuery Delegate object in charge of communicating with the underlying native code.
  * @constructor Instances of Query objects are only meant to be created through the JNI upon receiving
@@ -43,19 +44,14 @@ import org.apache.commons.net.ntp.TimeStamp
 class Query internal constructor(
     val keyExpr: KeyExpr,
     val selector: Selector,
-    val value: Value?,
+    val payload: ZBytes?,
+    val encoding: Encoding?,
     val attachment: ZBytes?,
     private var jniQuery: JNIQuery?
 ) : AutoCloseable, ZenohType {
 
     /** Shortcut to the [selector]'s parameters. */
     val parameters = selector.parameters
-
-    /** Payload of the query. */
-    val payload: ZBytes? = value?.payload
-
-    /** Encoding of the payload. */
-    val encoding: Encoding? = value?.encoding
 
     /**
      * Reply success to the remote [Query].
@@ -65,19 +61,21 @@ class Query internal constructor(
      *
      * @param keyExpr Key expression to reply to. This parameter must not be necessarily the same
      * as the key expression from the Query, however it must intersect with the query key.
-     * @param value The [Value] with the reply information.
+     * @param payload The payload with the reply information.
+     * @param encoding Encoding of the payload.
      * @param qos The [QoS] for the reply.
      * @param timestamp Optional timestamp for the reply.
      * @param attachment Optional attachment for the reply.
      */
     fun replySuccess(
         keyExpr: KeyExpr,
-        value: Value,
+        payload: ZBytes,
+        encoding: IntoEncoding = Encoding.default(),
         qos: QoS = QoS.default(),
         timestamp: TimeStamp? = null,
         attachment: ZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, value, SampleKind.PUT, timestamp, qos, attachment)
+        val sample = Sample(keyExpr, payload, encoding.into(), SampleKind.PUT, timestamp, qos, attachment)
         return jniQuery?.let {
             val result = it.replySuccess(sample)
             jniQuery = null
@@ -91,11 +89,12 @@ class Query internal constructor(
      * A query can not be replied more than once. After the reply is performed, the query is considered
      * to be no more valid and further attempts to reply to it will fail.
      *
-     * @param error [Value] with the error information.
+     * @param error The error information.
+     * @param encoding The encoding of the [error].
      */
-    fun replyError(error: Value): Result<Unit> {
+    fun replyError(error: ZBytes, encoding: IntoEncoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyError(error)
+            val result = it.replyError(error, encoding)
             jniQuery = null
             result
         } ?: Result.failure(SessionException("Query is invalid"))

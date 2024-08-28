@@ -19,10 +19,10 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import io.zenoh.prelude.CongestionControl
 import io.zenoh.prelude.Priority
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.into
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -38,9 +38,9 @@ class SubscriberTest {
         val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK
 
         val testValues = arrayListOf(
-            Value("Test 1", Encoding(Encoding.ID.TEXT_PLAIN)),
-            Value("Test 2", Encoding(Encoding.ID.TEXT_JSON)),
-            Value("Test 3", Encoding(Encoding.ID.TEXT_CSV))
+            Pair("Test 1".into(), Encoding.ID.TEXT_PLAIN),
+            Pair("Test 2".into(), Encoding.ID.TEXT_JSON),
+            Pair("Test 3".into(), Encoding.ID.TEXT_CSV),
         )
     }
 
@@ -66,12 +66,13 @@ class SubscriberTest {
             session.declareSubscriber(testKeyExpr, callback = { sample -> receivedSamples.add(sample)}).getOrThrow()
 
         testValues.forEach { value ->
-            session.put(testKeyExpr, value, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
+            session.put(testKeyExpr, value.first, encoding = value.second, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
         }
         assertEquals(receivedSamples.size, testValues.size)
 
         receivedSamples.zip(testValues).forEach { (sample, value) ->
-            assertEquals(sample.value, value)
+            assertEquals(sample.payload, value.first)
+            assertEquals(sample.encoding, value.second.into())
             assertEquals(sample.qos.priority, TEST_PRIORITY)
             assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }
@@ -85,12 +86,13 @@ class SubscriberTest {
         val subscriber = session.declareSubscriber(testKeyExpr, handler = handler).getOrThrow()
 
         testValues.forEach { value ->
-            session.put(testKeyExpr, value, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
+            session.put(testKeyExpr, value.first, encoding = value.second, qos = QoS(priority = TEST_PRIORITY, congestionControl = TEST_CONGESTION_CONTROL))
         }
         assertEquals(handler.queue.size, testValues.size)
 
         handler.queue.zip(testValues).forEach { (sample, value) ->
-            assertEquals(sample.value, value)
+            assertEquals(sample.payload, value.first)
+            assertEquals(sample.encoding, value.second.into())
             assertEquals(sample.qos.priority, TEST_PRIORITY)
             assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }
@@ -106,13 +108,13 @@ class SubscriberTest {
 
         val receivedSamples = ArrayList<Sample>()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSamples.add(sample) }).getOrThrow()
-        testValues.forEach { value -> session.put(testKeyExpr, value) }
+        testValues.forEach { value -> session.put(testKeyExpr, value.first) }
         subscriber.close()
 
         assertEquals(receivedSamples.size, testValues.size)
 
         for ((index, sample) in receivedSamples.withIndex()) {
-            assertEquals(sample.value, testValues[index])
+            assertEquals(sample.payload, testValues[index].first)
         }
     }
 

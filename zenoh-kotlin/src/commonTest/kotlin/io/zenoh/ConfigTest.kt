@@ -14,8 +14,8 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.protocol.into
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
@@ -131,8 +131,8 @@ class ConfigTest {
                 receivedSample = sample
             }).getOrThrow()
 
-            val value = Value("example message")
-            sessionClient.put(TEST_KEY_EXP, value).getOrThrow()
+            val payload = "example message".into()
+            sessionClient.put(TEST_KEY_EXP, payload).getOrThrow()
 
             delay(1000)
 
@@ -141,7 +141,7 @@ class ConfigTest {
             sessionServer.close()
 
             assertNotNull(receivedSample)
-            assertEquals(receivedSample!!.value, value)
+            assertEquals(receivedSample!!.payload, payload)
         }
     }
 
