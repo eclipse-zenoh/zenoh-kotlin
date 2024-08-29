@@ -12,21 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-mod errors;
-mod key_expr;
-mod logger;
-mod publisher;
-mod query;
-mod queryable;
-mod scouting;
-mod session;
-mod subscriber;
-mod utils;
-mod zbytes;
+package io.zenoh.scouting
 
-// Test should be runned with `cargo test --no-default-features`
-#[test]
-#[cfg(not(feature = "default"))]
-fn test_no_default_features() {
-    assert_eq!(zenoh::FEATURES, concat!(" zenoh/unstable"));
+/**
+ * WhatAmI
+ *
+ * The role of the node sending the `hello` message.
+ */
+enum class WhatAmI(internal val value: Int) {
+    Router(1),
+    Peer(2),
+    Client(4);
+
+    companion object {
+        internal fun fromInt(value: Int) = entries.first { value == it.value }
+    }
 }

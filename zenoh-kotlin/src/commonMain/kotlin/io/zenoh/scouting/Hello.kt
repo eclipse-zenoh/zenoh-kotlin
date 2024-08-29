@@ -12,19 +12,17 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni
+package io.zenoh.scouting
+
+import io.zenoh.ZenohType
+import io.zenoh.protocol.ZenohID
 
 /**
- * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.queryable.Queryable]
+ * Hello message received while scouting.
  *
- * @property ptr: raw pointer to the underlying native Queryable.
+ * @property whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
+ * @property zid [ZenohID] of the node sending the hello message.
+ * @property locators The locators of this hello message.
+ * @see Scout
  */
-internal class JNIQueryable(val ptr: Long) {
-
-    fun close() {
-        freePtrViaJNI(ptr)
-    }
-
-    /** Frees the underlying native Queryable. */
-    private external fun freePtrViaJNI(ptr: Long)
-}
+data class Hello(val whatAmI: WhatAmI, val zid: ZenohID, val locators: List<String>): ZenohType

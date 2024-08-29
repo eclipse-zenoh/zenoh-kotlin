@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::errors::{Error, Result};
+use crate::errors::Result;
 use crate::key_expr::process_kotlin_key_expr;
 use crate::{jni_error, utils::*};
 use crate::{session_error, throw_exception};
@@ -165,7 +165,7 @@ fn open_session_with_yaml_config(env: &mut JNIEnv, yaml_config: JString) -> Resu
     let deserializer = serde_yaml::Deserializer::from_str(&yaml_config);
     let config = Config::from_deserializer(deserializer).map_err(|err| match err {
         Ok(c) => session_error!("Invalid configuration: {}", c),
-        Err(e) => session_error!("JSON error: {}", e),
+        Err(e) => session_error!("YAML error: {}", e),
     })?;
     zenoh::open(config)
         .wait()

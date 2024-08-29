@@ -14,6 +14,90 @@
 
 package io.zenoh
 
+import io.zenoh.handlers.Callback
+import io.zenoh.handlers.ChannelHandler
+import io.zenoh.handlers.Handler
+import io.zenoh.jni.JNIScout
+import io.zenoh.scouting.Hello
+import io.zenoh.scouting.Scout
+import io.zenoh.scouting.WhatAmI
+import io.zenoh.scouting.WhatAmI.*
+import kotlinx.coroutines.channels.Channel
+
+object Zenoh {
+
+    /**
+     * Scout for routers and/or peers.
+     *
+     * Scout spawns a task that periodically sends scout messages and waits for Hello replies.
+     * Drop the returned Scout to stop the scouting task or explicitly call [Scout.stop] or [Scout.close].
+     *
+     * @param callback [Callback] to be run when receiving a [Hello] message.
+     * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
+     * @param config Optional [Config] for the scout.
+     * @return A [Scout] object.
+     */
+    fun scout(
+        callback: Callback<Hello>,
+        whatAmI: Set<WhatAmI> = setOf(Peer, Router),
+        config: Config? = null
+    ): Scout<Unit> {
+        ZenohLoad
+        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, config = config)
+    }
+
+    /**
+     * Scout for routers and/or peers.
+     *
+     * Scout spawns a task that periodically sends scout messages and waits for Hello replies.
+     * Drop the returned Scout to stop the scouting task or explicitly call [Scout.stop] or [Scout.close].
+     *
+     * @param handler [Handler] to handle incoming [Hello] messages.
+     * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
+     * @param config Optional [Config] for the scout.
+     * @return A [Scout] object.
+     */
+    fun <R> scout(
+        handler: Handler<Hello, R>,
+        whatAmI: Set<WhatAmI> = setOf(Peer, Router),
+        config: Config? = null
+    ): Scout<R> {
+        ZenohLoad
+        return JNIScout.scout(
+            whatAmI = whatAmI,
+            callback = { hello -> handler.handle(hello) },
+            receiver = handler.receiver(),
+            config = config
+        )
+    }
+
+    /**
+     * Scout for routers and/or peers.
+     *
+     * Scout spawns a task that periodically sends scout messages and waits for Hello replies.
+     * Drop the returned Scout to stop the scouting task or explicitly call [Scout.stop] or [Scout.close].
+     *
+     * @param channel [Channel] upon which the incoming [Hello] messages will be piped.
+     * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
+     * @param config Optional [Config] for the scout.
+     * @return A [Scout] object.
+     */
+    fun scout(
+        channel: Channel<Hello>,
+        whatAmI: Set<WhatAmI> = setOf(Peer, Router),
+        config: Config? = null
+    ): Scout<Channel<Hello>> {
+        ZenohLoad
+        val handler = ChannelHandler(channel)
+        return JNIScout.scout(
+            whatAmI = whatAmI,
+            callback = { hello -> handler.handle(hello) },
+            receiver = handler.receiver(),
+            config = config
+        )
+    }
+}
+
 /**
  * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
  * log level configuration.

@@ -17,4 +17,4 @@ package io.zenoh.protocol
 /**
  * The global unique id of a Zenoh peer.
  */
-class ZenohID(val id: String)
+data class ZenohID(val id: String)
