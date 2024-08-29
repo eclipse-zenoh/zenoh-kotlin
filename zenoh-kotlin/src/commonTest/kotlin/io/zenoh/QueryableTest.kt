@@ -18,7 +18,6 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.*
-import io.zenoh.prelude.Encoding.ID.ZENOH_STRING
 import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
@@ -118,12 +117,12 @@ class QueryableTest {
         receivedQuery = null
         val payload = "Test value".into()
         val attachment = "Attachment".into()
-        session.get(testKeyExpr.intoSelector(), callback = {}, payload = payload, encoding = ZENOH_STRING, attachment = attachment)
+        session.get(testKeyExpr.intoSelector(), callback = {}, payload = payload, encoding = Encoding.ZENOH_STRING, attachment = attachment)
 
         delay(100)
         assertNotNull(receivedQuery)
         assertEquals(payload, receivedQuery!!.payload)
-        assertEquals(ZENOH_STRING, receivedQuery!!.encoding!!.id)
+        assertEquals(Encoding.ZENOH_STRING.id, receivedQuery!!.encoding!!.id)
         assertEquals(attachment, receivedQuery!!.attachment)
 
         queryable.close()

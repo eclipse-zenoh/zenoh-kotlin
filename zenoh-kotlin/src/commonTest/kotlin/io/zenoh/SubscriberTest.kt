@@ -38,9 +38,9 @@ class SubscriberTest {
         val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK
 
         val testValues = arrayListOf(
-            Pair("Test 1".into(), Encoding.ID.TEXT_PLAIN),
-            Pair("Test 2".into(), Encoding.ID.TEXT_JSON),
-            Pair("Test 3".into(), Encoding.ID.TEXT_CSV),
+            Pair("Test 1".into(), Encoding.TEXT_PLAIN),
+            Pair("Test 2".into(), Encoding.TEXT_JSON),
+            Pair("Test 3".into(), Encoding.TEXT_CSV),
         )
     }
 
@@ -72,7 +72,7 @@ class SubscriberTest {
 
         receivedSamples.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.payload, value.first)
-            assertEquals(sample.encoding, value.second.into())
+            assertEquals(sample.encoding, value.second)
             assertEquals(sample.qos.priority, TEST_PRIORITY)
             assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }
@@ -92,7 +92,7 @@ class SubscriberTest {
 
         handler.queue.zip(testValues).forEach { (sample, value) ->
             assertEquals(sample.payload, value.first)
-            assertEquals(sample.encoding, value.second.into())
+            assertEquals(sample.encoding, value.second)
             assertEquals(sample.qos.priority, TEST_PRIORITY)
             assertEquals(sample.qos.congestionControl, TEST_CONGESTION_CONTROL)
         }

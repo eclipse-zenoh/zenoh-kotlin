@@ -20,7 +20,6 @@ import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.prelude.SampleKind
 import io.zenoh.protocol.ZBytes
@@ -70,12 +69,12 @@ class Query internal constructor(
     fun replySuccess(
         keyExpr: KeyExpr,
         payload: ZBytes,
-        encoding: IntoEncoding = Encoding.default(),
+        encoding: Encoding = Encoding.default(),
         qos: QoS = QoS.default(),
         timestamp: TimeStamp? = null,
         attachment: ZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload, encoding.into(), SampleKind.PUT, timestamp, qos, attachment)
+        val sample = Sample(keyExpr, payload, encoding, SampleKind.PUT, timestamp, qos, attachment)
         return jniQuery?.let {
             val result = it.replySuccess(sample)
             jniQuery = null
@@ -92,7 +91,7 @@ class Query internal constructor(
      * @param error The error information.
      * @param encoding The encoding of the [error].
      */
-    fun replyError(error: ZBytes, encoding: IntoEncoding = Encoding.default()): Result<Unit> {
+    fun replyError(error: ZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
             val result = it.replyError(error, encoding)
             jniQuery = null

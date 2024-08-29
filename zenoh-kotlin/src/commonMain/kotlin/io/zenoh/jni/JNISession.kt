@@ -16,7 +16,6 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.Encoding.ID
 import io.zenoh.exceptions.SessionException
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
@@ -97,7 +96,7 @@ internal class JNISession {
                 val sample = Sample(
                     KeyExpr(keyExpr, null),
                     payload.into(),
-                    Encoding(ID.fromId(encodingId)!!, encodingSchema),
+                    Encoding(encodingId, schema = encodingSchema),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
@@ -127,7 +126,7 @@ internal class JNISession {
                     keyExpr2,
                     selector,
                     payload?.into(),
-                    payload?.let { Encoding(ID.fromId(encodingId)!!, encodingSchema) },
+                    payload?.let { Encoding(encodingId, schema = encodingSchema) },
                     attachmentBytes?.into(),
                     jniQuery)
                 callback.run(query)
@@ -173,7 +172,7 @@ internal class JNISession {
                         val sample = Sample(
                             KeyExpr(keyExpr!!, null),
                             payload.into(),
-                            Encoding(ID.fromId(encodingId)!!, encodingSchema),
+                            Encoding(encodingId, schema = encodingSchema),
                             SampleKind.fromInt(kind),
                             timestamp,
                             QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
@@ -196,7 +195,7 @@ internal class JNISession {
                 reply = Reply.Error(
                     replierId?.let { ZenohID(it) },
                     payload.into(),
-                    Encoding(ID.fromId(encodingId)!!, encodingSchema)
+                    Encoding(encodingId, schema = encodingSchema)
                 )
             }
             callback.run(reply)
@@ -214,7 +213,7 @@ internal class JNISession {
             consolidation.ordinal,
             attachment?.bytes,
             payload?.bytes,
-            encoding?.id?.ordinal ?: ID.default().id,
+            encoding?.id ?: Encoding.default().id,
             encoding?.schema
         )
         receiver
@@ -242,7 +241,7 @@ internal class JNISession {
             keyExpr.keyExpr,
             sessionPtr.get(),
             put.payload.bytes,
-            put.encoding.id.ordinal,
+            put.encoding.id,
             put.encoding.schema,
             put.qos.congestionControl.value,
             put.qos.priority.value,

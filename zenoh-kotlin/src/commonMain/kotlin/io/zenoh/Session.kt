@@ -21,7 +21,6 @@ import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.IntoEncoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.publication.Delete
@@ -483,7 +482,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         callback: Callback<Reply>,
         payload: ZBytes? = null,
-        encoding: IntoEncoding? = null,
+        encoding: Encoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -499,7 +498,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             target = target,
             consolidation = consolidation,
             payload = payload,
-            encoding = encoding?.into(),
+            encoding = encoding,
             attachment = attachment
         )
     }
@@ -556,7 +555,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *                 selector,
      *                 handler,
      *                 payload = "Example payload".into(),
-     *                 encoding = Encoding.ID.TEXT_PLAIN,
+     *                 encoding = Encoding.TEXT_PLAIN,
      *                 target = QueryTarget.BEST_MATCHING,
      *                 attachment = ZBytes.from("Example attachment"),
      *                 timeout = Duration.ofMillis(1000),
@@ -591,7 +590,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         handler: Handler<Reply, R>,
         payload: ZBytes? = null,
-        encoding: IntoEncoding? = null,
+        encoding: Encoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -610,7 +609,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             target = target,
             consolidation = consolidation,
             payload = payload,
-            encoding = encoding?.into(),
+            encoding = encoding,
             attachment = attachment
         )
     }
@@ -649,7 +648,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *               session.get(selector,
      *                   channel = Channel(),
      *                   payload = "Example payload".into(),
-     *                   encoding = Encoding.ID.TEXT_PLAIN,
+     *                   encoding = Encoding.TEXT_PLAIN,
      *                   target = QueryTarget.BEST_MATCHING,
      *                   attachment = ZBytes.from("Example attachment"),
      *                   timeout = Duration.ofMillis(1000),
@@ -684,7 +683,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         channel: Channel<Reply>,
         payload: ZBytes? = null,
-        encoding: IntoEncoding? = null,
+        encoding: Encoding? = null,
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -704,7 +703,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             target,
             consolidation,
             payload,
-            encoding?.into(),
+            encoding,
             attachment
         )
     }
@@ -737,7 +736,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *             session.put(
      *                  keyExpr,
      *                  payload = "Example payload".into(),
-     *                  encoding = Encoding.ID.TEXT_PLAIN,
+     *                  encoding = Encoding.TEXT_PLAIN,
      *                  qos = exampleQoS,
      *                  attachment = exampleAttachment).getOrThrow()
      *         }
@@ -752,8 +751,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param attachment Optional attachment.
      * @return A [Result] with the status of the put operation.
      */
-    fun put(keyExpr: KeyExpr, payload: ZBytes, encoding: IntoEncoding? = null, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
-        val put = Put(keyExpr, payload, encoding?.into() ?: Encoding.default(), qos, attachment)
+    fun put(keyExpr: KeyExpr, payload: ZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
+        val put = Put(keyExpr, payload, encoding ?: Encoding.default(), qos, attachment)
         return resolvePut(keyExpr, put)
     }
 

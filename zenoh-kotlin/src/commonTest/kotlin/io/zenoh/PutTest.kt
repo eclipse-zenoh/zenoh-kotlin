@@ -35,7 +35,7 @@ class PutTest {
         var receivedSample: Sample? = null
         val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
-        session.put(keyExpr, TEST_PAYLOAD, encoding = Encoding.ID.TEXT_PLAIN)
+        session.put(keyExpr, TEST_PAYLOAD, encoding = Encoding.TEXT_PLAIN)
         subscriber.close()
         session.close()
         assertNotNull(receivedSample)

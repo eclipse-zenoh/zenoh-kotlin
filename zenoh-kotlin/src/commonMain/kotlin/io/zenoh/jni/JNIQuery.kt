@@ -15,7 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.IntoEncoding
+import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.sample.Sample
@@ -37,7 +37,7 @@ internal class JNIQuery(private val ptr: Long) {
             sample.keyExpr.jniKeyExpr?.ptr ?: 0,
             sample.keyExpr.keyExpr,
             sample.payload.bytes,
-            sample.encoding.id.ordinal,
+            sample.encoding.id,
             sample.encoding.schema,
             timestampEnabled,
             if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
@@ -48,8 +48,8 @@ internal class JNIQuery(private val ptr: Long) {
         )
     }
 
-    fun replyError(error: ZBytes, encoding: IntoEncoding): Result<Unit> = runCatching {
-        replyErrorViaJNI(ptr, error.bytes, encoding.into().id.ordinal, encoding.into().schema)
+    fun replyError(error: ZBytes, encoding: Encoding): Result<Unit> = runCatching {
+        replyErrorViaJNI(ptr, error.bytes, encoding.id, encoding.schema)
     }
 
     fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: ZBytes?, qos: QoS): Result<Unit> =

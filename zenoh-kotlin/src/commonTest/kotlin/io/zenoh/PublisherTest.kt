@@ -55,9 +55,9 @@ class PublisherTest {
     fun putTest() {
 
         val testPayloads = arrayListOf(
-            Pair("Test 1".into(), Encoding.ID.TEXT_PLAIN),
-            Pair("Test 2".into(), Encoding.ID.TEXT_JSON),
-            Pair("Test 3".into(), Encoding.ID.TEXT_CSV),
+            Pair("Test 1".into(), Encoding.TEXT_PLAIN),
+            Pair("Test 2".into(), Encoding.TEXT_JSON),
+            Pair("Test 3".into(), Encoding.TEXT_CSV),
         )
 
         testPayloads.forEach() { value -> publisher.put(value.first, encoding = value.second) }
@@ -65,7 +65,7 @@ class PublisherTest {
         assertEquals(receivedSamples.size, testPayloads.size)
         for ((index, sample) in receivedSamples.withIndex()) {
             assertEquals(sample.payload, testPayloads[index].first)
-            assertEquals(sample.encoding, testPayloads[index].second.into())
+            assertEquals(sample.encoding, testPayloads[index].second)
         }
     }
 

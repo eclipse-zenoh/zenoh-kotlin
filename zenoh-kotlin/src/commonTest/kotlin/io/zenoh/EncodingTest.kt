@@ -21,20 +21,20 @@ class EncodingTest {
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSample = sample
         }).getOrThrow()
-        session.put(keyExpr, payload = "test".into(), encoding = Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
+        session.put(keyExpr, payload = "test".into(), encoding = Encoding.TEXT_CSV.withSchema("test_schema"))
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
-        assertEquals(Encoding.ID.TEXT_CSV, receivedSample!!.encoding.id)
+        assertEquals(Encoding.TEXT_CSV.id, receivedSample!!.encoding.id)
         assertEquals("test_schema", receivedSample!!.encoding.schema)
 
         // Testing null schema
         receivedSample = null
-        session.put(keyExpr, payload = "test2".into(), encoding = Encoding.ID.ZENOH_STRING)
+        session.put(keyExpr, payload = "test2".into(), encoding = Encoding.ZENOH_STRING)
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
-        assertEquals(Encoding.ID.ZENOH_STRING, receivedSample!!.encoding.id)
+        assertEquals(Encoding.ZENOH_STRING.id, receivedSample!!.encoding.id)
         assertNull(receivedSample!!.encoding.schema)
 
         subscriber.close()
@@ -50,8 +50,8 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding.ID.TEXT_CSV)
-                test2.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
+                test1.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding.TEXT_CSV)
+                test2.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding.TEXT_CSV.withSchema("test_schema"))
             }
         }).getOrThrow()
 
@@ -64,7 +64,7 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
-        assertEquals(Encoding.ID.TEXT_CSV, receivedSample!!.encoding.id)
+        assertEquals(Encoding.TEXT_CSV.id, receivedSample!!.encoding.id)
         assertNull(receivedSample!!.encoding.schema)
 
         // Testing with non-null schema on a reply success scenario.
@@ -76,7 +76,7 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(receivedSample)
-        assertEquals(Encoding.ID.TEXT_CSV, receivedSample!!.encoding.id)
+        assertEquals(Encoding.TEXT_CSV.id, receivedSample!!.encoding.id)
         assertEquals("test_schema", receivedSample!!.encoding.schema)
 
         queryable.close()
@@ -93,8 +93,8 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replyError("test".into(), Encoding.ID.TEXT_CSV)
-                test2.keyExpr -> query.replyError("test".into(), Encoding(Encoding.ID.TEXT_CSV, "test_schema"))
+                test1.keyExpr -> query.replyError("test".into(), Encoding.TEXT_CSV)
+                test2.keyExpr -> query.replyError("test".into(), Encoding.TEXT_CSV.withSchema("test_schema"))
             }
         }).getOrThrow()
 
@@ -109,8 +109,10 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(errorMessage)
-        assertEquals(Encoding.ID.TEXT_CSV, errorEncoding!!.id)
+        assertEquals(Encoding.TEXT_CSV.id, errorEncoding!!.id)
         assertNull(errorEncoding!!.schema)
+
+        Thread.sleep(200)
 
         // Testing with non-null schema on a reply error scenario.
         errorMessage = null
@@ -123,7 +125,7 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(errorMessage)
-        assertEquals(Encoding.ID.TEXT_CSV, errorEncoding!!.id)
+        assertEquals(Encoding.TEXT_CSV.id, errorEncoding!!.id)
         assertEquals("test_schema", errorEncoding!!.schema)
 
         queryable.close()
@@ -134,8 +136,8 @@ class EncodingTest {
     fun encoding_queryTest() {
         val session = Session.open(Config.default()).getOrThrow()
         val selector = "example/testing/keyexpr".intoSelector().getOrThrow()
-        val encodingA = Encoding(Encoding.ID.TEXT_CSV, null)
-        val encodingB = Encoding(Encoding.ID.TEXT_CSV, "test_schema")
+        val encodingA = Encoding.TEXT_CSV
+        val encodingB = Encoding(123, "test_schema")
 
         var receivedEncoding: Encoding? = null
         val queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
@@ -148,8 +150,10 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(receivedEncoding)
-        assertEquals(Encoding.ID.TEXT_CSV, receivedEncoding!!.id)
+        assertEquals(Encoding.TEXT_CSV.id, receivedEncoding!!.id)
         assertNull(receivedEncoding!!.schema)
+
+        Thread.sleep(200)
 
         // Testing non-null schema
         receivedEncoding = null
@@ -157,7 +161,7 @@ class EncodingTest {
         Thread.sleep(200)
 
         assertNotNull(receivedEncoding)
-        assertEquals(Encoding.ID.TEXT_CSV, receivedEncoding!!.id)
+        assertEquals(123, receivedEncoding!!.id)
         assertEquals("test_schema", receivedEncoding!!.schema)
 
         queryable.close()
