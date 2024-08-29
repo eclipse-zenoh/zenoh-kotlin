@@ -16,11 +16,10 @@ package io.zenoh
 
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import java.time.Duration
 import kotlin.test.*
 
@@ -30,7 +29,7 @@ class UserAttachmentTest {
     private lateinit var keyExpr: KeyExpr
 
     companion object {
-        val value = Value("test", Encoding(Encoding.ID.TEXT_PLAIN))
+        val payload = "test".into()
         const val keyExprString = "example/testing/attachment"
         const val attachment = "mock_attachment"
         val attachmentZBytes = ZBytes.from(attachment)
@@ -52,7 +51,7 @@ class UserAttachmentTest {
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
-        session.put(keyExpr, value, attachment = attachmentZBytes)
+        session.put(keyExpr, payload, attachment = attachmentZBytes)
 
         subscriber.close()
 
@@ -135,7 +134,7 @@ class UserAttachmentTest {
         var receivedAttachment: ZBytes? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             receivedAttachment = query.attachment
-            query.replySuccess(keyExpr, value  = Value("test"))
+            query.replySuccess(keyExpr, payload)
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {}, attachment = attachmentZBytes, timeout = Duration.ofMillis(1000)).getOrThrow()
@@ -151,7 +150,7 @@ class UserAttachmentTest {
     fun queryReplyWithAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-            query.replySuccess(keyExpr, value = Value("test"), attachment = attachmentZBytes)
+            query.replySuccess(keyExpr, payload, attachment = attachmentZBytes)
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {
@@ -172,7 +171,7 @@ class UserAttachmentTest {
     fun queryReplyWithoutAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-            query.replySuccess(keyExpr, value = Value("test"))
+            query.replySuccess(keyExpr, payload)
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {

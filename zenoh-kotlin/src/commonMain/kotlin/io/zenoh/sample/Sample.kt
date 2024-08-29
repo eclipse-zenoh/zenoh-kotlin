@@ -18,18 +18,16 @@ import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.QoS
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.ZBytes
-import io.zenoh.value.Value
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
  * Class representing a Zenoh Sample.
  *
- * A sample consists of a [KeyExpr]-[Value] pair, annotated with the [SampleKind] (PUT or DELETE) of the publication
- * used to emit it and a timestamp.
- *
  * @property keyExpr The [KeyExpr] of the sample.
- * @property value The [Value] of the sample.
+ * @property payload [ZBytes] with the payload of the sample.
+ * @property encoding [Encoding] of the payload.
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
  * @property qos The Quality of Service settings used to deliver the sample.
@@ -37,7 +35,8 @@ import org.apache.commons.net.ntp.TimeStamp
  */
 data class Sample(
     val keyExpr: KeyExpr,
-    val value: Value,
+    val payload: ZBytes,
+    val encoding: Encoding,
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,

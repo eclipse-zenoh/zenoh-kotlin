@@ -31,7 +31,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
-                        session.put(keyExpr, value, attachment = attachment?.into())
+                        session.put(keyExpr, value.into(), attachment = attachment?.into())
                             .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
                     }
                 }

@@ -16,8 +16,8 @@ package io.zenoh.query
 
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.ZenohID
@@ -29,8 +29,7 @@ import org.apache.commons.net.ntp.TimeStamp
  *
  * A reply can be either successful ([Success]), an error ([Error]) or a delete request ([Delete]), both having different
  * information.
- * For instance, the successful reply will contain a [Sample] while the error reply will only contain a [Value]
- * with the error information.
+ * // TODO: fix comment and example after modifying the replies.
  *
  * Example:
  * ```kotlin
@@ -44,7 +43,7 @@ import org.apache.commons.net.ntp.TimeStamp
  *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
  *                         query.replySuccess(
  *                             keyExpr,
- *                             value = Value("Example value"),
+ *                             payload = "Example payload".into(),
  *                             timestamp = TimeStamp.getCurrentTime()
  *                         ).getOrThrow()
  *                     }
@@ -79,10 +78,11 @@ sealed class Reply private constructor(open val replierId: ZenohID?) : ZenohType
     /**
      * An Error reply.
      *
-     * @property error: value with the error information.*
-     * @param replierId: unique ID identifying the replier.
+     * @property replierId Unique ID identifying the replier.
+     * @property error Error message.
+     * @property encoding [Encoding] of the error message.
      */
-    data class Error internal constructor(override val replierId: ZenohID? = null, val error: Value) : Reply(replierId) {
+    data class Error internal constructor(override val replierId: ZenohID? = null, val error: ZBytes, val encoding: Encoding) : Reply(replierId) {
 
         override fun toString(): String {
             return "Error(error=$error)"
@@ -111,4 +111,3 @@ sealed class Reply private constructor(open val replierId: ZenohID?) : ZenohType
         }
     }
 }
-

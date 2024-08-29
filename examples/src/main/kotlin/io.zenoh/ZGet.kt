@@ -21,7 +21,6 @@ import io.zenoh.protocol.into
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
 import io.zenoh.selector.intoSelector
-import io.zenoh.value.Value
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
@@ -38,7 +37,7 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                 selector.intoSelector().onSuccess { selector ->
                     session.get(selector,
                         channel = Channel(),
-                        value = payload?.let { Value(it) },
+                        payload = payload?.into(),
                         target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
                         attachment = attachment?.into(),
                         timeout = Duration.ofMillis(timeout))
@@ -46,7 +45,7 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                             runBlocking {
                                 for (reply in channelReceiver) {
                                     when (reply) {
-                                        is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")
+                                        is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.payload}')")
                                         is Reply.Error -> println("Received (ERROR: '${reply.error}')")
                                         is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
                                     }

@@ -14,8 +14,8 @@
 
 package io.zenoh.jni
 
+import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.ZBytes
-import io.zenoh.value.Value
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].
@@ -27,11 +27,13 @@ internal class JNIPublisher(private val ptr: Long) {
     /**
      * Put operation.
      *
-     * @param value The [Value] to be put.
+     * @param payload Payload of the put.
+     * @param encoding Encoding of the payload.
      * @param attachment Optional attachment.
      */
-    fun put(value: Value, attachment: ZBytes?): Result<Unit> = runCatching {
-        putViaJNI(value.payload.bytes, value.encoding.id.ordinal, value.encoding.schema, attachment?.bytes, ptr)
+    fun put(payload: ZBytes, encoding: Encoding?, attachment: ZBytes?): Result<Unit> = runCatching {
+        val resolvedEncoding = encoding ?: Encoding.default()
+        putViaJNI(payload.bytes, resolvedEncoding.id, resolvedEncoding.schema, attachment?.bytes, ptr)
     }
 
     /**

@@ -18,12 +18,10 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.*
-import io.zenoh.prelude.Encoding.ID.ZENOH_STRING
 import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -38,7 +36,7 @@ import kotlin.test.*
 class QueryableTest {
 
     companion object {
-        const val testPayload = "Hello queryable"
+        val testPayload = "Hello queryable".into()
     }
 
     private lateinit var session: Session
@@ -61,13 +59,14 @@ class QueryableTest {
     fun queryable_runsWithCallback() = runBlocking {
         val sample = Sample(
             testKeyExpr,
-            Value(testPayload),
+            testPayload,
+            Encoding.default(),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
             QoS()
         )
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replySuccess(testKeyExpr, value = sample.value, timestamp = sample.timestamp)
+            query.replySuccess(testKeyExpr, payload = sample.payload, timestamp = sample.timestamp)
         }).getOrThrow()
 
         var reply: Reply? = null
@@ -116,14 +115,14 @@ class QueryableTest {
         assertNull(receivedQuery!!.attachment)
 
         receivedQuery = null
-        val payload = "Test value"
+        val payload = "Test value".into()
         val attachment = "Attachment".into()
-        session.get(testKeyExpr.intoSelector(), callback = {}, value = Value(payload, ZENOH_STRING), attachment = attachment)
+        session.get(testKeyExpr.intoSelector(), callback = {}, payload = payload, encoding = Encoding.ZENOH_STRING, attachment = attachment)
 
         delay(100)
         assertNotNull(receivedQuery)
-        assertEquals(payload, receivedQuery!!.payload!!.bytes.decodeToString())
-        assertEquals(ZENOH_STRING, receivedQuery!!.encoding!!.id)
+        assertEquals(payload, receivedQuery!!.payload)
+        assertEquals(Encoding.ZENOH_STRING.id, receivedQuery!!.encoding!!.id)
         assertEquals(attachment, receivedQuery!!.attachment)
 
         queryable.close()
@@ -131,14 +130,14 @@ class QueryableTest {
 
     @Test
     fun queryReplySuccessTest() {
-        val message = "Test message"
+        val message = "Test message".into()
         val timestamp = TimeStamp.getCurrentTime()
         val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
         val priority = Priority.DATA_HIGH
         val express = true
         val congestionControl = CongestionControl.DROP
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replySuccess(testKeyExpr, value = Value(message), timestamp = timestamp, qos = qos)
+            query.replySuccess(testKeyExpr, payload = message, timestamp = timestamp, qos = qos)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -148,7 +147,7 @@ class QueryableTest {
 
         assertTrue(receivedReply is Reply.Success)
         val reply = receivedReply as Reply.Success
-        assertEquals(message, reply.sample.value.payload.bytes.decodeToString())
+        assertEquals(message, reply.sample.payload)
         assertEquals(timestamp, reply.sample.timestamp)
         assertEquals(priority, reply.sample.qos.priority)
         assertEquals(express, reply.sample.qos.express)
@@ -157,9 +156,9 @@ class QueryableTest {
 
     @Test
     fun queryReplyErrorTest() {
-        val message = "Error message"
+        val errorMessage = "Error message".into()
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replyError(error = Value(message))
+            query.replyError(error = errorMessage)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -171,7 +170,7 @@ class QueryableTest {
         assertNotNull(receivedReply)
         assertTrue(receivedReply is Reply.Error)
         val reply = receivedReply as Reply.Error
-        assertEquals(message, reply.error.payload.bytes.decodeToString())
+        assertEquals(errorMessage, reply.error)
     }
 
     @Test
@@ -231,16 +230,17 @@ private class QueryHandler : Handler<Query, QueryHandler> {
     override fun onClose() {}
 
     fun reply(query: Query) {
-        val payload = "Hello queryable $counter!"
+        val payload = "Hello queryable $counter!".into()
         counter++
         val sample = Sample(
             query.keyExpr,
-            Value(payload),
+            payload,
+            Encoding.default(),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
             QoS()
         )
         performedReplies.add(sample)
-        query.replySuccess(query.keyExpr, value = sample.value, timestamp = sample.timestamp)
+        query.replySuccess(query.keyExpr, payload = payload, timestamp = sample.timestamp)
     }
 }

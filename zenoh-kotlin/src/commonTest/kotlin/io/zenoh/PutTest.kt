@@ -16,8 +16,8 @@ package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.into
 import io.zenoh.sample.Sample
-import io.zenoh.value.Value
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -26,7 +26,7 @@ class PutTest {
 
     companion object {
         const val TEST_KEY_EXP = "example/testing/keyexpr"
-        const val TEST_PAYLOAD = "Hello"
+        val TEST_PAYLOAD = "Hello".into()
     }
 
     @Test
@@ -35,11 +35,10 @@ class PutTest {
         var receivedSample: Sample? = null
         val keyExpr = TEST_KEY_EXP.intoKeyExpr().getOrThrow()
         val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
-        val value = Value(TEST_PAYLOAD, Encoding(Encoding.ID.TEXT_PLAIN))
-        session.put(keyExpr, value)
+        session.put(keyExpr, TEST_PAYLOAD, encoding = Encoding.TEXT_PLAIN)
         subscriber.close()
         session.close()
         assertNotNull(receivedSample)
-        assertEquals(value, receivedSample!!.value)
+        assertEquals(TEST_PAYLOAD, receivedSample!!.payload)
     }
 }
