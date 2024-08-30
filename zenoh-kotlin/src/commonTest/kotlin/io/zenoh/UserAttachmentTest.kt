@@ -138,7 +138,7 @@ class UserAttachmentTest {
         var receivedAttachment: ZBytes? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             receivedAttachment = query.attachment
-            query.replySuccess(keyExpr, payload)
+            query.reply(keyExpr, payload)
         }).getOrThrow()
 
         session.get(
@@ -159,7 +159,7 @@ class UserAttachmentTest {
     fun queryReplyWithAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-            query.replySuccess(keyExpr, payload, attachment = attachmentZBytes)
+            query.reply(keyExpr, payload, attachment = attachmentZBytes)
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {
@@ -177,7 +177,7 @@ class UserAttachmentTest {
     fun queryReplyWithoutAttachmentTest() {
         var reply: Reply? = null
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-            query.replySuccess(keyExpr, payload)
+            query.reply(keyExpr, payload)
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {

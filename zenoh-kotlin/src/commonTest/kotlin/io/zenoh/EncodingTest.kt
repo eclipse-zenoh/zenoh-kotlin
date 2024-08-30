@@ -50,13 +50,13 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replySuccess(
+                test1.keyExpr -> query.reply(
                     query.keyExpr,
                     payload = "test".into(),
                     encoding = Encoding.TEXT_CSV
                 )
 
-                test2.keyExpr -> query.replySuccess(
+                test2.keyExpr -> query.reply(
                     query.keyExpr,
                     payload = "test".into(),
                     encoding = Encoding.TEXT_CSV.withSchema("test_schema")
@@ -102,8 +102,8 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replyError("test".into(), Encoding.TEXT_CSV)
-                test2.keyExpr -> query.replyError("test".into(), Encoding.TEXT_CSV.withSchema("test_schema"))
+                test1.keyExpr -> query.replyErr("test".into(), Encoding.TEXT_CSV)
+                test2.keyExpr -> query.replyErr("test".into(), Encoding.TEXT_CSV.withSchema("test_schema"))
             }
         }).getOrThrow()
 

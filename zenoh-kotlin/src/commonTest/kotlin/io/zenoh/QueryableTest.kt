@@ -67,7 +67,7 @@ class QueryableTest {
             QoS()
         )
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replySuccess(testKeyExpr, payload = sample.payload, timestamp = sample.timestamp)
+            query.reply(testKeyExpr, payload = sample.payload, timestamp = sample.timestamp)
         }).getOrThrow()
 
         var reply: Reply? = null
@@ -138,7 +138,7 @@ class QueryableTest {
         val express = true
         val congestionControl = CongestionControl.DROP
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replySuccess(testKeyExpr, payload = message, timestamp = timestamp, qos = qos)
+            query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = qos)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -159,7 +159,7 @@ class QueryableTest {
     fun queryReplyErrorTest() {
         val errorMessage = "Error message".into()
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replyError(error = errorMessage)
+            query.replyErr(error = errorMessage)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -182,7 +182,7 @@ class QueryableTest {
         val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
 
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replyDelete(testKeyExpr, timestamp = timestamp, qos = qos)
+            query.replyDel(testKeyExpr, timestamp = timestamp, qos = qos)
         }).getOrThrow()
         var receivedReply: Reply? = null
         session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
@@ -239,6 +239,6 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             QoS()
         )
         performedReplies.add(sample)
-        query.replySuccess(query.keyExpr, payload = payload, timestamp = sample.timestamp)
+        query.reply(query.keyExpr, payload = payload, timestamp = sample.timestamp)
     }
 }
