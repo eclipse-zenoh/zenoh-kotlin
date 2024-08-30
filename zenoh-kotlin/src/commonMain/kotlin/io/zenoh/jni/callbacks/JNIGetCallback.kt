@@ -17,15 +17,18 @@ package io.zenoh.jni.callbacks
 internal fun interface JNIGetCallback {
 
     fun run(
-        replierId: String,
+        replierId: String?,
         success: Boolean,
-        keyExpr: String,
+        keyExpr: String?,
         payload: ByteArray,
-        encoding: Int,
+        encodingId: Int,
+        encodingSchema: String?,
         kind: Int,
         timestampNTP64: Long,
         timestampIsValid: Boolean,
-        qos: Byte,
-        attachment: ByteArray,
+        attachment: ByteArray?,
+        express: Boolean,
+        priority: Int,
+        congestionControl: Int,
     )
 }

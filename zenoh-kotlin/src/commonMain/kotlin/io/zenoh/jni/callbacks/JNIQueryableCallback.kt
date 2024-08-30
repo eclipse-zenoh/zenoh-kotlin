@@ -17,9 +17,9 @@ package io.zenoh.jni.callbacks
 internal fun interface JNIQueryableCallback {
     fun run(keyExpr: String,
             selectorParams: String,
-            withValue: Boolean,
             payload: ByteArray?,
-            encoding: Int,
-            attachmentBytes: ByteArray,
+            encodingId: Int,
+            encodingSchema: String?,
+            attachmentBytes: ByteArray?,
             queryPtr: Long)
 }

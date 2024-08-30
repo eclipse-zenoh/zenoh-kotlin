@@ -13,38 +13,23 @@
 //
 
 package io.zenoh.prelude
-import io.zenoh.jni.JNIQoS;
 
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
 /**
  * Quality of service settings used to send zenoh message.
+ *
+ * @property congestionControl [CongestionControl] policy used for the message.
+ * @property priority [Priority] policy used for the message.
+ * @property express If true, the message is not batched in order to reduce the latency.
  */
-class QoS internal constructor(internal val jniQoS: JNIQoS) {
-    internal constructor(qos: Byte): this(JNIQoS(qos))
-
-    /**
-     * Returns priority of the message.
-     */
-    fun priority(): Priority = jniQoS.getPriority()
-
-    /**
-     * Returns congestion control setting of the message.
-     */
-    fun congestionControl(): CongestionControl = jniQoS.getCongestionControl()
-
-    /**
-     * Returns express flag. If it is true, the message is not batched to reduce the latency.
-     */
-    fun express(): Boolean = jniQoS.getExpress()
+data class QoS (
+    val congestionControl: CongestionControl = CongestionControl.DROP,
+    val priority: Priority = Priority.DATA,
+    val express: Boolean = false
+) {
 
     companion object {
-        
-        /**
-        * Returns default QoS settings.
-        */
-        fun default(): QoS {
-            return QoS(JNIQoS())
-        } 
+        private val defaultQoS = QoS()
+
+        fun default() = defaultQoS
     }
 }

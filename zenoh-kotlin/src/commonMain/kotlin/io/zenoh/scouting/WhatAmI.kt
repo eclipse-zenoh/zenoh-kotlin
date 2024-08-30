@@ -12,12 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh
+package io.zenoh.scouting
 
 /**
- * A resolvable function interface meant to be used by Zenoh builders.
+ * WhatAmI
+ *
+ * The role of the node sending the `hello` message.
  */
-fun interface Resolvable<R> {
+enum class WhatAmI(internal val value: Int) {
+    Router(1),
+    Peer(2),
+    Client(4);
 
-    fun res(): Result<R>
+    companion object {
+        internal fun fromInt(value: Int) = entries.first { value == it.value }
+    }
 }

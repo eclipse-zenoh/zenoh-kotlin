@@ -15,14 +15,12 @@
 package io.zenoh
 
 import io.zenoh.handlers.Handler
-import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
+import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
 import io.zenoh.selector.Selector
-import io.zenoh.value.Value
+import io.zenoh.selector.intoSelector
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.*
@@ -31,57 +29,54 @@ import kotlin.test.*
 class GetTest {
 
     companion object {
-        val value = Value("Test")
+        val payload = "Test".into()
         val timestamp = TimeStamp.getCurrentTime()
         val kind = SampleKind.PUT
     }
 
     private lateinit var session: Session
-    private lateinit var keyExpr: KeyExpr
+    private lateinit var selector: Selector
     private lateinit var queryable: Queryable<Unit>
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
-        keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        queryable = session.declareQueryable(keyExpr).with { query ->
-            query.reply(query.keyExpr)
-                .success(value)
-                .withTimeStamp(timestamp)
-                .withKind(kind)
-                .res()
-        }.res().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
+        selector = "example/testing/keyexpr".intoSelector().getOrThrow()
+        queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
+            query.replySuccess(query.keyExpr, payload, timestamp = timestamp)
+        }).getOrThrow()
     }
 
     @AfterTest
     fun tearDown() {
         session.close()
-        keyExpr.close()
+        selector.close()
         queryable.close()
     }
 
     @Test
     fun get_runsWithCallback() {
         var reply: Reply? = null
-        session.get(keyExpr).with { reply = it }.timeout(Duration.ofMillis(1000)).res()
+        session.get(selector, callback = {
+            reply = it
+        }, timeout = Duration.ofMillis(1000))
 
         assertTrue(reply is Reply.Success)
         val sample = (reply as Reply.Success).sample
-        assertEquals(value, sample.value)
+        assertEquals(payload, sample.payload)
         assertEquals(kind, sample.kind)
-        assertEquals(keyExpr, sample.keyExpr)
+        assertEquals(selector.keyExpr, sample.keyExpr)
         assertEquals(timestamp, sample.timestamp)
     }
 
     @Test
     fun get_runsWithHandler() {
-        val receiver: ArrayList<Reply> = session.get(keyExpr).with(TestHandler())
-            .timeout(Duration.ofMillis(1000)).res().getOrThrow()!!
+        val receiver: ArrayList<Reply> = session.get(selector, handler = TestHandler(), timeout = Duration.ofMillis(1000)).getOrThrow()
 
         for (reply in receiver) {
             reply as Reply.Success
             val receivedSample = reply.sample
-            assertEquals(value, receivedSample.value)
+            assertEquals(payload, receivedSample.payload)
             assertEquals(SampleKind.PUT, receivedSample.kind)
             assertEquals(timestamp, receivedSample.timestamp)
         }
@@ -89,17 +84,17 @@ class GetTest {
 
     @Test
     fun getWithSelectorParamsTest() {
-        var receivedParams = String()
-        var receivedParamsMap = mapOf<String, String?>()
-        val queryable = session.declareQueryable(keyExpr).with { it.use { query ->
+        var receivedParams: String? = null
+        var receivedParamsMap : Map<String, String>? = null
+        val queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             receivedParams = query.parameters
-            receivedParamsMap = query.selector.parametersStringMap().getOrThrow()
-        }}.res().getOrThrow()
+            receivedParamsMap = query.selector.parametersStringMap()?.getOrThrow()
+        }).getOrThrow()
 
         val params = "arg1=val1&arg2=val2&arg3"
         val paramsMap = mapOf("arg1" to "val1", "arg2" to "val2", "arg3" to "")
-        val selector = Selector(keyExpr, params)
-        session.get(selector).with {}.timeout(Duration.ofMillis(1000)).res()
+        val selectorWithParams = Selector(selector.keyExpr, params)
+        session.get(selectorWithParams, callback = {}, timeout = Duration.ofMillis(1000))
 
         queryable.close()
 

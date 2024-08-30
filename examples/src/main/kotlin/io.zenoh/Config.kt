@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.sample.Attachment
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
@@ -57,10 +56,12 @@ internal fun loadConfig(
     noMulticastScouting: Boolean,
     mode: String?
 ): Config {
-    val config = if (emptyArgs) {
+    return if (emptyArgs) {
         Config.default()
     } else {
-        configFile?.let { Config.from(Path(it)) } ?: run {
+        configFile?.let {
+            Config.from(path = Path(it))
+        } ?: run {
             val connect = Connect(connectEndpoints)
             val listen = Listen(listenEndpoints)
             val scouting = Scouting(Multicast(!noMulticastScouting))
@@ -69,10 +70,4 @@ internal fun loadConfig(
             Config.from(jsonConfig)
         }
     }
-    return config
-}
-
-internal fun decodeAttachment(attachment: String): Attachment {
-    val pairs = attachment.split("&").map { it.split("=").let { (k, v) -> k.toByteArray() to v.toByteArray() } }
-    return Attachment.Builder().addAll(pairs).res()
 }

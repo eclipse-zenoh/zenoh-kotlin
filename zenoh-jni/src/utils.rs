@@ -14,40 +14,57 @@
 
 use std::sync::Arc;
 
+use crate::{errors::Result, jni_error, session_error, throw_exception};
 use jni::{
     objects::{JByteArray, JObject, JString},
+    sys::jint,
     JNIEnv, JavaVM,
 };
-use zenoh::sample::{Attachment, AttachmentBuilder};
-
-use crate::errors::{Error, Result};
+use zenoh::{
+    bytes::{Encoding, ZBytes},
+    internal::buffers::ZSlice,
+    pubsub::Reliability,
+    qos::{CongestionControl, Priority},
+    query::{ConsolidationMode, QueryTarget},
+};
 
 /// Converts a JString into a rust String.
 pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {
     let binding = env
         .get_string(string)
-        .map_err(|err| Error::Jni(format!("Error while retrieving JString: {}", err)))?;
+        .map_err(|err| jni_error!("Error while retrieving JString: {}", err))?;
     let value = binding
         .to_str()
-        .map_err(|err| Error::Jni(format!("Error decoding JString: {}", err)))?;
+        .map_err(|err| jni_error!("Error decoding JString: {}", err))?;
     Ok(value.to_string())
+}
+
+pub(crate) fn decode_encoding(
+    env: &mut JNIEnv,
+    encoding: jint,
+    schema: &JString,
+) -> Result<Encoding> {
+    let schema: Option<ZSlice> = if schema.is_null() {
+        None
+    } else {
+        Some(decode_string(env, schema)?.into_bytes().into())
+    };
+    let encoding_id =
+        u16::try_from(encoding).map_err(|err| jni_error!("Failed to decode encoding: {}", err))?;
+    Ok(Encoding::new(encoding_id, schema))
 }
 
 pub(crate) fn get_java_vm(env: &mut JNIEnv) -> Result<JavaVM> {
     env.get_java_vm()
-        .map_err(|err| Error::Jni(format!("Unable to retrieve JVM reference: {:?}", err)))
+        .map_err(|err| jni_error!("Unable to retrieve JVM reference: {}", err))
 }
 
 pub(crate) fn get_callback_global_ref(
     env: &mut JNIEnv,
     callback: JObject,
 ) -> crate::errors::Result<jni::objects::GlobalRef> {
-    env.new_global_ref(callback).map_err(|err| {
-        Error::Jni(format!(
-            "Unable to get reference to the provided callback: {}",
-            err
-        ))
-    })
+    env.new_global_ref(callback)
+        .map_err(|err| jni_error!("Unable to get reference to the provided callback: {}", err))
 }
 
 /// Helper function to convert a JByteArray into a Vec<u8>.
@@ -55,12 +72,70 @@ pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result
     let payload_len = env
         .get_array_length(&payload)
         .map(|length| length as usize)
-        .map_err(|err| Error::Jni(err.to_string()))?;
+        .map_err(|err| jni_error!(err))?;
     let mut buff = vec![0; payload_len];
     env.get_byte_array_region(payload, 0, &mut buff[..])
-        .map_err(|err| Error::Jni(err.to_string()))?;
+        .map_err(|err| jni_error!(err))?;
     let buff: Vec<u8> = unsafe { std::mem::transmute::<Vec<i8>, Vec<u8>>(buff) };
     Ok(buff)
+}
+
+pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {
+    Priority::try_from(priority as u8)
+        .map_err(|err| session_error!("Error retrieving priority: {}.", err))
+}
+
+pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<CongestionControl> {
+    match congestion_control {
+        1 => Ok(CongestionControl::Block),
+        0 => Ok(CongestionControl::Drop),
+        value => Err(session_error!("Unknown congestion control '{}'.", value)),
+    }
+}
+
+pub(crate) fn decode_query_target(target: jint) -> Result<QueryTarget> {
+    match target {
+        0 => Ok(QueryTarget::BestMatching),
+        1 => Ok(QueryTarget::All),
+        2 => Ok(QueryTarget::AllComplete),
+        value => Err(session_error!("Unable to decode QueryTarget '{}'.", value)),
+    }
+}
+
+pub(crate) fn decode_consolidation(consolidation: jint) -> Result<ConsolidationMode> {
+    match consolidation {
+        0 => Ok(ConsolidationMode::Auto),
+        1 => Ok(ConsolidationMode::None),
+        2 => Ok(ConsolidationMode::Monotonic),
+        3 => Ok(ConsolidationMode::Latest),
+        value => Err(session_error!("Unable to decode consolidation '{}'", value)),
+    }
+}
+
+pub(crate) fn decode_reliability(reliability: jint) -> Result<Reliability> {
+    match reliability {
+        0 => Ok(Reliability::BestEffort),
+        1 => Ok(Reliability::Reliable),
+        value => Err(session_error!("Unable to decode reliability '{}'", value)),
+    }
+}
+
+pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> Result<JByteArray<'a>> {
+    env.byte_array_from_slice(
+        slice
+            .deserialize::<Vec<u8>>()
+            .map_err(|err| session_error!("Unable to deserialize slice: {}", err))?
+            .as_ref(),
+    )
+    .map_err(|err| jni_error!(err))
+}
+
+pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> Result<JString<'a>> {
+    env.new_string(
+        String::from_utf8(slice.to_vec())
+            .map_err(|err| session_error!("Unable to decode string: {}", err))?,
+    )
+    .map_err(|err| jni_error!(err))
 }
 
 /// A type that calls a function when dropped
@@ -102,75 +177,12 @@ pub(crate) fn load_on_close(
                 Ok(_) => (),
                 Err(err) => {
                     _ = env.exception_describe();
-                    _ = Error::Jni(format!("Error while running 'onClose' callback: {}", err))
-                        .throw_on_jvm(&mut env)
-                        .map_err(|err| {
-                            tracing::error!(
-                                "Unable to throw exception upon 'onClose' failure: {}",
-                                err
-                            )
-                        });
+                    throw_exception!(
+                        env,
+                        jni_error!("Error while running 'onClose' callback: {}", err)
+                    );
                 }
             }
         }
     })
-}
-
-/// This function is used in conjunction with the Kotlin function
-/// `decodeAttachment(attachmentBytes: ByteArray): Attachment` which takes a byte array with the
-/// format <key size><key payload><value size><value payload>, repeating this
-/// pattern for as many pairs there are in the attachment.
-///
-/// The kotlin function expects both key size and value size to be i32 integers expressed with
-/// little endian format.
-///
-pub(crate) fn attachment_to_vec(attachment: Attachment) -> Vec<u8> {
-    let mut buffer: Vec<u8> = Vec::new();
-    for (key, value) in attachment.iter() {
-        buffer.extend((key.len() as i32).to_le_bytes());
-        buffer.extend(&key[..]);
-        buffer.extend((value.len() as i32).to_le_bytes());
-        buffer.extend(&value[..]);
-    }
-    buffer
-}
-
-/// This function is used in conjunction with the Kotlin function
-/// `encodeAttachment(attachment: Attachment): ByteArray` which converts the attachment into a
-/// ByteArray with the format <key size><key payload><value size><value payload>, repeating this
-/// pattern for as many pairs there are in the attachment.
-///
-/// Both key size and value size are i32 integers with little endian format.
-///
-pub(crate) fn vec_to_attachment(bytes: Vec<u8>) -> Attachment {
-    let mut builder = AttachmentBuilder::new();
-    let mut idx = 0;
-    let i32_size = std::mem::size_of::<i32>();
-    let mut slice_size;
-
-    while idx < bytes.len() {
-        slice_size = i32::from_le_bytes(
-            bytes[idx..idx + i32_size]
-                .try_into()
-                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
-        );
-        idx += i32_size;
-
-        let key = &bytes[idx..idx + slice_size as usize];
-        idx += slice_size as usize;
-
-        slice_size = i32::from_le_bytes(
-            bytes[idx..idx + i32_size]
-                .try_into()
-                .expect("Error decoding i32 while processing attachment."), //This error should never happen.
-        );
-        idx += i32_size;
-
-        let value = &bytes[idx..idx + slice_size as usize];
-        idx += slice_size as usize;
-
-        builder.insert(key, value);
-    }
-
-    builder.build()
 }

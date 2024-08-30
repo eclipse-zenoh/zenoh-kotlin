@@ -76,7 +76,7 @@ jobs:
   # Publish snapshot packages. These jobs will only be triggered when the CI is executed on main.
   publish_jvm_snapshot_package:
     name: Publish JVM snapshot package
-    if: contains(fromJSON('["refs/heads/main", "refs/heads/dev/1.0.0"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/main"]'), github.ref)
     needs: ci
     uses: ./.github/workflows/publish-jvm.yml
     permissions:
@@ -88,7 +88,7 @@ jobs:
 
   publish_android_snapshot_package:
     name: Publish Android snapshot package
-    if: contains(fromJSON('["refs/heads/main", "refs/heads/dev/1.0.0"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/main"]'), github.ref)
     needs: ci
     uses: ./.github/workflows/publish-android.yml
     permissions:

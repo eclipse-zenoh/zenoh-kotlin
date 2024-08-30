@@ -16,15 +16,13 @@ mod errors;
 mod key_expr;
 mod logger;
 mod publisher;
-mod put;
 mod query;
 mod queryable;
-mod reply;
-mod sample;
+mod scouting;
 mod session;
 mod subscriber;
 mod utils;
-mod value;
+mod zbytes;
 
 // Test should be runned with `cargo test --no-default-features`
 #[test]

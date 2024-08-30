@@ -18,39 +18,13 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import kotlin.system.exitProcess
 
 class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Subscriber Throughput test"
 ) {
-
-    private val samples by option(
-        "-s", "--samples", help = "Number of throughput measurements [default: 10]", metavar = "number"
-    ).ulong().default(10u)
-    private val number by option(
-        "-n",
-        "--number",
-        help = "Number of messages in each throughput measurements [default: 100000]",
-        metavar = "number"
-    ).ulong().default(10000u)
-    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val connect: List<String> by option(
-        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
-    ).multiple()
-    private val listen: List<String> by option(
-        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
-    ).multiple()
-    private val mode by option(
-        "-m",
-        "--mode",
-        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
-        metavar = "mode"
-    ).default("peer")
-    private val noMulticastScouting: Boolean by option(
-        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
-    ).flag(default = false)
-
     companion object {
         private const val NANOS_TO_SEC = 1_000_000_000L
     }
@@ -106,7 +80,11 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
                     session.use {
                         println("Press CTRL-C to quit...")
                         subscriber =
-                            session.declareSubscriber(keyExpr).reliable().with { listener(number) }.res().getOrThrow()
+                            session.declareSubscriber(
+                                keyExpr,
+                                callback = { listener(number) },
+                                reliability = Reliability.RELIABLE
+                            ).getOrThrow()
                         while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
                             Thread.sleep(1000)
                         }
@@ -115,6 +93,33 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
             }
         }
     }
+
+    private val samples by option(
+        "-s", "--samples", help = "Number of throughput measurements [default: 10]", metavar = "number"
+    ).ulong().default(10u)
+    private val number by option(
+        "-n",
+        "--number",
+        help = "Number of messages in each throughput measurements [default: 100000]",
+        metavar = "number"
+    ).ulong().default(10000u)
+    private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
+
 }
 
 fun main(args: Array<String>) = ZSubThr(args.isEmpty()).main(args)

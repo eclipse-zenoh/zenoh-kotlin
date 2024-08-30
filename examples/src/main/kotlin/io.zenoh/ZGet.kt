@@ -17,10 +17,11 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
-import io.zenoh.query.ConsolidationMode
+import io.zenoh.protocol.into
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.Reply
 import io.zenoh.selector.intoSelector
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
@@ -28,14 +29,42 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Get example"
 ) {
 
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        Session.open(config).onSuccess { session ->
+            session.use {
+                selector.intoSelector().onSuccess { selector ->
+                    session.get(selector,
+                        channel = Channel(),
+                        payload = payload?.into(),
+                        target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
+                        attachment = attachment?.into(),
+                        timeout = Duration.ofMillis(timeout))
+                        .onSuccess { channelReceiver ->
+                            runBlocking {
+                                for (reply in channelReceiver) {
+                                    when (reply) {
+                                        is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.payload}')")
+                                        is Reply.Error -> println("Received (ERROR: '${reply.error}')")
+                                        is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
+                                    }
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+
     private val selector by option(
         "-s",
         "--selector",
         help = "The selection of resources to query [default: demo/example/**]",
         metavar = "selector"
     ).default("demo/example/**")
-    private val value by option(
-        "-v", "--value", help = "An optional value to put in the query.", metavar = "value"
+    private val payload by option(
+        "-p", "--payload", help = "An optional payload to put in the query.", metavar = "payload"
     )
     private val target by option(
         "-t",
@@ -68,42 +97,6 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        Session.open(config).onSuccess { session ->
-            session.use {
-                selector.intoSelector().onSuccess { selector ->
-                    selector.use {
-                        session.get(selector)
-                            .consolidation(ConsolidationMode.NONE)
-                            .timeout(Duration.ofMillis(timeout))
-                            .apply {
-                                target?.let {
-                                    target(QueryTarget.valueOf(it.uppercase()))
-                                }
-                                attachment?.let {
-                                    withAttachment(decodeAttachment(it))
-                                }
-                            }
-                            .res()
-                            .onSuccess { receiver ->
-                                runBlocking {
-                                    for (reply in receiver!!) {
-                                        when (reply) {
-                                            is Reply.Success -> {println("Received ('${reply.sample.keyExpr}': '${reply.sample.value}')")}
-                                            is Reply.Error -> println("Received (ERROR: '${reply.error}')")
-                                        }
-                                    }
-                                }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZGet(args.isEmpty()).main(args)

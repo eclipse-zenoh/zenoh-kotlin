@@ -18,51 +18,27 @@ import io.zenoh.ZenohType
 import io.zenoh.prelude.SampleKind
 import io.zenoh.prelude.QoS
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.value.Value
+import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
  * Class representing a Zenoh Sample.
  *
- * A sample consists of a [KeyExpr]-[Value] pair, annotated with the [SampleKind] (PUT or DELETE) of the publication
- * used to emit it and a timestamp.
- *
  * @property keyExpr The [KeyExpr] of the sample.
- * @property value The [Value] of the sample.
+ * @property payload [ZBytes] with the payload of the sample.
+ * @property encoding [Encoding] of the payload.
  * @property kind The [SampleKind] of the sample.
  * @property timestamp Optional [TimeStamp].
  * @property qos The Quality of Service settings used to deliver the sample.
- * @property attachment Optional [Attachment].
+ * @property attachment Optional attachment.
  */
-class Sample(
+data class Sample(
     val keyExpr: KeyExpr,
-    val value: Value,
+    val payload: ZBytes,
+    val encoding: Encoding,
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,
-    val attachment: Attachment? = null
-): ZenohType {
-    override fun toString(): String {
-        return if (kind == SampleKind.DELETE) "$kind($keyExpr)" else "$kind($keyExpr: $value)"
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Sample
-
-        if (keyExpr != other.keyExpr) return false
-        if (value != other.value) return false
-        if (kind != other.kind) return false
-        return timestamp == other.timestamp
-    }
-
-    override fun hashCode(): Int {
-        var result = keyExpr.hashCode()
-        result = 31 * result + value.hashCode()
-        result = 31 * result + kind.hashCode()
-        result = 31 * result + (timestamp?.hashCode() ?: 0)
-        return result
-    }
-}
+    val attachment: ZBytes? = null
+): ZenohType

@@ -14,9 +14,10 @@
 
 package io.zenoh.keyexpr
 
-import io.zenoh.Resolvable
 import io.zenoh.Session
+import io.zenoh.SessionDeclaration
 import io.zenoh.jni.JNIKeyExpr
+import io.zenoh.selector.Selector
 
 /**
  * # Address space
@@ -59,7 +60,7 @@ import io.zenoh.jni.JNIKeyExpr
  * @param jniKeyExpr An optional [JNIKeyExpr] instance, present when the key expression was declared through [Session.declareKeyExpr],
  *  it represents the native instance of the key expression.
  */
-class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable {
+class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable, SessionDeclaration {
 
     companion object {
 
@@ -114,9 +115,9 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Undeclare the key expression if it was previously declared on the specified [session].
      *
      * @param session The session from which the key expression was previously declared.
-     * @return An empty [Resolvable].
+     * @return A [Result] with the operation status.
      */
-    fun undeclare(session: Session): Resolvable<Unit> {
+    fun undeclare(session: Session): Result<Unit> {
         return session.undeclare(this)
     }
 
@@ -125,6 +126,10 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      */
     fun isValid(): Boolean {
         return jniKeyExpr != null
+    }
+
+    fun intoSelector(): Selector {
+        return Selector(this)
     }
 
     override fun toString(): String {
@@ -137,6 +142,10 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
     override fun close() {
         jniKeyExpr?.close()
         jniKeyExpr = null
+    }
+
+    override fun undeclare() {
+        close()
     }
 
     override fun equals(other: Any?): Boolean {

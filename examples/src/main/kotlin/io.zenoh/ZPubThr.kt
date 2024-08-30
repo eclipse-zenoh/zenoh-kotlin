@@ -21,16 +21,55 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
-import io.zenoh.prelude.KnownEncoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.Priority
-import io.zenoh.value.Value
+import io.zenoh.prelude.QoS
+import io.zenoh.protocol.into
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"
 ) {
+
+    override fun run() {
+        val data = ByteArray(payloadSize)
+        for (i in 0..<payloadSize) {
+            data[i] = (i % 10).toByte()
+        }
+        val payload = data.into()
+
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        val qos = QoS(
+            congestionControl = CongestionControl.BLOCK,
+            priority = priorityInput?.let { Priority.entries[it] } ?: Priority.default(),
+        )
+
+        Session.open(config).onSuccess {
+            it.use { session ->
+                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow(), qos = qos).onSuccess { pub ->
+                    println("Publisher declared on test/thr.")
+                    var count: Long = 0
+                    var start = System.currentTimeMillis()
+                    val number = number.toLong()
+                    println("Press CTRL-C to quit...")
+                    while (true) {
+                        pub.put(payload).getOrThrow()
+                        if (statsPrint) {
+                            if (count < number) {
+                                count++
+                            } else {
+                                val throughput = count * 1000 / (System.currentTimeMillis() - start)
+                                println("$throughput msgs/s")
+                                count = 0
+                                start = System.currentTimeMillis()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private val payloadSize by argument(
         "payload_size",
@@ -66,46 +105,6 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val data = ByteArray(payloadSize)
-        for (i in 0..<payloadSize) {
-            data[i] = (i % 10).toByte()
-        }
-        val value = Value(data, Encoding(KnownEncoding.EMPTY))
-
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        Session.open(config).onSuccess {
-            it.use { session ->
-                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow())
-                    .congestionControl(CongestionControl.BLOCK).apply {
-                        priorityInput?.let { priority(Priority.entries[it]) }
-                    }.res().onSuccess { pub ->
-                        pub.use {
-                            println("Publisher declared on test/thr.")
-                            var count: Long = 0
-                            var start = System.currentTimeMillis()
-                            val number = number.toLong()
-                            println("Press CTRL-C to quit...")
-                            while (true) {
-                                pub.put(value).res().getOrThrow()
-                                if (statsPrint) {
-                                    if (count < number) {
-                                        count++
-                                    } else {
-                                        val throughput = count * 1000 / (System.currentTimeMillis() - start)
-                                        println("$throughput msgs/s")
-                                        count = 0
-                                        start = System.currentTimeMillis()
-                                    }
-                                }
-                            }
-                        }
-                    }
-            }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZPubThr(args.isEmpty()).main(args)

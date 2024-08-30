@@ -9,10 +9,6 @@ import kotlin.test.assertFailsWith
 
 class SelectorTest {
 
-    init {
-        Zenoh.load()
-    }
-
     @Test
     fun selectorFromStringTest() {
         "a/b/c?arg1=val1".intoSelector().getOrThrow().use { selector: Selector ->

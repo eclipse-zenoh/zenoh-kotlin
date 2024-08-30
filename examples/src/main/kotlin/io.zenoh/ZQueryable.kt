@@ -16,10 +16,8 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
-import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.SampleKind
-import io.zenoh.queryable.Query
+import io.zenoh.protocol.into
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
@@ -27,6 +25,31 @@ import org.apache.commons.net.ntp.TimeStamp
 class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Queryable example"
 ) {
+
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    println("Declaring Queryable on $key...")
+                    session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
+                        runBlocking {
+                            for (query in queryable.receiver) {
+                                val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
+                                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+                                query.replySuccess(
+                                    keyExpr,
+                                    payload = value.into(),
+                                    timestamp = TimeStamp.getCurrentTime()
+                                ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private val key by option(
         "-k",
@@ -53,41 +76,6 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
-
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Queryable on " + key + "...")
-                        session.declareQueryable(keyExpr).res().onSuccess { queryable ->
-                            queryable.use {
-                                println("Press CTRL-C to quit...")
-                                queryable.receiver?.let { receiverChannel -> //  The default receiver is a Channel we can process on a coroutine.
-                                    runBlocking {
-                                        handleRequests(receiverChannel, keyExpr)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun handleRequests(
-        receiverChannel: Channel<Query>, keyExpr: KeyExpr
-    ) {
-        for (query in receiverChannel) {
-            val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
-            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-            query.reply(keyExpr).success(value).withKind(SampleKind.PUT).withTimeStamp(TimeStamp.getCurrentTime())
-                .res().onFailure { println(">> [Queryable ] Error sending reply: $it") }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZQueryable(args.isEmpty()).main(args)

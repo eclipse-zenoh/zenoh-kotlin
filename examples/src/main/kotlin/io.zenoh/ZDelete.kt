@@ -21,6 +21,19 @@ import io.zenoh.keyexpr.intoKeyExpr
 class ZDelete(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Delete example"
 ) {
+    override fun run() {
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        println("Opening session...")
+        Session.open(config).onSuccess { session ->
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    println("Deleting resources matching '$keyExpr'...")
+                    session.delete(keyExpr)
+                }
+            }
+        }
+    }
 
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
@@ -41,22 +54,6 @@ class ZDelete(private val emptyArgs: Boolean) : CliktCommand(
     private val noMulticastScouting: Boolean by option(
         "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
     ).flag(default = false)
-
-    override fun run() {
-        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting,mode)
-
-        println("Opening session...")
-        Session.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Deleting resources matching '$keyExpr'...")
-                        session.delete(keyExpr).res()
-                    }
-                }
-            }
-        }
-    }
 }
 
 fun main(args: Array<String>) = ZDelete(args.isEmpty()).main(args)

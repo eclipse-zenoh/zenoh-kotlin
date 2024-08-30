@@ -15,15 +15,13 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.KnownEncoding
-import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
+import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
+import io.zenoh.protocol.into
 import io.zenoh.publication.Publisher
 import io.zenoh.sample.Sample
 import io.zenoh.subscriber.Subscriber
-import io.zenoh.value.Value
 import kotlin.test.*
 
 class PublisherTest {
@@ -36,12 +34,12 @@ class PublisherTest {
 
     @BeforeTest
     fun setUp() {
-        session = Session.open().getOrThrow()
+        session = Session.open(Config.default()).getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        publisher = session.declarePublisher(keyExpr).res().getOrThrow()
-        subscriber = session.declareSubscriber(keyExpr).with { sample ->
+        publisher = session.declarePublisher(keyExpr).getOrThrow()
+        subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSamples.add(sample)
-        }.res().getOrThrow()
+        }).getOrThrow()
         receivedSamples = ArrayList()
     }
 
@@ -56,23 +54,24 @@ class PublisherTest {
     @Test
     fun putTest() {
 
-        val testValues = arrayListOf(
-            Value("Test 1".encodeToByteArray(), Encoding(KnownEncoding.TEXT_PLAIN)),
-            Value("Test 2".encodeToByteArray(), Encoding(KnownEncoding.TEXT_JSON)),
-            Value("Test 3".encodeToByteArray(), Encoding(KnownEncoding.TEXT_CSV))
+        val testPayloads = arrayListOf(
+            Pair("Test 1".into(), Encoding.TEXT_PLAIN),
+            Pair("Test 2".into(), Encoding.TEXT_JSON),
+            Pair("Test 3".into(), Encoding.TEXT_CSV),
         )
 
-        testValues.forEach() { value -> publisher.put(value).res() }
+        testPayloads.forEach() { value -> publisher.put(value.first, encoding = value.second) }
 
-        assertEquals(receivedSamples.size, testValues.size)
+        assertEquals(receivedSamples.size, testPayloads.size)
         for ((index, sample) in receivedSamples.withIndex()) {
-            assertEquals(sample.value, testValues[index])
+            assertEquals(sample.payload, testPayloads[index].first)
+            assertEquals(sample.encoding, testPayloads[index].second)
         }
     }
 
     @Test
     fun deleteTest() {
-        publisher.delete().res()
+        publisher.delete()
         assertEquals(1, receivedSamples.size)
         assertEquals(SampleKind.DELETE, receivedSamples[0].kind)
     }

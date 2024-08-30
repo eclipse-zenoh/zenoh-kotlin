@@ -18,110 +18,77 @@ import io.zenoh.*
 import io.zenoh.exceptions.SessionException
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.Priority
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.sample.Attachment
-import io.zenoh.value.Value
+import io.zenoh.prelude.Encoding
+import io.zenoh.prelude.QoS
+import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.into
 
 /**
+ * # Publisher
+ *
  * A Zenoh Publisher.
  *
  * A publisher is automatically dropped when using it with the 'try-with-resources' statement (i.e. 'use' in Kotlin).
  * The session from which it was declared will also keep a reference to it and undeclare it once the session is closed.
  *
- * In order to declare a publisher, [Session.declarePublisher] must be called, which returns a [Publisher.Builder] from
- * which we can specify the [Priority], and the [CongestionControl].
- *
- * Example:
- * ```
+ * Example of a publisher declaration:
+ * ```kotlin
  * val keyExpr = "demo/kotlin/greeting"
- * Session.open().onSuccess {
+ * Session.open(Config.default()).onSuccess {
  *     it.use { session ->
  *         session
  *             .declarePublisher(keyExpr)
- *             .priority(Priority.REALTIME)
- *             .congestionControl(CongestionControl.DROP)
- *             .res()
  *             .onSuccess { pub ->
- *                 pub.use {
- *                     var i = 0
- *                     while (true) {
- *                         pub.put("Hello for the ${i}th time!").res()
- *                         Thread.sleep(1000)
- *                         i++
- *                     }
+ *                 var i = 0
+ *                 while (true) {
+ *                     pub.put("Hello for the ${i}th time!")
+ *                     Thread.sleep(1000)
+ *                     i++
  *                 }
  *             }
  *     }
  * }
  * ```
  *
- * The publisher configuration parameters can be later changed using the setter functions.
+ * ## Lifespan
+ *
+ * Internally, the [Session] from which the [Publisher] was declared keeps a reference to it, therefore keeping it alive
+ * until the session is closed. For the cases where we want to stop the publisher earlier, it's necessary
+ * to keep a reference to it in order to undeclare it later.
  *
  * @property keyExpr The key expression the publisher will be associated to.
+ * @property qos [QoS] configuration of the publisher.
  * @property jniPublisher Delegate class handling the communication with the native code.
- * @property congestionControl The congestion control policy.
- * @property priority The priority policy.
  * @constructor Create empty Publisher with the default configuration.
+ * @see Session.declarePublisher
  */
 class Publisher internal constructor(
     val keyExpr: KeyExpr,
+    val qos: QoS,
     private var jniPublisher: JNIPublisher?,
-    private var congestionControl: CongestionControl,
-    private var priority: Priority
 ) : SessionDeclaration, AutoCloseable {
 
     companion object {
         private val InvalidPublisherResult = Result.failure<Unit>(SessionException("Publisher is not valid."))
     }
 
-    /** Performs a PUT operation on the specified [keyExpr] with the specified [value]. */
-    fun put(value: Value) = Put(jniPublisher, value)
+    val congestionControl = qos.congestionControl
+    val priority = qos.priority
+    val express = qos.express
 
-    /** Performs a PUT operation on the specified [keyExpr] with the specified string [value]. */
-    fun put(value: String) = Put(jniPublisher, Value(value))
+    /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
+    fun put(payload: ZBytes, encoding: Encoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(payload, encoding, attachment) ?: InvalidPublisherResult
+
+
+    /** Performs a PUT operation on the specified [keyExpr] with the specified string [message]. */
+    fun put(message: String, encoding: Encoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(message.into(), encoding, attachment) ?: InvalidPublisherResult
 
     /**
      * Performs a DELETE operation on the specified [keyExpr]
-     *
-     * @return A [Resolvable] operation.
      */
-    fun delete() = Delete(jniPublisher)
+    fun delete(attachment: ZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
 
-    /** Get congestion control policy. */
-    fun getCongestionControl(): CongestionControl {
-        return congestionControl
-    }
-
-    /**
-     * Set the congestion control policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param congestionControl: The [CongestionControl] policy.
-     */
-    fun setCongestionControl(congestionControl: CongestionControl) {
-        jniPublisher?.setCongestionControl(congestionControl)?.onSuccess { this.congestionControl = congestionControl }
-    }
-
-    /** Get priority policy. */
-    fun getPriority(): Priority {
-        return priority
-    }
-
-    /**
-     * Set the priority policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param priority: The [Priority] policy.
-     */
-    fun setPriority(priority: Priority) {
-        jniPublisher?.setPriority(priority)?.onSuccess { this.priority = priority }
-    }
-
-    override fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return jniPublisher != null
     }
 
@@ -133,62 +100,4 @@ class Publisher internal constructor(
         jniPublisher?.close()
         jniPublisher = null
     }
-
-    protected fun finalize() {
-        jniPublisher?.close()
-    }
-
-    class Put internal constructor(
-        private var jniPublisher: JNIPublisher?,
-        val value: Value,
-        var attachment: Attachment? = null
-    ) : Resolvable<Unit> {
-
-        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
-
-        override fun res(): Result<Unit> = run {
-            jniPublisher?.put(value, attachment) ?: InvalidPublisherResult
-        }
-    }
-
-    class Delete internal constructor(
-        private var jniPublisher: JNIPublisher?,
-        var attachment: Attachment? = null
-    ) : Resolvable<Unit> {
-
-        fun withAttachment(attachment: Attachment) = apply { this.attachment = attachment }
-
-        override fun res(): Result<Unit> = run {
-            jniPublisher?.delete(attachment) ?: InvalidPublisherResult
-        }
-    }
-
-    /**
-     * Publisher Builder.
-     *
-     * @property session The [Session] from which the publisher is declared.
-     * @property keyExpr The key expression the publisher will be associated to.
-     * @property congestionControl The congestion control policy, defaults to [CongestionControl.DROP].
-     * @property priority The priority policy, defaults to [Priority.DATA]
-     * @constructor Create empty Builder.
-     */
-    class Builder internal constructor(
-        val session: Session,
-        val keyExpr: KeyExpr,
-        var congestionControl: CongestionControl = CongestionControl.DROP,
-        var priority: Priority = Priority.DATA,
-    ) {
-
-        /** Change the `congestion_control` to apply when routing the data. */
-        fun congestionControl(congestionControl: CongestionControl) =
-            apply { this.congestionControl = congestionControl }
-
-        /** Change the priority of the written data. */
-        fun priority(priority: Priority) = apply { this.priority = priority }
-
-        fun res(): Result<Publisher> {
-            return session.run { resolvePublisher(this@Builder) }
-        }
-    }
 }
-

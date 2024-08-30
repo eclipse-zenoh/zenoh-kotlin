@@ -14,11 +14,8 @@
 
 package io.zenoh.jni
 
-import io.zenoh.*
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
-import io.zenoh.sample.Attachment
-import io.zenoh.value.Value
+import io.zenoh.prelude.Encoding
+import io.zenoh.protocol.ZBytes
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].
@@ -30,20 +27,22 @@ internal class JNIPublisher(private val ptr: Long) {
     /**
      * Put operation.
      *
-     * @param value The [Value] to be put.
-     * @param attachment Optional [Attachment].
+     * @param payload Payload of the put.
+     * @param encoding Encoding of the payload.
+     * @param attachment Optional attachment.
      */
-    fun put(value: Value, attachment: Attachment?): Result<Unit> = runCatching {
-        putViaJNI(value.payload, value.encoding.knownEncoding.ordinal, attachment?.let { encodeAttachment(it) }, ptr)
+    fun put(payload: ZBytes, encoding: Encoding?, attachment: ZBytes?): Result<Unit> = runCatching {
+        val resolvedEncoding = encoding ?: Encoding.default()
+        putViaJNI(payload.bytes, resolvedEncoding.id, resolvedEncoding.schema, attachment?.bytes, ptr)
     }
 
     /**
      * Delete operation.
      *
-     * @param attachment Optional [Attachment].
+     * @param attachment Optional attachment.
      */
-    fun delete(attachment: Attachment?): Result<Unit> = runCatching {
-        deleteViaJNI(attachment?.let { encodeAttachment(it) }, ptr)
+    fun delete(attachment: ZBytes?): Result<Unit> = runCatching {
+        deleteViaJNI(attachment?.bytes, ptr)
     }
 
     /**
@@ -55,61 +54,14 @@ internal class JNIPublisher(private val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    /**
-     * Set the congestion control policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param congestionControl: The [CongestionControl] policy.
-     * @return A [Result] with the status of the operation.
-     */
-    fun setCongestionControl(congestionControl: CongestionControl): Result<Unit> = runCatching {
-        setCongestionControlViaJNI(congestionControl.value, ptr)
-    }
-
-    /**
-     * Set the priority policy of the publisher.
-     *
-     * This function is not thread safe.
-     *
-     * @param priority: The [Priority] policy.
-     * @return A [Result] with the status of the operation.
-     */
-    fun setPriority(priority: Priority): Result<Unit> = runCatching {
-        setPriorityViaJNI(priority.value, ptr)
-    }
-
-    /**
-     * Set the congestion control policy of the publisher through JNI.
-     *
-     * This function is NOT thread safe.
-     *
-     * @param congestionControl The congestion control policy.
-     * @param ptr Pointer to the publisher.
-     */
-    private external fun setCongestionControlViaJNI(congestionControl: Int, ptr: Long)
-
-    /**
-     * Set the priority policy of the publisher through JNI.
-     *
-     * This function is NOT thread safe.
-     *
-     * @param priority The priority policy.
-     * @param ptr Pointer to the publisher.
-     */
-    private external fun setPriorityViaJNI(priority: Int, ptr: Long)
-
-
-    /** Puts through the native Publisher. */
     @Throws(Exception::class)
     private external fun putViaJNI(
-        valuePayload: ByteArray, valueEncoding: Int, encodedAttachment: ByteArray?, ptr: Long
+        valuePayload: ByteArray, encodingId: Int, encodingSchema: String?, attachment: ByteArray?, ptr: Long
     )
 
     @Throws(Exception::class)
-    private external fun deleteViaJNI(encodedAttachment: ByteArray?, ptr: Long)
+    private external fun deleteViaJNI(attachment: ByteArray?, ptr: Long)
 
-    /** Frees the underlying native Publisher. */
     private external fun freePtrViaJNI(ptr: Long)
 
 }
