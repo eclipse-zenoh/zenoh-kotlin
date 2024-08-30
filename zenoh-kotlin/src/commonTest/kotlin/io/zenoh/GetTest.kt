@@ -61,8 +61,8 @@ class GetTest {
             reply = it
         }, timeout = Duration.ofMillis(1000))
 
-        assertTrue(reply is Reply.Success)
-        val sample = (reply as Reply.Success).sample
+        assertNotNull(reply)
+        val sample = reply!!.result.getOrThrow()
         assertEquals(payload, sample.payload)
         assertEquals(kind, sample.kind)
         assertEquals(selector.keyExpr, sample.keyExpr)
@@ -74,8 +74,7 @@ class GetTest {
         val receiver: ArrayList<Reply> = session.get(selector, handler = TestHandler(), timeout = Duration.ofMillis(1000)).getOrThrow()
 
         for (reply in receiver) {
-            reply as Reply.Success
-            val receivedSample = reply.sample
+            val receivedSample = reply.result.getOrThrow()
             assertEquals(payload, receivedSample.payload)
             assertEquals(SampleKind.PUT, receivedSample.kind)
             assertEquals(timestamp, receivedSample.timestamp)

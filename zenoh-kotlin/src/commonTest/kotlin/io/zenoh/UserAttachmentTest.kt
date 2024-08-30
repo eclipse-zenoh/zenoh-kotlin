@@ -50,7 +50,8 @@ class UserAttachmentTest {
     @Test
     fun putWithAttachmentTest() {
         var receivedSample: Sample? = null
-        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
+        val subscriber =
+            session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
         session.put(keyExpr, payload, attachment = attachmentZBytes)
 
         subscriber.close()
@@ -84,7 +85,8 @@ class UserAttachmentTest {
     fun publisherPutWithoutAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
+        val subscriber =
+            session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.put("test")
 
@@ -100,7 +102,8 @@ class UserAttachmentTest {
     fun publisherDeleteWithAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
+        val subscriber =
+            session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.delete(attachment = attachmentZBytes)
 
@@ -117,7 +120,8 @@ class UserAttachmentTest {
     fun publisherDeleteWithoutAttachmentTest() {
         var receivedSample: Sample? = null
         val publisher = session.declarePublisher(keyExpr).getOrThrow()
-        val subscriber = session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
+        val subscriber =
+            session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
         publisher.delete()
 
@@ -137,7 +141,12 @@ class UserAttachmentTest {
             query.replySuccess(keyExpr, payload)
         }).getOrThrow()
 
-        session.get(keyExpr.intoSelector(), callback = {}, attachment = attachmentZBytes, timeout = Duration.ofMillis(1000)).getOrThrow()
+        session.get(
+            keyExpr.intoSelector(),
+            callback = {},
+            attachment = attachmentZBytes,
+            timeout = Duration.ofMillis(1000)
+        ).getOrThrow()
 
         queryable.close()
 
@@ -154,17 +163,14 @@ class UserAttachmentTest {
         }).getOrThrow()
 
         session.get(keyExpr.intoSelector(), callback = {
-            if (it is Reply.Success) {
-                reply = it
-            }
+            reply = it
         }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
 
-        assertNotNull(reply) {
-            val receivedAttachment = (it as Reply.Success).sample.attachment!!
-            assertEquals(attachment, receivedAttachment.toString())
-        }
+        assertNotNull(reply)
+        val receivedAttachment = reply!!.result.getOrThrow().attachment!!
+        assertEquals(attachment, receivedAttachment.toString())
     }
 
     @Test
@@ -180,9 +186,8 @@ class UserAttachmentTest {
 
         queryable.close()
 
-        assertNotNull(reply) {
-            assertTrue(it is Reply.Success)
-            assertNull(it.sample.attachment)
-        }
+        assertNotNull(reply)
+        assertTrue(reply!!.result.isSuccess)
+        assertNull(reply!!.result.getOrThrow().attachment)
     }
 }

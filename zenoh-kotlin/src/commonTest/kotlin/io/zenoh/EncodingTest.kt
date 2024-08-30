@@ -4,7 +4,7 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
-import io.zenoh.query.Reply
+import io.zenoh.query.ReplyError
 import io.zenoh.sample.Sample
 import io.zenoh.selector.intoSelector
 import kotlin.test.*
@@ -50,16 +50,25 @@ class EncodingTest {
 
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding.TEXT_CSV)
-                test2.keyExpr -> query.replySuccess(query.keyExpr, payload = "test".into(), encoding = Encoding.TEXT_CSV.withSchema("test_schema"))
+                test1.keyExpr -> query.replySuccess(
+                    query.keyExpr,
+                    payload = "test".into(),
+                    encoding = Encoding.TEXT_CSV
+                )
+
+                test2.keyExpr -> query.replySuccess(
+                    query.keyExpr,
+                    payload = "test".into(),
+                    encoding = Encoding.TEXT_CSV.withSchema("test_schema")
+                )
             }
         }).getOrThrow()
 
         // Testing with null schema on a reply success scenario.
         var receivedSample: Sample? = null
         session.get(test1, callback = { reply ->
-            assertTrue(reply is Reply.Success)
-            receivedSample = reply.sample
+            assertTrue(reply.result.isSuccess)
+            receivedSample = reply.result.getOrThrow()
         }).getOrThrow()
         Thread.sleep(200)
 
@@ -70,8 +79,8 @@ class EncodingTest {
         // Testing with non-null schema on a reply success scenario.
         receivedSample = null
         session.get(test2, callback = { reply ->
-            assertTrue(reply is Reply.Success)
-            receivedSample = reply.sample
+            assertTrue(reply.result.isSuccess)
+            receivedSample = reply.result.getOrThrow()
         }).getOrThrow()
         Thread.sleep(200)
 
@@ -102,9 +111,12 @@ class EncodingTest {
         var errorMessage: ZBytes? = null
         var errorEncoding: Encoding? = null
         session.get(test1, callback = { reply ->
-            assertTrue(reply is Reply.Error)
-            errorMessage = reply.error
-            errorEncoding = reply.encoding
+            assertTrue(reply.result.isFailure)
+            reply.result.onFailure { error ->
+                error as ReplyError
+                errorMessage = error.payload
+                errorEncoding = error.encoding
+            }
         }).getOrThrow()
         Thread.sleep(200)
 
@@ -118,9 +130,12 @@ class EncodingTest {
         errorMessage = null
         errorEncoding = null
         session.get(test2, callback = { reply ->
-            assertTrue(reply is Reply.Error)
-            errorMessage = reply.error
-            errorEncoding = reply.encoding
+            assertTrue(reply.result.isFailure)
+            reply.result.onFailure { error ->
+                error as ReplyError
+                errorMessage = error.payload
+                errorEncoding = error.encoding
+            }
         }).getOrThrow()
         Thread.sleep(200)
 
