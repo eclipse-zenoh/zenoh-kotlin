@@ -28,7 +28,7 @@ class ConfigTest {
         val TEST_KEY_EXP = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
     }
 
-    private val json5ClientConfig = Config.from(
+    private val json5ClientConfig = Config.fromJson5(
         config = """
         {
             mode: "peer",
@@ -41,10 +41,10 @@ class ConfigTest {
                 }
             }
         }
-        """.trimIndent(), format = Config.Format.JSON5
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
-    private val json5ServerConfig = Config.from(
+    private val json5ServerConfig = Config.fromJson5(
         config = """
         {
             mode: "peer",
@@ -57,11 +57,11 @@ class ConfigTest {
                 }
             }
         }
-        """.trimIndent(), format = Config.Format.JSON5
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
 
-    private val jsonClientConfig = Config.from(
+    private val jsonClientConfig = Config.fromJson(
         config = """
         {
             "mode": "peer",
@@ -74,11 +74,11 @@ class ConfigTest {
                 }
             }
         }
-        """.trimIndent(), format = Config.Format.JSON
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
 
-    private val jsonServerConfig = Config.from(
+    private val jsonServerConfig = Config.fromJson(
         config = """
         {
             "mode": "peer",
@@ -91,11 +91,11 @@ class ConfigTest {
                 }
             }
         }
-        """.trimIndent(), format = Config.Format.JSON
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
 
-    private val yamlClientConfig = Config.from(
+    private val yamlClientConfig = Config.fromYaml(
         config = """
         mode: peer
         connect:
@@ -104,11 +104,11 @@ class ConfigTest {
         scouting:
           multicast:
             enabled: false
-        """.trimIndent(), format = Config.Format.YAML
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
 
-    private val yamlServerConfig = Config.from(
+    private val yamlServerConfig = Config.fromYaml(
         config = """
         mode: peer
         listen:
@@ -117,8 +117,8 @@ class ConfigTest {
         scouting:
           multicast:
             enabled: false
-        """.trimIndent(), format = Config.Format.YAML
-    )
+        """.trimIndent()
+    ).getOrThrow()
 
 
     private fun runSessionTest(clientConfig: Config, serverConfig: Config) {
@@ -186,6 +186,6 @@ class ConfigTest {
         }
         """.trimIndent()
         )
-        runSessionTest(Config.from(clientConfigJson), Config.from(serverConfigJson))
+        runSessionTest(Config.from(clientConfigJson).getOrThrow(), Config.from(serverConfigJson).getOrThrow())
     }
 }

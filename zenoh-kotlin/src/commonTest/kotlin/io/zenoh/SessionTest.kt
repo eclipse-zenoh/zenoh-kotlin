@@ -43,12 +43,6 @@ class SessionTest {
     }
 
     @Test
-    fun sessionOpeningFailure() {
-        val invalidConfig = Config.from(path = Path.of("invalid"))
-        assertFailsWith<SessionException> { Session.open(invalidConfig).getOrThrow() }
-    }
-
-    @Test
     fun sessionClose_succeedsDespiteNotFreeingAllDeclarations() {
         val session = Session.open(Config.default()).getOrThrow()
         val queryable = session.declareQueryable(testKeyExpr, callback = {}).getOrThrow()

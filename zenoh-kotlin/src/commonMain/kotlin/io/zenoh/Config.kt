@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.jni.JNIConfig
 import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.json.JsonElement
@@ -96,13 +97,7 @@ import kotlinx.serialization.json.JsonElement
  * @property config Raw string configuration, (supported types: JSON5, JSON and YAML).
  * @property format [Format] of the configuration.
  */
-class Config private constructor(internal val path: Path? = null, internal val config: String? = null, val format: Format? = null) {
-
-    enum class Format {
-        YAML,
-        JSON,
-        JSON5
-    }
+class Config internal constructor(internal val jniConfig: JNIConfig) {
 
     companion object {
 
@@ -110,7 +105,7 @@ class Config private constructor(internal val path: Path? = null, internal val c
          * Returns the default config.
          */
         fun default(): Config {
-            return Config()
+            return JNIConfig.loadDefaultConfig()
         }
 
         /**
@@ -118,8 +113,8 @@ class Config private constructor(internal val path: Path? = null, internal val c
          *
          * @param file The zenoh config file.
          */
-        fun from(file: File): Config {
-            return Config(path = file.toPath())
+        fun from(file: File): Result<Config> {
+            return JNIConfig.loadConfigFile(file)
         }
 
         /**
@@ -127,15 +122,20 @@ class Config private constructor(internal val path: Path? = null, internal val c
          *
          * @param path The zenoh config file path.
          */
-        fun from(path: Path): Config {
-            return Config(path)
+        fun from(path: Path): Result<Config> {
+            return JNIConfig.loadConfigFile(path)
         }
 
-        /**
-         * Loads the configuration from the [config] param. The [Format] needs to be specified explicitly.
-         */
-        fun from(config: String, format: Format): Config {
-            return Config(config = config, format = format)
+        fun fromJson(config: String): Result<Config> {
+            return JNIConfig.loadJsonConfig(config)
+        }
+
+        fun fromJson5(config: String): Result<Config> {
+            return JNIConfig.loadJson5Config(config)
+        }
+
+        fun fromYaml(config: String): Result<Config> {
+            return JNIConfig.loadYamlConfig(config)
         }
 
         /**
@@ -143,6 +143,12 @@ class Config private constructor(internal val path: Path? = null, internal val c
          *
          * @param jsonElement The zenoh config as a [JsonElement].
          */
-        fun from(jsonElement: JsonElement) = Config(config = jsonElement.toString(), format = Format.JSON)
+        fun from(jsonElement: JsonElement): Result<Config> {
+            return JNIConfig.loadJsonConfig(jsonElement.toString())
+        }
+    }
+
+    protected fun finalize() {
+        jniConfig.close()
     }
 }

@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+mod config;
 mod errors;
 mod key_expr;
 mod logger;
