@@ -128,7 +128,8 @@ internal class JNISession {
                     payload?.into(),
                     payload?.let { Encoding(encodingId, schema = encodingSchema) },
                     attachmentBytes?.into(),
-                    jniQuery)
+                    jniQuery
+                )
                 callback.run(query)
             }
         val queryableRawPtr = declareQueryableViaJNI(
@@ -167,35 +168,24 @@ internal class JNISession {
             val reply: Reply
             if (success) {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
-                when (SampleKind.fromInt(kind)) {
-                    SampleKind.PUT -> {
-                        val sample = Sample(
-                            KeyExpr(keyExpr!!, null),
-                            payload.into(),
-                            Encoding(encodingId, schema = encodingSchema),
-                            SampleKind.fromInt(kind),
-                            timestamp,
-                            QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
-                            attachmentBytes?.into()
-                        )
-                        reply = Reply.Success(replierId?.let { ZenohID(it) }, sample)
-                    }
-
-                    SampleKind.DELETE -> {
-                        reply = Reply.Delete(
-                            replierId?.let { ZenohID(it) },
-                            KeyExpr(keyExpr!!, null),
-                            timestamp,
-                            attachmentBytes?.into(),
-                            QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express)
-                        )
-                    }
-                }
-            } else {
-                reply = Reply.Error(
-                    replierId?.let { ZenohID(it) },
+                val sample = Sample(
+                    KeyExpr(keyExpr!!, null),
                     payload.into(),
-                    Encoding(encodingId, schema = encodingSchema)
+                    Encoding(encodingId, schema = encodingSchema),
+                    SampleKind.fromInt(kind),
+                    timestamp,
+                    QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
+                    attachmentBytes?.into()
+                )
+                reply = Reply(replierId?.let { ZenohID(it) }, Result.success(sample))
+            } else {
+                reply = Reply(
+                    replierId?.let { ZenohID(it) }, Result.failure(
+                        ReplyError(
+                            payload.into(),
+                            Encoding(encodingId, schema = encodingSchema)
+                        )
+                    )
                 )
             }
             callback.run(reply)

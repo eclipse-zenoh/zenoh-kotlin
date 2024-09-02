@@ -66,7 +66,7 @@ class Query internal constructor(
      * @param timestamp Optional timestamp for the reply.
      * @param attachment Optional attachment for the reply.
      */
-    fun replySuccess(
+    fun reply(
         keyExpr: KeyExpr,
         payload: ZBytes,
         encoding: Encoding = Encoding.default(),
@@ -91,7 +91,7 @@ class Query internal constructor(
      * @param error The error information.
      * @param encoding The encoding of the [error].
      */
-    fun replyError(error: ZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
+    fun replyErr(error: ZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
             val result = it.replyError(error, encoding)
             jniQuery = null
@@ -111,7 +111,7 @@ class Query internal constructor(
      * @param timestamp Optional timestamp for the reply.
      * @param attachment Optional attachment for the reply.
      */
-    fun replyDelete(
+    fun replyDel(
         keyExpr: KeyExpr,
         qos: QoS = QoS.default(),
         timestamp: TimeStamp? = null,

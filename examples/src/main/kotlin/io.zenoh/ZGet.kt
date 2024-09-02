@@ -17,9 +17,9 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
+import io.zenoh.prelude.SampleKind
 import io.zenoh.protocol.into
 import io.zenoh.query.QueryTarget
-import io.zenoh.query.Reply
 import io.zenoh.selector.intoSelector
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -44,10 +44,13 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                         .onSuccess { channelReceiver ->
                             runBlocking {
                                 for (reply in channelReceiver) {
-                                    when (reply) {
-                                        is Reply.Success -> println("Received ('${reply.sample.keyExpr}': '${reply.sample.payload}')")
-                                        is Reply.Error -> println("Received (ERROR: '${reply.error}')")
-                                        is Reply.Delete -> println("Received (DELETE '${reply.keyExpr}')")
+                                    reply.result.onSuccess { sample ->
+                                        when (sample.kind) {
+                                            SampleKind.PUT -> println("Received ('${sample.keyExpr}': '${sample.payload}')")
+                                            SampleKind.DELETE -> println("Received (DELETE '${sample.keyExpr}')")
+                                        }
+                                    }.onFailure { error ->
+                                        println("Received (ERROR: '${error.message}')")
                                     }
                                 }
                             }

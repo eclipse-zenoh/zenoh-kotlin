@@ -38,7 +38,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                             for (query in queryable.receiver) {
                                 val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
                                 println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                                query.replySuccess(
+                                query.reply(
                                     keyExpr,
                                     payload = value.into(),
                                     timestamp = TimeStamp.getCurrentTime()
