@@ -173,7 +173,10 @@ class ConfigTest {
         val serverConfigJson = Json.parseToJsonElement(
             jsonServerConfigString
         )
-        runSessionTest(Config.fromFile(clientConfigJson).getOrThrow(), Config.fromFile(serverConfigJson).getOrThrow())
+        runSessionTest(
+            Config.fromJsonElement(clientConfigJson).getOrThrow(),
+            Config.fromJsonElement(serverConfigJson).getOrThrow()
+        )
     }
 
     @Test

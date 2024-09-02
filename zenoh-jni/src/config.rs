@@ -23,6 +23,11 @@ use zenoh::Config;
 use crate::errors::Result;
 use crate::{session_error, throw_exception, utils::decode_string};
 
+/// Loads the default configuration, returning a raw pointer to it.
+/// 
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+/// 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadDefaultConfigViaJNI(
@@ -33,6 +38,12 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadDefaultConfigVi
     Arc::into_raw(Arc::new(config))
 }
 
+/// Loads the config from a file, returning a pointer to the loaded config in case of success.
+/// In case of failure, an exception is thrown via JNI.
+/// 
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+/// 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadConfigFileViaJNI(
@@ -51,6 +62,12 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadConfigFileViaJN
     })
 }
 
+/// Loads the config from a json/json5 formatted string, returning a pointer to the loaded config
+/// in case of success. In case of failure, an exception is thrown via JNI.
+/// 
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+/// 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadJsonConfigViaJNI(
@@ -74,6 +91,12 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadJsonConfigViaJN
     })
 }
 
+/// Loads the config from a yaml-formatted string, returning a pointer to the loaded config
+/// in case of success. In case of failure, an exception is thrown via JNI.
+/// 
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+/// 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJNI(
@@ -96,6 +119,9 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
     })
 }
 
+/// Frees the pointer to the config. The pointer should be valid and should have been obtained through 
+/// one of the preceding `load` functions. This function should be called upon destruction of the kotlin
+/// Config instance.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_freePtrViaJNI(

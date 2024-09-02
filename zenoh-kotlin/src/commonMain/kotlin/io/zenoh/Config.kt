@@ -264,7 +264,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          *
          * @param jsonElement The zenoh config as a [JsonElement].
          */
-        fun fromFile(jsonElement: JsonElement): Result<Config> {
+        fun fromJsonElement(jsonElement: JsonElement): Result<Config> {
             return JNIConfig.loadJsonConfig(jsonElement.toString())
         }
     }
