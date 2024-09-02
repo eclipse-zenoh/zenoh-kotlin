@@ -687,7 +687,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: ZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.default(),
         onClose: (() -> Unit)? = null
     ): Result<Channel<Reply>> {
         val channelHandler = ChannelHandler(channel)
