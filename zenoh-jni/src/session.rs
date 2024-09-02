@@ -75,7 +75,7 @@ unsafe fn open_session(config_ptr: *const Config) -> Result<Session> {
         .wait()
         .map_err(|err| session_error!(err));
     mem::forget(config);
-    return result;
+    result
 }
 
 /// Open a Zenoh session with a JSON configuration.
