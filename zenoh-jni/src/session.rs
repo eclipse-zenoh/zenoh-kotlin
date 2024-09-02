@@ -49,12 +49,12 @@ use zenoh::session::{Session, SessionDeclarations};
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    config_path: /*nullable*/ JString,
+    config_ptr: *const Config,
 ) -> *const Session {
-    let session = open_session(&mut env, config_path);
+    let session = open_session(config_ptr);
     match session {
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
@@ -69,16 +69,13 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
 ///
 /// If the config path provided is null then the default configuration is loaded.
 ///
-fn open_session(env: &mut JNIEnv, config_path: JString) -> Result<Session> {
-    let config = if config_path.is_null() {
-        Config::default()
-    } else {
-        let config_file_path = decode_string(env, &config_path)?;
-        Config::from_file(config_file_path).map_err(|err| session_error!(err))?
-    };
-    zenoh::open(config)
+unsafe fn open_session(config_ptr: *const Config) -> Result<Session> {
+    let config = Arc::from_raw(config_ptr);
+    let result = zenoh::open(config.as_ref().clone())
         .wait()
-        .map_err(|err| session_error!(err))
+        .map_err(|err| session_error!(err));
+    mem::forget(config);
+    result
 }
 
 /// Open a Zenoh session with a JSON configuration.

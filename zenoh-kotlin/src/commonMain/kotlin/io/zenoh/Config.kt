@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.jni.JNIConfig
 import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.json.JsonElement
@@ -29,7 +30,36 @@ import kotlinx.serialization.json.JsonElement
  *
  * Either way, the supported formats are `yaml`, `json` and `json5`.
  *
- * ## Example:
+ * A default configuration can be loaded using [Config.default].
+ *
+ * ## Examples:
+ *
+ * ### Loading default config:
+ *
+ * ```kotlin
+ * val config = Config.default()
+ * Session.open(config).onSuccess {
+ *   // ...
+ * }
+ * ```
+ * ### Loading from file
+ *
+ * Using [Path]:
+ * ```kotlin
+ * val config = Config.fromFile(Path("example/path/config.json5")).getOrThrow()
+ * Session.open(config).onSuccess {
+ *   // ...
+ * }
+ * ```
+ *
+ * or alternatively, using [File]
+ * ```kotlin
+ * val config = Config.fromFile(File("example/path/config.json5")).getOrThrow()
+ * Session.open(config).onSuccess {
+ *   // ...
+ * }
+ * ```
+ * ### Embedded string configuration
  * - Json5
  * ```kotlin
  * val json5config = """
@@ -45,7 +75,7 @@ import kotlinx.serialization.json.JsonElement
  *         }
  *     }
  *     """.trimIndent()
- * val config = Config(config = json5Config, format = Config.Format.JSON5)
+ * val config = Config.fromJson5(json5config).getOrThrow()
  * Session.open(config).onSuccess {
  *     // ...
  * }
@@ -66,7 +96,7 @@ import kotlinx.serialization.json.JsonElement
  *         }
  *     }
  *     """.trimIndent()
- * val config = Config(config = json5Config, format = Config.Format.JSON)
+ * val config = Config.fromJson(jsonConfig).getOrThrow()
  * Session.open(config).onSuccess {
  *     // ...
  * }
@@ -83,7 +113,7 @@ import kotlinx.serialization.json.JsonElement
  *       multicast:
  *         enabled: false
  *     """.trimIndent()
- * val config = Config(config = yamlConfig, format = Config.Format.YAML)
+ * val config = Config.fromYaml(yamlConfig).getOrThrow()
  * Session.open(config).onSuccess {
  *     // ...
  * }
@@ -91,18 +121,8 @@ import kotlinx.serialization.json.JsonElement
  *
  * Visit the [default configuration](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) for more
  * information on the Zenoh config parameters.
- *
- * @property path The path to the configuration file (supported types: JSON5, JSON and YAML).
- * @property config Raw string configuration, (supported types: JSON5, JSON and YAML).
- * @property format [Format] of the configuration.
  */
-class Config private constructor(internal val path: Path? = null, internal val config: String? = null, val format: Format? = null) {
-
-    enum class Format {
-        YAML,
-        JSON,
-        JSON5
-    }
+class Config internal constructor(internal val jniConfig: JNIConfig) {
 
     companion object {
 
@@ -110,32 +130,133 @@ class Config private constructor(internal val path: Path? = null, internal val c
          * Returns the default config.
          */
         fun default(): Config {
-            return Config()
+            return JNIConfig.loadDefaultConfig()
         }
 
         /**
          * Loads the configuration from the [File] specified.
          *
-         * @param file The zenoh config file.
+         * @param file The Zenoh config file. Supported types are: JSON, JSON5 and YAML.
+         *   Note the format is determined after the file extension.
+         * @return A result with the [Config].
          */
-        fun from(file: File): Config {
-            return Config(path = file.toPath())
+        fun fromFile(file: File): Result<Config> {
+            return JNIConfig.loadConfigFile(file)
         }
 
         /**
          * Loads the configuration from the [Path] specified.
          *
-         * @param path The zenoh config file path.
+         * @param path Path to the Zenoh config file. Supported types are: JSON, JSON5 and YAML.
+         *   Note the format is determined after the file extension.
+         * @return A result with the [Config].
          */
-        fun from(path: Path): Config {
-            return Config(path)
+        fun fromFile(path: Path): Result<Config> {
+            return JNIConfig.loadConfigFile(path)
         }
 
         /**
-         * Loads the configuration from the [config] param. The [Format] needs to be specified explicitly.
+         * Loads the configuration from json-formatted string.
+         *
+         * Example:
+         * ```kotlin
+         * val config = Config.fromJson(
+         *     config = """
+         *     {
+         *         "mode": "peer",
+         *         "connect": {
+         *             "endpoints": ["tcp/localhost:7450"]
+         *         },
+         *         "scouting": {
+         *             "multicast": {
+         *                 "enabled": false
+         *             }
+         *         }
+         *     }
+         *     """.trimIndent()
+         * ).getOrThrow()
+         *
+         * Session.open(config).onSuccess {
+         *  // ...
+         * }
+         * ```
+         *
+         * Visit the [default configuration](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) for more
+         * information on the Zenoh config parameters.
+         *
+         * @param config Json formatted config.
+         * @return A result with the [Config].
          */
-        fun from(config: String, format: Format): Config {
-            return Config(config = config, format = format)
+        fun fromJson(config: String): Result<Config> {
+            return JNIConfig.loadJsonConfig(config)
+        }
+
+        /**
+         * Loads the configuration from json5-formatted string.
+         *
+         * Example:
+         * ```kotlin
+         * val config = Config.fromJson5(
+         *     config = """
+         *     {
+         *         mode: "peer",
+         *         connect: {
+         *             endpoints: ["tcp/localhost:7450"],
+         *         },
+         *         scouting: {
+         *             multicast: {
+         *                 enabled: false,
+         *             }
+         *         }
+         *     }
+         *     """.trimIndent()
+         * ).getOrThrow()
+         *
+         * Session.open(config).onSuccess {
+         *  // ...
+         * }
+         * ```
+         *
+         * Visit the [default configuration](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) for more
+         * information on the Zenoh config parameters.
+         *
+         * @param config Json5 formatted config
+         * @return A result with the [Config].
+         */
+        fun fromJson5(config: String): Result<Config> {
+            return JNIConfig.loadJson5Config(config)
+        }
+
+        /**
+         * Loads the configuration from yaml-formatted string.
+         *
+         * Example:
+         * ```kotlin
+         * val config = Config.fromYaml(
+         *     config = """
+         *     mode: peer
+         *     connect:
+         *       endpoints:
+         *         - tcp/localhost:7450
+         *     scouting:
+         *       multicast:
+         *         enabled: false
+         *     """.trimIndent()
+         * ).getOrThrow()
+         *
+         * Session.open(config).onSuccess {
+         *  // ...
+         * }
+         * ```
+         *
+         * Visit the [default configuration](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) for more
+         * information on the Zenoh config parameters.
+         *
+         * @param config Yaml formatted config
+         * @return A result with the [Config].
+         */
+        fun fromYaml(config: String): Result<Config> {
+            return JNIConfig.loadYamlConfig(config)
         }
 
         /**
@@ -143,6 +264,12 @@ class Config private constructor(internal val path: Path? = null, internal val c
          *
          * @param jsonElement The zenoh config as a [JsonElement].
          */
-        fun from(jsonElement: JsonElement) = Config(config = jsonElement.toString(), format = Format.JSON)
+        fun fromJsonElement(jsonElement: JsonElement): Result<Config> {
+            return JNIConfig.loadJsonConfig(jsonElement.toString())
+        }
+    }
+
+    protected fun finalize() {
+        jniConfig.close()
     }
 }
