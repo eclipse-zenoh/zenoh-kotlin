@@ -40,7 +40,7 @@
             </a>
     </div>
     <div>
-1.0.0-alpha.6    </div>
+1.0.0-beta.1    </div>
     <div class="pull-right d-flex">
         <div class="filter-section" id="filter-section">
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":zenoh-kotlin:dokkaHtml/commonMain">common</button>
@@ -58,29 +58,14 @@
   <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.query</a><span class="delimiter">/</span><span class="current">Reply</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>Reply</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">Reply</a> : <a href="../../io.zenoh/-zenoh-type/index.html">ZenohType</a></div><p class="paragraph">Class to represent a Zenoh Reply to a <a href="../-get/index.html">Get</a> operation and to a remote <a href="../../io.zenoh.queryable/-query/index.html">Query</a>.</p><p class="paragraph">A reply can be either successful (<a href="-success/index.html">Success</a>) or an error (<a href="-error/index.html">Error</a>), both having different information. For instance, the successful reply will contain a <a href="../../io.zenoh.sample/-sample/index.html">Sample</a> while the error reply will only contain a <a href="../../io.zenoh.value/-value/index.html">Value</a> with the error information.</p><p class="paragraph">Replies can either be automatically created when receiving a remote reply after performing a <a href="../-get/index.html">Get</a> (in which case the <a href="replier-id.html">replierId</a> shows the id of the replier) or created through the builders while answering to a remote <a href="../../io.zenoh.queryable/-query/index.html">Query</a> (in that case the replier ID is automatically added by Zenoh).</p><p class="paragraph">Generating a reply only makes sense within the context of a <a href="../../io.zenoh.queryable/-query/index.html">Query</a>, therefore builders below are meant to only be accessible from <a href="../../io.zenoh.queryable/-query/reply.html">Query.reply</a>.</p><p class="paragraph">Example:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">session.declareQueryable(keyExpr).with { query -&gt;<br>    query.reply(keyExpr)<br>         .success(Value(&quot;Hello&quot;))<br>         .withTimeStamp(TimeStamp(Date.from(Instant.now())))<br>         .res()<br>    }.res()<br>...</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph"><strong>IMPORTANT: Error replies are not yet fully supported by Zenoh, but the code for the error replies below has been added for the sake of future compatibility.</strong></p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-success/index.html">Success</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-error/index.html">Error</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-delete/index.html">Delete</a></div></span></div><div></div></div></div></div></div></div>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">Reply</a> : <a href="../../io.zenoh/-zenoh-type/index.html">ZenohType</a></div><p class="paragraph">Class to represent a Zenoh Reply to a get query and to a remote <a href="../../io.zenoh.queryable/-query/index.html">Query</a>.</p><p class="paragraph">A reply can be either successful (<a href="-success/index.html">Success</a>), an error (<a href="-error/index.html">Error</a>) or a delete request (<a href="-delete/index.html">Delete</a>), both having different information. // TODO: fix comment and example after modifying the replies.</p><p class="paragraph">Example:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">Session.open(config).onSuccess { session -&gt;<br>    session.use {<br>        key.intoKeyExpr().onSuccess { keyExpr -&gt;<br>            session.declareQueryable(keyExpr, Channel()).onSuccess { queryable -&gt;<br>                runBlocking {<br>                    for (query in queryable.receiver) {<br>                        val valueInfo = query.value?.let { value -&gt; &quot; with value '$value'&quot; } ?: &quot;&quot;<br>                        println(&quot;&gt;&gt; [Queryable] Received Query '${query.selector}' $valueInfo&quot;)<br>                        query.replySuccess(<br>                            keyExpr,<br>                            payload = &quot;Example payload&quot;.into(),<br>                            timestamp = TimeStamp.getCurrentTime()<br>                        ).getOrThrow()<br>                    }<br>                }<br>            }<br>        }<br>    }<br>}</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-success/index.html">Success</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-error/index.html">Error</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-delete/index.html">Delete</a></div></span></div><div></div></div></div></div></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="TYPE">
         <h2 class="">Types</h2>
-        <div class="table"><a data-name="61891483%2FClasslikes%2F264607012" anchor-label="Builder" id="61891483%2FClasslikes%2F264607012" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"></a>
-          <div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="-builder/index.html"><span><span>Builder</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="61891483%2FClasslikes%2F264607012"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-builder/index.html">Builder</a></div><div class="brief "><p class="paragraph">Builder to construct a <a href="index.html">Reply</a>.</p></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-<a data-name="-1700395615%2FClasslikes%2F264607012" anchor-label="Delete" id="-1700395615%2FClasslikes%2F264607012" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"></a>
+        <div class="table"><a data-name="-1700395615%2FClasslikes%2F264607012" anchor-label="Delete" id="-1700395615%2FClasslikes%2F264607012" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
@@ -90,7 +75,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-delete/index.html">Delete</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">A Delete reply.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-delete/index.html">Delete</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">A Delete reply.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -105,7 +90,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-error/index.html">Error</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">An Error reply.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-error/index.html">Error</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">An Error reply.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -120,7 +105,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="-success/index.html">Success</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">A successful <a href="index.html">Reply</a>.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-success/index.html">Success</a> : <a href="index.html">Reply</a></div><div class="brief "><p class="paragraph">A successful <a href="index.html">Reply</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
@@ -139,7 +124,7 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">val </span><a href="replier-id.html">replierId</a><span class="token operator">: </span><a href="../../io.zenoh.protocol/-zenoh-i-d/index.html">ZenohID</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">: unique ID identifying the replier.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword"></span><span class="token keyword">val </span><a href="replier-id.html">replierId</a><span class="token operator">: </span><a href="../../io.zenoh.protocol/-zenoh-i-d/index.html">ZenohID</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">: unique ID identifying the replier, may be null in case the network cannot provide it (@see https://github.com/eclipse-zenoh/zenoh/issues/709#issuecomment-2202763630).</p></div></div></div>
                 </div>
               </div>
             </div>
