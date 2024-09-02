@@ -60,14 +60,14 @@ internal fun loadConfig(
         Config.default()
     } else {
         configFile?.let {
-            Config.from(path = Path(it)).getOrThrow()
+            Config.fromFile(path = Path(it)).getOrThrow()
         } ?: run {
             val connect = Connect(connectEndpoints)
             val listen = Listen(listenEndpoints)
             val scouting = Scouting(Multicast(!noMulticastScouting))
             val configData = ConfigData(connect, listen, mode, scouting)
             val jsonConfig = Json.encodeToJsonElement(configData)
-            Config.from(jsonConfig).getOrThrow()
+            Config.fromFile(jsonConfig).getOrThrow()
         }
     }
 }
