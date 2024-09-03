@@ -15,7 +15,7 @@
 package io.zenoh
 
 import io.zenoh.protocol.Deserializable
-import io.zenoh.protocol.Serializable
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 import org.junit.jupiter.api.Assertions.assertArrayEquals
@@ -179,7 +179,7 @@ class ZBytesTests {
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to byteArrayOf(1, 2, 3), byteArrayOf(4, 5, 6) to byteArrayOf(4, 5, 6)), ByteArray::class, ByteArray::class),
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to MyZBytes("foo"), byteArrayOf(4, 5, 6) to MyZBytes("bar")), ByteArray::class, MyZBytes::class),
 
-                // MyZBytes (Serializable and Deserializable) Keys
+                // MyZBytes (IntoZBytes and Deserializable) Keys
                 MapTestCase(mapOf(MyZBytes("foo") to "value1", MyZBytes("bar") to "value2"), MyZBytes::class, String::class),
                 MapTestCase(mapOf(MyZBytes("foo") to 1.toByte(), MyZBytes("bar") to 2.toByte()), MyZBytes::class, Byte::class),
                 MapTestCase(mapOf(MyZBytes("foo") to 1.toShort(), MyZBytes("bar") to 2.toShort()), MyZBytes::class, Short::class),
@@ -410,9 +410,9 @@ class ZBytesTests {
     /**
      * Custom class for the tests. The purpose of this class is to test
      * the proper functioning of the serialization and deserialization for
-     * a class implementing the [Serializable] and the [Deserializable] interface.
+     * a class implementing the [IntoZBytes] and the [Deserializable] interface.
      */
-    class MyZBytes(val content: String) : Serializable, Deserializable {
+    class MyZBytes(val content: String) : IntoZBytes, Deserializable {
 
         override fun into(): ZBytes = content.into()
 

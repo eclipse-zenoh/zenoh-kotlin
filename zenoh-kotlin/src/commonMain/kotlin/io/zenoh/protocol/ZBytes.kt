@@ -66,7 +66,7 @@ import kotlin.reflect.typeOf
  * - List of [Number] (Byte, Short, Int, Long, Float or Double)
  * - List of [String]
  * - List of [ByteArray]
- * - List of [Serializable]
+ * - List of [IntoZBytes]
  *
  * The serialize syntax must be used:
  * ```kotlin
@@ -80,7 +80,7 @@ import kotlin.reflect.typeOf
  * - [Number]
  * - [String]
  * - [ByteArray]
- * - [Serializable]
+ * - [IntoZBytes]
  *
  * ```kotlin
  * val myMap: Map<String, Int> = mapOf("foo" to 1, "bar" to 2)
@@ -154,13 +154,13 @@ import kotlin.reflect.typeOf
  *
  * ## Serialization
  *
- * For custom serialization, classes to be serialized need to implement the [Serializable] interface.
+ * For custom serialization, classes to be serialized need to implement the [IntoZBytes] interface.
  * For instance:
  *
  * ```kotlin
- * class Foo(val content: String) : Serializable {
+ * class Foo(val content: String) : IntoZBytes {
  *
- *   /*Inherits: Serializable*/
+ *   /*Inherits: IntoZBytes*/
  *   override fun into(): ZBytes = content.into()
  * }
  * ```
@@ -171,7 +171,7 @@ import kotlin.reflect.typeOf
  * val serialization = ZBytes.serialize<Foo>(foo).getOrThrow()
  * ```
  *
- * Implementing the [Serializable] interface on a class enables the possibility of serializing lists and maps
+ * Implementing the [IntoZBytes] interface on a class enables the possibility of serializing lists and maps
  * of that type, for instance:
  * ```kotlin
  * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
@@ -185,9 +185,9 @@ import kotlin.reflect.typeOf
  * `Foo` class (defined in the previous section) implement these interfaces:
  *
  * ```kotlin
- * class Foo(val content: String) : Serializable, Deserializable {
+ * class Foo(val content: String) : IntoZBytes, Deserializable {
  *
- *   /*Inherits: Serializable*/
+ *   /*Inherits: IntoZBytes*/
  *   override fun into(): ZBytes = content.into()
  *
  *   companion object: Deserializable.From {
@@ -221,11 +221,11 @@ import kotlin.reflect.typeOf
  * functions for deserialization for each of the types in the map.
  *
  * For instance, let's stick to the previous implementation of our example Foo class, when it
- * only implemented the [Serializable] class:
+ * only implemented the [IntoZBytes] class:
  * ```kotlin
- * class Foo(val content: String) : Serializable {
+ * class Foo(val content: String) : IntoZBytes {
  *
- *   /*Inherits: Serializable*/
+ *   /*Inherits: IntoZBytes*/
  *   override fun into(): ZBytes = content.into()
  * }
  * ```
@@ -243,10 +243,10 @@ import kotlin.reflect.typeOf
  * val deserialization = zbytes.deserialize<Foo>(mapOf(typeOf<Foo>() to ::deserializeFoo)).getOrThrow()
  * ```
  */
-class ZBytes internal constructor(internal val bytes: ByteArray) : Serializable {
+class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
 
     companion object {
-        fun from(serializable: Serializable) = serializable.into()
+        fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
         fun from(string: String) = ZBytes(string.toByteArray())
         fun from(byteArray: ByteArray) = ZBytes(byteArray)
         fun from(number: Number): ZBytes {
@@ -289,7 +289,7 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : Serializable 
          * - [Number]: Byte, Short, Int, Long, Float, Double
          * - [String]
          * - [ByteArray]
-         * - [Serializable]
+         * - [IntoZBytes]
          * - Lists and Maps of the above-mentioned types.
          *
          * @see ZBytes
@@ -510,7 +510,7 @@ internal fun Any?.into(): ZBytes {
         is String -> this.into()
         is Number -> this.into()
         is ByteArray -> this.into()
-        is Serializable -> this.into()
+        is IntoZBytes -> this.into()
         else -> throw IllegalArgumentException("Unsupported serializable type")
     }
 }
