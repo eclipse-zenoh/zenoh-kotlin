@@ -35,23 +35,16 @@ Alternatively, you can build it locally as [explained below](#building-the-docum
 ----
 # How to import
 
-:warning: Note nº1: **Breaking changes incoming** 
+:warning: Note nº1: **Breaking changes incoming**
 
-We are currently releasing a series of alpha versions, the latests one being currently the 
-[1.0.0-alpha.6](https://github.com/eclipse-zenoh/zenoh-kotlin/releases/tag/1.0.0-alpha.6). 
-We are currently working to provide an upgraded API across all the languages supported by  the Zenoh ecosystem.
-This last alpha release still offers an 'old-fashioned' API, although it's fully
-compatible with the other 1.0.0 alpha releases of Zenoh. You must take into consideration when importing this library
-that the API is about to be modified with some considerable breaking changes. A migration guide will be provided when
-the time comes.
+We are currently working to provide an upgraded API across all the languages supported by the Zenoh ecosystem.
 
-:warning: Note nº2: **Using the `dev/1.0.0` branch**
+Therefore a series of alpha and beta versions are currently being released, the latest one being currently the 
+[1.0.0-beta.1](https://github.com/eclipse-zenoh/zenoh-kotlin/releases/tag/1.0.0-beta.1), which contains a considerable
+amount of changes on the API with respect to `0.11.0`.
+However, please consider changes on Zenoh Kotlin are still going on and the API isn't fully stable yet.
 
-The `main` branch contains the codebase for the `0.11.0` version of Zenoh-Kotlin,
-compatible with the same version of Zenoh. We are currently working with the `dev/1.0.0` branch. So in case you want 
-to build the project with the latest changes being implemented, switch to that branch!
-
-:warning: Note nº3: **About the released packages**
+:warning: Note nº2: **About the released packages**
 
 The released packages can be found in the "packages" section of this repository, or in the links below:
 * [Android packages](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034/versions)
@@ -341,10 +334,6 @@ You can find more info about these examples on the [examples README file](/examp
 
 We intend to publish this code on Maven in the short term in order to ease the installation, but for the moment, until we
 add some extra functionalities and test this library a bit further, we will only publish packages to Github packages.
-
-### Potential API changes
-
-When using this library, keep in mind the api is not fully stable. Changes are to be expected, especially for version 1.0.0. 
 
 
 ### Performance
