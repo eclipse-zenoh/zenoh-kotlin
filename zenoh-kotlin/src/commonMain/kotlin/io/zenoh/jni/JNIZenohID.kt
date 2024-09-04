@@ -15,7 +15,6 @@
 package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
-import io.zenoh.protocol.ZenohID
 
 internal object JNIZenohID {
 
@@ -25,11 +24,4 @@ internal object JNIZenohID {
 
     external fun toStringViaJNI(bytes: ByteArray): String
 
-    /* Internal function for testing. */
-    internal fun getDefault(): ZenohID {
-        val id = getDefaultViaJNI()
-        return ZenohID(id)
-    }
-
-    private external fun getDefaultViaJNI(): ByteArray
 }

@@ -12,14 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::{
-    errors::{self, Result},
-    jni_error, session_error, throw_exception,
-    utils::decode_byte_array,
-};
+use crate::{errors::Result, jni_error, session_error, throw_exception, utils::decode_byte_array};
 use jni::{
     objects::{JByteArray, JClass, JString},
-    sys::{jbyteArray, jstring},
+    sys::jstring,
     JNIEnv,
 };
 use zenoh::config::ZenohId;
@@ -44,26 +40,6 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZenohID_toStringViaJNI(
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JString::default()
-    })
-    .as_raw()
-}
-
-/// Function avialable for testing purposes. Creates a default ZenohId, returning
-/// its internal little endian byte array representation.
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNIZenohID_getDefaultViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-) -> jbyteArray {
-    {
-        let id = ZenohIdProto::default();
-        env.byte_array_from_slice(&id.to_le_bytes())
-            .map_err(|err| jni_error!(err))
-    }
-    .unwrap_or_else(|err: errors::Error| {
-        throw_exception!(env, err);
-        JByteArray::default()
     })
     .as_raw()
 }
