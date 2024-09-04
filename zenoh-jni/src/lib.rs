@@ -24,6 +24,7 @@ mod session;
 mod subscriber;
 mod utils;
 mod zbytes;
+mod zenoh_id;
 
 // Test should be runned with `cargo test --no-default-features`
 #[test]

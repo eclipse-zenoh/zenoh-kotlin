@@ -12,9 +12,19 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh
 
-internal fun interface JNIScoutCallback {
+import io.zenoh.jni.JNIZenohID
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-    fun run(whatAmI: Int, zid: ByteArray, locators: List<String>)
+class ZenohIdTest {
+
+    @OptIn(ExperimentalStdlibApi::class)
+    @Test
+    fun `ZenohID toString test`() {
+        val zenohid = JNIZenohID.getDefault()
+        val expectedStringRepresentation = zenohid.bytes.reversedArray().toHexString(HexFormat.Default)
+        assertEquals(expectedStringRepresentation, zenohid.toString())
+    }
 }

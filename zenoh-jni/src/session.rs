@@ -32,6 +32,7 @@ use zenoh::pubsub::{Publisher, Subscriber};
 use zenoh::query::{Query, Queryable, ReplyError, Selector};
 use zenoh::sample::Sample;
 use zenoh::session::{Session, SessionDeclarations};
+use zenoh_protocol::core::ZenohIdProto;
 
 /// Open a Zenoh session via JNI.
 ///
@@ -915,9 +916,10 @@ fn on_reply_success(
 ) -> Result<()> {
     let zenoh_id = replier_id
         .map_or_else(
-            || Ok(JString::default()),
+            || Ok(JByteArray::default()),
             |replier_id| {
-                env.new_string(replier_id.to_string())
+                let zenoh_id_proto: ZenohIdProto = replier_id.into();
+                env.byte_array_from_slice(&zenoh_id_proto.to_le_bytes())
                     .map_err(|err| jni_error!(err))
             },
         )
@@ -967,7 +969,7 @@ fn on_reply_success(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        "([BZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(true),
@@ -1001,9 +1003,10 @@ fn on_reply_error(
 ) -> Result<()> {
     let zenoh_id = replier_id
         .map_or_else(
-            || Ok(JString::default()),
+            || Ok(JByteArray::default()),
             |replier_id| {
-                env.new_string(replier_id.to_string())
+                let zenoh_id_proto: ZenohIdProto = replier_id.into();
+                env.byte_array_from_slice(&zenoh_id_proto.to_le_bytes())
                     .map_err(|err| jni_error!(err))
             },
         )
@@ -1023,7 +1026,7 @@ fn on_reply_error(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "(Ljava/lang/String;ZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        "([BZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
             JValue::from(false),

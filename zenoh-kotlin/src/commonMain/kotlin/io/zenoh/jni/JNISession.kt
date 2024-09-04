@@ -144,7 +144,7 @@ internal class JNISession {
         attachment: IntoZBytes?
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
-                replierId: String?,
+                replierId: ByteArray?,
                 success: Boolean,
                 keyExpr: String?,
                 payload: ByteArray,

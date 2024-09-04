@@ -12,9 +12,24 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.jni.callbacks
+package io.zenoh.jni
 
-internal fun interface JNIScoutCallback {
+import io.zenoh.ZenohLoad
+import io.zenoh.protocol.ZenohID
 
-    fun run(whatAmI: Int, zid: ByteArray, locators: List<String>)
+internal object JNIZenohID {
+
+    init {
+        ZenohLoad
+    }
+
+    external fun toStringViaJNI(bytes: ByteArray): String
+
+    /* Internal function for testing. */
+    internal fun getDefault(): ZenohID {
+        val id = getDefaultViaJNI()
+        return ZenohID(id)
+    }
+
+    private external fun getDefaultViaJNI(): ByteArray
 }
