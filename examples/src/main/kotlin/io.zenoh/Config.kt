@@ -67,7 +67,7 @@ internal fun loadConfig(
             val scouting = Scouting(Multicast(!noMulticastScouting))
             val configData = ConfigData(connect, listen, mode, scouting)
             val jsonConfig = Json.encodeToJsonElement(configData)
-            Config.fromFile(jsonConfig).getOrThrow()
+            Config.fromJsonElement(jsonConfig).getOrThrow()
         }
     }
 }
