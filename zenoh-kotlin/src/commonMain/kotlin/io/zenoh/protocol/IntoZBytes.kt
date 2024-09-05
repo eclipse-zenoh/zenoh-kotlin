@@ -1,18 +1,18 @@
 package io.zenoh.protocol
 
 /**
- * Serializable interface.
+ * IntoZBytes interface.
  *
  * Classes implementing this interface can be serialized into a ZBytes object.
  *
  * Example:
  * ```kotlin
- * class Foo(val content: String) : Serializable {
+ * class Foo(val content: String) : IntoZBytes {
  *
  *   override fun into(): ZBytes = content.into()
  * }
  * ```
  */
-interface Serializable {
+interface IntoZBytes {
     fun into(): ZBytes
 }

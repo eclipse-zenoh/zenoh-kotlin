@@ -22,6 +22,7 @@ import io.zenoh.jni.JNISession
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
@@ -481,9 +482,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun get(
         selector: Selector,
         callback: Callback<Reply>,
-        payload: ZBytes? = null,
+        payload: IntoZBytes? = null,
         encoding: Encoding? = null,
-        attachment: ZBytes? = null,
+        attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.NONE,
@@ -589,9 +590,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun <R> get(
         selector: Selector,
         handler: Handler<Reply, R>,
-        payload: ZBytes? = null,
+        payload: IntoZBytes? = null,
         encoding: Encoding? = null,
-        attachment: ZBytes? = null,
+        attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.NONE,
@@ -682,9 +683,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun get(
         selector: Selector,
         channel: Channel<Reply>,
-        payload: ZBytes? = null,
+        payload: IntoZBytes? = null,
         encoding: Encoding? = null,
-        attachment: ZBytes? = null,
+        attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.default(),
@@ -751,8 +752,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param attachment Optional attachment.
      * @return A [Result] with the status of the put operation.
      */
-    fun put(keyExpr: KeyExpr, payload: ZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
-        val put = Put(keyExpr, payload, encoding ?: Encoding.default(), qos, attachment)
+    fun put(keyExpr: KeyExpr, payload: IntoZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: IntoZBytes? = null): Result<Unit> {
+        val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into())
         return resolvePut(keyExpr, put)
     }
 
@@ -776,8 +777,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param attachment Optional [ZBytes] attachment.
      * @return a [Result] with the status of the operation.
      */
-    fun delete(keyExpr: KeyExpr, qos: QoS = QoS.default(), attachment: ZBytes? = null): Result<Unit> {
-        val delete = Delete(keyExpr, qos, attachment)
+    fun delete(keyExpr: KeyExpr, qos: QoS = QoS.default(), attachment: IntoZBytes? = null): Result<Unit> {
+        val delete = Delete(keyExpr, qos, attachment?.into())
         return resolveDelete(keyExpr, delete)
     }
 
@@ -824,9 +825,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
-        payload: ZBytes?,
+        payload: IntoZBytes?,
         encoding: Encoding?,
-        attachment: ZBytes?,
+        attachment: IntoZBytes?,
     ): Result<R> {
         return jniSession?.run {
             performGet(

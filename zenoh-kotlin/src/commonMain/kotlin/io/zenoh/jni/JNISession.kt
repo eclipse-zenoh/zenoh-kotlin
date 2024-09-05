@@ -24,7 +24,7 @@ import io.zenoh.jni.callbacks.JNIQueryableCallback
 import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
-import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZenohID
 import io.zenoh.protocol.into
 import io.zenoh.publication.Delete
@@ -137,9 +137,9 @@ internal class JNISession {
         timeout: Duration,
         target: QueryTarget,
         consolidation: ConsolidationMode,
-        payload: ZBytes?,
+        payload: IntoZBytes?,
         encoding: Encoding?,
-        attachment: ZBytes?
+        attachment: IntoZBytes?
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
                 replierId: String?,
@@ -192,8 +192,8 @@ internal class JNISession {
             timeout.toMillis(),
             target.ordinal,
             consolidation.ordinal,
-            attachment?.bytes,
-            payload?.bytes,
+            attachment?.into()?.bytes,
+            payload?.into()?.bytes,
             encoding?.id ?: Encoding.default().id,
             encoding?.schema
         )

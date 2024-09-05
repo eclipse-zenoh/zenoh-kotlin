@@ -21,6 +21,6 @@ package io.zenoh.protocol
  */
 interface Deserializable {
     interface From {
-        fun from(zbytes: ZBytes): Serializable
+        fun from(zbytes: ZBytes): IntoZBytes
     }
 }

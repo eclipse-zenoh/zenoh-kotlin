@@ -15,7 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.IntoZBytes
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].
@@ -31,9 +31,9 @@ internal class JNIPublisher(private val ptr: Long) {
      * @param encoding Encoding of the payload.
      * @param attachment Optional attachment.
      */
-    fun put(payload: ZBytes, encoding: Encoding?, attachment: ZBytes?): Result<Unit> = runCatching {
+    fun put(payload: IntoZBytes, encoding: Encoding?, attachment: IntoZBytes?): Result<Unit> = runCatching {
         val resolvedEncoding = encoding ?: Encoding.default()
-        putViaJNI(payload.bytes, resolvedEncoding.id, resolvedEncoding.schema, attachment?.bytes, ptr)
+        putViaJNI(payload.into().bytes, resolvedEncoding.id, resolvedEncoding.schema, attachment?.into()?.bytes, ptr)
     }
 
     /**
@@ -41,8 +41,8 @@ internal class JNIPublisher(private val ptr: Long) {
      *
      * @param attachment Optional attachment.
      */
-    fun delete(attachment: ZBytes?): Result<Unit> = runCatching {
-        deleteViaJNI(attachment?.bytes, ptr)
+    fun delete(attachment: IntoZBytes?): Result<Unit> = runCatching {
+        deleteViaJNI(attachment?.into()?.bytes, ptr)
     }
 
     /**

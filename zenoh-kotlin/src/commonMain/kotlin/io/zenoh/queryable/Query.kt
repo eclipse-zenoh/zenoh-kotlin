@@ -22,6 +22,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.prelude.SampleKind
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
 import io.zenoh.sample.Sample
 import org.apache.commons.net.ntp.TimeStamp
@@ -68,13 +69,13 @@ class Query internal constructor(
      */
     fun reply(
         keyExpr: KeyExpr,
-        payload: ZBytes,
+        payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
         qos: QoS = QoS.default(),
         timestamp: TimeStamp? = null,
-        attachment: ZBytes? = null
+        attachment: IntoZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload, encoding, SampleKind.PUT, timestamp, qos, attachment)
+        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos, attachment?.into())
         return jniQuery?.let {
             val result = it.replySuccess(sample)
             jniQuery = null
@@ -91,7 +92,7 @@ class Query internal constructor(
      * @param error The error information.
      * @param encoding The encoding of the [error].
      */
-    fun replyErr(error: ZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
+    fun replyErr(error: IntoZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
             val result = it.replyError(error, encoding)
             jniQuery = null
@@ -115,7 +116,7 @@ class Query internal constructor(
         keyExpr: KeyExpr,
         qos: QoS = QoS.default(),
         timestamp: TimeStamp? = null,
-        attachment: ZBytes? = null
+        attachment: IntoZBytes? = null
     ): Result<Unit> {
         return jniQuery?.let {
             val result = it.replyDelete(keyExpr, timestamp, attachment, qos)

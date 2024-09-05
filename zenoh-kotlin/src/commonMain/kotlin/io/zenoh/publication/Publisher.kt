@@ -20,7 +20,7 @@ import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
-import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.into
 
 /**
@@ -77,16 +77,16 @@ class Publisher internal constructor(
     val express = qos.express
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
-    fun put(payload: ZBytes, encoding: Encoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(payload, encoding, attachment) ?: InvalidPublisherResult
+    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(payload, encoding, attachment) ?: InvalidPublisherResult
 
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified string [message]. */
-    fun put(message: String, encoding: Encoding? = null, attachment: ZBytes? = null) = jniPublisher?.put(message.into(), encoding, attachment) ?: InvalidPublisherResult
+    fun put(message: String, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(message.into(), encoding, attachment) ?: InvalidPublisherResult
 
     /**
      * Performs a DELETE operation on the specified [keyExpr]
      */
-    fun delete(attachment: ZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+    fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
 
     fun isValid(): Boolean {
         return jniPublisher != null

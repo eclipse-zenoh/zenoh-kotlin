@@ -94,7 +94,7 @@ fun main() {
      *********************************************/
 
     /**
-     * The examples below use [MyZBytes], an example class consisting that implements the [Serializable] interface.
+     * The examples below use [MyZBytes], an example class consisting that implements the [IntoZBytes] interface.
      *
      * In order for the serialization and deserialization to be successful on a custom class,
      * the class itself must override the `into(): ZBytes` function, but also the companion
@@ -141,7 +141,7 @@ fun main() {
     check(fooMap == deserializedFooMap)
 }
 
-class MyZBytes(val content: String) : Serializable, Deserializable {
+class MyZBytes(val content: String) : IntoZBytes, Deserializable {
 
     override fun into(): ZBytes = content.into()
 
