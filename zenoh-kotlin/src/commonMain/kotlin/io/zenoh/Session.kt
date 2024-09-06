@@ -747,8 +747,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param attachment Optional attachment.
      * @return A [Result] with the status of the put operation.
      */
-    fun put(keyExpr: KeyExpr, payload: IntoZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: IntoZBytes? = null): Result<Unit> {
-        val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into())
+    fun put(keyExpr: KeyExpr, payload: IntoZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: IntoZBytes? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Unit> {
+        val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into(), reliability)
         return resolvePut(keyExpr, put)
     }
 

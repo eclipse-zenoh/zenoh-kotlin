@@ -228,7 +228,8 @@ internal class JNISession {
             put.qos.congestionControl.value,
             put.qos.priority.value,
             put.qos.express,
-            put.attachment?.bytes
+            put.attachment?.bytes,
+            put.reliability.ordinal
         )
     }
 
@@ -318,7 +319,8 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
-        attachmentBytes: ByteArray?
+        attachmentBytes: ByteArray?,
+        reliability: Int
     )
 
     @Throws(Exception::class)

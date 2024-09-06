@@ -18,6 +18,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
+import io.zenoh.subscriber.Reliability
 
 /**
  * Put operation.
@@ -27,11 +28,13 @@ import io.zenoh.protocol.ZBytes
  * @property encoding The [Encoding] of the payload.
  * @property qos The [QoS] configuration.
  * @property attachment An optional user attachment.
+ * @property reliability The [Reliability] the put wishes to obtain from the Zenoh network.
  */
 internal data class Put (
     val keyExpr: KeyExpr,
     val payload: ZBytes,
     val encoding: Encoding,
     val qos: QoS,
-    val attachment: ZBytes?
+    val attachment: ZBytes?,
+    val reliability: Reliability
 )
