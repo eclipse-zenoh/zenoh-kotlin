@@ -121,7 +121,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param reliability The [Reliability] the publisher wishes to obtain from the network.
      * @return The result of the declaration, returning the publisher in case of success.
      */
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS.default(), reliability: Reliability = Reliability.BEST_EFFORT): Result<Publisher> {
+    fun declarePublisher(
+        keyExpr: KeyExpr,
+        qos: QoS = QoS.default(),
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Publisher> {
         return resolvePublisher(keyExpr, qos, reliability)
     }
 
@@ -745,9 +749,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param payload The [ZBytes] to be put.
      * @param qos The [QoS] configuration.
      * @param attachment Optional attachment.
+     * @param reliability The [Reliability] wished to be obtained from the network.
      * @return A [Result] with the status of the put operation.
      */
-    fun put(keyExpr: KeyExpr, payload: IntoZBytes, encoding: Encoding? = null, qos: QoS = QoS.default(), attachment: IntoZBytes? = null, reliability: Reliability = Reliability.BEST_EFFORT): Result<Unit> {
+    fun put(
+        keyExpr: KeyExpr,
+        payload: IntoZBytes,
+        encoding: Encoding? = null,
+        qos: QoS = QoS.default(),
+        attachment: IntoZBytes? = null,
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Unit> {
         val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into(), reliability)
         return resolvePut(keyExpr, put)
     }
@@ -770,10 +782,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] to be used for the delete operation.
      * @param qos The [QoS] configuration.
      * @param attachment Optional [ZBytes] attachment.
+     * @param reliability The [Reliability] wished to be obtained from the network.
      * @return a [Result] with the status of the operation.
      */
-    fun delete(keyExpr: KeyExpr, qos: QoS = QoS.default(), attachment: IntoZBytes? = null): Result<Unit> {
-        val delete = Delete(keyExpr, qos, attachment?.into())
+    fun delete(
+        keyExpr: KeyExpr,
+        qos: QoS = QoS.default(),
+        attachment: IntoZBytes? = null,
+        reliability: Reliability = Reliability.BEST_EFFORT
+    ): Result<Unit> {
+        val delete = Delete(keyExpr, qos, attachment?.into(), reliability)
         return resolveDelete(keyExpr, delete)
     }
 

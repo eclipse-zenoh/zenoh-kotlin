@@ -358,6 +358,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
 /// - `priority`: The [Priority] mechanism specified.
 /// - `is_express`: The express flag.
 /// - `attachment`: Optional attachment encoded into a byte array. May be null.
+/// - `reliability`: The reliability value as an ordinal.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -379,18 +380,21 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
     priority: jint,
     is_express: jboolean,
     attachment: JByteArray,
+    reliability: jint,
 ) {
     let session = Arc::from_raw(session_ptr);
     let _ = || -> Result<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
+        let reliability = decode_reliability(reliability)?;
 
         let mut delete_builder = session
             .delete(&key_expr)
             .congestion_control(congestion_control)
             .express(is_express != 0)
-            .priority(priority);
+            .priority(priority)
+            .reliability(reliability);
 
         if !attachment.is_null() {
             let attachment = decode_byte_array(&env, attachment)?;

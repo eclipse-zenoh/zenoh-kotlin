@@ -245,7 +245,8 @@ internal class JNISession {
             delete.qos.congestionControl.value,
             delete.qos.priority.value,
             delete.qos.express,
-            delete.attachment?.bytes
+            delete.attachment?.bytes,
+            delete.reliability.ordinal
         )
     }
 
@@ -331,6 +332,7 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
-        attachmentBytes: ByteArray?
+        attachmentBytes: ByteArray?,
+        reliability: Int
     )
 }

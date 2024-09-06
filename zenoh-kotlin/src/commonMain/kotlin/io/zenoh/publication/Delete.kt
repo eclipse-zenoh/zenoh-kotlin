@@ -17,6 +17,7 @@ package io.zenoh.publication
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.ZBytes
+import io.zenoh.subscriber.Reliability
 
 /**
  * Delete operation.
@@ -24,7 +25,8 @@ import io.zenoh.protocol.ZBytes
  * @property keyExpr The [KeyExpr] for the delete operation.
  * @property qos The [QoS] configuration.
  * @property attachment Optional attachment.
+ * @property reliability The [Reliability] wished to be obtained from the network.
  */
 internal class Delete (
-    val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?
+    val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?, val reliability: Reliability
 )
