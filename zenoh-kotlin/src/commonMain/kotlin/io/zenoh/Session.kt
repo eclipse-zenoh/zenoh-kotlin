@@ -118,10 +118,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
      * @param qos The [QoS] configuration of the publisher.
+     * @param reliability The [Reliability] the publisher wishes to obtain from the network.
      * @return The result of the declaration, returning the publisher in case of success.
      */
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS.default()): Result<Publisher> {
-        return resolvePublisher(keyExpr, qos)
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS = QoS.default(), reliability: Reliability = Reliability.BEST_EFFORT): Result<Publisher> {
+        return resolvePublisher(keyExpr, qos, reliability)
     }
 
     /**
@@ -143,19 +144,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the subscriber will be associated to.
      * @param callback Callback to handle the received samples.
      * @param onClose Callback function to be called when the subscriber is closed.
-     * @param reliability The reliability the subscriber wishes to obtain from the network.
      * @return A result with the [Subscriber] in case of success.
      */
     fun declareSubscriber(
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
         onClose: (() -> Unit)? = null,
-        reliability: Reliability = Reliability.BEST_EFFORT
     ): Result<Subscriber<Unit>> {
         val resolvedOnClose = fun() {
             onClose?.invoke()
         }
-        return resolveSubscriber(keyExpr, callback, resolvedOnClose, Unit, reliability)
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, Unit)
     }
 
     /**
@@ -188,21 +187,19 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called
      *  upon closing the session.
      * @param onClose Callback function to be called when the subscriber is closed.
-     * @param reliability The reliability the subscriber wishes to obtain from the network.
      * @return A result with the [Subscriber] in case of success.
      */
     fun <R> declareSubscriber(
         keyExpr: KeyExpr,
         handler: Handler<Sample, R>,
         onClose: (() -> Unit)? = null,
-        reliability: Reliability = Reliability.BEST_EFFORT
     ): Result<Subscriber<R>> {
         val resolvedOnClose = fun() {
             handler.onClose()
             onClose?.invoke()
         }
         val callback = Callback { t: Sample -> handler.handle(t) }
-        return resolveSubscriber(keyExpr, callback, resolvedOnClose, handler.receiver(), reliability)
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, handler.receiver())
     }
 
     /**
@@ -230,14 +227,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *  closed, the channel is closed as well.
      * @param onClose Callback function to be called when the subscriber is closed. [Handler.onClose] will be called
      *  upon closing the session.
-     * @param reliability The reliability the subscriber wishes to obtain from the network.
      * @return A result with the [Subscriber] in case of success.
      */
     fun declareSubscriber(
         keyExpr: KeyExpr,
         channel: Channel<Sample>,
         onClose: (() -> Unit)? = null,
-        reliability: Reliability = Reliability.BEST_EFFORT
     ): Result<Subscriber<Channel<Sample>>> {
         val channelHandler = ChannelHandler(channel)
         val resolvedOnClose = fun() {
@@ -245,7 +240,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             onClose?.invoke()
         }
         val callback = Callback { t: Sample -> channelHandler.handle(t) }
-        return resolveSubscriber(keyExpr, callback, resolvedOnClose, channelHandler.receiver(), reliability)
+        return resolveSubscriber(keyExpr, callback, resolvedOnClose, channelHandler.receiver())
     }
 
     /**
@@ -787,9 +782,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
-    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> {
+    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(keyExpr, qos).onSuccess { declarations.add(it) }
+            declarePublisher(keyExpr, qos, reliability).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -797,11 +792,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
         onClose: () -> Unit,
-        receiver: R,
-        reliability: Reliability
+        receiver: R
     ): Result<Subscriber<R>> {
         return jniSession?.run {
-            declareSubscriber(keyExpr, callback, onClose, receiver, reliability).onSuccess { declarations.add(it) }
+            declareSubscriber(keyExpr, callback, onClose, receiver).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 

@@ -241,17 +241,20 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     congestion_control: jint,
     priority: jint,
     is_express: jboolean,
+    reliability: jint,
 ) -> *const Publisher<'static> {
     let session = Arc::from_raw(session_ptr);
     let publisher_ptr = || -> Result<*const Publisher<'static>> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
+        let reliability = decode_reliability(reliability)?;
         let result = session
             .declare_publisher(key_expr)
             .congestion_control(congestion_control)
             .priority(priority)
             .express(is_express != 0)
+            .reliability(reliability)
             .wait();
         match result {
             Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
@@ -434,14 +437,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
-    reliability: jint,
 ) -> *const Subscriber<'static, ()> {
     let session = Arc::from_raw(session_ptr);
     || -> Result<*const Subscriber<'static, ()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let reliability = decode_reliability(reliability)?;
         let on_close = load_on_close(&java_vm, on_close_global_ref);
 
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -510,17 +511,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                 }()
                 .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
             })
-            .reliability(reliability)
             .wait();
 
         let subscriber =
             result.map_err(|err| session_error!("Unable to declare subscriber: {}", err))?;
 
-        tracing::debug!(
-            "Subscriber declared on '{}' with reliability '{:?}'.",
-            key_expr,
-            reliability
-        );
+        tracing::debug!("Subscriber declared on '{}'.", key_expr);
         std::mem::forget(session);
         Ok(Arc::into_raw(Arc::new(subscriber)))
     }()
