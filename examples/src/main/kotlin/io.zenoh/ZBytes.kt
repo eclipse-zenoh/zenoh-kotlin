@@ -94,35 +94,33 @@ fun main() {
      *********************************************/
 
     /**
-     * The examples below use [MyZBytes], an example class consisting that implements the [IntoZBytes] interface.
+     * The examples below use [MyZBytes], an example class that implements the [IntoZBytes] interface.
      *
-     * In order for the serialization and deserialization to be successful on a custom class,
-     * the class itself must override the `into(): ZBytes` function, but also the companion
-     * object must implement the [Deserializable.From] interface.
+     * In order for the serialization to be successful on a custom class,
+     * the class itself must override the `into(): ZBytes` function.
+     *
+     * Regarding deserialization for custom objects, for the time being (this API will be expanded to
+     * provide further utilities) you need to manually convert the ZBytes into the type you want.
      *
      * @see MyZBytes
      */
     val inputMyZBytes = MyZBytes("example")
     payload = ZBytes.serialize(inputMyZBytes).getOrThrow()
-    val outputMyZBytes = payload.deserialize<MyZBytes>().getOrThrow()
+    val outputMyZBytes = MyZBytes.from(payload)
     check(inputMyZBytes == outputMyZBytes)
 
     /** List of MyZBytes. */
     val inputListMyZBytes = inputList.map { value -> MyZBytes(value) }
     payload = ZBytes.serialize<List<MyZBytes>>(inputListMyZBytes).getOrThrow()
-    val outputListMyZBytes = payload.deserialize<List<MyZBytes>>().getOrThrow()
+    val outputListMyZBytes = payload.deserialize<List<ZBytes>>().getOrThrow().map { zbytes -> MyZBytes.from(zbytes) }
     check(inputListMyZBytes == outputListMyZBytes)
 
     /** Map of MyZBytes. */
-    val inputMapMyZBytes = inputMap.map { (k, v) -> MyZBytes(k) to MyZBytes(v)}.toMap()
+    val inputMapMyZBytes = inputMap.map { (k, v) -> MyZBytes(k) to MyZBytes(v) }.toMap()
     payload = ZBytes.serialize<Map<MyZBytes, MyZBytes>>(inputMapMyZBytes).getOrThrow()
-    val outputMapMyZBytes = payload.deserialize<Map<MyZBytes, MyZBytes>>().getOrThrow()
+    val outputMapMyZBytes = payload.deserialize<Map<ZBytes, ZBytes>>().getOrThrow()
+        .map { (key, value) -> MyZBytes.from(key) to MyZBytes.from(value) }.toMap()
     check(inputMapMyZBytes == outputMapMyZBytes)
-
-    val combinedMap = mapOf(MyZBytes("foo") to 1, MyZBytes("bar") to 2)
-    payload = ZBytes.serialize<Map<MyZBytes, Int>>(combinedMap).getOrThrow()
-    val combinedOutput = payload.deserialize<Map<MyZBytes, Int>>().getOrThrow()
-    check(combinedMap == combinedOutput)
 
     /**
      * Providing a map of deserializers.
@@ -141,46 +139,19 @@ fun main() {
     check(fooMap == deserializedFooMap)
 }
 
-class MyZBytes(val content: String) : IntoZBytes, Deserializable {
+data class MyZBytes(val content: String) : IntoZBytes {
 
     override fun into(): ZBytes = content.into()
 
-    companion object : Deserializable.From {
-        override fun from(zbytes: ZBytes): MyZBytes {
+    companion object {
+        fun from(zbytes: ZBytes): MyZBytes {
             return MyZBytes(zbytes.toString())
         }
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as MyZBytes
-
-        return content == other.content
-    }
-
-    override fun hashCode(): Int {
-        return content.hashCode()
     }
 }
 
 /** Example class for the deserialization map examples. */
-class Foo(val content: String) {
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as Foo
-
-        return content == other.content
-    }
-
-    override fun hashCode(): Int {
-        return content.hashCode()
-    }
-}
+data class Foo(val content: String)
 
 /** Example serializer and deserializer. */
 private fun serializeFooMap(testMap: Map<Foo, Foo>): ByteArray {
