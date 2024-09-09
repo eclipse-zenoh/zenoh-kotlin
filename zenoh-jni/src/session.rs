@@ -32,7 +32,6 @@ use zenoh::pubsub::{Publisher, Subscriber};
 use zenoh::query::{Query, Queryable, ReplyError, Selector};
 use zenoh::sample::Sample;
 use zenoh::session::{Session, SessionDeclarations};
-use zenoh_protocol::core::ZenohIdProto;
 
 /// Open a Zenoh session via JNI.
 ///
@@ -918,8 +917,7 @@ fn on_reply_success(
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
-                let zenoh_id_proto: ZenohIdProto = replier_id.into();
-                env.byte_array_from_slice(&zenoh_id_proto.to_le_bytes())
+                env.byte_array_from_slice(&replier_id.to_le_bytes())
                     .map_err(|err| jni_error!(err))
             },
         )
@@ -1005,8 +1003,7 @@ fn on_reply_error(
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
-                let zenoh_id_proto: ZenohIdProto = replier_id.into();
-                env.byte_array_from_slice(&zenoh_id_proto.to_le_bytes())
+                env.byte_array_from_slice(&replier_id.to_le_bytes())
                     .map_err(|err| jni_error!(err))
             },
         )

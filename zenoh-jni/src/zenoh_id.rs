@@ -19,7 +19,6 @@ use jni::{
     JNIEnv,
 };
 use zenoh::config::ZenohId;
-use zenoh_protocol::core::ZenohIdProto;
 
 /// Returns the string representation of a ZenohID.
 #[no_mangle]
@@ -31,9 +30,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZenohID_toStringViaJNI(
 ) -> jstring {
     || -> Result<JString> {
         let bytes = decode_byte_array(&env, zenoh_id)?;
-        let zenohIdProto =
-            ZenohIdProto::try_from(bytes.as_slice()).map_err(|err| session_error!(err))?;
-        let zenohid = ZenohId::from(zenohIdProto);
+        let zenohid = ZenohId::try_from(bytes.as_slice()).map_err(|err| session_error!(err))?;
         env.new_string(zenohid.to_string())
             .map_err(|err| jni_error!(err))
     }()
