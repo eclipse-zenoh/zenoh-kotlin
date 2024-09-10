@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.protocol.Deserializable
 import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
@@ -60,7 +59,6 @@ class ZBytesTests {
                 SimpleTestCase(1.0, Double::class),
                 SimpleTestCase("value1", String::class),
                 SimpleTestCase(byteArrayOf(1, 2, 3), ByteArray::class),
-                SimpleTestCase(MyZBytes("foo"), MyZBytes::class)
             )
         }
 
@@ -83,8 +81,6 @@ class ZBytesTests {
                 ListTestCase(listOf("value1", "value2", "value3"), String::class),
                 // ByteArray Lists
                 ListTestCase(listOf(byteArrayOf(1, 2, 3), byteArrayOf(4, 5, 6)), ByteArray::class),
-                // MyZBytes Lists
-                ListTestCase(listOf(MyZBytes("foo"), MyZBytes("bar")), MyZBytes::class)
             )
         }
 
@@ -100,7 +96,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1.toByte() to 1.0f, 2.toByte() to 2.0f), Byte::class, Float::class),
                 MapTestCase(mapOf(1.toByte() to 1.0, 2.toByte() to 2.0), Byte::class, Double::class),
                 MapTestCase(mapOf(1.toByte() to byteArrayOf(1, 2, 3), 2.toByte() to byteArrayOf(4, 5, 6)), Byte::class, ByteArray::class),
-                MapTestCase(mapOf(1.toByte() to MyZBytes("foo"), 2.toByte() to MyZBytes("bar")), Byte::class, MyZBytes::class),
 
                 // Short Keys
                 MapTestCase(mapOf(1.toShort() to "value1", 2.toShort() to "value2"), Short::class, String::class),
@@ -111,7 +106,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1.toShort() to 1.0f, 2.toShort() to 2.0f), Short::class, Float::class),
                 MapTestCase(mapOf(1.toShort() to 1.0, 2.toShort() to 2.0), Short::class, Double::class),
                 MapTestCase(mapOf(1.toShort() to byteArrayOf(1, 2, 3), 2.toShort() to byteArrayOf(4, 5, 6)), Short::class, ByteArray::class),
-                MapTestCase(mapOf(1.toShort() to MyZBytes("foo"), 2.toShort() to MyZBytes("bar")), Short::class, MyZBytes::class),
 
                 // Int Keys
                 MapTestCase(mapOf(1 to "value1", 2 to "value2"), Int::class, String::class),
@@ -122,7 +116,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1 to 1.0f, 2 to 2.0f), Int::class, Float::class),
                 MapTestCase(mapOf(1 to 1.0, 2 to 2.0), Int::class, Double::class),
                 MapTestCase(mapOf(1 to byteArrayOf(1, 2, 3), 2 to byteArrayOf(4, 5, 6)), Int::class, ByteArray::class),
-                MapTestCase(mapOf(1 to MyZBytes("foo"), 2 to MyZBytes("bar")), Int::class, MyZBytes::class),
 
                 // Long Keys
                 MapTestCase(mapOf(1L to "value1", 2L to "value2"), Long::class, String::class),
@@ -133,7 +126,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1L to 1.0f, 2L to 2.0f), Long::class, Float::class),
                 MapTestCase(mapOf(1L to 1.0, 2L to 2.0), Long::class, Double::class),
                 MapTestCase(mapOf(1L to byteArrayOf(1, 2, 3), 2L to byteArrayOf(4, 5, 6)), Long::class, ByteArray::class),
-                MapTestCase(mapOf(1L to MyZBytes("foo"), 2L to MyZBytes("bar")), Long::class, MyZBytes::class),
 
                 // Float Keys
                 MapTestCase(mapOf(1.0f to "value1", 2.0f to "value2"), Float::class, String::class),
@@ -144,7 +136,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1.0f to 1.0f, 2.0f to 2.0f), Float::class, Float::class),
                 MapTestCase(mapOf(1.0f to 1.0, 2.0f to 2.0), Float::class, Double::class),
                 MapTestCase(mapOf(1.0f to byteArrayOf(1, 2, 3), 2.0f to byteArrayOf(4, 5, 6)), Float::class, ByteArray::class),
-                MapTestCase(mapOf(1.0f to MyZBytes("foo"), 2.0f to MyZBytes("bar")), Float::class, MyZBytes::class),
 
                 // Double Keys
                 MapTestCase(mapOf(1.0 to "value1", 2.0 to "value2"), Double::class, String::class),
@@ -155,7 +146,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(1.0 to 1.0f, 2.0 to 2.0f), Double::class, Float::class),
                 MapTestCase(mapOf(1.0 to 1.0, 2.0 to 2.0), Double::class, Double::class),
                 MapTestCase(mapOf(1.0 to byteArrayOf(1, 2, 3), 2.0 to byteArrayOf(4, 5, 6)), Double::class, ByteArray::class),
-                MapTestCase(mapOf(1.0 to MyZBytes("foo"), 2.0 to MyZBytes("bar")), Double::class, MyZBytes::class),
 
                 // String Keys
                 MapTestCase(mapOf("key1" to "value1", "key2" to "value2"), String::class, String::class),
@@ -166,7 +156,6 @@ class ZBytesTests {
                 MapTestCase(mapOf("key1" to 1.0f, "key2" to 2.0f), String::class, Float::class),
                 MapTestCase(mapOf("key1" to 1.0, "key2" to 2.0), String::class, Double::class),
                 MapTestCase(mapOf("key1" to byteArrayOf(1, 2, 3), "key2" to byteArrayOf(4, 5, 6)), String::class, ByteArray::class),
-                MapTestCase(mapOf("key1" to MyZBytes("foo"), "key2" to MyZBytes("bar")), String::class, MyZBytes::class),
 
                 // ByteArray Keys
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to "value1", byteArrayOf(4, 5, 6) to "value2"), ByteArray::class, String::class),
@@ -177,18 +166,6 @@ class ZBytesTests {
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to 1.0f, byteArrayOf(4, 5, 6) to 2.0f), ByteArray::class, Float::class),
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to 1.0, byteArrayOf(4, 5, 6) to 2.0), ByteArray::class, Double::class),
                 MapTestCase(mapOf(byteArrayOf(1, 2, 3) to byteArrayOf(1, 2, 3), byteArrayOf(4, 5, 6) to byteArrayOf(4, 5, 6)), ByteArray::class, ByteArray::class),
-                MapTestCase(mapOf(byteArrayOf(1, 2, 3) to MyZBytes("foo"), byteArrayOf(4, 5, 6) to MyZBytes("bar")), ByteArray::class, MyZBytes::class),
-
-                // MyZBytes (IntoZBytes and Deserializable) Keys
-                MapTestCase(mapOf(MyZBytes("foo") to "value1", MyZBytes("bar") to "value2"), MyZBytes::class, String::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1.toByte(), MyZBytes("bar") to 2.toByte()), MyZBytes::class, Byte::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1.toShort(), MyZBytes("bar") to 2.toShort()), MyZBytes::class, Short::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1, MyZBytes("bar") to 2), MyZBytes::class, Int::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1L, MyZBytes("bar") to 2L), MyZBytes::class, Long::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1.0f, MyZBytes("bar") to 2.0f), MyZBytes::class, Float::class),
-                MapTestCase(mapOf(MyZBytes("foo") to 1.0, MyZBytes("bar") to 2.0), MyZBytes::class, Double::class),
-                MapTestCase(mapOf(MyZBytes("foo") to byteArrayOf(1, 2, 3), MyZBytes("bar") to byteArrayOf(4, 5, 6)), MyZBytes::class, ByteArray::class),
-                MapTestCase(mapOf(MyZBytes("foo") to MyZBytes("foo"), MyZBytes("bar") to MyZBytes("bar")), MyZBytes::class, MyZBytes::class)
             )
         }
     }
@@ -371,28 +348,6 @@ class ZBytesTests {
          * Custom serialization and deserialization. *
          *********************************************/
 
-        val inputMyZBytes = MyZBytes("example")
-        payload = ZBytes.serialize(inputMyZBytes).getOrThrow()
-        val outputMyZBytes = payload.deserialize<MyZBytes>().getOrThrow()
-        assertEquals(inputMyZBytes, outputMyZBytes)
-
-        /** List of MyZBytes. */
-        val inputListMyZBytes = inputList.map { value -> MyZBytes(value) }
-        payload = ZBytes.serialize<List<MyZBytes>>(inputListMyZBytes).getOrThrow()
-        val outputListMyZBytes = payload.deserialize<List<MyZBytes>>().getOrThrow()
-        assertEquals(inputListMyZBytes, outputListMyZBytes)
-
-        /** Map of MyZBytes. */
-        val inputMapMyZBytes = inputMap.map { (k, v) -> MyZBytes(k) to MyZBytes(v)}.toMap()
-        payload = ZBytes.serialize<Map<MyZBytes, MyZBytes>>(inputMapMyZBytes).getOrThrow()
-        val outputMapMyZBytes = payload.deserialize<Map<MyZBytes, MyZBytes>>().getOrThrow()
-        assertEquals(inputMapMyZBytes, outputMapMyZBytes)
-
-        val combinedMap = mapOf(MyZBytes("foo") to 1, MyZBytes("bar") to 2)
-        payload = ZBytes.serialize<Map<MyZBytes, Int>>(combinedMap).getOrThrow()
-        val combinedOutput = payload.deserialize<Map<MyZBytes, Int>>().getOrThrow()
-        assertEquals(combinedMap, combinedOutput)
-
         /**
          * Providing a map of deserializers.
          */
@@ -406,35 +361,6 @@ class ZBytesTests {
     /*****************
      * Testing utils *
      *****************/
-
-    /**
-     * Custom class for the tests. The purpose of this class is to test
-     * the proper functioning of the serialization and deserialization for
-     * a class implementing the [IntoZBytes] and the [Deserializable] interface.
-     */
-    class MyZBytes(val content: String) : IntoZBytes, Deserializable {
-
-        override fun into(): ZBytes = content.into()
-
-        companion object : Deserializable.From {
-            override fun from(zbytes: ZBytes): MyZBytes {
-                return MyZBytes(zbytes.toString())
-            }
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as MyZBytes
-
-            return content == other.content
-        }
-
-        override fun hashCode(): Int {
-            return content.hashCode()
-        }
-    }
 
     /** Example class for the deserialization map examples. */
     class Foo(val content: String) {

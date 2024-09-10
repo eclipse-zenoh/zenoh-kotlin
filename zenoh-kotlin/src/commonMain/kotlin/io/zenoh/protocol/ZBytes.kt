@@ -126,7 +126,6 @@ import kotlin.reflect.typeOf
  * - List of [Number] (Byte, Short, Int, Long, Float or Double)
  * - List of [String]
  * - List of [ByteArray]
- * - List of [Deserializable]
  *
  * To deserialize into a list, we need to use the deserialize syntax as follows:
  * ```kotlin
@@ -141,7 +140,6 @@ import kotlin.reflect.typeOf
  * - [Number]
  * - [String]
  * - [ByteArray]
- * - [Deserializable]
  *
  * ```kotlin
  * val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
@@ -180,38 +178,30 @@ import kotlin.reflect.typeOf
  *
  * ## Deserialization
  *
- * For custom deserialization, classes to be serialized need to implement the [Deserializable] interface, and
- * their companion object need to implement the [Deserializable.From] interface, for instance, let's make the
- * `Foo` class (defined in the previous section) implement these interfaces:
+ * In order for the serialization to be successful on a custom class,
+ * it must override the `into(): ZBytes` function from the [IntoZBytes] interface.
+ *
+ * Regarding deserialization for custom objects, for the time being (this API will be expanded to
+ * provide further utilities) you need to manually convert the ZBytes into the type you want.
  *
  * ```kotlin
- * class Foo(val content: String) : IntoZBytes, Deserializable {
+ * val inputFoo = Foo("example")
+ * payload = ZBytes.serialize(inputFoo).getOrThrow()
+ * val outputFoo = Foo.from(payload)
+ * check(inputFoo == outputFoo)
  *
- *   /*Inherits: IntoZBytes*/
- *   override fun into(): ZBytes = content.into()
+ * // List of Foo.
+ * val inputListFoo = inputList.map { value -> Foo(value) }
+ * payload = ZBytes.serialize<List<Foo>>(inputListFoo).getOrThrow()
+ * val outputListFoo = payload.deserialize<List<ZBytes>>().getOrThrow().map { zbytes -> Foo.from(zbytes) }
+ * check(inputListFoo == outputListFoo)
  *
- *   companion object: Deserializable.From {
- *      override fun from(zbytes: ZBytes): Foo {
- *          return Foo(zbytes.toString())
- *      }
- *   }
- * }
- * ```
- *
- * With this implementation, then the deserialization works as follows with the deserialization syntax:
- * ```kotlin
- * val foo = Foo("bar")
- * val zbytes = ZBytes.serialize<Foo>(foo).getOrThrow()
- * val deserialization = zbytes.deserialize<Foo>().getOrThrow()
- * ```
- *
- * Analogous to the serialization, we can deserialize into lists and maps of the type implementing
- * the [Deserializable] interface:
- *
- * ```kotlin
- * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
- * val zbytes = ZBytes.serialize<List<Foo>>(list)
- * val deserializedList = zbytes.deserialize<List<Foo>>().getOrThrow()
+ * // Map of Foo.
+ * val inputMapFoo = inputMap.map { (k, v) -> Foo(k) to Foo(v) }.toMap()
+ * payload = ZBytes.serialize<Map<Foo, Foo>>(inputMapFoo).getOrThrow()
+ * val outputMapFoo = payload.deserialize<Map<ZBytes, ZBytes>>().getOrThrow()
+ *     .map { (key, value) -> Foo.from(key) to Foo.from(value) }.toMap()
+ * check(inputMapFoo == outputMapFoo)
  * ```
  *
  * ### Deserialization functions:
@@ -220,18 +210,8 @@ import kotlin.reflect.typeOf
  * of a `Map<KType, KFunction1<ZBytes, Any>>` map. This allows to specify types in a map, associating
  * functions for deserialization for each of the types in the map.
  *
- * For instance, let's stick to the previous implementation of our example Foo class, when it
- * only implemented the [IntoZBytes] class:
- * ```kotlin
- * class Foo(val content: String) : IntoZBytes {
- *
- *   /*Inherits: IntoZBytes*/
- *   override fun into(): ZBytes = content.into()
- * }
- * ```
- *
- * Instead of making it implement the [Deserializable] interface as explained previously,
- * we could provide directly the deserialization function as follows:
+ * For instance, let's stick to the previous implementation of our example Foo class.
+ * We could provide directly the deserialization function as follows:
  *
  * ```kotlin
  * fun deserializeFoo(zbytes: ZBytes): Foo {
@@ -334,7 +314,6 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
      * - [Number]: Byte, Short, Int, Long, Float, Double
      * - [String]
      * - [ByteArray]
-     * - [Deserializable]
      * - Lists and Maps of the above-mentioned types.
      *
      *
@@ -355,7 +334,6 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
      * (if provided), the deserialization will carry on with the default behavior.
      *
      * @see ZBytes
-     * @see Deserializable
      * @return a [Result] with the deserialization.
      */
     inline fun <reified T: Any> deserialize(
@@ -401,7 +379,6 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
      * - [Number]: Byte, Short, Int, Long, Float, Double
      * - [String]
      * - [ByteArray]
-     * - [Deserializable]
      * - Lists and Maps of the above-mentioned types.
      *
      * @see [ZBytes.deserialize]
@@ -527,26 +504,6 @@ internal fun ZBytes.intoAny(type: KType): Any {
         typeOf<Double>() -> this.toDouble()
         typeOf<ByteArray>() -> this.toByteArray()
         typeOf<ZBytes>() -> this
-        else -> {
-            when {
-                typeOf<Deserializable>().isSupertypeOf(type) -> {
-                    val companion = type.jvmErasure.companionObject
-                    val function = companion?.declaredMemberFunctions?.find { it.name == "from" }
-                    if (function != null) {
-                        val result = function.call(type.jvmErasure.companionObjectInstance, this)
-                        if (result != null) {
-                            return result
-                        } else {
-                            throw Exception("The 'from' method returned null for the type '$type'.")
-                        }
-                    } else {
-                        throw Exception("Implementation of 'from' method from the ${Deserializable.From::class} interface not found on element of type '$type'.")
-                    }
-                }
-
-                else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization.")
-            }
-
-        }
+        else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization.")
     }
 }
