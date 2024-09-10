@@ -27,10 +27,9 @@ use jni::{
 use uhlc::ID;
 use zenoh::{
     key_expr::KeyExpr,
-    prelude::{EncodingBuilderTrait, Wait},
-    qos::{CongestionControl, Priority, QoSBuilderTrait},
+    prelude::Wait,
+    qos::{CongestionControl, Priority},
     query::Query,
-    sample::{SampleBuilderTrait, TimestampBuilderTrait},
     time::{Timestamp, NTP64},
 };
 
