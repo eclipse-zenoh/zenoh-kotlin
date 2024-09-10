@@ -22,6 +22,13 @@ import io.zenoh.jni.JNIScout
  * Scout spawns a task that periodically sends scout messages and waits for Hello replies.
  * Drop the returned Scout to stop the scouting task.
  *
+ * To launch a scout, use [io.zenoh.Zenoh.scout]:
+ * ```kotlin
+ * Zenoh.scout(callback = { hello ->
+ *     println(hello)
+ * }).getOrThrow()
+ * ```
+ *
  * @param R The receiver type.
  * @param receiver Receiver to handle incoming hello messages.
  */

@@ -35,13 +35,13 @@ class JNIScout(private val ptr: Long) {
             callback: Callback<Hello>,
             config: Config?,
             receiver: R
-        ): Scout<R> {
+        ): Result<Scout<R>> = runCatching {
             val scoutCallback = JNIScoutCallback { whatAmI2: Int, id: String, locators: List<String> ->
                 callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohID(id), locators))
             }
             val binaryWhatAmI: Int = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
             val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config?.jniConfig?.ptr)
-            return Scout(receiver, JNIScout(ptr))
+            Scout(receiver, JNIScout(ptr))
         }
 
         @Throws(Exception::class)

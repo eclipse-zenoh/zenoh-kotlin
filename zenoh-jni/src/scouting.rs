@@ -97,3 +97,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
         null()
     })
 }
+
+/// Frees the scout.
+#[no_mangle]
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_freePtrViaJNI(
+    _env: JNIEnv,
+    _: JClass,
+    scout_ptr: *const Scout<()>,
+) {
+    Arc::from_raw(scout_ptr);
+}
