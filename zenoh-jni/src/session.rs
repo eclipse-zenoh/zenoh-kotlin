@@ -27,11 +27,10 @@ use std::sync::Arc;
 use std::time::Duration;
 use zenoh::config::{Config, ZenohId};
 use zenoh::key_expr::KeyExpr;
-use zenoh::prelude::{EncodingBuilderTrait, Wait};
+use zenoh::prelude::Wait;
 use zenoh::pubsub::{Publisher, Subscriber};
-use zenoh::qos::QoSBuilderTrait;
 use zenoh::query::{Query, Queryable, ReplyError, Selector};
-use zenoh::sample::{Sample, SampleBuilderTrait};
+use zenoh::sample::Sample;
 use zenoh::session::{Session, SessionDeclarations};
 
 /// Open a Zenoh session via JNI.

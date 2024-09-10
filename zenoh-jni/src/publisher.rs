@@ -19,7 +19,7 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::{bytes::EncodingBuilderTrait, pubsub::Publisher, sample::SampleBuilderTrait, Wait};
+use zenoh::{pubsub::Publisher, Wait};
 
 use crate::{
     errors::Result,
