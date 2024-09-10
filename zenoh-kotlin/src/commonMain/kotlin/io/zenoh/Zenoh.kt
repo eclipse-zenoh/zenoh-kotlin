@@ -35,13 +35,13 @@ object Zenoh {
      * @param callback [Callback] to be run when receiving a [Hello] message.
      * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
      * @param config Optional [Config] for the scout.
-     * @return A [Scout] object.
+     * @return A result with the [Scout] object.
      */
     fun scout(
         callback: Callback<Hello>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Scout<Unit> {
+    ): Result<Scout<Unit>> {
         ZenohLoad
         return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, config = config)
     }
@@ -55,13 +55,13 @@ object Zenoh {
      * @param handler [Handler] to handle incoming [Hello] messages.
      * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
      * @param config Optional [Config] for the scout.
-     * @return A [Scout] object.
+     * @return A result with the [Scout] object.
      */
     fun <R> scout(
         handler: Handler<Hello, R>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Scout<R> {
+    ): Result<Scout<R>> {
         ZenohLoad
         return JNIScout.scout(
             whatAmI = whatAmI,
@@ -80,13 +80,13 @@ object Zenoh {
      * @param channel [Channel] upon which the incoming [Hello] messages will be piped.
      * @param whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
      * @param config Optional [Config] for the scout.
-     * @return A [Scout] object.
+     * @return A result with the [Scout] object.
      */
     fun scout(
         channel: Channel<Hello>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Scout<Channel<Hello>> {
+    ): Result<Scout<Channel<Hello>>> {
         ZenohLoad
         val handler = ChannelHandler(channel)
         return JNIScout.scout(
