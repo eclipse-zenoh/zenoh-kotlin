@@ -124,7 +124,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun declarePublisher(
         keyExpr: KeyExpr,
         qos: QoS = QoS.default(),
-        reliability: Reliability = Reliability.BEST_EFFORT
+        reliability: Reliability = Reliability.RELIABLE
     ): Result<Publisher> {
         return resolvePublisher(keyExpr, qos, reliability)
     }
@@ -758,7 +758,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         encoding: Encoding? = null,
         qos: QoS = QoS.default(),
         attachment: IntoZBytes? = null,
-        reliability: Reliability = Reliability.BEST_EFFORT
+        reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
         val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into(), reliability)
         return resolvePut(keyExpr, put)
@@ -789,7 +789,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         qos: QoS = QoS.default(),
         attachment: IntoZBytes? = null,
-        reliability: Reliability = Reliability.BEST_EFFORT
+        reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
         val delete = Delete(keyExpr, qos, attachment?.into(), reliability)
         return resolveDelete(keyExpr, delete)
