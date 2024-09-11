@@ -19,11 +19,12 @@ import io.zenoh.keyexpr.KeyExpr
 
 fun String.intoSelector(): Result<Selector> = runCatching {
     if (this.isEmpty()) {
-        return Result.failure(KeyExprException("Attempting to create a KeyExpr from an empty string."))
+        throw KeyExprException("Attempting to create a KeyExpr from an empty string.")
     }
     val result = this.split('?', limit = 2)
     val keyExpr = KeyExpr.autocanonize(result[0]).getOrThrow()
-    val params = if (result.size == 2) result[1] else ""
-    return Result.success(Selector(keyExpr, params))
+    val params = if (result.size == 2) Parameters.from(result[1]).getOrThrow() else null
+
+    Selector(keyExpr, params)
 }
 

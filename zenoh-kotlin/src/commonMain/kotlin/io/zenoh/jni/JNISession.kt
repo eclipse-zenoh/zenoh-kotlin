@@ -34,6 +34,7 @@ import io.zenoh.query.*
 import io.zenoh.queryable.Query
 import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
+import io.zenoh.selector.Parameters
 import io.zenoh.selector.Selector
 import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
@@ -112,7 +113,7 @@ internal class JNISession {
                 val selector = if (selectorParams.isEmpty()) {
                     Selector(keyExpr2)
                 } else {
-                    Selector(keyExpr2, selectorParams)
+                    Selector(keyExpr2, Parameters.from(selectorParams).getOrThrow())
                 }
                 val query = Query(
                     keyExpr2,
@@ -186,7 +187,7 @@ internal class JNISession {
         getViaJNI(
             selector.keyExpr.jniKeyExpr?.ptr ?: 0,
             selector.keyExpr.keyExpr,
-            selector.parameters,
+            selector.parameters.toString(),
             sessionPtr.get(),
             getCallback,
             onClose,
