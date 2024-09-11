@@ -83,7 +83,6 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
                             session.declareSubscriber(
                                 keyExpr,
                                 callback = { listener(number) },
-                                reliability = Reliability.RELIABLE
                             ).getOrThrow()
                         while (subscriber.isValid()) {/* Keep alive the subscriber until the test is done. */
                             Thread.sleep(1000)

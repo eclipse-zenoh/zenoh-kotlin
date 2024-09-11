@@ -62,14 +62,15 @@ internal class JNISession {
         closeSessionViaJNI(sessionPtr.get())
     }
 
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS): Result<Publisher> = runCatching {
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> = runCatching {
         val publisherRawPtr = declarePublisherViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
             sessionPtr.get(),
             qos.congestionControl.value,
             qos.priority.value,
-            qos.express
+            qos.express,
+            reliability.ordinal
         )
         Publisher(
             keyExpr,
@@ -79,7 +80,7 @@ internal class JNISession {
     }
 
     fun <R> declareSubscriber(
-        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R, reliability: Reliability
+        keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R
     ): Result<Subscriber<R>> = runCatching {
         val subCallback =
             JNISubscriberCallback { keyExpr, payload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
@@ -96,7 +97,7 @@ internal class JNISession {
                 callback.run(sample)
             }
         val subscriberRawPtr = declareSubscriberViaJNI(
-            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), subCallback, onClose, reliability.ordinal
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), subCallback, onClose
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
     }
@@ -227,7 +228,8 @@ internal class JNISession {
             put.qos.congestionControl.value,
             put.qos.priority.value,
             put.qos.express,
-            put.attachment?.bytes
+            put.attachment?.bytes,
+            put.reliability.ordinal
         )
     }
 
@@ -243,7 +245,8 @@ internal class JNISession {
             delete.qos.congestionControl.value,
             delete.qos.priority.value,
             delete.qos.express,
-            delete.attachment?.bytes
+            delete.attachment?.bytes,
+            delete.reliability.ordinal
         )
     }
 
@@ -260,7 +263,8 @@ internal class JNISession {
         sessionPtr: Long,
         congestionControl: Int,
         priority: Int,
-        express: Boolean
+        express: Boolean,
+        reliability: Int
     ): Long
 
     @Throws(Exception::class)
@@ -270,7 +274,6 @@ internal class JNISession {
         sessionPtr: Long,
         callback: JNISubscriberCallback,
         onClose: JNIOnCloseCallback,
-        reliability: Int
     ): Long
 
     @Throws(Exception::class)
@@ -317,7 +320,8 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
-        attachmentBytes: ByteArray?
+        attachmentBytes: ByteArray?,
+        reliability: Int
     )
 
     @Throws(Exception::class)
@@ -328,6 +332,7 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
-        attachmentBytes: ByteArray?
+        attachmentBytes: ByteArray?,
+        reliability: Int
     )
 }
