@@ -28,7 +28,7 @@ import io.zenoh.subscriber.Reliability
  * @property encoding The [Encoding] of the payload.
  * @property qos The [QoS] configuration.
  * @property attachment An optional user attachment.
- * @property reliability The [Reliability] the put wishes to obtain from the Zenoh network.
+ * @property reliability The [Reliability] configuration.
  */
 internal data class Put (
     val keyExpr: KeyExpr,

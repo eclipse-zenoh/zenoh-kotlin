@@ -749,7 +749,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param payload The [ZBytes] to be put.
      * @param qos The [QoS] configuration.
      * @param attachment Optional attachment.
-     * @param reliability The [Reliability] wished to be obtained from the network.
+     * @param reliability The [Reliability] configuration.
      * @return A [Result] with the status of the put operation.
      */
     fun put(
