@@ -19,6 +19,7 @@ import io.zenoh.prelude.SampleKind
 import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.queryable.Queryable
+import io.zenoh.selector.Parameters
 import io.zenoh.selector.Selector
 import io.zenoh.selector.intoSelector
 import org.apache.commons.net.ntp.TimeStamp
@@ -83,22 +84,18 @@ class GetTest {
 
     @Test
     fun getWithSelectorParamsTest() {
-        var receivedParams: String? = null
-        var receivedParamsMap : Map<String, String>? = null
+        var receivedParams: Parameters? = null
         val queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             receivedParams = query.parameters
-            receivedParamsMap = query.selector.parametersStringMap()?.getOrThrow()
         }).getOrThrow()
 
-        val params = "arg1=val1&arg2=val2&arg3"
-        val paramsMap = mapOf("arg1" to "val1", "arg2" to "val2", "arg3" to "")
+        val params = Parameters.from("arg1=val1&arg2=val2&arg3").getOrThrow()
         val selectorWithParams = Selector(selector.keyExpr, params)
         session.get(selectorWithParams, callback = {}, timeout = Duration.ofMillis(1000))
 
         queryable.close()
 
         assertEquals(params, receivedParams)
-        assertEquals(paramsMap, receivedParamsMap)
     }
 }
 

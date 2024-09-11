@@ -15,38 +15,40 @@
 package io.zenoh.selector
 
 import io.zenoh.keyexpr.KeyExpr
-import java.net.URLDecoder
 
 /**
  * A selector is the combination of a [KeyExpr], which defines the
- * set of keys that are relevant to an operation, and a [parameters], a set of key-value pairs with a few uses:
+ * set of keys that are relevant to an operation, and a set of parameters
+ * with a few intended uses:
+ * - specifying arguments to a queryable, allowing the passing of Remote Procedure Call parameters
+ * - filtering by value,
+ * - filtering by metadata, such as the timestamp of a value,
+ * - specifying arguments to zenoh when using the REST API.
  *
- *  * specifying arguments to a queryable, allowing the passing of Remote Procedure Call parameters
- *  * filtering by value,
- *  * filtering by metadata, such as the timestamp of a value
+ * When in string form, selectors look a lot like a URI, with similar semantics:
+ * - the `key_expr` before the first `?` must be a valid key expression.
+ * - the `parameters` after the first `?` should be encoded like the query section of a URL:
+ *     - parameters are separated by `;`,
+ *     - the parameter name and value are separated by the first `=`,
+ *     - in the absence of `=`, the parameter value is considered to be the empty string,
+ *     - both name and value should use percent-encoding to escape characters,
+ *     - defining a value for the same parameter name twice is considered undefined behavior,
+ *       with the encouraged behaviour being to reject operations when a duplicate parameter is detected.
+ *
+ * Zenoh intends to standardize the usage of a set of parameter names. To avoid conflicting with RPC parameters,
+ * the Zenoh team has settled on reserving the set of parameter names that start with non-alphanumeric characters.
+ *
+ * The full specification for selectors is available [here](https://github.com/eclipse-zenoh/roadmap/tree/main/rfcs/ALL/Selectors),
+ * it includes standardized parameters.
+ *
+ * Queryable implementers are encouraged to prefer these standardized parameter names when implementing their
+ * associated features, and to prefix their own parameter names to avoid having conflicting parameter names with other
+ * queryables.
  *
  * @property keyExpr The [KeyExpr] of the selector.
- * @property parameters The parameters of the selector.
+ * @property parameters The [Parameters] of the selector.
  */
-class Selector(val keyExpr: KeyExpr, val parameters: String? = null) : AutoCloseable {
-
-    /**
-     * If the [parameters] argument is defined, this function extracts its name-value pairs into a map,
-     * returning an error in case of duplicated parameters.
-     */
-    fun parametersStringMap(): Result<Map<String, String>>? {
-        return parameters?.let {
-            it.split('&').fold<String, Map<String, String>>(mapOf()) { parametersMap, parameter ->
-                val keyValuePair = parameter.split('=')
-                val key = keyValuePair[0]
-                if (parametersMap.containsKey(key)) {
-                    throw IllegalArgumentException("Duplicated parameter `$key` detected.")
-                }
-                val value = keyValuePair.getOrNull(1)?.let { URLDecoder.decode(it, Charsets.UTF_8.name()) } ?: ""
-                parametersMap + (key to value)
-            }.let { map -> Result.success(map) }
-        }
-    }
+data class Selector(val keyExpr: KeyExpr, val parameters: Parameters? = null) : AutoCloseable {
 
     override fun toString(): String {
         return parameters?.let { "$keyExpr?$parameters" } ?: keyExpr.toString()
