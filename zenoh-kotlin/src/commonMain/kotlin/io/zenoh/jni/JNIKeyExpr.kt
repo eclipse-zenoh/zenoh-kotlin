@@ -57,6 +57,10 @@ internal class JNIKeyExpr(internal val ptr: Long) {
             return SetIntersectionLevel.fromInt(intersection)
         }
 
+        fun joinViaJNI(keyExpr: KeyExpr, other: String): Result<KeyExpr> = runCatching {
+            KeyExpr(joinViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, other))
+        }
+
         @Throws(Exception::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
@@ -72,6 +76,8 @@ internal class JNIKeyExpr(internal val ptr: Long) {
         @Throws(Exception::class)
         private external fun relationToViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Int
 
+        @Throws(Exception::class)
+        private external fun joinViaJNI(ptrA: Long, keyExprA: String, other: String): String
     }
 
     fun close() {

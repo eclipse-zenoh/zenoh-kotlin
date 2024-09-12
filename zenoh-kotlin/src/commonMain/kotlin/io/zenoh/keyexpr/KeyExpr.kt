@@ -123,8 +123,8 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * Joins both sides, inserting a / in between them.
      * This should be your preferred method when concatenating path segments.
      */
-    fun join(other: String): KeyExpr {
-        TODO()
+    fun join(other: String): Result<KeyExpr> {
+        return JNIKeyExpr.joinViaJNI(this, other)
     }
 
     /**

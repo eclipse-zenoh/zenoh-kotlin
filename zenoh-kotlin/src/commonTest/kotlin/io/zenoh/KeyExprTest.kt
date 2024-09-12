@@ -160,4 +160,13 @@ class KeyExprTest {
 
         assertEquals(SetIntersectionLevel.DISJOINT, keyExprA.relationTo(keyExprB))
     }
+
+    @Test
+    fun `join test`() {
+        val keyExprA = KeyExpr.tryFrom("A/B").getOrThrow()
+        val keyExprExpected = KeyExpr.tryFrom("A/B/C/D").getOrThrow()
+
+        val keyExprJoined = keyExprA.join("C/D").getOrThrow()
+        assertEquals(keyExprExpected, keyExprJoined)
+    }
 }
