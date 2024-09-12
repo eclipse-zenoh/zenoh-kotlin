@@ -189,21 +189,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
     _class: JClass,
     session_ptr: *const Session,
 ) {
-    let ptr = Arc::try_unwrap(Arc::from_raw(session_ptr));
-    match ptr {
-        Ok(session) => {
-            // Do nothing, the pointer will be freed.
-        }
-        Err(arc_session) => {
-            let ref_count = Arc::strong_count(&arc_session);
-            throw_exception!(env, session_error!(
-                "Attempted to close the session, but at least one strong reference to it is still alive
-                (ref count: {}). All the declared publishers, subscribers, and queryables need to be
-                dropped first.",
-                ref_count
-            ));
-        }
-    };
+    Arc::from_raw(session_ptr);
 }
 
 /// Declare a Zenoh publisher via JNI.
