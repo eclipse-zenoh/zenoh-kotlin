@@ -61,6 +61,10 @@ internal class JNIKeyExpr(internal val ptr: Long) {
             KeyExpr(joinViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, other))
         }
 
+        fun concatViaJNI(keyExpr: KeyExpr, other: String): Result<KeyExpr> = runCatching {
+            KeyExpr(concatViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, other))
+        }
+
         @Throws(Exception::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
@@ -78,6 +82,9 @@ internal class JNIKeyExpr(internal val ptr: Long) {
 
         @Throws(Exception::class)
         private external fun joinViaJNI(ptrA: Long, keyExprA: String, other: String): String
+
+        @Throws(Exception::class)
+        private external fun concatViaJNI(ptrA: Long, keyExprA: String, other: String): String
     }
 
     fun close() {

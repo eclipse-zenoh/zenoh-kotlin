@@ -129,10 +129,10 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
 
     /**
      * Performs string concatenation and returns the result as a KeyExpr if possible.
-     * You should probably prefer [join] as Zenoh may then take advantage of the hierachical separation it inserts.
+     * You should probably prefer [join] as Zenoh may then take advantage of the hierarchical separation it inserts.
      */
-    fun concat(other: String): KeyExpr {
-        TODO()
+    fun concat(other: String): Result<KeyExpr> {
+        return JNIKeyExpr.concatViaJNI(this, other)
     }
 
     override fun toString(): String {

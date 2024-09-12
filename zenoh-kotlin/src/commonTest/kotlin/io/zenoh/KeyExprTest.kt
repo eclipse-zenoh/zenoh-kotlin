@@ -169,4 +169,13 @@ class KeyExprTest {
         val keyExprJoined = keyExprA.join("C/D").getOrThrow()
         assertEquals(keyExprExpected, keyExprJoined)
     }
+
+    @Test
+    fun `concat test`() {
+        val keyExprA = KeyExpr.tryFrom("A/B").getOrThrow()
+        val keyExprExpected = KeyExpr.tryFrom("A/B/C/D").getOrThrow()
+
+        val keyExprConcat = keyExprA.concat("/C/D").getOrThrow()
+        assertEquals(keyExprExpected, keyExprConcat)
+    }
 }
