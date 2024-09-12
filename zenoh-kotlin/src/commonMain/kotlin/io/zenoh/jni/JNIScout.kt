@@ -36,7 +36,7 @@ class JNIScout(private val ptr: Long) {
             config: Config?,
             receiver: R
         ): Result<Scout<R>> = runCatching {
-            val scoutCallback = JNIScoutCallback { whatAmI2: Int, id: String, locators: List<String> ->
+            val scoutCallback = JNIScoutCallback { whatAmI2: Int, id: ByteArray, locators: List<String> ->
                 callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohID(id), locators))
             }
             val binaryWhatAmI: Int = whatAmI.map { it.value }.reduce { acc, it -> acc or it }

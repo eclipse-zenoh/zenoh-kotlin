@@ -65,7 +65,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
                 let _ = || -> jni::errors::Result<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon()?;
                     let whatami = hello.whatami() as jint;
-                    let zenohid = env.new_string(hello.zid().to_string())?;
+                    let zenoh_id = env
+                        .byte_array_from_slice(&hello.zid().to_le_bytes())
+                        .map(|it| env.auto_local(it))?;
                     let locators = env
                         .new_object("java/util/ArrayList", "()V", &[])
                         .map(|it| env.auto_local(it))?;
@@ -77,10 +79,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
                     env.call_method(
                         &callback_global_ref,
                         "run",
-                        "(ILjava/lang/String;Ljava/util/List;)V",
+                        "(I[BLjava/util/List;)V",
                         &[
                             JValue::from(whatami),
-                            JValue::from(&zenohid),
+                            JValue::from(&zenoh_id),
                             JValue::from(&locators),
                         ],
                     )?;

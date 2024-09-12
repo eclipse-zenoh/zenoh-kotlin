@@ -17,7 +17,7 @@ package io.zenoh.jni.callbacks
 internal fun interface JNIGetCallback {
 
     fun run(
-        replierId: String?,
+        replierId: ByteArray?,
         success: Boolean,
         keyExpr: String?,
         payload: ByteArray,
