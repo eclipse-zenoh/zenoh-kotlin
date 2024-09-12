@@ -23,6 +23,7 @@ import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
 import io.zenoh.queryable.Query
 import io.zenoh.sample.Sample
+import io.zenoh.selector.Selector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -73,7 +74,7 @@ class QueryableTest {
         var reply: Reply? = null
         val delay = Duration.ofMillis(1000)
         withTimeout(delay) {
-            session.get(testKeyExpr.intoSelector(), callback = { reply = it }, timeout = delay)
+            session.get(Selector(testKeyExpr), callback = { reply = it }, timeout = delay)
         }
 
         assertNotNull(reply)
@@ -90,7 +91,7 @@ class QueryableTest {
         delay(500)
 
         val receivedReplies = ArrayList<Reply>()
-        session.get(testKeyExpr.intoSelector(), callback = { reply: Reply ->
+        session.get(Selector(testKeyExpr), callback = { reply: Reply ->
             receivedReplies.add(reply)
         })
 
@@ -107,7 +108,7 @@ class QueryableTest {
         val queryable =
             session.declareQueryable(testKeyExpr, callback = { query -> receivedQuery = query }).getOrThrow()
 
-        session.get(testKeyExpr.intoSelector(), callback = {})
+        session.get(Selector(testKeyExpr), callback = {})
 
         delay(100)
         assertNotNull(receivedQuery)
@@ -118,7 +119,7 @@ class QueryableTest {
         receivedQuery = null
         val payload = "Test value".into()
         val attachment = "Attachment".into()
-        session.get(testKeyExpr.intoSelector(), callback = {}, payload = payload, encoding = Encoding.ZENOH_STRING, attachment = attachment)
+        session.get(Selector(testKeyExpr), callback = {}, payload = payload, encoding = Encoding.ZENOH_STRING, attachment = attachment)
 
         delay(100)
         assertNotNull(receivedQuery)
@@ -142,7 +143,7 @@ class QueryableTest {
         }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
+        session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 
@@ -163,7 +164,7 @@ class QueryableTest {
         }).getOrThrow()
 
         var receivedReply: Reply? = null
-        session.get(testKeyExpr.intoSelector(), callback =  { receivedReply = it }, timeout = Duration.ofMillis(10))
+        session.get(Selector(testKeyExpr), callback =  { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         Thread.sleep(1000)
         queryable.close()
@@ -185,7 +186,7 @@ class QueryableTest {
             query.replyDel(testKeyExpr, timestamp = timestamp, qos = qos)
         }).getOrThrow()
         var receivedReply: Reply? = null
-        session.get(testKeyExpr.intoSelector(), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
+        session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
 

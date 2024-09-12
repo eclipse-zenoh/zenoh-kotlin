@@ -20,6 +20,7 @@ import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
+import io.zenoh.selector.Selector
 import java.time.Duration
 import kotlin.test.*
 
@@ -142,7 +143,7 @@ class UserAttachmentTest {
         }).getOrThrow()
 
         session.get(
-            keyExpr.intoSelector(),
+            Selector(keyExpr),
             callback = {},
             attachment = attachmentZBytes,
             timeout = Duration.ofMillis(1000)
@@ -162,7 +163,7 @@ class UserAttachmentTest {
             query.reply(keyExpr, payload, attachment = attachmentZBytes)
         }).getOrThrow()
 
-        session.get(keyExpr.intoSelector(), callback = {
+        session.get(Selector(keyExpr), callback = {
             reply = it
         }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
@@ -180,7 +181,7 @@ class UserAttachmentTest {
             query.reply(keyExpr, payload)
         }).getOrThrow()
 
-        session.get(keyExpr.intoSelector(), callback = {
+        session.get(Selector(keyExpr), callback = {
             reply = it
         }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
