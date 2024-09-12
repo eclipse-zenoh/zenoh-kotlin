@@ -17,7 +17,6 @@ package io.zenoh.keyexpr
 import io.zenoh.Session
 import io.zenoh.SessionDeclaration
 import io.zenoh.jni.JNIKeyExpr
-import io.zenoh.selector.Selector
 
 /**
  * # Address space
@@ -111,41 +110,27 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
         return JNIKeyExpr.includes(this, other)
     }
 
-    /**
-     * Undeclare the key expression if it was previously declared on the specified [session].
-     *
-     * @param session The session from which the key expression was previously declared.
-     * @return A [Result] with the operation status.
-     */
-    fun undeclare(session: Session): Result<Unit> {
-        return session.undeclare(this)
-    }
-
-    /**
-     * Returns true if the [KeyExpr] has still associated a native key expression allowing it to perform operations.
-     */
-    fun isValid(): Boolean {
-        return jniKeyExpr != null
-    }
-
-    fun intoSelector(): Selector {
-        return Selector(this)
-    }
-
     override fun toString(): String {
         return keyExpr
     }
 
     /**
-     * Closes the key expression. Operations performed on this key expression won't be valid anymore after this call.
+     * Equivalent to [undeclare]. This function is automatically called when using try with resources.
+     *
+     * @see undeclare
      */
     override fun close() {
-        jniKeyExpr?.close()
-        jniKeyExpr = null
+        undeclare()
     }
 
+    /**
+     * If the key expression was declared from a [Session], then [undeclare] frees the native key expression associated
+     * to this instance. The KeyExpr instance is downgraded into a normal KeyExpr, which still allows performing
+     * operations on it, but without the inner optimizations.
+     */
     override fun undeclare() {
-        close()
+        jniKeyExpr?.close()
+        jniKeyExpr = null
     }
 
     override fun equals(other: Any?): Boolean {
