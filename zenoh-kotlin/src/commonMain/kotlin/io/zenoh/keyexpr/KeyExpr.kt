@@ -110,6 +110,31 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
         return JNIKeyExpr.includes(this, other)
     }
 
+    /**
+     * Returns the relation between 'this' and other from 'this''s point of view (SetIntersectionLevel::Includes
+     * signifies that self includes other). Note that this is slower than [intersects] and [includes],
+     * so you should favor these methods for most applications.
+     */
+    fun relationTo(other: KeyExpr): SetIntersectionLevel {
+        return JNIKeyExpr.relationTo(this, other)
+    }
+
+    /**
+     * Joins both sides, inserting a / in between them.
+     * This should be your preferred method when concatenating path segments.
+     */
+    fun join(other: String): KeyExpr {
+        TODO()
+    }
+
+    /**
+     * Performs string concatenation and returns the result as a KeyExpr if possible.
+     * You should probably prefer [join] as Zenoh may then take advantage of the hierachical separation it inserts.
+     */
+    fun concat(other: String): KeyExpr {
+        TODO()
+    }
+
     override fun toString(): String {
         return keyExpr
     }

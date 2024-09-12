@@ -16,6 +16,7 @@ package io.zenoh
 
 import io.zenoh.exceptions.SessionException
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.keyexpr.SetIntersectionLevel
 import io.zenoh.keyexpr.intoKeyExpr
 import kotlin.test.*
 
@@ -126,5 +127,37 @@ class KeyExprTest {
         session.close()
         keyExpr.close()
         keyExpr2.close()
+    }
+
+    @Test
+    fun `relationTo returns includes test`() {
+        val keyExprA = KeyExpr.tryFrom("A/**").getOrThrow()
+        val keyExprB = KeyExpr.tryFrom("A/B/C").getOrThrow()
+
+        assertEquals(SetIntersectionLevel.INCLUDES, keyExprA.relationTo(keyExprB))
+    }
+
+    @Test
+    fun `relationTo returns intersect test`() {
+        val keyExprA = KeyExpr.tryFrom("A/*/C/D").getOrThrow()
+        val keyExprB = KeyExpr.tryFrom("A/B/C/*").getOrThrow()
+
+        assertEquals(SetIntersectionLevel.INTERSECTS, keyExprA.relationTo(keyExprB))
+    }
+
+    @Test
+    fun `relationTo returns equals test`() {
+        val keyExprA = KeyExpr.tryFrom("A/B/C").getOrThrow()
+        val keyExprB = KeyExpr.tryFrom("A/B/C").getOrThrow()
+
+        assertEquals(SetIntersectionLevel.EQUALS, keyExprA.relationTo(keyExprB))
+    }
+
+    @Test
+    fun `relationTo returns disjoint test`() {
+        val keyExprA = KeyExpr.tryFrom("A/B/C").getOrThrow()
+        val keyExprB = KeyExpr.tryFrom("D/E/F").getOrThrow()
+
+        assertEquals(SetIntersectionLevel.DISJOINT, keyExprA.relationTo(keyExprB))
     }
 }
