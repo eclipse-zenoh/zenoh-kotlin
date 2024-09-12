@@ -12,26 +12,27 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::errors::Result;
-use crate::key_expr::process_kotlin_key_expr;
-use crate::{jni_error, utils::*};
-use crate::{session_error, throw_exception};
+use std::{mem, ops::Deref, ptr::null, sync::Arc, time::Duration};
 
-use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
-use jni::sys::{jboolean, jint, jlong};
-use jni::JNIEnv;
-use std::mem;
-use std::ops::Deref;
-use std::ptr::null;
-use std::sync::Arc;
-use std::time::Duration;
-use zenoh::config::{Config, ZenohId};
-use zenoh::key_expr::KeyExpr;
-use zenoh::prelude::Wait;
-use zenoh::pubsub::{Publisher, Subscriber};
-use zenoh::query::{Query, Queryable, ReplyError, Selector};
-use zenoh::sample::Sample;
-use zenoh::session::{Session, SessionDeclarations};
+use jni::{
+    objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue},
+    sys::{jboolean, jint, jlong},
+    JNIEnv,
+};
+use zenoh::{
+    config::{Config, ZenohId},
+    key_expr::KeyExpr,
+    prelude::Wait,
+    pubsub::{Publisher, Subscriber},
+    query::{Query, Queryable, ReplyError, Selector},
+    sample::Sample,
+    session::Session,
+};
+
+use crate::{
+    errors::Result, jni_error, key_expr::process_kotlin_key_expr, session_error, throw_exception,
+    utils::*,
+};
 
 /// Open a Zenoh session via JNI.
 ///
@@ -188,21 +189,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
     _class: JClass,
     session_ptr: *const Session,
 ) {
-    let ptr = Arc::try_unwrap(Arc::from_raw(session_ptr));
-    match ptr {
-        Ok(session) => {
-            // Do nothing, the pointer will be freed.
-        }
-        Err(arc_session) => {
-            let ref_count = Arc::strong_count(&arc_session);
-            throw_exception!(env, session_error!(
-                "Attempted to close the session, but at least one strong reference to it is still alive
-                (ref count: {}). All the declared publishers, subscribers, and queryables need to be
-                dropped first.",
-                ref_count
-            ));
-        }
-    };
+    Arc::from_raw(session_ptr);
 }
 
 /// Declare a Zenoh publisher via JNI.
@@ -444,9 +431,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
-) -> *const Subscriber<'static, ()> {
+) -> *const Subscriber<()> {
     let session = Arc::from_raw(session_ptr);
-    || -> Result<*const Subscriber<'static, ()>> {
+    || -> Result<*const Subscriber<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
@@ -457,7 +444,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 
         let result = session
             .declare_subscriber(key_expr.to_owned())
-            .callback(move |sample| {
+            .with(move |sample: Sample| {
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> Result<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
@@ -572,9 +559,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     callback: JObject,
     on_close: JObject,
     complete: jboolean,
-) -> *const Queryable<'static, ()> {
+) -> *const Queryable<()> {
     let session = Arc::from_raw(session_ptr);
-    let query_ptr = || -> Result<*const Queryable<'static, ()>> {
+    let query_ptr = || -> Result<*const Queryable<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
@@ -584,7 +571,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
         tracing::debug!("Declaring queryable through JNI on {}", key_expr);
         let builder = session
             .declare_queryable(key_expr)
-            .callback(move |query| {
+            .with(move |query: Query| {
                 on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
                 let env = match java_vm.attach_current_thread_as_daemon() {
                     Ok(env) => env,
