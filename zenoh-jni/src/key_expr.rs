@@ -206,9 +206,48 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
 ) -> jstring {
     || -> Result<jstring> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
-        let key_expr_str = decode_string(&mut env, &key_expr_2)?;
+        let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
         let result = key_expr_1
-            .join(key_expr_str.as_str())
+            .join(key_expr_2_str.as_str())
+            .map_err(|err| session_error!(err))?;
+        env.new_string(result.to_string())
+            .map(|kexp| kexp.as_raw())
+            .map_err(|err| jni_error!(err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JString::default().as_raw()
+    })
+}
+
+/// Concats key_expr_1 with key_expr_2, where key_expr_2 is a string. Returns the string representation
+/// of the result, or throws an exception in case of failure.
+///
+/// # Params:
+/// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
+/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_2`: String representation of the key expression 2.
+///
+/// # Safety
+/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
+/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+/// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
+/// remain valid after the call to this function.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_concatViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str_1: JString,
+    key_expr_2: JString,
+) -> jstring {
+    || -> Result<jstring> {
+        let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
+        let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
+        let result = key_expr_1
+            .concat(key_expr_2_str.as_str())
             .map_err(|err| session_error!(err))?;
         env.new_string(result.to_string())
             .map(|kexp| kexp.as_raw())
