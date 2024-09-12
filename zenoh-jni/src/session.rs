@@ -12,26 +12,27 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::errors::Result;
-use crate::key_expr::process_kotlin_key_expr;
-use crate::{jni_error, utils::*};
-use crate::{session_error, throw_exception};
+use std::{mem, ops::Deref, ptr::null, sync::Arc, time::Duration};
 
-use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
-use jni::sys::{jboolean, jint, jlong};
-use jni::JNIEnv;
-use std::mem;
-use std::ops::Deref;
-use std::ptr::null;
-use std::sync::Arc;
-use std::time::Duration;
-use zenoh::config::{Config, ZenohId};
-use zenoh::key_expr::KeyExpr;
-use zenoh::prelude::Wait;
-use zenoh::pubsub::{Publisher, Subscriber};
-use zenoh::query::{Query, Queryable, ReplyError, Selector};
-use zenoh::sample::Sample;
-use zenoh::session::{Session, SessionDeclarations};
+use jni::{
+    objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue},
+    sys::{jboolean, jint, jlong},
+    JNIEnv,
+};
+use zenoh::{
+    config::{Config, ZenohId},
+    key_expr::KeyExpr,
+    prelude::Wait,
+    pubsub::{Publisher, Subscriber},
+    query::{Query, Queryable, ReplyError, Selector},
+    sample::Sample,
+    session::Session,
+};
+
+use crate::{
+    errors::Result, jni_error, key_expr::process_kotlin_key_expr, session_error, throw_exception,
+    utils::*,
+};
 
 /// Open a Zenoh session via JNI.
 ///
@@ -444,9 +445,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     session_ptr: *const Session,
     callback: JObject,
     on_close: JObject,
-) -> *const Subscriber<'static, ()> {
+) -> *const Subscriber<()> {
     let session = Arc::from_raw(session_ptr);
-    || -> Result<*const Subscriber<'static, ()>> {
+    || -> Result<*const Subscriber<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
@@ -572,9 +573,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     callback: JObject,
     on_close: JObject,
     complete: jboolean,
-) -> *const Queryable<'static, ()> {
+) -> *const Queryable<()> {
     let session = Arc::from_raw(session_ptr);
-    let query_ptr = || -> Result<*const Queryable<'static, ()>> {
+    let query_ptr = || -> Result<*const Queryable<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;

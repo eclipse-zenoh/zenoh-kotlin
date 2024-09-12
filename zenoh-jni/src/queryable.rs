@@ -35,7 +35,7 @@ use zenoh::query::Queryable;
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQueryable_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    queryable_ptr: *const Queryable<'_, ()>,
+    queryable_ptr: *const Queryable<()>,
 ) {
     Arc::from_raw(queryable_ptr);
 }
