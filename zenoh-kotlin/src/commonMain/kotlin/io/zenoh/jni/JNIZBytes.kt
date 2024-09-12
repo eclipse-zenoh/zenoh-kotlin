@@ -18,7 +18,7 @@ import io.zenoh.ZenohLoad
 import io.zenoh.protocol.ZBytes
 import io.zenoh.protocol.into
 
-object JNIZBytes {
+internal object JNIZBytes {
 
     init {
         ZenohLoad

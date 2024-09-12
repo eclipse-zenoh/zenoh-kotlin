@@ -42,7 +42,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
 
         val qos = QoS(
             congestionControl = CongestionControl.BLOCK,
-            priority = priorityInput?.let { Priority.entries[it] } ?: Priority.default(),
+            priority = priorityInput?.let { Priority.entries[it] } ?: Priority.DATA,
         )
 
         Session.open(config).onSuccess {

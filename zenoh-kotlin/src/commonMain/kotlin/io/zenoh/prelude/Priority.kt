@@ -31,10 +31,7 @@ enum class Priority(val value: Int) {
     DATA_LOW(6),
     BACKGROUND(7);
 
-    companion object {
+    internal companion object {
         fun fromInt(value: Int) = entries.first { it.value == value }
-
-        fun default() = DATA
     }
 }
-

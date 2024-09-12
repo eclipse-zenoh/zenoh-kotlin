@@ -19,7 +19,7 @@ enum class SampleKind {
     PUT,
     DELETE;
 
-    companion object {
+    internal companion object {
         fun fromInt(value: Int) = entries.first { it.ordinal == value }
     }
 }

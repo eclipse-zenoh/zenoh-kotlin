@@ -15,7 +15,7 @@
 package io.zenoh.prelude
 
 /** The congestion control to be applied when routing the data. */
-enum class CongestionControl (val value: Int) {
+enum class CongestionControl (internal val value: Int) {
     
     /**
      * Allows the message to be dropped if all buffers are full.
@@ -28,9 +28,7 @@ enum class CongestionControl (val value: Int) {
      */
     BLOCK(1);
 
-    companion object {
+    internal companion object {
         fun fromInt(value: Int) = entries.first { it.value == value }
-
-        fun default() = DROP
     }
 }
