@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.keyexpr.SetIntersectionLevel
 
 internal class JNIKeyExpr(internal val ptr: Long) {
 
@@ -46,6 +47,16 @@ internal class JNIKeyExpr(internal val ptr: Long) {
             keyExprB.keyExpr
         )
 
+        fun relationTo(keyExpr: KeyExpr, other: KeyExpr): SetIntersectionLevel {
+            val intersection = relationToViaJNI(
+                keyExpr.jniKeyExpr?.ptr ?: 0,
+                keyExpr.keyExpr,
+                other.jniKeyExpr?.ptr ?: 0,
+                other.keyExpr
+            )
+            return SetIntersectionLevel.fromInt(intersection)
+        }
+
         @Throws(Exception::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
@@ -57,6 +68,10 @@ internal class JNIKeyExpr(internal val ptr: Long) {
 
         @Throws(Exception::class)
         private external fun includesViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
+
+        @Throws(Exception::class)
+        private external fun relationToViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Int
+
     }
 
     fun close() {

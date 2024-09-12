@@ -16,7 +16,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use jni::objects::JClass;
-use jni::sys::{jboolean, jstring};
+use jni::sys::{jboolean, jint, jstring};
 use jni::{objects::JString, JNIEnv};
 use zenoh::key_expr::KeyExpr;
 
@@ -142,6 +142,42 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         false as jboolean
+    })
+}
+
+/// Returns the integer representation of the intersection level of the key expression 1 and key expression 2,
+/// from the perspective of key expression 1.
+///
+/// # Params:
+/// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
+/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
+/// - `key_expr_ptr_2`: String representation of the key expression 2.
+///
+/// # Safety
+/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
+/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+/// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
+/// remain valid after the call to this function.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToViaJNI(
+    mut env: JNIEnv,
+    _: JClass,
+    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str_1: JString,
+    key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str_2: JString,
+) -> jint {
+    || -> Result<jint> {
+        let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
+        let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
+        Ok(key_expr_1.relation_to(&key_expr_2) as jint)
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        -1 as jint
     })
 }
 
