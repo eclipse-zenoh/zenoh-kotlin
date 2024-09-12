@@ -23,7 +23,7 @@ use zenoh::key_expr::KeyExpr;
 use crate::errors::Error;
 use crate::errors::Result;
 use crate::utils::decode_string;
-use crate::{jni_error, key_expr_error, throw_exception};
+use crate::{jni_error, key_expr_error, session_error, throw_exception};
 
 /// Validates the provided `key_expr` to be a valid key expression, returning it back
 /// in case of success or throwing an exception in case of failure.
@@ -79,9 +79,9 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI
 ///
 /// # Params:
 /// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_str_1`: String representation of the key expression 1.
 /// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_2`: String representation of the key expression 2.
+/// - `key_expr_str_2`: String representation of the key expression 2.
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
@@ -114,9 +114,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
 ///
 /// # Params:
 /// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_str_1`: String representation of the key expression 1.
 /// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_2`: String representation of the key expression 2.
+/// - `key_expr_str_2`: String representation of the key expression 2.
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
@@ -150,9 +150,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
 ///
 /// # Params:
 /// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_str_1`: String representation of the key expression 1.
 /// - `key_expr_ptr_2`: Pointer to the key expression 2, differs from null only if it's a declared key expr.
-/// - `key_expr_ptr_2`: String representation of the key expression 2.
+/// - `key_expr_str_2`: String representation of the key expression 2.
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
@@ -178,6 +178,45 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToV
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         -1 as jint
+    })
+}
+
+/// Joins key expression 1 with key expression 2, where key_expr_2 is a string. Returns the string representation
+/// of the result, or throws an exception in case of failure.
+///
+/// # Params:
+/// - `key_expr_ptr_1`: Pointer to the key expression 1, differs from null only if it's a declared key expr.
+/// - `key_expr_ptr_1`: String representation of the key expression 1.
+/// - `key_expr_2`: String representation of the key expression 2.
+///
+/// # Safety
+/// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
+/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+/// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
+/// remain valid after the call to this function.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str_1: JString,
+    key_expr_2: JString,
+) -> jstring {
+    || -> Result<jstring> {
+        let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
+        let key_expr_str = decode_string(&mut env, &key_expr_2)?;
+        let result = key_expr_1
+            .join(key_expr_str.as_str())
+            .map_err(|err| session_error!(err))?;
+        env.new_string(result.to_string())
+            .map(|kexp| kexp.as_raw())
+            .map_err(|err| jni_error!(err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JString::default().as_raw()
     })
 }
 
