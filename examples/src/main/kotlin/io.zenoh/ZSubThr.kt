@@ -18,7 +18,6 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.subscriber.Reliability
 import io.zenoh.subscriber.Subscriber
 import kotlin.system.exitProcess
 
@@ -72,6 +71,8 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
 
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
+
+        Zenoh.initLogFromEnvOr("error")
 
         "test/thr".intoKeyExpr().onSuccess { keyExpr ->
             keyExpr.use {

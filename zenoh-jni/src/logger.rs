@@ -21,27 +21,28 @@ use crate::{errors::Result, jni_error, throw_exception};
 
 /// Redirects the Rust logs either to logcat for Android systems or to the standard output (for non-Android systems).
 ///
-/// This function is meant to be called from Java/Kotlin code through JNI. It takes a `log_level`
-/// indicating the desired log level, which must be one of the following: "info", "debug", "warn",
-/// "trace", or "error".
+/// This function is meant to be called from Java/Kotlin code through JNI. It takes a `filter`
+/// indicating the desired log level.
+///
+/// See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
 ///
 /// # Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `log_level`: The log level java string indicating the desired log level.
+/// - `filter`: The logs filter.
 ///
 /// # Errors:
 /// - If there is an error parsing the log level string, a `JNIException` is thrown on the JVM.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
+pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    log_level: JString,
+    filter: JString,
 ) {
     || -> Result<()> {
-        let log_level = parse_log_level(&mut env, log_level)?;
+        let log_level = parse_filter(&mut env, filter)?;
         android_logd_logger::builder()
             .parse_filters(log_level.as_str())
             .tag_target_strip()
@@ -52,7 +53,7 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
     .unwrap_or_else(|err| throw_exception!(env, err))
 }
 
-fn parse_log_level(env: &mut JNIEnv, log_level: JString) -> Result<String> {
+fn parse_filter(env: &mut JNIEnv, log_level: JString) -> Result<String> {
     let log_level = env.get_string(&log_level).map_err(|err| jni_error!(err))?;
     log_level
         .to_str()

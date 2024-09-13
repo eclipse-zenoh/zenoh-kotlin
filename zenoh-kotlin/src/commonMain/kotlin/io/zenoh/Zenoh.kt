@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.Logger.Companion.LOG_ENV
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
@@ -108,15 +109,33 @@ object Zenoh {
     }
 
     /**
-     * Try starting the logs with the level specified under the property 'zenoh.logger'.
+     * Initializes the zenoh runtime logger, using rust environment settings.
+     * E.g.: `RUST_LOG=info` will enable logging at info level. Similarly, you can set the variable to `error` or `debug`.
+     *
+     * Note that if the environment variable is not set, then logging will not be enabled.
+     * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
      *
      * @see Logger
      */
     fun tryInitLogFromEnv() {
-        val logLevel = System.getProperty("zenoh.logger")
-        if (logLevel != null) {
-            Logger.start(logLevel)
-        }
+        ZenohLoad
+        Logger.start(System.getenv(LOG_ENV) ?: "")
+    }
+
+    /**
+     * Initializes the zenoh runtime logger, using rust environment settings or the provided fallback level.
+     * E.g.: `RUST_LOG=info` will enable logging at info level. Similarly, you can set the variable to `error` or `debug`.
+     *
+     * Note that if the environment variable is not set, then [fallbackFilter] will be used instead.
+     * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
+     *
+     * @param fallbackFilter: The fallback filter if the `RUST_LOG` environment variable is not set.
+     * @see Logger
+     */
+    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> = runCatching {
+        ZenohLoad
+        val logLevelProp = System.getenv(LOG_ENV)
+        logLevelProp?.let { Logger.start(it) } ?: Logger.start(fallbackFilter)
     }
 }
 
