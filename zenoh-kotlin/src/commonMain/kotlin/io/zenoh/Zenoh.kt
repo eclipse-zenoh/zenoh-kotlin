@@ -109,27 +109,33 @@ object Zenoh {
     }
 
     /**
-     * Try starting the logs with the level specified under the [LOG_ENV] environment variable.
+     * Initializes the zenoh runtime logger, using rust environment settings.
+     * E.g.: `RUST_LOG=info` will enable logging at info level. Similarly, you can set the variable to `error` or `debug`.
+     *
+     * Note that if the environment variable is not set, then logging will not be enabled.
+     * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
      *
      * @see Logger
      */
-    fun tryInitLogFromEnv(): Result<Unit> = runCatching {
+    fun tryInitLogFromEnv() {
         ZenohLoad
-        val logLevel = System.getenv(LOG_ENV)
-            ?: return Result.failure(Exception("Failure during logs initialization: couldn't find environment variable '$LOG_ENV'."))
-        return Logger.start(logLevel)
+        Logger.start(System.getenv(LOG_ENV) ?: "")
     }
 
     /**
-     * Try starting the logs with the level specified under the [LOG_ENV] environment variable or by default [defaultLogLevel].
+     * Initializes the zenoh runtime logger, using rust environment settings or the provided fallback level.
+     * E.g.: `RUST_LOG=info` will enable logging at info level. Similarly, you can set the variable to `error` or `debug`.
      *
-     * @param defaultLogLevel A string that must be either "info", "debug", "error", "trace", "warn".
+     * Note that if the environment variable is not set, then [fallbackFilter] will be used instead.
+     * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
+     *
+     * @param fallbackFilter: The fallback filter if the `RUST_LOG` environment variable is not set.
      * @see Logger
      */
-    fun initLogFromEnvOr(defaultLogLevel: String): Result<Unit> = runCatching {
+    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> = runCatching {
         ZenohLoad
         val logLevelProp = System.getenv(LOG_ENV)
-        logLevelProp?.let { Logger.start(it) } ?: Logger.start(defaultLogLevel)
+        logLevelProp?.let { Logger.start(it) } ?: Logger.start(fallbackFilter)
     }
 }
 

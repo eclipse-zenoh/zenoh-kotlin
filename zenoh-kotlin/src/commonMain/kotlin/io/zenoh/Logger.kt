@@ -21,17 +21,17 @@ internal class Logger {
 
         internal const val LOG_ENV: String = "RUST_LOG"
 
-        fun start(logLevel: String) = runCatching {
-            startLogsViaJNI(logLevel)
+        fun start(filter: String) = runCatching {
+            startLogsViaJNI(filter)
         }
 
         /**
          * Redirects the rust logs either to logcat for Android systems or to the standard output (for non-android
          * systems).
          *
-         * @param logLevel must be either "info", "debug", "warn", "trace" or "error".
+         * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
          */
         @Throws(Exception::class)
-        private external fun startLogsViaJNI(logLevel: String)
+        private external fun startLogsViaJNI(filter: String)
     }
 }
