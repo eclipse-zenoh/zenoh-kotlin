@@ -66,10 +66,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         /**
          * Open a [Session] with the provided [Config].
          *
+         * Note: Use [Zenoh.open] to launch a session.
+         *
          * @param config The configuration for the session.
          * @return A [Result] with the [Session] on success.
          */
-        fun open(config: Config): Result<Session> {
+        internal fun open(config: Config): Result<Session> {
             val session = Session(config)
             return session.launch()
         }

@@ -29,7 +29,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
-        Session.open(config).onSuccess { session ->
+        Zenoh.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     println("Declaring Queryable on $key...")

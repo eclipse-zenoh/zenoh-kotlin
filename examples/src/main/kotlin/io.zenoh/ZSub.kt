@@ -28,7 +28,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         println("Opening session...")
-        Session.open(config).onSuccess { session ->
+        Zenoh.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {

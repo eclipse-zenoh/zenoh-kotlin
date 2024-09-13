@@ -45,7 +45,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
             priority = priorityInput?.let { Priority.entries[it] } ?: Priority.DATA,
         )
 
-        Session.open(config).onSuccess {
+        Zenoh.open(config).onSuccess {
             it.use { session ->
                 session.declarePublisher("test/thr".intoKeyExpr().getOrThrow(), qos = qos).onSuccess { pub ->
                     println("Publisher declared on test/thr.")

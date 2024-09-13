@@ -27,6 +27,16 @@ import kotlinx.coroutines.channels.Channel
 object Zenoh {
 
     /**
+     * Open a [Session] with the provided [Config].
+     *
+     * @param config The configuration for the session.
+     * @return A [Result] with the [Session] on success.
+     */
+    fun open(config: Config): Result<Session> {
+        return Session.open(config)
+    }
+
+    /**
      * Scout for routers and/or peers.
      *
      * Scout spawns a task that periodically sends scout messages and waits for Hello replies.
