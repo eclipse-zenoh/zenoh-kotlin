@@ -26,7 +26,7 @@ class ZScout : CliktCommand(
 
         println("Scouting...")
 
-        val scout = Zenoh.scout(channel = Channel(), whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router))
+        val scout = Zenoh.scout(channel = Channel(), whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router)).getOrThrow()
         runBlocking {
             for (hello in scout.receiver) {
                 println(hello)
