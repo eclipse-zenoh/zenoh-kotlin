@@ -24,7 +24,7 @@ class ZScout : CliktCommand(
 ) {
     override fun run() {
 
-        Zenoh.tryInitLogFromProperties()
+        Zenoh.tryInitLogFromEnv()
 
         println("Scouting...")
 

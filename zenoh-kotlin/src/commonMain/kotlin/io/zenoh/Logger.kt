@@ -19,7 +19,7 @@ internal class Logger {
 
     companion object {
 
-        internal const val LOG_PROPERTY: String = "zenoh.rust_log"
+        internal const val LOG_ENV: String = "RUST_LOG"
 
         fun start(logLevel: LogLevel) = runCatching {
             startLogsViaJNI(logLevel.description)

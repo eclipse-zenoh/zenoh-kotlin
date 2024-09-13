@@ -25,7 +25,7 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
-        Zenoh.tryInitLogFromProperties()
+        Zenoh.tryInitLogFromEnv()
 
         println("Opening session...")
         Zenoh.open(config).onSuccess { session ->

@@ -54,10 +54,10 @@ There is the possibility to provide a Zenoh config file as follows
 
 In that case, any other provided configuration parameters through the command line interface will not be taken into consideration.
 
-One last comment regarding Zenoh logging for the examples, remember it can be enabled through the `zenoh.rust_log` property as follows:
+One last comment regarding Zenoh logging for the examples, remember it can be enabled through the environment variable `RUST_LOG` as follows:
 
 ```bash
-  gradle ZPub -Pzenoh.rust_log=<level>
+  RUST_LOG=<level> gradle ZPub
 ```
 
 where `<level>` can be either `info`, `trace`, `debug`, `warn` or `error`.
