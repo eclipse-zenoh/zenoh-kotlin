@@ -15,18 +15,6 @@ $dokka.location:io.zenoh.handlers/Handler///PointingToDeclaration/zenoh-kotlin/
 $dokka.location:io.zenoh.handlers/Handler/handle/#TypeParam(bounds=[io.zenoh.ZenohType])/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/handle.html
 $dokka.location:io.zenoh.handlers/Handler/onClose/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/on-close.html
 $dokka.location:io.zenoh.handlers/Handler/receiver/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-handler/receiver.html
-$dokka.location:io.zenoh.jni////PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/index.html
-$dokka.location:io.zenoh.jni/JNIScout.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/-companion/index.html
-$dokka.location:io.zenoh.jni/JNIScout.Companion/freePtrViaJNI/#kotlin.Long/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/-companion/free-ptr-via-j-n-i.html
-$dokka.location:io.zenoh.jni/JNIScout.Companion/scout/#kotlin.collections.Set[io.zenoh.scouting.WhatAmI]#io.zenoh.handlers.Callback[io.zenoh.scouting.Hello]#io.zenoh.Config?#TypeParam(bounds=[kotlin.Any?])/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/-companion/scout.html
-$dokka.location:io.zenoh.jni/JNIScout///PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/index.html
-$dokka.location:io.zenoh.jni/JNIScout/JNIScout/#kotlin.Long/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/-j-n-i-scout.html
-$dokka.location:io.zenoh.jni/JNIScout/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-scout/close.html
-$dokka.location:io.zenoh.jni/JNIZBytes///PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-z-bytes/index.html
-$dokka.location:io.zenoh.jni/JNIZBytes/deserializeIntoList/#io.zenoh.protocol.ZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-z-bytes/deserialize-into-list.html
-$dokka.location:io.zenoh.jni/JNIZBytes/deserializeIntoMap/#io.zenoh.protocol.ZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-z-bytes/deserialize-into-map.html
-$dokka.location:io.zenoh.jni/JNIZBytes/serializeIntoList/#kotlin.collections.List[io.zenoh.protocol.ZBytes]/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-z-bytes/serialize-into-list.html
-$dokka.location:io.zenoh.jni/JNIZBytes/serializeIntoMap/#kotlin.collections.Map[io.zenoh.protocol.ZBytes,io.zenoh.protocol.ZBytes]/PointingToDeclaration/zenoh-kotlin/io.zenoh.jni/-j-n-i-z-bytes/serialize-into-map.html
 $dokka.location:io.zenoh.keyexpr////PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/index.html
 $dokka.location:io.zenoh.keyexpr//intoKeyExpr/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/into-key-expr.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/-companion/index.html
@@ -34,23 +22,27 @@ $dokka.location:io.zenoh.keyexpr/KeyExpr.Companion/autocanonize/#kotlin.String/P
 $dokka.location:io.zenoh.keyexpr/KeyExpr.Companion/tryFrom/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/-companion/try-from.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr///PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/index.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/close.html
+$dokka.location:io.zenoh.keyexpr/KeyExpr/concat/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/concat.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/equals.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/hash-code.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/includes/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/includes.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/intersects/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/intersects.html
-$dokka.location:io.zenoh.keyexpr/KeyExpr/intoSelector/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/into-selector.html
-$dokka.location:io.zenoh.keyexpr/KeyExpr/isValid/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/is-valid.html
+$dokka.location:io.zenoh.keyexpr/KeyExpr/join/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/join.html
+$dokka.location:io.zenoh.keyexpr/KeyExpr/relationTo/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/relation-to.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/to-string.html
 $dokka.location:io.zenoh.keyexpr/KeyExpr/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/undeclare.html
-$dokka.location:io.zenoh.keyexpr/KeyExpr/undeclare/#io.zenoh.Session/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-key-expr/undeclare.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/-companion/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.DISJOINT///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/-d-i-s-j-o-i-n-t/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.EQUALS///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/-e-q-u-a-l-s/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.INCLUDES///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/-i-n-c-l-u-d-e-s/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.INTERSECTS///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/-i-n-t-e-r-s-e-c-t-s/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel///PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/index.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/value-of.html
+$dokka.location:io.zenoh.keyexpr/SetIntersectionLevel/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/values.html
 $dokka.location:io.zenoh.prelude////PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/index.html
 $dokka.location:io.zenoh.prelude/CongestionControl.BLOCK///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-congestion-control/-b-l-o-c-k/index.html
-$dokka.location:io.zenoh.prelude/CongestionControl.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/-companion/index.html
-$dokka.location:io.zenoh.prelude/CongestionControl.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/-companion/default.html
-$dokka.location:io.zenoh.prelude/CongestionControl.Companion/fromInt/#kotlin.Int/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/-companion/from-int.html
 $dokka.location:io.zenoh.prelude/CongestionControl.DROP///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-congestion-control/-d-r-o-p/index.html
 $dokka.location:io.zenoh.prelude/CongestionControl///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/index.html
-$dokka.location:io.zenoh.prelude/CongestionControl/value/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/value.html
 $dokka.location:io.zenoh.prelude/CongestionControl/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/value-of.html
 $dokka.location:io.zenoh.prelude/CongestionControl/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-congestion-control/values.html
 $dokka.location:io.zenoh.prelude/Encoding.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-encoding/-companion/index.html
@@ -129,9 +121,6 @@ $dokka.location:io.zenoh.prelude/Encoding/schema/#/PointingToDeclaration/zenoh-
 $dokka.location:io.zenoh.prelude/Encoding/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-encoding/to-string.html
 $dokka.location:io.zenoh.prelude/Encoding/withSchema/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-encoding/with-schema.html
 $dokka.location:io.zenoh.prelude/Priority.BACKGROUND///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-priority/-b-a-c-k-g-r-o-u-n-d/index.html
-$dokka.location:io.zenoh.prelude/Priority.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-priority/-companion/index.html
-$dokka.location:io.zenoh.prelude/Priority.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-priority/-companion/default.html
-$dokka.location:io.zenoh.prelude/Priority.Companion/fromInt/#kotlin.Int/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-priority/-companion/from-int.html
 $dokka.location:io.zenoh.prelude/Priority.DATA///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-priority/-d-a-t-a/index.html
 $dokka.location:io.zenoh.prelude/Priority.DATA_HIGH///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-priority/-d-a-t-a_-h-i-g-h/index.html
 $dokka.location:io.zenoh.prelude/Priority.DATA_LOW///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-priority/-d-a-t-a_-l-o-w/index.html
@@ -149,8 +138,6 @@ $dokka.location:io.zenoh.prelude/QoS/QoS/#io.zenoh.prelude.CongestionControl#io.
 $dokka.location:io.zenoh.prelude/QoS/congestionControl/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-qo-s/congestion-control.html
 $dokka.location:io.zenoh.prelude/QoS/express/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-qo-s/express.html
 $dokka.location:io.zenoh.prelude/QoS/priority/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-qo-s/priority.html
-$dokka.location:io.zenoh.prelude/SampleKind.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-sample-kind/-companion/index.html
-$dokka.location:io.zenoh.prelude/SampleKind.Companion/fromInt/#kotlin.Int/PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-sample-kind/-companion/from-int.html
 $dokka.location:io.zenoh.prelude/SampleKind.DELETE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-sample-kind/-d-e-l-e-t-e/index.html
 $dokka.location:io.zenoh.prelude/SampleKind.PUT///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.prelude/-sample-kind/-p-u-t/index.html
 $dokka.location:io.zenoh.prelude/SampleKind///PointingToDeclaration/zenoh-kotlin/io.zenoh.prelude/-sample-kind/index.html
@@ -160,13 +147,10 @@ $dokka.location:io.zenoh.protocol////PointingToDeclaration/zenoh-kotlin/io.zeno
 $dokka.location:io.zenoh.protocol//into/kotlin.ByteArray#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/into.html
 $dokka.location:io.zenoh.protocol//into/kotlin.Number#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/into.html
 $dokka.location:io.zenoh.protocol//into/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/into.html
-$dokka.location:io.zenoh.protocol/Deserializable.From///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-deserializable/-from/index.html
-$dokka.location:io.zenoh.protocol/Deserializable.From/from/#io.zenoh.protocol.ZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-deserializable/-from/from.html
-$dokka.location:io.zenoh.protocol/Deserializable///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-deserializable/index.html
-$dokka.location:io.zenoh.protocol/Serializable///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-serializable/index.html
-$dokka.location:io.zenoh.protocol/Serializable/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-serializable/into.html
+$dokka.location:io.zenoh.protocol/IntoZBytes///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-into-z-bytes/index.html
+$dokka.location:io.zenoh.protocol/IntoZBytes/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-into-z-bytes/into.html
 $dokka.location:io.zenoh.protocol/ZBytes.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/index.html
-$dokka.location:io.zenoh.protocol/ZBytes.Companion/from/#io.zenoh.protocol.Serializable/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/from.html
+$dokka.location:io.zenoh.protocol/ZBytes.Companion/from/#io.zenoh.protocol.IntoZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.protocol/ZBytes.Companion/from/#kotlin.ByteArray/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.protocol/ZBytes.Companion/from/#kotlin.Number/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.protocol/ZBytes.Companion/from/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/-companion/from.html
@@ -187,26 +171,25 @@ $dokka.location:io.zenoh.protocol/ZBytes/toLong/#/PointingToDeclaration/zenoh-k
 $dokka.location:io.zenoh.protocol/ZBytes/toShort/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/to-short.html
 $dokka.location:io.zenoh.protocol/ZBytes/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-z-bytes/to-string.html
 $dokka.location:io.zenoh.protocol/ZenohID///PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/index.html
-$dokka.location:io.zenoh.protocol/ZenohID/ZenohID/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/-zenoh-i-d.html
-$dokka.location:io.zenoh.protocol/ZenohID/id/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/id.html
+$dokka.location:io.zenoh.protocol/ZenohID/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/equals.html
+$dokka.location:io.zenoh.protocol/ZenohID/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/hash-code.html
+$dokka.location:io.zenoh.protocol/ZenohID/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.protocol/-zenoh-i-d/to-string.html
 $dokka.location:io.zenoh.publication////PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/index.html
 $dokka.location:io.zenoh.publication/Publisher.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/-companion/index.html
 $dokka.location:io.zenoh.publication/Publisher///PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/index.html
 $dokka.location:io.zenoh.publication/Publisher/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/close.html
 $dokka.location:io.zenoh.publication/Publisher/congestionControl/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/congestion-control.html
-$dokka.location:io.zenoh.publication/Publisher/delete/#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/delete.html
+$dokka.location:io.zenoh.publication/Publisher/delete/#io.zenoh.protocol.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/delete.html
 $dokka.location:io.zenoh.publication/Publisher/express/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/express.html
 $dokka.location:io.zenoh.publication/Publisher/isValid/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/is-valid.html
 $dokka.location:io.zenoh.publication/Publisher/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/key-expr.html
 $dokka.location:io.zenoh.publication/Publisher/priority/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/priority.html
-$dokka.location:io.zenoh.publication/Publisher/put/#io.zenoh.protocol.ZBytes#io.zenoh.prelude.Encoding?#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/put.html
-$dokka.location:io.zenoh.publication/Publisher/put/#kotlin.String#io.zenoh.prelude.Encoding?#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/put.html
+$dokka.location:io.zenoh.publication/Publisher/put/#io.zenoh.protocol.IntoZBytes#io.zenoh.prelude.Encoding?#io.zenoh.protocol.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/put.html
+$dokka.location:io.zenoh.publication/Publisher/put/#kotlin.String#io.zenoh.prelude.Encoding?#io.zenoh.protocol.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/put.html
 $dokka.location:io.zenoh.publication/Publisher/qos/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/qos.html
 $dokka.location:io.zenoh.publication/Publisher/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.publication/-publisher/undeclare.html
 $dokka.location:io.zenoh.query////PointingToDeclaration/zenoh-kotlin/io.zenoh.query/index.html
 $dokka.location:io.zenoh.query/ConsolidationMode.AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.query/-consolidation-mode/-a-u-t-o/index.html
-$dokka.location:io.zenoh.query/ConsolidationMode.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-consolidation-mode/-companion/index.html
-$dokka.location:io.zenoh.query/ConsolidationMode.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-consolidation-mode/-companion/default.html
 $dokka.location:io.zenoh.query/ConsolidationMode.LATEST///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.query/-consolidation-mode/-l-a-t-e-s-t/index.html
 $dokka.location:io.zenoh.query/ConsolidationMode.MONOTONIC///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.query/-consolidation-mode/-m-o-n-o-t-o-n-i-c/index.html
 $dokka.location:io.zenoh.query/ConsolidationMode.NONE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.query/-consolidation-mode/-n-o-n-e/index.html
@@ -219,24 +202,14 @@ $dokka.location:io.zenoh.query/QueryTarget.BEST_MATCHING///PointingToDeclaration
 $dokka.location:io.zenoh.query/QueryTarget///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query-target/index.html
 $dokka.location:io.zenoh.query/QueryTarget/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query-target/value-of.html
 $dokka.location:io.zenoh.query/QueryTarget/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query-target/values.html
-$dokka.location:io.zenoh.query/Reply.Delete///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/index.html
-$dokka.location:io.zenoh.query/Reply.Delete/attachment/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/attachment.html
-$dokka.location:io.zenoh.query/Reply.Delete/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/key-expr.html
-$dokka.location:io.zenoh.query/Reply.Delete/qos/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/qos.html
-$dokka.location:io.zenoh.query/Reply.Delete/replierId/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/replier-id.html
-$dokka.location:io.zenoh.query/Reply.Delete/timestamp/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/timestamp.html
-$dokka.location:io.zenoh.query/Reply.Delete/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-delete/to-string.html
-$dokka.location:io.zenoh.query/Reply.Error///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-error/index.html
-$dokka.location:io.zenoh.query/Reply.Error/encoding/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-error/encoding.html
-$dokka.location:io.zenoh.query/Reply.Error/error/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-error/error.html
-$dokka.location:io.zenoh.query/Reply.Error/replierId/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-error/replier-id.html
-$dokka.location:io.zenoh.query/Reply.Error/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-error/to-string.html
-$dokka.location:io.zenoh.query/Reply.Success///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/index.html
-$dokka.location:io.zenoh.query/Reply.Success/replierId/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/replier-id.html
-$dokka.location:io.zenoh.query/Reply.Success/sample/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/sample.html
-$dokka.location:io.zenoh.query/Reply.Success/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-success/to-string.html
 $dokka.location:io.zenoh.query/Reply///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/index.html
+$dokka.location:io.zenoh.query/Reply/Reply/#io.zenoh.protocol.ZenohID?#kotlin.Result[io.zenoh.sample.Sample]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-reply.html
 $dokka.location:io.zenoh.query/Reply/replierId/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/replier-id.html
+$dokka.location:io.zenoh.query/Reply/result/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/result.html
+$dokka.location:io.zenoh.query/ReplyError///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply-error/index.html
+$dokka.location:io.zenoh.query/ReplyError/ReplyError/#io.zenoh.protocol.ZBytes?#io.zenoh.prelude.Encoding?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply-error/-reply-error.html
+$dokka.location:io.zenoh.query/ReplyError/encoding/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply-error/encoding.html
+$dokka.location:io.zenoh.query/ReplyError/payload/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply-error/payload.html
 $dokka.location:io.zenoh.queryable////PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/index.html
 $dokka.location:io.zenoh.queryable/Query///PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/index.html
 $dokka.location:io.zenoh.queryable/Query/attachment/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/attachment.html
@@ -245,9 +218,9 @@ $dokka.location:io.zenoh.queryable/Query/encoding/#/PointingToDeclaration/zenoh
 $dokka.location:io.zenoh.queryable/Query/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/key-expr.html
 $dokka.location:io.zenoh.queryable/Query/parameters/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/parameters.html
 $dokka.location:io.zenoh.queryable/Query/payload/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/payload.html
-$dokka.location:io.zenoh.queryable/Query/replyDelete/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply-delete.html
-$dokka.location:io.zenoh.queryable/Query/replyError/#io.zenoh.protocol.ZBytes#io.zenoh.prelude.Encoding/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply-error.html
-$dokka.location:io.zenoh.queryable/Query/replySuccess/#io.zenoh.keyexpr.KeyExpr#io.zenoh.protocol.ZBytes#io.zenoh.prelude.Encoding#io.zenoh.prelude.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply-success.html
+$dokka.location:io.zenoh.queryable/Query/reply/#io.zenoh.keyexpr.KeyExpr#io.zenoh.protocol.IntoZBytes#io.zenoh.prelude.Encoding#io.zenoh.prelude.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.protocol.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply.html
+$dokka.location:io.zenoh.queryable/Query/replyDel/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.protocol.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply-del.html
+$dokka.location:io.zenoh.queryable/Query/replyErr/#io.zenoh.protocol.IntoZBytes#io.zenoh.prelude.Encoding/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/reply-err.html
 $dokka.location:io.zenoh.queryable/Query/selector/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-query/selector.html
 $dokka.location:io.zenoh.queryable/Queryable///PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/index.html
 $dokka.location:io.zenoh.queryable/Queryable/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.queryable/-queryable/close.html
@@ -284,12 +257,30 @@ $dokka.location:io.zenoh.scouting/WhatAmI/valueOf/#kotlin.String/PointingToDecla
 $dokka.location:io.zenoh.scouting/WhatAmI/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.scouting/-what-am-i/values.html
 $dokka.location:io.zenoh.selector////PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/index.html
 $dokka.location:io.zenoh.selector//intoSelector/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/into-selector.html
+$dokka.location:io.zenoh.selector/IntoParameters///PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-into-parameters/index.html
+$dokka.location:io.zenoh.selector/IntoParameters/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-into-parameters/into.html
+$dokka.location:io.zenoh.selector/Parameters.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/-companion/index.html
+$dokka.location:io.zenoh.selector/Parameters.Companion/empty/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/-companion/empty.html
+$dokka.location:io.zenoh.selector/Parameters.Companion/from/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/-companion/from.html
+$dokka.location:io.zenoh.selector/Parameters.Companion/from/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/-companion/from.html
+$dokka.location:io.zenoh.selector/Parameters///PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/index.html
+$dokka.location:io.zenoh.selector/Parameters/containsKey/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/contains-key.html
+$dokka.location:io.zenoh.selector/Parameters/extend/#io.zenoh.selector.IntoParameters/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/extend.html
+$dokka.location:io.zenoh.selector/Parameters/extend/#kotlin.collections.Map[kotlin.String,kotlin.String]/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/extend.html
+$dokka.location:io.zenoh.selector/Parameters/get/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/get.html
+$dokka.location:io.zenoh.selector/Parameters/getOrDefault/#kotlin.String#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/get-or-default.html
+$dokka.location:io.zenoh.selector/Parameters/insert/#kotlin.String#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/insert.html
+$dokka.location:io.zenoh.selector/Parameters/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/into.html
+$dokka.location:io.zenoh.selector/Parameters/isEmpty/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/is-empty.html
+$dokka.location:io.zenoh.selector/Parameters/remove/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/remove.html
+$dokka.location:io.zenoh.selector/Parameters/toMap/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/to-map.html
+$dokka.location:io.zenoh.selector/Parameters/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/to-string.html
+$dokka.location:io.zenoh.selector/Parameters/values/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-parameters/values.html
 $dokka.location:io.zenoh.selector/Selector///PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/index.html
-$dokka.location:io.zenoh.selector/Selector/Selector/#io.zenoh.keyexpr.KeyExpr#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/-selector.html
+$dokka.location:io.zenoh.selector/Selector/Selector/#io.zenoh.keyexpr.KeyExpr#io.zenoh.selector.Parameters?/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/-selector.html
 $dokka.location:io.zenoh.selector/Selector/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/close.html
 $dokka.location:io.zenoh.selector/Selector/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/key-expr.html
 $dokka.location:io.zenoh.selector/Selector/parameters/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/parameters.html
-$dokka.location:io.zenoh.selector/Selector/parametersStringMap/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/parameters-string-map.html
 $dokka.location:io.zenoh.selector/Selector/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.selector/-selector/to-string.html
 $dokka.location:io.zenoh.subscriber////PointingToDeclaration/zenoh-kotlin/io.zenoh.subscriber/index.html
 $dokka.location:io.zenoh.subscriber/Reliability.BEST_EFFORT///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.subscriber/-reliability/-b-e-s-t_-e-f-f-o-r-t/index.html
@@ -306,40 +297,30 @@ $dokka.location:io.zenoh.subscriber/Subscriber/undeclare/#/PointingToDeclaration
 $dokka.location:io.zenoh////PointingToDeclaration/zenoh-kotlin/io.zenoh/index.html
 $dokka.location:io.zenoh/Config.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/index.html
 $dokka.location:io.zenoh/Config.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/default.html
-$dokka.location:io.zenoh/Config.Companion/from/#[Error type: Unresolved type for File]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
-$dokka.location:io.zenoh/Config.Companion/from/#[Error type: Unresolved type for Path]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
-$dokka.location:io.zenoh/Config.Companion/from/#kotlin.String#io.zenoh.Config.Format/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
-$dokka.location:io.zenoh/Config.Companion/from/#kotlinx.serialization.json.JsonElement/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from.html
-$dokka.location:io.zenoh/Config.Format.JSON///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh/-config/-format/-j-s-o-n/index.html
-$dokka.location:io.zenoh/Config.Format.JSON5///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh/-config/-format/-j-s-o-n5/index.html
-$dokka.location:io.zenoh/Config.Format.YAML///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh/-config/-format/-y-a-m-l/index.html
-$dokka.location:io.zenoh/Config.Format///PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-format/index.html
-$dokka.location:io.zenoh/Config.Format/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-format/value-of.html
-$dokka.location:io.zenoh/Config.Format/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-format/values.html
+$dokka.location:io.zenoh/Config.Companion/fromFile/#[Error type: Unresolved type for File]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-file.html
+$dokka.location:io.zenoh/Config.Companion/fromFile/#[Error type: Unresolved type for Path]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-file.html
+$dokka.location:io.zenoh/Config.Companion/fromJson/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-json.html
+$dokka.location:io.zenoh/Config.Companion/fromJson5/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-json5.html
+$dokka.location:io.zenoh/Config.Companion/fromJsonElement/#kotlinx.serialization.json.JsonElement/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-json-element.html
+$dokka.location:io.zenoh/Config.Companion/fromYaml/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/-companion/from-yaml.html
 $dokka.location:io.zenoh/Config///PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/index.html
-$dokka.location:io.zenoh/Config/format/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-config/format.html
-$dokka.location:io.zenoh/Logger.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/-companion/index.html
-$dokka.location:io.zenoh/Logger.Companion/start/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/-companion/start.html
-$dokka.location:io.zenoh/Logger///PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/index.html
-$dokka.location:io.zenoh/Logger/Logger/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-logger/-logger.html
 $dokka.location:io.zenoh/Session.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/-companion/index.html
-$dokka.location:io.zenoh/Session.Companion/open/#io.zenoh.Config/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/-companion/open.html
 $dokka.location:io.zenoh/Session///PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/index.html
 $dokka.location:io.zenoh/Session/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/close.html
 $dokka.location:io.zenoh/Session/declareKeyExpr/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-key-expr.html
-$dokka.location:io.zenoh/Session/declarePublisher/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-publisher.html
+$dokka.location:io.zenoh/Session/declarePublisher/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-publisher.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.queryable.Query]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.queryable.Query,TypeParam(bounds=[kotlin.Any?])]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.queryable.Query]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
-$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.sample.Sample]#kotlin.Function0[kotlin.Unit]?#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
-$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.sample.Sample,TypeParam(bounds=[kotlin.Any?])]#kotlin.Function0[kotlin.Unit]?#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
-$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.sample.Sample]#kotlin.Function0[kotlin.Unit]?#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
-$dokka.location:io.zenoh/Session/delete/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/delete.html
-$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#io.zenoh.handlers.Callback[io.zenoh.query.Reply]#io.zenoh.protocol.ZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.ZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
-$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#io.zenoh.handlers.Handler[io.zenoh.query.Reply,TypeParam(bounds=[kotlin.Any?])]#io.zenoh.protocol.ZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.ZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
-$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]#io.zenoh.protocol.ZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.ZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
+$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.sample.Sample]#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
+$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.sample.Sample,TypeParam(bounds=[kotlin.Any?])]#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
+$dokka.location:io.zenoh/Session/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.sample.Sample]#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-subscriber.html
+$dokka.location:io.zenoh/Session/delete/#io.zenoh.keyexpr.KeyExpr#io.zenoh.prelude.QoS#io.zenoh.protocol.IntoZBytes?#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/delete.html
+$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#io.zenoh.handlers.Callback[io.zenoh.query.Reply]#io.zenoh.protocol.IntoZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.IntoZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
+$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#io.zenoh.handlers.Handler[io.zenoh.query.Reply,TypeParam(bounds=[kotlin.Any?])]#io.zenoh.protocol.IntoZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.IntoZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
+$dokka.location:io.zenoh/Session/get/#io.zenoh.selector.Selector#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]#io.zenoh.protocol.IntoZBytes?#io.zenoh.prelude.Encoding?#io.zenoh.protocol.IntoZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
 $dokka.location:io.zenoh/Session/isOpen/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/is-open.html
-$dokka.location:io.zenoh/Session/put/#io.zenoh.keyexpr.KeyExpr#io.zenoh.protocol.ZBytes#io.zenoh.prelude.Encoding?#io.zenoh.prelude.QoS#io.zenoh.protocol.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/put.html
+$dokka.location:io.zenoh/Session/put/#io.zenoh.keyexpr.KeyExpr#io.zenoh.protocol.IntoZBytes#io.zenoh.prelude.Encoding?#io.zenoh.prelude.QoS#io.zenoh.protocol.IntoZBytes?#io.zenoh.subscriber.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/put.html
 $dokka.location:io.zenoh/Session/undeclare/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/undeclare.html
 $dokka.location:io.zenoh/SessionDeclaration///PointingToDeclaration/zenoh-kotlin/io.zenoh/-session-declaration/index.html
 $dokka.location:io.zenoh/SessionDeclaration/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session-declaration/undeclare.html
@@ -353,14 +334,16 @@ $dokka.location:io.zenoh/Target/toString/#/PointingToDeclaration/zenoh-kotlin/i
 $dokka.location:io.zenoh/Target/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-target/value-of.html
 $dokka.location:io.zenoh/Target/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-target/values.html
 $dokka.location:io.zenoh/Zenoh///PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/index.html
+$dokka.location:io.zenoh/Zenoh/initLogFromEnvOr/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/init-log-from-env-or.html
+$dokka.location:io.zenoh/Zenoh/open/#io.zenoh.Config/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/open.html
 $dokka.location:io.zenoh/Zenoh/scout/#io.zenoh.handlers.Callback[io.zenoh.scouting.Hello]#kotlin.collections.Set[io.zenoh.scouting.WhatAmI]#io.zenoh.Config?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/scout.html
 $dokka.location:io.zenoh/Zenoh/scout/#io.zenoh.handlers.Handler[io.zenoh.scouting.Hello,TypeParam(bounds=[kotlin.Any?])]#kotlin.collections.Set[io.zenoh.scouting.WhatAmI]#io.zenoh.Config?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/scout.html
 $dokka.location:io.zenoh/Zenoh/scout/#kotlinx.coroutines.channels.Channel[io.zenoh.scouting.Hello]#kotlin.collections.Set[io.zenoh.scouting.WhatAmI]#io.zenoh.Config?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/scout.html
+$dokka.location:io.zenoh/Zenoh/tryInitLogFromEnv/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/try-init-log-from-env.html
 $dokka.location:io.zenoh/ZenohType///PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh-type/index.html
 io.zenoh
 io.zenoh.exceptions
 io.zenoh.handlers
-io.zenoh.jni
 io.zenoh.keyexpr
 io.zenoh.prelude
 io.zenoh.protocol

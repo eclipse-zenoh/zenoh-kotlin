@@ -40,7 +40,7 @@
             </a>
     </div>
     <div>
-1.0.0-beta.1    </div>
+1.0.0-beta.2    </div>
     <div class="pull-right d-flex">
         <div class="filter-section" id="filter-section">
                 <button class="platform-tag platform-selector common-like" data-active="" data-filter=":zenoh-kotlin:dokkaHtml/commonMain">common</button>
@@ -54,12 +54,12 @@
         <div id="sideMenu"></div>
     </div>
     <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageIds="zenoh-kotlin::io.zenoh.keyexpr/KeyExpr/undeclare/#io.zenoh.Session/PointingToDeclaration//264607012">
+<div class="main-content" data-page-type="member" id="content" pageIds="zenoh-kotlin::io.zenoh.keyexpr/KeyExpr/undeclare/#/PointingToDeclaration//264607012">
   <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.keyexpr</a><span class="delimiter">/</span><a href="index.html">KeyExpr</a><span class="delimiter">/</span><span class="current">undeclare</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>undeclare</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword"></span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">session<span class="token operator">: </span><a href="../../io.zenoh/-session/index.html">Session</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/index.html">Result</a><span class="token operator">&lt;</span><span class="token keyword"></span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">&gt;</span></div><p class="paragraph">Undeclare the key expression if it was previously declared on the specified <a href="undeclare.html">session</a>.</p><span class="kdoc-tag"><h4 class="">Return</h4><p class="paragraph">A <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-result/index.html">Result</a> with the operation status.</p></span><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin:dokkaHtml/commonMain" data-filterable-set=":zenoh-kotlin:dokkaHtml/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>session</span></span></u></div></span></div><div><div class="title"><p class="paragraph">The session from which the key expression was previously declared.</p></div></div></div></div></div><hr><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><p class="paragraph">Undeclare a declaration. No further operations should be performed after calling this function.</p></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin:dokkaHtml/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><p class="paragraph">If the key expression was declared from a <a href="../../io.zenoh/-session/index.html">Session</a>, then <a href="undeclare.html">undeclare</a> frees the native key expression associated to this instance. The KeyExpr instance is downgraded into a normal KeyExpr, which still allows performing operations on it, but without the inner optimizations.</p></div></div>
 </div>
       <div class="footer">
         <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2024 Copyright</span><span
