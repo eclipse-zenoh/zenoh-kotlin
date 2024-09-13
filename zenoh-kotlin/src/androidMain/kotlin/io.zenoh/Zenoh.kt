@@ -20,13 +20,9 @@ package io.zenoh
  */
 internal actual object ZenohLoad {
     private const val ZENOH_LIB_NAME = "zenoh_jni"
-    private const val ZENOH_LOGS_PROPERTY = "zenoh.logger"
 
     init {
         System.loadLibrary(ZENOH_LIB_NAME)
-        val logLevel = System.getProperty(ZENOH_LOGS_PROPERTY)
-        if (logLevel != null) {
-            Logger.start(logLevel)
-        }
+        Zenoh.tryInitLogFromEnv()
     }
 }

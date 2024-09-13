@@ -96,6 +96,18 @@ object Zenoh {
             config = config
         )
     }
+
+    /**
+     * Try starting the logs with the level specified under the property 'zenoh.logger'.
+     *
+     * @see Logger
+     */
+    fun tryInitLogFromEnv() {
+        val logLevel = System.getProperty("zenoh.logger")
+        if (logLevel != null) {
+            Logger.start(logLevel)
+        }
+    }
 }
 
 /**
