@@ -118,8 +118,11 @@ object Zenoh {
      * @see Logger
      */
     fun tryInitLogFromEnv() {
-        ZenohLoad
-        Logger.start(System.getenv(LOG_ENV) ?: "")
+        val logEnv = System.getenv(LOG_ENV)
+        if (logEnv != null) {
+            ZenohLoad
+            Logger.start(logEnv)
+        }
     }
 
     /**
