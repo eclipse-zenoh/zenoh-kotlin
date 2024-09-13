@@ -51,9 +51,9 @@ tasks {
             classpath(sourceSets["main"].runtimeClasspath)
             val zenohPaths = "../zenoh-jni/target/release"
             val defaultJvmArgs = arrayListOf("-Djava.library.path=$zenohPaths")
-            val loggerLvl = project.findProperty("zenoh.logger")?.toString()
+            val loggerLvl = project.findProperty("zenoh.rust_log")?.toString()
             if (loggerLvl != null) {
-                jvmArgs(defaultJvmArgs + "-Dzenoh.logger=$loggerLvl")
+                jvmArgs(defaultJvmArgs + "-Dzenoh.rust_log=$loggerLvl")
             } else {
                 jvmArgs(defaultJvmArgs)
             }

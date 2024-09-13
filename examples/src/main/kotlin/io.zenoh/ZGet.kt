@@ -32,6 +32,8 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
+        Zenoh.tryInitLogFromProperties()
+
         Zenoh.open(config).onSuccess { session ->
             session.use {
                 selector.intoSelector().onSuccess { selector ->

@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.Logger.Companion.LOG_PROPERTY
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
@@ -108,15 +109,28 @@ object Zenoh {
     }
 
     /**
-     * Try starting the logs with the level specified under the property 'zenoh.logger'.
+     * Try starting the logs with the level specified under the [LOG_PROPERTY] property.
      *
      * @see Logger
      */
-    fun tryInitLogFromEnv() {
-        val logLevel = System.getProperty("zenoh.logger")
-        if (logLevel != null) {
-            Logger.start(logLevel)
-        }
+    fun tryInitLogFromProperties(): Result<Unit> = runCatching {
+        ZenohLoad
+        val logProp = System.getProperty(LOG_PROPERTY)
+            ?: return Result.failure(Exception("Failure during logs initialization: couldn't find property '$LOG_PROPERTY'."))
+        val logLevel = LogLevel.fromString(logProp)
+        return Logger.start(logLevel)
+    }
+
+    /**
+     * Try starting the logs with the level specified under the [LOG_PROPERTY] property.
+     *
+     * @see Logger
+     */
+    fun tryInitLogFromPropertiesOr(defaultLogLevel: LogLevel): Result<Unit> = runCatching {
+        ZenohLoad
+        val logLevelProp = System.getProperty(LOG_PROPERTY)
+        val logLevel = logLevelProp?.let { LogLevel.fromString(it) } ?: defaultLogLevel
+        Logger.start(logLevel)
     }
 }
 

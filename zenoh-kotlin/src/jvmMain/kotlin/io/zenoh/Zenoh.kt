@@ -34,8 +34,6 @@ internal actual object ZenohLoad {
             val target = determineTarget().getOrThrow()
             tryLoadingLibraryFromJarPackage(target).getOrThrow()
         }
-
-        Zenoh.tryInitLogFromEnv()
     }
 
     /**

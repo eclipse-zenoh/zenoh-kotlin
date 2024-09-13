@@ -24,6 +24,8 @@ class ZScout : CliktCommand(
 ) {
     override fun run() {
 
+        Zenoh.tryInitLogFromProperties()
+
         println("Scouting...")
 
         val scout = Zenoh.scout(channel = Channel(), whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router)).getOrThrow()

@@ -15,13 +15,35 @@
 package io.zenoh
 
 /** Logger class to redirect the Rust logs from Zenoh to the kotlin environment. */
-class Logger {
+internal class Logger {
 
     companion object {
+
+        internal const val LOG_PROPERTY: String = "zenoh.rust_log"
+
+        fun start(logLevel: LogLevel) = runCatching {
+            startLogsViaJNI(logLevel.description)
+        }
+
         /**
          * Redirects the rust logs either to logcat for Android systems or to the standard output (for non-android
-         * systems). @param logLevel must be either "info", "debug", "warn", "trace" or "error".
+         * systems).
+         *
+         * @param logLevel must be either "info", "debug", "warn", "trace" or "error".
          */
-        external fun start(logLevel: String)
+        @Throws(Exception::class)
+        private external fun startLogsViaJNI(logLevel: String)
+    }
+}
+
+enum class LogLevel(internal val description: String) {
+    INFO("info"),
+    DEBUG("debug"),
+    WARN("warn"),
+    TRACE("trace"),
+    ERROR("error");
+
+    companion object  {
+        internal fun fromString(description: String): LogLevel = LogLevel.entries.first { it.description == description }
     }
 }

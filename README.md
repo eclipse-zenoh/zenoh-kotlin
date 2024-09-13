@@ -295,12 +295,12 @@ tests executed locally as Unit tests.
 
 ## Logging
 
-Rust logs are propagated when setting the property `zenoh.logger=debug` (using RUST_LOG=debug will result in nothing)
+Rust logs are propagated when setting the property `zenoh.rust_log=debug`.
 
 For instance running the ZPub test as follows:
 
 ```bash
-gradle -Pzenoh.logger=debug ZPub
+gradle -Pzenoh.rust_log=debug ZPub
 ```
 
 causes the logs to appear in standard output.

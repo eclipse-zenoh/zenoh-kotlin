@@ -23,6 +23,5 @@ internal actual object ZenohLoad {
 
     init {
         System.loadLibrary(ZENOH_LIB_NAME)
-        Zenoh.tryInitLogFromEnv()
     }
 }

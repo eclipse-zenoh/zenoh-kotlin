@@ -35,7 +35,7 @@ use crate::{errors::Result, jni_error, throw_exception};
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_Logger_00024Companion_start(
+pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     log_level: JString,
