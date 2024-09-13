@@ -26,7 +26,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
-        Zenoh.tryInitLogFromEnv()
+        Zenoh.initLogFromEnvOr("error")
 
         println("Opening Session...")
         Zenoh.open(config).onSuccess { session ->

@@ -115,22 +115,21 @@ object Zenoh {
      */
     fun tryInitLogFromEnv(): Result<Unit> = runCatching {
         ZenohLoad
-        val logProp = System.getenv(LOG_ENV)
+        val logLevel = System.getenv(LOG_ENV)
             ?: return Result.failure(Exception("Failure during logs initialization: couldn't find environment variable '$LOG_ENV'."))
-        val logLevel = LogLevel.fromString(logProp)
         return Logger.start(logLevel)
     }
 
     /**
-     * Try starting the logs with the level specified under the [LOG_ENV] environment variable.
+     * Try starting the logs with the level specified under the [LOG_ENV] environment variable or by default [defaultLogLevel].
      *
+     * @param defaultLogLevel A string that must be either "info", "debug", "error", "trace", "warn".
      * @see Logger
      */
-    fun tryInitLogFromEnvOr(defaultLogLevel: LogLevel): Result<Unit> = runCatching {
+    fun initLogFromEnvOr(defaultLogLevel: String): Result<Unit> = runCatching {
         ZenohLoad
         val logLevelProp = System.getenv(LOG_ENV)
-        val logLevel = logLevelProp?.let { LogLevel.fromString(it) } ?: defaultLogLevel
-        Logger.start(logLevel)
+        logLevelProp?.let { Logger.start(it) } ?: Logger.start(defaultLogLevel)
     }
 }
 

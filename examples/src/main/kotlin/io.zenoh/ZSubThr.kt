@@ -72,6 +72,8 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
+        Zenoh.initLogFromEnvOr("error")
+
         "test/thr".intoKeyExpr().onSuccess { keyExpr ->
             keyExpr.use {
                 println("Opening Session")

@@ -32,6 +32,8 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
 ) {
 
     override fun run() {
+        Zenoh.initLogFromEnvOr("error")
+
         val data = ByteArray(payloadSize)
         for (i in 0..<payloadSize) {
             data[i] = (i % 10).toByte()

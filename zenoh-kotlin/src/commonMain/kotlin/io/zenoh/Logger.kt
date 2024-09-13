@@ -21,8 +21,8 @@ internal class Logger {
 
         internal const val LOG_ENV: String = "RUST_LOG"
 
-        fun start(logLevel: LogLevel) = runCatching {
-            startLogsViaJNI(logLevel.description)
+        fun start(logLevel: String) = runCatching {
+            startLogsViaJNI(logLevel)
         }
 
         /**
@@ -33,17 +33,5 @@ internal class Logger {
          */
         @Throws(Exception::class)
         private external fun startLogsViaJNI(logLevel: String)
-    }
-}
-
-enum class LogLevel(internal val description: String) {
-    INFO("info"),
-    DEBUG("debug"),
-    WARN("warn"),
-    TRACE("trace"),
-    ERROR("error");
-
-    companion object  {
-        internal fun fromString(description: String): LogLevel = LogLevel.entries.first { it.description == description }
     }
 }
