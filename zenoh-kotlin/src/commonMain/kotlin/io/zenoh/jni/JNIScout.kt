@@ -27,7 +27,7 @@ import io.zenoh.scouting.WhatAmI
  *
  * @property ptr: raw pointer to the underlying native scout.
  */
-class JNIScout(private val ptr: Long) {
+internal class JNIScout(private val ptr: Long) {
 
     companion object {
         fun <R> scout(
