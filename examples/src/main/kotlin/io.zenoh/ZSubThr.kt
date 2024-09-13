@@ -76,7 +76,7 @@ class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
         "test/thr".intoKeyExpr().onSuccess { keyExpr ->
             keyExpr.use {
                 println("Opening Session")
-                Session.open(config).onSuccess { session ->
+                Zenoh.open(config).onSuccess { session ->
                     session.use {
                         println("Press CTRL-C to quit...")
                         subscriber =

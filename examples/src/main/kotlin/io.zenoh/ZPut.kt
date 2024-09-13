@@ -27,7 +27,7 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         println("Opening Session...")
-        Session.open(config).onSuccess { session ->
+        Zenoh.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
