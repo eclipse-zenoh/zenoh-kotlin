@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.jni.JNIConfig
+import io.zenoh.protocol.ZenohID
 import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.json.JsonElement
@@ -267,9 +268,33 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         fun fromJsonElement(jsonElement: JsonElement): Result<Config> {
             return JNIConfig.loadJsonConfig(jsonElement.toString())
         }
+
+        fun peer(): Result<Config> {
+            TODO()
+        }
+
+        fun fromEnv(): Result<Config> {
+            TODO()
+        }
+
+        fun id(): ZenohID {
+            TODO()
+        }
+
+        fun getJson(): String {
+            TODO()
+        }
+
+        fun insertJson5() {
+            TODO()
+        }
     }
 
     protected fun finalize() {
         jniConfig.close()
     }
+}
+
+fun client(peers: List<String>): Result<Config> {
+    return JNIConfig.loadClientConfig(peers)
 }

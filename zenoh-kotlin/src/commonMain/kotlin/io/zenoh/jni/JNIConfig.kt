@@ -54,6 +54,11 @@ internal class JNIConfig(internal val ptr: Long) {
             Config(JNIConfig(cfgPtr))
         }
 
+        fun loadClientConfig(peers: List<String>): Result<Config> = runCatching {
+            val cfgPtr = loadClientConfigViaJNI(peers)
+            Config(JNIConfig(cfgPtr))
+        }
+
         @Throws
         private external fun loadDefaultConfigViaJNI(): Long
 
@@ -65,6 +70,9 @@ internal class JNIConfig(internal val ptr: Long) {
 
         @Throws
         private external fun loadYamlConfigViaJNI(rawConfig: String): Long
+
+        @Throws
+        private external fun loadClientConfigViaJNI(peers: List<String>): Long
 
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)

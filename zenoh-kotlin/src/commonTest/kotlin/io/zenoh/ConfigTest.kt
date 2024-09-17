@@ -289,4 +289,14 @@ class ConfigTest {
             serverConfigFile.delete()
         }
     }
+
+    @Test
+    fun `client function should create a basic client config`() {
+        client(listOf("tcp/localhost:7450", "tcp/localhost:7451", "tcp/localhost:7452", "tcp/localhost:7453")).getOrThrow()
+    }
+
+    @Test
+    fun `client function fails when providing wrongly formatted peers test`() {
+        assertTrue(client(listOf("wrong_formatted_peer")).isFailure)
+    }
 }
