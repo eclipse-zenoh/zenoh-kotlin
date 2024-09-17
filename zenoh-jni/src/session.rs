@@ -20,13 +20,13 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    config::{Config, ZenohId},
+    config::{Config},
     key_expr::KeyExpr,
     prelude::Wait,
     pubsub::{Publisher, Subscriber},
     query::{Query, Queryable, ReplyError, Selector},
     sample::Sample,
-    session::Session,
+    session::{Session, ZenohId},
 };
 
 use crate::{
