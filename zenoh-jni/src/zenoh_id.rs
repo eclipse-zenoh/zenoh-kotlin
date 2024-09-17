@@ -18,7 +18,7 @@ use jni::{
     sys::jstring,
     JNIEnv,
 };
-use zenoh::config::ZenohId;
+use zenoh::session::ZenohId;
 
 /// Returns the string representation of a ZenohID.
 #[no_mangle]
