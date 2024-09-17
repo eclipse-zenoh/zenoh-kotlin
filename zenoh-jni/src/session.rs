@@ -20,7 +20,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    config::{Config},
+    config::Config,
     key_expr::KeyExpr,
     prelude::Wait,
     pubsub::{Publisher, Subscriber},
