@@ -301,7 +301,7 @@ class ConfigTest {
     }
 
     @Test
-    fun `peer function shoulr create a basic peer config`() {
+    fun `peer function should create a basic peer config`() {
         peer().getOrThrow()
     }
 }

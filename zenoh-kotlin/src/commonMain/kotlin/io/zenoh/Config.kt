@@ -127,6 +127,8 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
 
     companion object {
 
+        const val CONFIG_ENV = "ZENOH_CONFIG"
+
         /**
          * Returns the default config.
          */
@@ -269,8 +271,18 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
             return JNIConfig.loadJsonConfig(jsonElement.toString())
         }
 
-        fun fromEnv(): Result<Config> {
-            TODO()
+        /**
+         * Loads the configuration from the env variable [CONFIG_ENV](ZENOH_CONFIG).
+         *
+         * @return A result with the config.
+         */
+        fun fromEnv(): Result<Config> = runCatching {
+            val envValue = System.getenv(CONFIG_ENV)
+            if (envValue != null) {
+                return fromFile(File(envValue))
+            } else {
+                throw Exception("Couldn't load env variable: $CONFIG_ENV.")
+            }
         }
     }
 
