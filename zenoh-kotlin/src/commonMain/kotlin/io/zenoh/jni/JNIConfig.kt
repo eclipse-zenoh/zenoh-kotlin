@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.Config
 import io.zenoh.ZenohLoad
+import io.zenoh.protocol.ZenohID
 import java.io.File
 import java.nio.file.Path
 
@@ -82,11 +83,19 @@ internal class JNIConfig(internal val ptr: Long) {
         @Throws
         private external fun loadPeerConfigViaJNI(): Long
 
+        @Throws
+        private external fun getIdViaJNI(ptr: Long): ByteArray
+
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)
     }
 
     fun close() {
         freePtrViaJNI(ptr)
+    }
+
+    fun id(): ZenohID {
+        val bytes = getIdViaJNI(ptr)
+        return ZenohID(bytes)
     }
 }

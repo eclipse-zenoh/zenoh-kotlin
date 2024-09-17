@@ -15,7 +15,8 @@
 use std::{ptr::null, sync::Arc};
 
 use jni::{
-    objects::{JClass, JList, JObject, JString},
+    objects::{JByteArray, JClass, JList, JObject, JString},
+    sys::jbyteArray,
     JNIEnv,
 };
 use zenoh::{
@@ -165,6 +166,28 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadPeerConfigViaJN
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         null()
+    })
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getIdViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    cfg_ptr: *const Config,
+) -> jbyteArray {
+    || -> Result<jbyteArray> {
+        let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+        let bytes = arc_cfg.id().to_le_bytes();
+        let id_bytes = env
+            .byte_array_from_slice(&bytes)
+            .map_err(|err| jni_error!(err))?;
+        std::mem::forget(arc_cfg);
+        Ok(id_bytes.as_raw())
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JByteArray::default().as_raw()
     })
 }
 
