@@ -269,25 +269,21 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
             return JNIConfig.loadJsonConfig(jsonElement.toString())
         }
 
-        fun peer(): Result<Config> {
-            TODO()
-        }
-
         fun fromEnv(): Result<Config> {
             TODO()
         }
+    }
 
-        fun id(): ZenohID {
-            TODO()
-        }
+    fun id(): ZenohID {
+        TODO()
+    }
 
-        fun getJson(): String {
-            TODO()
-        }
+    fun getJson(): String {
+        TODO()
+    }
 
-        fun insertJson5() {
-            TODO()
-        }
+    fun insertJson5() {
+        TODO()
     }
 
     protected fun finalize() {
@@ -295,6 +291,16 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
     }
 }
 
+/**
+ * Creates a default 'client' mode zenoh net Session configuration.
+ */
 fun client(peers: List<String>): Result<Config> {
     return JNIConfig.loadClientConfig(peers)
+}
+
+/**
+ * Creates a default 'peer' mode zenoh net Session configuration.
+ */
+fun peer(): Result<Config> {
+    return JNIConfig.loadPeerConfig()
 }

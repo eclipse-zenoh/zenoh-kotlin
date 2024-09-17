@@ -299,4 +299,9 @@ class ConfigTest {
     fun `client function fails when providing wrongly formatted peers test`() {
         assertTrue(client(listOf("wrong_formatted_peer")).isFailure)
     }
+
+    @Test
+    fun `peer function shoulr create a basic peer config`() {
+        peer().getOrThrow()
+    }
 }

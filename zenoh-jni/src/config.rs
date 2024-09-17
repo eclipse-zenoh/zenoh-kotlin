@@ -19,7 +19,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::{
-    config::{client, EndPoint},
+    config::{client, peer, EndPoint},
     Config,
 };
 
@@ -150,6 +150,22 @@ fn process_peers(env: &mut JNIEnv, list: &JObject) -> Result<Vec<EndPoint>> {
         rust_vec.push(EndPoint::try_from(str).map_err(|err| session_error!(err))?);
     }
     Ok(rust_vec)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadPeerConfigViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+) -> *const Config {
+    || -> Result<*const Config> {
+        let config = peer();
+        Ok(Arc::into_raw(Arc::new(config)))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        null()
+    })
 }
 
 /// Frees the pointer to the config. The pointer should be valid and should have been obtained through
