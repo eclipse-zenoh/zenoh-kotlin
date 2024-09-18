@@ -66,11 +66,28 @@ internal class JNIConfig(internal val ptr: Long) {
         @Throws
         private external fun loadYamlConfigViaJNI(rawConfig: String): Long
 
+        @Throws
+        private external fun getIdViaJNI(ptr: Long): ByteArray
+
+        @Throws
+        private external fun insertJson5ViaJNI(ptr: Long, key: String, value: String): Long
+
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)
+
+        @Throws
+        private external fun getJsonViaJNI(ptr: Long, key: String): String
     }
 
     fun close() {
         freePtrViaJNI(ptr)
+    }
+
+    fun getJson(key: String): Result<String> = runCatching {
+        getJsonViaJNI(ptr, key)
+    }
+
+    fun insertJson5(key: String, value: String): Result<Unit> = runCatching {
+        insertJson5ViaJNI(this.ptr, key, value)
     }
 }

@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.jni.JNIConfig
+import io.zenoh.protocol.ZenohID
 import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.json.JsonElement
@@ -125,6 +126,8 @@ import kotlinx.serialization.json.JsonElement
 class Config internal constructor(internal val jniConfig: JNIConfig) {
 
     companion object {
+
+        private const val CONFIG_ENV = "ZENOH_CONFIG"
 
         /**
          * Returns the default config.
@@ -267,6 +270,51 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         fun fromJsonElement(jsonElement: JsonElement): Result<Config> {
             return JNIConfig.loadJsonConfig(jsonElement.toString())
         }
+
+        /**
+         * Loads the configuration from the env variable [CONFIG_ENV].
+         *
+         * @return A result with the config.
+         */
+        fun fromEnv(): Result<Config> = runCatching {
+            val envValue = System.getenv(CONFIG_ENV)
+            if (envValue != null) {
+                return fromFile(File(envValue))
+            } else {
+                throw Exception("Couldn't load env variable: $CONFIG_ENV.")
+            }
+        }
+    }
+
+    /**
+     * Returns the json value associated to the [key].
+     */
+    fun getJson(key: String): Result<String> {
+        return jniConfig.getJson(key)
+    }
+
+    /**
+     * Inserts a json5 value associated to the [key] into the Config.
+     *
+     * Example:
+     * ```kotlin
+     * val config = Config.default()
+     *
+     * // ...
+     * val scouting = """
+     *     {
+     *         multicast: {
+     *             enabled: true,
+     *         }
+     *     }
+     * """.trimIndent()
+     * config.insertJson5("scouting", scouting).getOrThrow()
+     * ```
+     *
+     * @return A result with the status of the operation.
+     */
+    fun insertJson5(key: String, value: String): Result<Unit> {
+        return jniConfig.insertJson5(key, value)
     }
 
     protected fun finalize() {

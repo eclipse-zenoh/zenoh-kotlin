@@ -289,4 +289,79 @@ class ConfigTest {
             serverConfigFile.delete()
         }
     }
+
+    @Test
+    fun `get json function test`() {
+        val jsonConfig = """
+        {
+            mode: "peer",
+            connect: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+            scouting: {
+                multicast: {
+                    enabled: false,
+                }
+            }
+        }
+        """.trimIndent()
+
+        val config = Config.fromJson(jsonConfig).getOrThrow()
+        val value = config.getJson("connect").getOrThrow()
+        assertTrue(value.contains("\"endpoints\":[\"tcp/localhost:7450\"]"))
+
+        val value2 = config.getJson("mode").getOrThrow()
+        assertEquals("\"peer\"", value2)
+    }
+
+    @Test
+    fun `config should remain valid despite failing to get json value`() {
+        val jsonConfig = """
+        {
+            mode: "peer",
+            connect: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+            scouting: {
+                multicast: {
+                    enabled: false,
+                }
+            }
+        }
+        """.trimIndent()
+
+        val config = Config.fromJson(jsonConfig).getOrThrow()
+        val result = config.getJson("non_existent_key")
+        assertTrue(result.isFailure)
+
+        // We perform another operation and it should be ok
+        val mode = config.getJson("mode").getOrThrow()
+        assertEquals("\"peer\"", mode)
+    }
+
+    @Test
+    fun `insert json5 function test`() {
+        val config = Config.default()
+
+        val endpoints = """["tcp/8.8.8.8:8", "tcp/8.8.8.8:9"]""".trimIndent()
+        config.insertJson5("listen/endpoints", endpoints)
+
+        val jsonValue = config.getJson("listen/endpoints").getOrThrow()
+        println(jsonValue)
+        assertTrue(jsonValue.contains("8.8.8.8"))
+    }
+
+    @Test
+    fun `insert ill formatted json5 should fail and config should remain valid`() {
+        val config = Config.default()
+
+        val illFormattedEndpoints = """["tcp/8.8.8.8:8"""".trimIndent()
+        val result = config.insertJson5("listen/endpoints", illFormattedEndpoints)
+        assertTrue(result.isFailure)
+
+        val correctEndpoints = """["tcp/8.8.8.8:8", "tcp/8.8.8.8:9"]""".trimIndent()
+        config.insertJson5("listen/endpoints", correctEndpoints)
+        val retrievedEndpoints = config.getJson("listen/endpoints").getOrThrow()
+        assertTrue(retrievedEndpoints.contains("8.8.8.8"))
+    }
 }
