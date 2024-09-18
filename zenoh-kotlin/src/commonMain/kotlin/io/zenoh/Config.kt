@@ -127,7 +127,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
 
     companion object {
 
-        const val CONFIG_ENV = "ZENOH_CONFIG"
+        private const val CONFIG_ENV = "ZENOH_CONFIG"
 
         /**
          * Returns the default config.
@@ -272,7 +272,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         }
 
         /**
-         * Loads the configuration from the env variable [CONFIG_ENV](ZENOH_CONFIG).
+         * Loads the configuration from the env variable [CONFIG_ENV].
          *
          * @return A result with the config.
          */
