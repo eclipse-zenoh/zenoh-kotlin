@@ -292,7 +292,8 @@ class ConfigTest {
 
     @Test
     fun `client function should create a basic client config`() {
-        client(listOf("tcp/localhost:7450", "tcp/localhost:7451", "tcp/localhost:7452", "tcp/localhost:7453")).getOrThrow()
+        val config = client(listOf("tcp/localhost:7450", "tcp/localhost:7451", "tcp/localhost:7452", "tcp/localhost:7453")).getOrThrow()
+        assertEquals("\"client\"", config.getJson("mode").getOrThrow())
     }
 
     @Test
@@ -302,7 +303,8 @@ class ConfigTest {
 
     @Test
     fun `peer function should create a basic peer config`() {
-        peer().getOrThrow()
+        val config = peer().getOrThrow()
+        assertEquals("\"peer\"", config.getJson("mode").getOrThrow())
     }
 
     @Test
