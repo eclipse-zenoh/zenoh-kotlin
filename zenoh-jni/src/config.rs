@@ -19,7 +19,7 @@ use jni::{
     sys::{jbyteArray, jstring},
     JNIEnv,
 };
-use zenoh::{Config};
+use zenoh::Config;
 
 use crate::{errors::Result, jni_error};
 use crate::{session_error, throw_exception, utils::decode_string};
