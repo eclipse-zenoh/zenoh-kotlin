@@ -287,13 +287,6 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
     }
 
     /**
-     * Returns the id in the config.
-     */
-    fun id(): ZenohID {
-        return jniConfig.id()
-    }
-
-    /**
      * Returns the json value associated to the [key].
      */
     fun getJson(key: String): Result<String> {

@@ -15,8 +15,8 @@
 use std::{ptr::null, sync::Arc};
 
 use jni::{
-    objects::{JByteArray, JClass, JString},
-    sys::{jbyteArray, jstring},
+    objects::{JClass, JString},
+    sys::jstring,
     JNIEnv,
 };
 use zenoh::Config;
@@ -118,30 +118,6 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
         throw_exception!(env, err);
         null()
     })
-}
-
-/// Obtains the id of the config, returning it as a little endian byte array.
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getIdViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    cfg_ptr: *const Config,
-) -> jbyteArray {
-    let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
-    let result = || -> Result<jbyteArray> {
-        let bytes = arc_cfg.id().to_le_bytes();
-        let id_bytes = env
-            .byte_array_from_slice(&bytes)
-            .map_err(|err| jni_error!(err))?;
-        Ok(id_bytes.as_raw())
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        JByteArray::default().as_raw()
-    });
-    std::mem::forget(arc_cfg);
-    result
 }
 
 /// Returns the json value associated to the provided [key]. May throw an exception in case of failure, which must be handled

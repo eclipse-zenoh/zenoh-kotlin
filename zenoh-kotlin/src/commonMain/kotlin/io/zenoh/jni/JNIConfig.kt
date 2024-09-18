@@ -16,7 +16,6 @@ package io.zenoh.jni
 
 import io.zenoh.Config
 import io.zenoh.ZenohLoad
-import io.zenoh.protocol.ZenohID
 import java.io.File
 import java.nio.file.Path
 
@@ -82,11 +81,6 @@ internal class JNIConfig(internal val ptr: Long) {
 
     fun close() {
         freePtrViaJNI(ptr)
-    }
-
-    fun id(): ZenohID {
-        val bytes = getIdViaJNI(ptr)
-        return ZenohID(bytes)
     }
 
     fun getJson(key: String): Result<String> = runCatching {

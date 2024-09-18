@@ -291,17 +291,6 @@ class ConfigTest {
     }
 
     @Test
-    fun `config id function test`() {
-        val customId = "123456789"
-        val config = Config.fromJson("""{
-            id: "$customId"
-        }
-        """.trimIndent()).getOrThrow()
-
-        assertEquals(customId, config.id().toString())
-    }
-
-    @Test
     fun `get json function test`() {
         val jsonConfig = """
         {
