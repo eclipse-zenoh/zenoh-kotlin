@@ -339,4 +339,30 @@ class ConfigTest {
         val value2 = config.getJson("mode").getOrThrow()
         assertEquals("\"peer\"", value2)
     }
+
+    @Test
+    fun `insert json5 function test`() {
+        val config = Config.default()
+
+        val endpoints = """["tcp/8.8.8.8:8", "tcp/8.8.8.8:9"]""".trimIndent()
+        config.insertJson5("listen/endpoints", endpoints)
+
+        val jsonValue = config.getJson("listen/endpoints").getOrThrow()
+        println(jsonValue)
+        assertTrue(jsonValue.contains("8.8.8.8"))
+    }
+
+    @Test
+    fun `insert ill formatted json5 should fail and config should remain valid`() {
+        val config = Config.default()
+
+        val illFormattedEndpoints = """["tcp/8.8.8.8:8"""".trimIndent()
+        val result = config.insertJson5("listen/endpoints", illFormattedEndpoints)
+        assertTrue(result.isFailure)
+
+        val correctEndpoints = """["tcp/8.8.8.8:8", "tcp/8.8.8.8:9"]""".trimIndent()
+        config.insertJson5("listen/endpoints", correctEndpoints)
+        val retrievedEndpoints = config.getJson("listen/endpoints").getOrThrow()
+        assertTrue(retrievedEndpoints.contains("8.8.8.8"))
+    }
 }

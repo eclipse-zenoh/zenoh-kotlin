@@ -86,6 +86,9 @@ internal class JNIConfig(internal val ptr: Long) {
         @Throws
         private external fun getIdViaJNI(ptr: Long): ByteArray
 
+        @Throws
+        private external fun insertJson5ViaJNI(ptr: Long, key: String, value: String): Long
+
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)
 
@@ -104,5 +107,9 @@ internal class JNIConfig(internal val ptr: Long) {
 
     fun getJson(key: String): Result<String> = runCatching {
         getJsonViaJNI(ptr, key)
+    }
+
+    fun insertJson5(key: String, value: String): Result<Unit> = runCatching {
+        insertJson5ViaJNI(this.ptr, key, value)
     }
 }

@@ -213,6 +213,30 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJN
     })
 }
 
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_insertJson5ViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    cfg_ptr: *const Config,
+    key: JString,
+    value: JString,
+) {
+    || -> Result<()> {
+        let key = decode_string(&mut env, &key)?;
+        let value = decode_string(&mut env, &value)?;
+        let mut config = core::ptr::read(cfg_ptr);
+        let insert_result = config
+            .insert_json5(&key, &value)
+            .map_err(|err| session_error!(err));
+        core::ptr::write(cfg_ptr as *mut _, config);
+        insert_result
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+    })
+}
+
 /// Frees the pointer to the config. The pointer should be valid and should have been obtained through
 /// one of the preceding `load` functions. This function should be called upon destruction of the kotlin
 /// Config instance.

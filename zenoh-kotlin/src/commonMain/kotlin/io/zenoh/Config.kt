@@ -293,12 +293,35 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         return jniConfig.id()
     }
 
+    /**
+     * Returns the json value associated to the [key].
+     */
     fun getJson(key: String): Result<String> {
         return jniConfig.getJson(key)
     }
 
-    fun insertJson5() {
-        TODO()
+    /**
+     * Inserts a json5 value associated to the [key] into the Config.
+     *
+     * Example:
+     * ```kotlin
+     * val config = Config.default()
+     *
+     * // ...
+     * val scouting = """
+     *     {
+     *         multicast: {
+     *             enabled: true,
+     *         }
+     *     }
+     * """.trimIndent()
+     * config.insertJson5("scouting", scouting).getOrThrow()
+     * ```
+     *
+     * @return A result with the status of the operation.
+     */
+    fun insertJson5(key: String, value: String): Result<Unit> {
+        return jniConfig.insertJson5(key, value)
     }
 
     protected fun finalize() {
