@@ -15,8 +15,8 @@
 use std::{mem, ops::Deref, ptr::null, sync::Arc, time::Duration};
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue},
-    sys::{jboolean, jint, jlong},
+    objects::{GlobalRef, JByteArray, JClass, JList, JObject, JString, JValue},
+    sys::{jboolean, jint, jlong, jobject},
     JNIEnv,
 };
 use zenoh::{
@@ -1035,4 +1035,56 @@ fn on_reply_error(
         }
     };
     result
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jobject {
+    let session = Arc::from_raw(session_ptr);
+    let ids = || -> Result<jobject> {
+        let peers_zid = session.info().peers_zid().wait();
+        let ids = peers_zid.collect::<Vec<ZenohId>>();
+        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JObject::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jobject {
+    let session = Arc::from_raw(session_ptr);
+    let ids = || -> Result<jobject> {
+        let peers_zid = session.info().routers_zid().wait();
+        let ids = peers_zid.collect::<Vec<ZenohId>>();
+        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JObject::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+fn ids_to_java_list(env: &mut JNIEnv, ids: Vec<ZenohId>) -> jni::errors::Result<jobject> {
+    let array_list = env.new_object("java/util/ArrayList", "()V", &[])?;
+    let jlist = JList::from_env(env, &array_list)?;
+    for id in ids {
+        let value = &mut env.byte_array_from_slice(&id.to_le_bytes())?;
+        jlist.add(env, value)?;
+    }
+    Ok(array_list.as_raw())
 }

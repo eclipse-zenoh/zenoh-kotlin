@@ -24,6 +24,7 @@ import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
+import io.zenoh.protocol.ZenohID
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -802,6 +803,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
+    fun info(): SessionInfo {
+        return SessionInfo(this)
+    }
+
     private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> {
         return jniSession?.run {
             declarePublisher(keyExpr, qos, reliability).onSuccess { declarations.add(it) }
@@ -865,6 +870,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     private fun resolveDelete(keyExpr: KeyExpr, delete: Delete): Result<Unit> = runCatching {
         jniSession?.run { performDelete(keyExpr, delete) }
+    }
+
+    internal fun getPeersId(): List<ZenohID> {
+        return jniSession?.peersZid() ?: emptyList()
+    }
+
+    internal fun getRoutersId(): List<ZenohID> {
+        return jniSession?.routersZid() ?: emptyList()
     }
 
     /** Launches the session through the jni session, returning the [Session] on success. */
