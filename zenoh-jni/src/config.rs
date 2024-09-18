@@ -123,6 +123,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
     })
 }
 
+/// Creates a default `'client'` mode zenoh net Session configuration and returns a pointer to it.
+///
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadClientConfigViaJNI(
@@ -153,22 +158,22 @@ fn process_peers(env: &mut JNIEnv, list: &JObject) -> Result<Vec<EndPoint>> {
     Ok(rust_vec)
 }
 
+/// Creates a default `'peer'` mode zenoh net Session configuration and returns a pointer to it.
+///
+/// The pointer to the config is expected to be freed later on upon the destruction of the
+/// Kotlin Config instance.
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadPeerConfigViaJNI(
-    mut env: JNIEnv,
+    mut _env: JNIEnv,
     _class: JClass,
 ) -> *const Config {
-    || -> Result<*const Config> {
-        let config = peer();
-        Ok(Arc::into_raw(Arc::new(config)))
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        null()
-    })
+    let config = peer();
+    Arc::into_raw(Arc::new(config))
 }
 
+/// Obtains the id of the config, returning it as a little endian byte array.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getIdViaJNI(
@@ -176,21 +181,24 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getIdViaJNI(
     _class: JClass,
     cfg_ptr: *const Config,
 ) -> jbyteArray {
-    || -> Result<jbyteArray> {
-        let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+    let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+    let result = || -> Result<jbyteArray> {
         let bytes = arc_cfg.id().to_le_bytes();
         let id_bytes = env
             .byte_array_from_slice(&bytes)
             .map_err(|err| jni_error!(err))?;
-        std::mem::forget(arc_cfg);
         Ok(id_bytes.as_raw())
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JByteArray::default().as_raw()
-    })
+    });
+    std::mem::forget(arc_cfg);
+    result
 }
 
+/// Returns the json value associated to the provided [key]. May throw an exception in case of failure, which must be handled
+/// on the kotlin layer.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJNI(
@@ -199,20 +207,23 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJN
     cfg_ptr: *const Config,
     key: JString,
 ) -> jstring {
-    || -> Result<jstring> {
-        let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+    let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+    let result = || -> Result<jstring> {
         let key = decode_string(&mut env, &key)?;
         let json = arc_cfg.get_json(&key).map_err(|err| session_error!(err))?;
         let java_json = env.new_string(json).map_err(|err| jni_error!(err))?;
-        std::mem::forget(arc_cfg);
         Ok(java_json.as_raw())
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JString::default().as_raw()
-    })
+    });
+    std::mem::forget(arc_cfg);
+    result
 }
 
+/// Inserts a json5 value associated to the provided [key]. May throw an exception in case of failure, which must be handled
+/// on the kotlin layer.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_insertJson5ViaJNI(

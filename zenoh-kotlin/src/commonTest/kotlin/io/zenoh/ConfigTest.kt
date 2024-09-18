@@ -341,6 +341,17 @@ class ConfigTest {
     }
 
     @Test
+    fun `config should remain valid despite failing to get json value`() {
+        val config = peer().getOrThrow()
+        val result = config.getJson("non_existent_key")
+        assertTrue(result.isFailure)
+
+        // We perform another operation and it should be ok
+        val mode = config.getJson("mode").getOrThrow()
+        assertEquals("\"peer\"", mode)
+    }
+
+    @Test
     fun `insert json5 function test`() {
         val config = Config.default()
 
