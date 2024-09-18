@@ -16,7 +16,7 @@ use std::{ptr::null, sync::Arc};
 
 use jni::{
     objects::{JByteArray, JClass, JList, JObject, JString},
-    sys::jbyteArray,
+    sys::{jbyteArray, jstring},
     JNIEnv,
 };
 use zenoh::{
@@ -188,6 +188,28 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getIdViaJNI(
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JByteArray::default().as_raw()
+    })
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    cfg_ptr: *const Config,
+    key: JString,
+) -> jstring {
+    || -> Result<jstring> {
+        let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
+        let key = decode_string(&mut env, &key)?;
+        let json = arc_cfg.get_json(&key).map_err(|err| session_error!(err))?;
+        let java_json = env.new_string(json).map_err(|err| jni_error!(err))?;
+        std::mem::forget(arc_cfg);
+        Ok(java_json.as_raw())
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JString::default().as_raw()
     })
 }
 

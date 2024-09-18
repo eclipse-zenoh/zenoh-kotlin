@@ -293,8 +293,8 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         return jniConfig.id()
     }
 
-    fun getJson(): String {
-        TODO()
+    fun getJson(key: String): Result<String> {
+        return jniConfig.getJson(key)
     }
 
     fun insertJson5() {

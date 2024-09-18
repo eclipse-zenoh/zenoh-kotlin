@@ -315,4 +315,28 @@ class ConfigTest {
 
         assertEquals(customId, config.id().toString())
     }
+
+    @Test
+    fun `get json function test`() {
+        val jsonConfig = """
+        {
+            mode: "peer",
+            connect: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+            scouting: {
+                multicast: {
+                    enabled: false,
+                }
+            }
+        }
+        """.trimIndent()
+
+        val config = Config.fromJson(jsonConfig).getOrThrow()
+        val value = config.getJson("connect").getOrThrow()
+        assertTrue(value.contains("\"endpoints\":[\"tcp/localhost:7450\"]"))
+
+        val value2 = config.getJson("mode").getOrThrow()
+        assertEquals("\"peer\"", value2)
+    }
 }

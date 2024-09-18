@@ -88,6 +88,9 @@ internal class JNIConfig(internal val ptr: Long) {
 
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)
+
+        @Throws
+        private external fun getJsonViaJNI(ptr: Long, key: String): String
     }
 
     fun close() {
@@ -97,5 +100,9 @@ internal class JNIConfig(internal val ptr: Long) {
     fun id(): ZenohID {
         val bytes = getIdViaJNI(ptr)
         return ZenohID(bytes)
+    }
+
+    fun getJson(key: String): Result<String> = runCatching {
+        getJsonViaJNI(ptr, key)
     }
 }
