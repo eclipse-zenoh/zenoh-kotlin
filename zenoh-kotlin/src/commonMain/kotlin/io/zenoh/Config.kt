@@ -330,6 +330,20 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
 }
 
 /**
+ * Returns an empty configuration.
+ */
+fun empty(): Config {
+    return Config.default()
+}
+
+/**
+ * Returns a default configuration.
+ */
+fun default(): Config {
+    return Config.default()
+}
+
+/**
  * Creates a default 'client' mode zenoh net Session configuration.
  */
 fun client(peers: List<String>): Result<Config> {
