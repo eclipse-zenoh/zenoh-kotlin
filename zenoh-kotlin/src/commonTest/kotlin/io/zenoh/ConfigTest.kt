@@ -291,23 +291,6 @@ class ConfigTest {
     }
 
     @Test
-    fun `client function should create a basic client config`() {
-        val config = client(listOf("tcp/localhost:7450", "tcp/localhost:7451", "tcp/localhost:7452", "tcp/localhost:7453")).getOrThrow()
-        assertEquals("\"client\"", config.getJson("mode").getOrThrow())
-    }
-
-    @Test
-    fun `client function fails when providing wrongly formatted peers test`() {
-        assertTrue(client(listOf("wrong_formatted_peer")).isFailure)
-    }
-
-    @Test
-    fun `peer function should create a basic peer config`() {
-        val config = peer().getOrThrow()
-        assertEquals("\"peer\"", config.getJson("mode").getOrThrow())
-    }
-
-    @Test
     fun `config id function test`() {
         val customId = "123456789"
         val config = Config.fromJson("""{
@@ -344,7 +327,21 @@ class ConfigTest {
 
     @Test
     fun `config should remain valid despite failing to get json value`() {
-        val config = peer().getOrThrow()
+        val jsonConfig = """
+        {
+            mode: "peer",
+            connect: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+            scouting: {
+                multicast: {
+                    enabled: false,
+                }
+            }
+        }
+        """.trimIndent()
+
+        val config = Config.fromJson(jsonConfig).getOrThrow()
         val result = config.getJson("non_existent_key")
         assertTrue(result.isFailure)
 

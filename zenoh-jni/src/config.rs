@@ -15,14 +15,11 @@
 use std::{ptr::null, sync::Arc};
 
 use jni::{
-    objects::{JByteArray, JClass, JList, JObject, JString},
+    objects::{JByteArray, JClass, JString},
     sys::{jbyteArray, jstring},
     JNIEnv,
 };
-use zenoh::{
-    config::{client, peer, EndPoint},
-    Config,
-};
+use zenoh::{Config};
 
 use crate::{errors::Result, jni_error};
 use crate::{session_error, throw_exception, utils::decode_string};
@@ -121,56 +118,6 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
         throw_exception!(env, err);
         null()
     })
-}
-
-/// Creates a default `'client'` mode zenoh net Session configuration and returns a pointer to it.
-///
-/// The pointer to the config is expected to be freed later on upon the destruction of the
-/// Kotlin Config instance.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadClientConfigViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    list: JObject,
-) -> *const Config {
-    || -> Result<*const Config> {
-        let peers = process_peers(&mut env, &list)?;
-        let config = client(peers);
-        Ok(Arc::into_raw(Arc::new(config)))
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        null()
-    })
-}
-
-fn process_peers(env: &mut JNIEnv, list: &JObject) -> Result<Vec<EndPoint>> {
-    let jmap = JList::from_env(env, list).map_err(|err| jni_error!(err))?;
-    let mut iterator = jmap.iter(env).map_err(|err| jni_error!(err))?;
-    let mut rust_vec: Vec<EndPoint> = Vec::new();
-    while let Some(value) = iterator.next(env).map_err(|err| jni_error!(err))? {
-        let java_str = env.auto_local(JString::from(value));
-        let str = decode_string(env, &java_str)?;
-        rust_vec.push(EndPoint::try_from(str).map_err(|err| session_error!(err))?);
-    }
-    Ok(rust_vec)
-}
-
-/// Creates a default `'peer'` mode zenoh net Session configuration and returns a pointer to it.
-///
-/// The pointer to the config is expected to be freed later on upon the destruction of the
-/// Kotlin Config instance.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadPeerConfigViaJNI(
-    mut _env: JNIEnv,
-    _class: JClass,
-) -> *const Config {
-    let config = peer();
-    Arc::into_raw(Arc::new(config))
 }
 
 /// Obtains the id of the config, returning it as a little endian byte array.

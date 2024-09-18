@@ -328,31 +328,3 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
         jniConfig.close()
     }
 }
-
-/**
- * Returns an empty configuration.
- */
-fun empty(): Config {
-    return Config.default()
-}
-
-/**
- * Returns a default configuration.
- */
-fun default(): Config {
-    return Config.default()
-}
-
-/**
- * Creates a default 'client' mode zenoh net Session configuration.
- */
-fun client(peers: List<String>): Result<Config> {
-    return JNIConfig.loadClientConfig(peers)
-}
-
-/**
- * Creates a default 'peer' mode zenoh net Session configuration.
- */
-fun peer(): Result<Config> {
-    return JNIConfig.loadPeerConfig()
-}
