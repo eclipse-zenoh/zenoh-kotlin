@@ -23,7 +23,7 @@ use zenoh::session::ZenohId;
 /// Returns the string representation of a ZenohID.
 #[no_mangle]
 #[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNIZenohID_toStringViaJNI(
+pub extern "C" fn Java_io_zenoh_jni_JNIZenohId_toStringViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     zenoh_id: JByteArray,

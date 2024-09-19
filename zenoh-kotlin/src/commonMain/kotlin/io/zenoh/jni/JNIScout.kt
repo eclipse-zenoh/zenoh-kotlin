@@ -17,7 +17,7 @@ package io.zenoh.jni
 import io.zenoh.Config
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback
-import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.ZenohId
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
 import io.zenoh.scouting.WhatAmI
@@ -37,7 +37,7 @@ internal class JNIScout(private val ptr: Long) {
             receiver: R
         ): Result<Scout<R>> = runCatching {
             val scoutCallback = JNIScoutCallback { whatAmI2: Int, id: ByteArray, locators: List<String> ->
-                callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohID(id), locators))
+                callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(id), locators))
             }
             val binaryWhatAmI: Int = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
             val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config?.jniConfig?.ptr)

@@ -24,7 +24,7 @@ import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
 import io.zenoh.protocol.IntoZBytes
 import io.zenoh.protocol.ZBytes
-import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.ZenohId
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
@@ -872,15 +872,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         jniSession?.run { performDelete(keyExpr, delete) }
     }
 
-    internal fun zid(): Result<ZenohID> {
+    internal fun zid(): Result<ZenohId> {
         return jniSession?.zid() ?: Result.failure(sessionClosedException)
     }
 
-    internal fun getPeersId(): Result<List<ZenohID>> {
+    internal fun getPeersId(): Result<List<ZenohId>> {
         return jniSession?.peersZid() ?: Result.failure(sessionClosedException)
     }
 
-    internal fun getRoutersId(): Result<List<ZenohID>> {
+    internal fun getRoutersId(): Result<List<ZenohId>> {
         return jniSession?.routersZid() ?: Result.failure(sessionClosedException)
     }
 

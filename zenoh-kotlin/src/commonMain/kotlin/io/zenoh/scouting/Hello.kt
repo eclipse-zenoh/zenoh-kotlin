@@ -15,14 +15,14 @@
 package io.zenoh.scouting
 
 import io.zenoh.ZenohType
-import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.ZenohId
 
 /**
  * Hello message received while scouting.
  *
  * @property whatAmI [WhatAmI] configuration: it indicates the role of the zenoh node sending the HELLO message.
- * @property zid [ZenohID] of the node sending the hello message.
+ * @property zid [ZenohId] of the node sending the hello message.
  * @property locators The locators of this hello message.
  * @see Scout
  */
-data class Hello(val whatAmI: WhatAmI, val zid: ZenohID, val locators: List<String>): ZenohType
+data class Hello(val whatAmI: WhatAmI, val zid: ZenohId, val locators: List<String>): ZenohType
