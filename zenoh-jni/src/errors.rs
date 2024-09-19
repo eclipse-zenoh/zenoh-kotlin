@@ -26,71 +26,34 @@ macro_rules! throw_exception {
 }
 
 #[macro_export]
-macro_rules! jni_error {
+macro_rules! zerror {
     ($arg:expr) => {
-        $crate::errors::Error::Jni($arg.to_string())
+        $crate::errors::ZError($arg.to_string())
     };
     ($fmt:expr, $($arg:tt)*) => {
-        $crate::errors::Error::Jni(format!($fmt, $($arg)*))
+        $crate::errors::ZError(format!($fmt, $($arg)*))
     };
 }
 
-#[macro_export]
-macro_rules! session_error {
-    ($arg:expr) => {
-        $crate::errors::Error::Session($arg.to_string())
-    };
-    ($fmt:expr, $($arg:tt)*) => {
-        $crate::errors::Error::Session(format!($fmt, $($arg)*))
-    };
-
-}
-
-#[macro_export]
-macro_rules! key_expr_error {
-    ($arg:expr) => {
-        Error::KeyExpr($arg.to_string())
-    };
-    ($fmt:expr, $($arg:tt)*) => {
-        Error::KeyExpr(format!($fmt, $($arg)*))
-    };
-}
-
-pub(crate) type Result<T> = core::result::Result<T, Error>;
+pub(crate) type ZResult<T> = core::result::Result<T, ZError>;
 
 #[derive(Debug)]
-pub(crate) enum Error {
-    Session(String),
-    KeyExpr(String),
-    Jni(String),
-}
+pub(crate) struct ZError(pub String);
 
-impl fmt::Display for Error {
+impl fmt::Display for ZError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::Session(msg) => write!(f, "{}", msg),
-            Error::KeyExpr(msg) => write!(f, "{}", msg),
-            Error::Jni(msg) => write!(f, "{}", msg),
-        }
+        write!(f, "{}", self.0)
     }
 }
 
-impl Error {
-    fn get_associated_kotlin_exception(&self) -> String {
-        let class = match self {
-            Error::Session(_) => "io/zenoh/exceptions/SessionException",
-            Error::KeyExpr(_) => "io/zenoh/exceptions/KeyExprException",
-            Error::Jni(_) => "io/zenoh/exceptions/JNIException",
-        };
-        class.to_string()
-    }
+impl ZError {
+    const KOTLIN_EXCEPTION_NAME: &'static str = "io/zenoh/exceptions/ZError";
 
-    pub fn throw_on_jvm(&self, env: &mut JNIEnv) -> Result<()> {
-        let exception_name = self.get_associated_kotlin_exception();
+    pub fn throw_on_jvm(&self, env: &mut JNIEnv) -> ZResult<()> {
         let exception_class = env
-            .find_class(&exception_name)
-            .map_err(|err| jni_error!("Failed to retrieve exception class: {}", err))?;
+            .find_class(Self::KOTLIN_EXCEPTION_NAME)
+            .map_err(|err| zerror!("Failed to retrieve exception class: {}", err))?;
         env.throw_new(exception_class, self.to_string())
-            .map_err(|err| jni_error!("Failed to throw exception: {}", err))
+            .map_err(|err| zerror!("Failed to throw exception: {}", err))
     }
 }

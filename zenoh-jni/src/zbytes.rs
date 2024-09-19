@@ -21,7 +21,7 @@ use jni::{
 };
 use zenoh::bytes::ZBytes;
 
-use crate::{errors::Result, jni_error, session_error, utils::bytes_to_java_array};
+use crate::{errors::ZResult, utils::bytes_to_java_array, zerror};
 use crate::{throw_exception, utils::decode_byte_array};
 
 ///
@@ -44,8 +44,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeIntoMapViaJNI(
     _class: JClass,
     map: JObject,
 ) -> jbyteArray {
-    || -> Result<jobject> {
-        let zbytes = java_map_to_zbytes(&mut env, &map).map_err(|err| jni_error!(err))?;
+    || -> ZResult<jobject> {
+        let zbytes = java_map_to_zbytes(&mut env, &map).map_err(|err| zerror!(err))?;
         let byte_array = bytes_to_java_array(&env, &zbytes)?;
         Ok(byte_array.as_raw())
     }()
@@ -84,13 +84,13 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoMapViaJNI(
     _class: JClass,
     serialized_map: JByteArray,
 ) -> jobject {
-    || -> Result<jobject> {
+    || -> ZResult<jobject> {
         let payload = decode_byte_array(&env, serialized_map)?;
         let zbytes = ZBytes::new(payload);
         let deserialization: HashMap<Vec<u8>, Vec<u8>> = zbytes
             .deserialize::<HashMap<Vec<u8>, Vec<u8>>>()
-            .map_err(|err| session_error!(err))?;
-        hashmap_to_java_map(&mut env, &deserialization).map_err(|err| jni_error!(err))
+            .map_err(|err| zerror!(err))?;
+        hashmap_to_java_map(&mut env, &deserialization).map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -134,8 +134,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeIntoListViaJNI(
     _class: JClass,
     list: JObject,
 ) -> jbyteArray {
-    || -> Result<jobject> {
-        let zbytes = java_list_to_zbytes(&mut env, &list).map_err(|err| jni_error!(err))?;
+    || -> ZResult<jobject> {
+        let zbytes = java_list_to_zbytes(&mut env, &list).map_err(|err| zerror!(err))?;
         let byte_array = bytes_to_java_array(&env, &zbytes)?;
         Ok(byte_array.as_raw())
     }()
@@ -175,10 +175,10 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoListViaJNI(
     _class: JClass,
     serialized_list: JByteArray,
 ) -> jobject {
-    || -> Result<jobject> {
+    || -> ZResult<jobject> {
         let payload = decode_byte_array(&env, serialized_list)?;
         let zbytes = ZBytes::new(payload);
-        zbytes_to_java_list(&mut env, &zbytes).map_err(|err| jni_error!(err))
+        zbytes_to_java_list(&mut env, &zbytes).map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);

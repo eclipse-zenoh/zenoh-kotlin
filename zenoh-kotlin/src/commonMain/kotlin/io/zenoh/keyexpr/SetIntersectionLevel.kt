@@ -14,6 +14,11 @@
 
 package io.zenoh.keyexpr
 
+/**
+ * The possible relations between two sets.
+ *
+ * Note that [EQUALS] implies [INCLUDES], which itself implies [INTERSECTS].
+ */
 enum class SetIntersectionLevel(internal val value: Int) {
     DISJOINT(0),
     INTERSECTS(1),

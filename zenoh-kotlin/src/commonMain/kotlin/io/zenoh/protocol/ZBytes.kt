@@ -14,6 +14,7 @@
 
 package io.zenoh.protocol
 
+import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIZBytes
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -481,7 +482,7 @@ fun ByteArray.into(): ZBytes {
     return ZBytes(this)
 }
 
-@Throws(Exception::class)
+@Throws(ZError::class)
 internal fun Any?.into(): ZBytes {
     return when (this) {
         is String -> this.into()
@@ -492,7 +493,7 @@ internal fun Any?.into(): ZBytes {
     }
 }
 
-@Throws(Exception::class)
+@Throws(ZError::class)
 internal fun ZBytes.intoAny(type: KType): Any {
     return when (type) {
         typeOf<String>() -> this.toString()

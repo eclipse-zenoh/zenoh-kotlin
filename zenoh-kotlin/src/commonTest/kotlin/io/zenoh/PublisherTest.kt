@@ -36,7 +36,7 @@ class PublisherTest {
     fun setUp() {
         session = Session.open(Config.default()).getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
-        publisher = session.declarePublisher(keyExpr).getOrThrow()
+        publisher = session.declarePublisher(keyExpr, encoding = Encoding.ZENOH_STRING).getOrThrow()
         subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
             receivedSamples.add(sample)
         }).getOrThrow()
@@ -74,5 +74,12 @@ class PublisherTest {
         publisher.delete()
         assertEquals(1, receivedSamples.size)
         assertEquals(SampleKind.DELETE, receivedSamples[0].kind)
+    }
+
+    @Test
+    fun `when encoding is not provided a put should fallback to the publisher encoding`() {
+        publisher.put("Test")
+        assertEquals(1, receivedSamples.size)
+        assertEquals(Encoding.ZENOH_STRING, receivedSamples[0].encoding)
     }
 }

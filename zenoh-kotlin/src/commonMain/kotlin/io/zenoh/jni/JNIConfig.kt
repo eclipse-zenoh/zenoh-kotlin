@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.Config
 import io.zenoh.ZenohLoad
+import io.zenoh.exceptions.ZError
 import java.io.File
 import java.nio.file.Path
 
@@ -54,28 +55,28 @@ internal class JNIConfig(internal val ptr: Long) {
             Config(JNIConfig(cfgPtr))
         }
 
-        @Throws
+        @Throws(ZError::class)
         private external fun loadDefaultConfigViaJNI(): Long
 
-        @Throws
+        @Throws(ZError::class)
         private external fun loadConfigFileViaJNI(path: String): Long
 
-        @Throws
+        @Throws(ZError::class)
         private external fun loadJsonConfigViaJNI(rawConfig: String): Long
 
-        @Throws
+        @Throws(ZError::class)
         private external fun loadYamlConfigViaJNI(rawConfig: String): Long
 
-        @Throws
+        @Throws(ZError::class)
         private external fun getIdViaJNI(ptr: Long): ByteArray
 
-        @Throws
+        @Throws(ZError::class)
         private external fun insertJson5ViaJNI(ptr: Long, key: String, value: String): Long
 
         /** Frees the underlying native config. */
         private external fun freePtrViaJNI(ptr: Long)
 
-        @Throws
+        @Throws(ZError::class)
         private external fun getJsonViaJNI(ptr: Long, key: String): String
     }
 

@@ -16,7 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.prelude.Encoding
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.jni.callbacks.JNIGetCallback
@@ -63,7 +63,7 @@ internal class JNISession {
         closeSessionViaJNI(sessionPtr.get())
     }
 
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> = runCatching {
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS, encoding: Encoding, reliability: Reliability): Result<Publisher> = runCatching {
         val publisherRawPtr = declarePublisherViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
@@ -76,6 +76,7 @@ internal class JNISession {
         Publisher(
             keyExpr,
             qos,
+            encoding,
             JNIPublisher(publisherRawPtr),
         )
     }
@@ -211,10 +212,10 @@ internal class JNISession {
         keyExpr.jniKeyExpr?.run {
             undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
             keyExpr.jniKeyExpr = null
-        } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
+        } ?: throw ZError("Attempting to undeclare a non declared key expression.")
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     fun performPut(
         keyExpr: KeyExpr,
         put: Put,
@@ -234,7 +235,7 @@ internal class JNISession {
         )
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     fun performDelete(
         keyExpr: KeyExpr,
         delete: Delete,
@@ -263,22 +264,22 @@ internal class JNISession {
         getRoutersZidViaJNI(sessionPtr.get()).map { ZenohId(it) }
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getZidViaJNI(ptr: Long): ByteArray
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getPeersZidViaJNI(ptr: Long): List<ByteArray>
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getRoutersZidViaJNI(ptr: Long): List<ByteArray>
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun openSessionViaJNI(configPtr: Long): Long
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun closeSessionViaJNI(ptr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun declarePublisherViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
@@ -289,7 +290,7 @@ internal class JNISession {
         reliability: Int
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun declareSubscriberViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
@@ -298,7 +299,7 @@ internal class JNISession {
         onClose: JNIOnCloseCallback,
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun declareQueryableViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
@@ -308,13 +309,13 @@ internal class JNISession {
         complete: Boolean
     ): Long
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun declareKeyExprViaJNI(sessionPtr: Long, keyExpr: String): Long
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun undeclareKeyExprViaJNI(sessionPtr: Long, keyExprPtr: Long)
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
@@ -331,7 +332,7 @@ internal class JNISession {
         encodingSchema: String?,
     )
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun putViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
@@ -346,7 +347,7 @@ internal class JNISession {
         reliability: Int
     )
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun deleteViaJNI(
         keyExprPtr: Long,
         keyExprString: String,

@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.Config
+import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback
 import io.zenoh.protocol.ZenohId
@@ -40,18 +41,18 @@ internal class JNIScout(private val ptr: Long) {
                 callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(id), locators))
             }
             val binaryWhatAmI: Int = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
-            val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config?.jniConfig?.ptr)
+            val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config?.jniConfig?.ptr ?: 0)
             Scout(receiver, JNIScout(ptr))
         }
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun scoutViaJNI(
             whatAmI: Int,
             callback: JNIScoutCallback,
-            configPtr: Long?,
+            configPtr: Long,
         ): Long
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         external fun freePtrViaJNI(ptr: Long)
     }
 

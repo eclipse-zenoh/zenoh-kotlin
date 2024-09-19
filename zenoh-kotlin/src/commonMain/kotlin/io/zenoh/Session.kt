@@ -14,7 +14,7 @@
 
 package io.zenoh
 
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
@@ -62,7 +62,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     companion object {
 
-        private val sessionClosedException = SessionException("Session is closed.")
+        private val sessionClosedException = ZError("Session is closed.")
 
         /**
          * Open a [Session] with the provided [Config].
@@ -121,15 +121,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param keyExpr The [KeyExpr] the publisher will be associated to.
      * @param qos The [QoS] configuration of the publisher.
+     * @param encoding The default [Encoding] for the publications.
      * @param reliability The [Reliability] the publisher wishes to obtain from the network.
      * @return The result of the declaration, returning the publisher in case of success.
      */
     fun declarePublisher(
         keyExpr: KeyExpr,
         qos: QoS = QoS.default(),
+        encoding: Encoding = Encoding.default(),
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Publisher> {
-        return resolvePublisher(keyExpr, qos, reliability)
+        return resolvePublisher(keyExpr, qos, encoding, reliability)
     }
 
     /**
@@ -803,13 +805,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return jniSession != null
     }
 
+    /**
+     * Returns the [SessionInfo] of this session.
+     */
     fun info(): SessionInfo {
         return SessionInfo(this)
     }
 
-    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> {
+    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS, encoding: Encoding, reliability: Reliability): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(keyExpr, qos, reliability).onSuccess { declarations.add(it) }
+            declarePublisher(keyExpr, qos, encoding, reliability).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 

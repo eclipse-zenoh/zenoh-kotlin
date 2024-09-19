@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.SetIntersectionLevel
 
@@ -65,25 +66,25 @@ internal class JNIKeyExpr(internal val ptr: Long) {
             KeyExpr(concatViaJNI(keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, other))
         }
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun tryFromViaJNI(keyExpr: String): String
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun autocanonizeViaJNI(keyExpr: String): String
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun intersectsViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun includesViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Boolean
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun relationToViaJNI(ptrA: Long, keyExprA: String, ptrB: Long, keyExprB: String): Int
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun joinViaJNI(ptrA: Long, keyExprA: String, other: String): String
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun concatViaJNI(ptrA: Long, keyExprA: String, other: String): String
     }
 

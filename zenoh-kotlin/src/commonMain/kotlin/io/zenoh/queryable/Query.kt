@@ -16,7 +16,7 @@ package io.zenoh.queryable
 
 import io.zenoh.ZenohType
 import io.zenoh.selector.Selector
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
@@ -80,7 +80,7 @@ class Query internal constructor(
             val result = it.replySuccess(sample)
             jniQuery = null
             result
-        } ?: Result.failure(SessionException("Query is invalid"))
+        } ?: Result.failure(ZError("Query is invalid"))
     }
 
     /**
@@ -97,7 +97,7 @@ class Query internal constructor(
             val result = it.replyError(error, encoding)
             jniQuery = null
             result
-        } ?: Result.failure(SessionException("Query is invalid"))
+        } ?: Result.failure(ZError("Query is invalid"))
     }
 
     /**
@@ -122,7 +122,7 @@ class Query internal constructor(
             val result = it.replyDelete(keyExpr, timestamp, attachment, qos)
             jniQuery = null
             result
-        } ?: Result.failure(SessionException("Query is invalid"))
+        } ?: Result.failure(ZError("Query is invalid"))
     }
 
     override fun close() {

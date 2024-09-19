@@ -14,11 +14,10 @@
 
 package io.zenoh
 
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import kotlinx.coroutines.runBlocking
-import java.nio.file.Path
 import kotlin.test.*
 
 class SessionTest {
@@ -73,9 +72,9 @@ class SessionTest {
     fun sessionClose_newDeclarationsReturnNullAfterClosingSession() {
         val session = Session.open(Config.default()).getOrThrow()
         session.close()
-        assertFailsWith<SessionException> { session.declarePublisher(testKeyExpr).getOrThrow() }
-        assertFailsWith<SessionException> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }
-        assertFailsWith<SessionException> { session.declareQueryable(testKeyExpr, callback = {}).getOrThrow() }
+        assertFailsWith<ZError> { session.declarePublisher(testKeyExpr).getOrThrow() }
+        assertFailsWith<ZError> { session.declareSubscriber(testKeyExpr, callback = {}).getOrThrow() }
+        assertFailsWith<ZError> { session.declareQueryable(testKeyExpr, callback = {}).getOrThrow() }
     }
 
 }

@@ -14,6 +14,7 @@
 
 package io.zenoh.jni
 
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
 import io.zenoh.prelude.QoS
@@ -72,7 +73,7 @@ internal class JNIQuery(private val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun replySuccessViaJNI(
         queryPtr: Long,
         keyExprPtr: Long,
@@ -88,7 +89,7 @@ internal class JNIQuery(private val ptr: Long) {
         qosCongestionControl: Int,
     )
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun replyErrorViaJNI(
         queryPtr: Long,
         errorValuePayload: ByteArray,
@@ -96,7 +97,7 @@ internal class JNIQuery(private val ptr: Long) {
         encodingSchema: String?,
     )
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun replyDeleteViaJNI(
         queryPtr: Long,
         keyExprPtr: Long,

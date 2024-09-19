@@ -15,9 +15,6 @@
 package io.zenoh.exceptions
 
 /**
- * JNI (Java native interface) exception.
- *
- * This type of exception is thrown from the native code when something goes wrong regarding the
- * communication between the Java/Kotlin layer and the native layer through the JNI.
+ * A Zenoh Error.
  */
-class JNIException : Exception()
+class ZError(override val message: String? = null): Exception()
