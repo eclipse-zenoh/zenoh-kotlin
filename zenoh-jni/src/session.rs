@@ -1044,7 +1044,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
     let ids = {
         let peers_zid = session.info().peers_zid().wait();
         let ids = peers_zid.collect::<Vec<ZenohId>>();
-        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+        ids_to_java_list(&mut env, ids).map_err(|err| zerror!(err))
     }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -1067,7 +1067,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
     let ids = {
         let peers_zid = session.info().routers_zid().wait();
         let ids = peers_zid.collect::<Vec<ZenohId>>();
-        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+        ids_to_java_list(&mut env, ids).map_err(|err| zerror!(err))
     }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -1090,7 +1090,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
         let zid = session.info().zid().wait();
         env.byte_array_from_slice(&zid.to_le_bytes())
             .map(|x| x.as_raw())
-            .map_err(|err| jni_error!(err))
+            .map_err(|err| zerror!(err))
     }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
