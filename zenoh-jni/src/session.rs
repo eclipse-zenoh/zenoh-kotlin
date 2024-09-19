@@ -1037,6 +1037,8 @@ fn on_reply_error(
     result
 }
 
+/// Returns a list of zenoh ids as byte arrays corresponding to the peers connected to the session provided.
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
@@ -1045,11 +1047,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
     session_ptr: *const Session,
 ) -> jobject {
     let session = Arc::from_raw(session_ptr);
-    let ids = || -> Result<jobject> {
+    let ids = {
         let peers_zid = session.info().peers_zid().wait();
         let ids = peers_zid.collect::<Vec<ZenohId>>();
         ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
-    }()
+    }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JObject::default().as_raw()
@@ -1058,6 +1060,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
     ids
 }
 
+/// Returns a list of zenoh ids as byte arrays corresponding to the routers connected to the session provided.
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
@@ -1066,11 +1070,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
     session_ptr: *const Session,
 ) -> jobject {
     let session = Arc::from_raw(session_ptr);
-    let ids = || -> Result<jobject> {
+    let ids = {
         let peers_zid = session.info().routers_zid().wait();
         let ids = peers_zid.collect::<Vec<ZenohId>>();
         ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
-    }()
+    }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JObject::default().as_raw()
@@ -1079,6 +1083,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
     ids
 }
 
+/// Returns the Zenoh ID as a byte array of the session.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
@@ -1087,12 +1092,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
     session_ptr: *const Session,
 ) -> jbyteArray {
     let session = Arc::from_raw(session_ptr);
-    let ids = || -> Result<jbyteArray> {
+    let ids = {
         let zid = session.info().zid().wait();
         env.byte_array_from_slice(&zid.to_le_bytes())
             .map(|x| x.as_raw())
             .map_err(|err| jni_error!(err))
-    }()
+    }
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JByteArray::default().as_raw()

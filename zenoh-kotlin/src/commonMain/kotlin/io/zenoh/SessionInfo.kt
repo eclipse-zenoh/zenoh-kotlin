@@ -16,16 +16,28 @@ package io.zenoh
 
 import io.zenoh.protocol.ZenohID
 
+/**
+ * Class allowing to obtain the information of a [Session].
+ */
 class SessionInfo(private val session: Session) {
 
+    /**
+     *  Return the [ZenohID] of the current Zenoh [Session]
+     */
     fun id(): Result<ZenohID> {
         return session.zid()
     }
 
+    /**
+     * Return the [ZenohID] of the zenoh peers the session is currently connected to.
+     */
     fun peersId(): Result<List<ZenohID>> {
         return session.getPeersId()
     }
 
+    /**
+     * Return the [ZenohID] of the zenoh routers the session is currently connected to.
+     */
     fun routersId(): Result<List<ZenohID>> {
         return session.getRoutersId()
     }
