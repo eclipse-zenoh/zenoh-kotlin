@@ -72,9 +72,11 @@ class Publisher internal constructor(
         private val InvalidPublisherResult = Result.failure<Unit>(SessionException("Publisher is not valid."))
     }
 
-    val congestionControl = qos.congestionControl
-    val priority = qos.priority
-    val express = qos.express
+    /** Get the congestion control applied when routing the data. */
+    fun congestionControl() = qos.congestionControl
+
+    /** Get the priority of the written data. */
+    fun priority() = qos.priority
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
     fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(payload, encoding, attachment) ?: InvalidPublisherResult
