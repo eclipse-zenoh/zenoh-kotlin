@@ -15,8 +15,8 @@
 use std::{mem, ops::Deref, ptr::null, sync::Arc, time::Duration};
 
 use jni::{
-    objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue},
-    sys::{jboolean, jint, jlong},
+    objects::{GlobalRef, JByteArray, JClass, JList, JObject, JString, JValue},
+    sys::{jboolean, jbyteArray, jint, jlong, jobject},
     JNIEnv,
 };
 use zenoh::{
@@ -1035,4 +1035,83 @@ fn on_reply_error(
         }
     };
     result
+}
+
+/// Returns a list of zenoh ids as byte arrays corresponding to the peers connected to the session provided.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getPeersZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jobject {
+    let session = Arc::from_raw(session_ptr);
+    let ids = {
+        let peers_zid = session.info().peers_zid().wait();
+        let ids = peers_zid.collect::<Vec<ZenohId>>();
+        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+    }
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JObject::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+/// Returns a list of zenoh ids as byte arrays corresponding to the routers connected to the session provided.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jobject {
+    let session = Arc::from_raw(session_ptr);
+    let ids = {
+        let peers_zid = session.info().routers_zid().wait();
+        let ids = peers_zid.collect::<Vec<ZenohId>>();
+        ids_to_java_list(&mut env, ids).map_err(|err| jni_error!(err))
+    }
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JObject::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+/// Returns the Zenoh ID as a byte array of the session.
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jbyteArray {
+    let session = Arc::from_raw(session_ptr);
+    let ids = {
+        let zid = session.info().zid().wait();
+        env.byte_array_from_slice(&zid.to_le_bytes())
+            .map(|x| x.as_raw())
+            .map_err(|err| jni_error!(err))
+    }
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JByteArray::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+fn ids_to_java_list(env: &mut JNIEnv, ids: Vec<ZenohId>) -> jni::errors::Result<jobject> {
+    let array_list = env.new_object("java/util/ArrayList", "()V", &[])?;
+    let jlist = JList::from_env(env, &array_list)?;
+    for id in ids {
+        let value = &mut env.byte_array_from_slice(&id.to_le_bytes())?;
+        jlist.add(env, value)?;
+    }
+    Ok(array_list.as_raw())
 }

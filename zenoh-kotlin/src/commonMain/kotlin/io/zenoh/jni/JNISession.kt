@@ -251,6 +251,27 @@ internal class JNISession {
         )
     }
 
+    fun zid(): Result<ZenohID> = runCatching {
+        ZenohID(getZidViaJNI(sessionPtr.get()))
+    }
+
+    fun peersZid(): Result<List<ZenohID>> = runCatching {
+        getPeersZidViaJNI(sessionPtr.get()).map { ZenohID(it) }
+    }
+
+    fun routersZid(): Result<List<ZenohID>> = runCatching {
+        getRoutersZidViaJNI(sessionPtr.get()).map { ZenohID(it) }
+    }
+
+    @Throws(Exception::class)
+    private external fun getZidViaJNI(ptr: Long): ByteArray
+
+    @Throws(Exception::class)
+    private external fun getPeersZidViaJNI(ptr: Long): List<ByteArray>
+
+    @Throws(Exception::class)
+    private external fun getRoutersZidViaJNI(ptr: Long): List<ByteArray>
+
     @Throws(Exception::class)
     private external fun openSessionViaJNI(configPtr: Long): Long
 

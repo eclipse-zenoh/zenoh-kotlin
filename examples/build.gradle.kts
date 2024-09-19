@@ -34,6 +34,7 @@ tasks {
         "ZBytes",
         "ZDelete",
         "ZGet",
+        "ZInfo",
         "ZPub",
         "ZPubThr",
         "ZPut",
