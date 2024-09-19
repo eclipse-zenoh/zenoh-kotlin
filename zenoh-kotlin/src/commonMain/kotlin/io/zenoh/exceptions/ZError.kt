@@ -17,4 +17,4 @@ package io.zenoh.exceptions
 /**
  * A Zenoh Error.
  */
-open class ZError(override val message: String? = null): Exception()
+class ZError(override val message: String? = null): Exception()

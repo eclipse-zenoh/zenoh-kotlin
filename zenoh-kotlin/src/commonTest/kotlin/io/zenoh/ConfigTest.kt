@@ -13,7 +13,6 @@
 //
 package io.zenoh
 
-import io.zenoh.exceptions.SessionException
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.protocol.into

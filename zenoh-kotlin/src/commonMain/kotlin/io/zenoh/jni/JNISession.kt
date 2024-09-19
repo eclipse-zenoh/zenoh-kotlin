@@ -16,7 +16,6 @@ package io.zenoh.jni
 
 import io.zenoh.*
 import io.zenoh.prelude.Encoding
-import io.zenoh.exceptions.SessionException
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
@@ -212,7 +211,7 @@ internal class JNISession {
         keyExpr.jniKeyExpr?.run {
             undeclareKeyExprViaJNI(sessionPtr.get(), this.ptr)
             keyExpr.jniKeyExpr = null
-        } ?: throw SessionException("Attempting to undeclare a non declared key expression.")
+        } ?: throw ZError("Attempting to undeclare a non declared key expression.")
     }
 
     @Throws(ZError::class)

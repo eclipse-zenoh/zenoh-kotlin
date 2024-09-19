@@ -14,9 +14,9 @@
 
 use std::sync::Arc;
 
-use crate::{errors::Result, key_expr::process_kotlin_key_expr, throw_exception};
+use crate::zerror;
+use crate::{errors::ZResult, key_expr::process_kotlin_key_expr, throw_exception};
 use crate::{
-    session_error,
     utils::{decode_byte_array, decode_encoding},
 };
 use jni::{
@@ -76,7 +76,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     qos_priority: jint,
     qos_congestion_control: jint,
 ) {
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let payload = decode_byte_array(&env, payload)?;
@@ -97,7 +97,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder.wait().map_err(|err| session_error!(err))
+        reply_builder.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
@@ -129,14 +129,14 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
 ) {
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
         query
             .reply_err(decode_byte_array(&env, payload)?)
             .encoding(encoding)
             .wait()
-            .map_err(|err| session_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }
@@ -178,7 +178,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     qos_priority: jint,
     qos_congestion_control: jint,
 ) {
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let mut reply_builder = query.reply_del(key_expr);
@@ -196,7 +196,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
         } else {
             reply_builder.congestion_control(CongestionControl::Drop)
         };
-        reply_builder.wait().map_err(|err| session_error!(err))
+        reply_builder.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
 }

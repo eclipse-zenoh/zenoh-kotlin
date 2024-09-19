@@ -15,7 +15,7 @@
 package io.zenoh.publication
 
 import io.zenoh.*
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.Encoding
@@ -69,7 +69,7 @@ class Publisher internal constructor(
 ) : SessionDeclaration, AutoCloseable {
 
     companion object {
-        private val InvalidPublisherResult = Result.failure<Unit>(SessionException("Publisher is not valid."))
+        private val InvalidPublisherResult = Result.failure<Unit>(ZError("Publisher is not valid."))
     }
 
     val congestionControl = qos.congestionControl

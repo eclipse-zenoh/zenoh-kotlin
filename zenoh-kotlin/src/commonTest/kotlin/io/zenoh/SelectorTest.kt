@@ -1,6 +1,6 @@
 package io.zenoh
 
-import io.zenoh.exceptions.KeyExprException
+import io.zenoh.exceptions.ZError
 import io.zenoh.selector.Selector
 import io.zenoh.selector.intoSelector
 import org.junit.jupiter.api.Assertions.assertNull
@@ -22,7 +22,7 @@ class SelectorTest {
             assertNull(selector.parameters)
         }
 
-        assertFailsWith<KeyExprException> { "".intoSelector().getOrThrow() }
+        assertFailsWith<ZError> { "".intoSelector().getOrThrow() }
     }
 
     @Test

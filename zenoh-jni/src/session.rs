@@ -30,8 +30,7 @@ use zenoh::{
 };
 
 use crate::{
-    errors::Result, jni_error, key_expr::process_kotlin_key_expr, session_error, throw_exception,
-    utils::*,
+    errors::ZResult, key_expr::process_kotlin_key_expr, throw_exception, utils::*, zerror,
 };
 
 /// Open a Zenoh session via JNI.
@@ -59,7 +58,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
             tracing::error!("Unable to open session: {}", err);
-            throw_exception!(env, session_error!(err));
+            throw_exception!(env, zerror!(err));
             null()
         }
     }
@@ -69,11 +68,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_openSessionViaJNI(
 ///
 /// If the config path provided is null then the default configuration is loaded.
 ///
-unsafe fn open_session(config_ptr: *const Config) -> Result<Session> {
+unsafe fn open_session(config_ptr: *const Config) -> ZResult<Session> {
     let config = Arc::from_raw(config_ptr);
     let result = zenoh::open(config.as_ref().clone())
         .wait()
-        .map_err(|err| session_error!(err));
+        .map_err(|err| zerror!(err));
     mem::forget(config);
     result
 }
@@ -103,7 +102,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
             tracing::error!("Unable to open session: {}", err);
-            throw_exception!(env, session_error!(err));
+            throw_exception!(env, zerror!(err));
             null()
         }
     }
@@ -111,17 +110,15 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithJsonConfigViaJNI(
 
 /// Open a Zenoh session with the provided json configuration.
 ///
-fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> Result<Session> {
+fn open_session_with_json_config(env: &mut JNIEnv, json_config: JString) -> ZResult<Session> {
     let json_config = decode_string(env, &json_config)?;
     let mut deserializer =
-        json5::Deserializer::from_str(&json_config).map_err(|err| session_error!(err))?;
+        json5::Deserializer::from_str(&json_config).map_err(|err| zerror!(err))?;
     let config = Config::from_deserializer(&mut deserializer).map_err(|err| match err {
-        Ok(c) => session_error!("Invalid configuration: {}", c),
-        Err(e) => session_error!("JSON error: {}", e),
+        Ok(c) => zerror!("Invalid configuration: {}", c),
+        Err(e) => zerror!("JSON error: {}", e),
     })?;
-    zenoh::open(config)
-        .wait()
-        .map_err(|err| session_error!(err))
+    zenoh::open(config).wait().map_err(|err| zerror!(err))
 }
 
 /// Open a Zenoh session with a YAML configuration.
@@ -149,7 +146,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithYamlConfigViaJNI(
         Ok(session) => Arc::into_raw(Arc::new(session)),
         Err(err) => {
             tracing::error!("Unable to open session: {}", err);
-            throw_exception!(env, session_error!(err));
+            throw_exception!(env, zerror!(err));
             null()
         }
     }
@@ -157,16 +154,14 @@ pub extern "C" fn Java_io_zenoh_jni_JNISession_openSessionWithYamlConfigViaJNI(
 
 /// Open a Zenoh session with the provided yaml configuration.
 ///
-fn open_session_with_yaml_config(env: &mut JNIEnv, yaml_config: JString) -> Result<Session> {
+fn open_session_with_yaml_config(env: &mut JNIEnv, yaml_config: JString) -> ZResult<Session> {
     let yaml_config = decode_string(env, &yaml_config)?;
     let deserializer = serde_yaml::Deserializer::from_str(&yaml_config);
     let config = Config::from_deserializer(deserializer).map_err(|err| match err {
-        Ok(c) => session_error!("Invalid configuration: {}", c),
-        Err(e) => session_error!("YAML error: {}", e),
+        Ok(c) => zerror!("Invalid configuration: {}", c),
+        Err(e) => zerror!("YAML error: {}", e),
     })?;
-    zenoh::open(config)
-        .wait()
-        .map_err(|err| session_error!(err))
+    zenoh::open(config).wait().map_err(|err| zerror!(err))
 }
 
 /// Closes a Zenoh session via JNI.
@@ -231,7 +226,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     reliability: jint,
 ) -> *const Publisher<'static> {
     let session = Arc::from_raw(session_ptr);
-    let publisher_ptr = || -> Result<*const Publisher<'static>> {
+    let publisher_ptr = || -> ZResult<*const Publisher<'static>> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
@@ -245,7 +240,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
             .wait();
         match result {
             Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
-            Err(err) => Err(session_error!(err)),
+            Err(err) => Err(zerror!(err)),
         }
     }()
     .unwrap_or_else(|err| {
@@ -300,7 +295,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
     reliability: jint,
 ) {
     let session = Arc::from_raw(session_ptr);
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let payload = decode_byte_array(&env, payload)?;
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
@@ -324,7 +319,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_putViaJNI(
         put_builder
             .wait()
             .map(|_| tracing::trace!("Put on '{key_expr}'"))
-            .map_err(|err| session_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -369,7 +364,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
     reliability: jint,
 ) {
     let session = Arc::from_raw(session_ptr);
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let congestion_control = decode_congestion_control(congestion_control)?;
         let priority = decode_priority(priority)?;
@@ -390,7 +385,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_deleteViaJNI(
         delete_builder
             .wait()
             .map(|_| tracing::trace!("Delete on '{key_expr}'"))
-            .map_err(|err| session_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -433,7 +428,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     on_close: JObject,
 ) -> *const Subscriber<()> {
     let session = Arc::from_raw(session_ptr);
-    || -> Result<*const Subscriber<()>> {
+    || -> ZResult<*const Subscriber<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
@@ -446,9 +441,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
             .declare_subscriber(key_expr.to_owned())
             .with(move |sample: Sample| {
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> Result<()> {
+                let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        jni_error!("Unable to attach thread for subscriber: {}", err)
+                        zerror!("Unable to attach thread for subscriber: {}", err)
                     })?;
                     let byte_array = bytes_to_java_array(&env, sample.payload())
                         .map(|array| env.auto_local(array))?;
@@ -471,12 +466,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                             |attachment| bytes_to_java_array(&env, attachment),
                         )
                         .map(|array| env.auto_local(array))
-                        .map_err(|err| jni_error!("Error processing attachment: {}", err))?;
+                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
 
-                    let key_expr_str =
-                        env.auto_local(env.new_string(sample.key_expr().to_string()).map_err(
-                            |err| jni_error!("Error processing sample key expr: {}", err),
-                        )?);
+                    let key_expr_str = env.auto_local(
+                        env.new_string(sample.key_expr().to_string())
+                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
+                    );
 
                     let express = sample.express();
                     let priority = sample.priority() as jint;
@@ -500,15 +495,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                             JValue::from(cc),
                         ],
                     )
-                    .map_err(|err| jni_error!(err))?;
+                    .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
                 .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
             })
             .wait();
 
-        let subscriber =
-            result.map_err(|err| session_error!("Unable to declare subscriber: {}", err))?;
+        let subscriber = result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
 
         tracing::debug!("Subscriber declared on '{}'.", key_expr);
         std::mem::forget(session);
@@ -561,7 +555,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     complete: jboolean,
 ) -> *const Queryable<()> {
     let session = Arc::from_raw(session_ptr);
-    let query_ptr = || -> Result<*const Queryable<()>> {
+    let query_ptr = || -> ZResult<*const Queryable<()>> {
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
@@ -591,7 +585,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
 
         let queryable = builder
             .wait()
-            .map_err(|err| session_error!("Error declaring queryable: {}", err))?;
+            .map_err(|err| zerror!("Error declaring queryable: {}", err))?;
         Ok(Arc::into_raw(Arc::new(queryable)))
     }()
     .unwrap_or_else(|err| {
@@ -602,12 +596,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
     query_ptr
 }
 
-fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Result<()> {
+fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> ZResult<()> {
     let selector_params_jstr = env
         .new_string(query.parameters().to_string())
         .map(|value| env.auto_local(value))
         .map_err(|err| {
-            jni_error!(
+            zerror!(
                 "Could not create a JString through JNI for the Query key expression. {}",
                 err
             )
@@ -640,13 +634,13 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
             |attachment| bytes_to_java_array(&env, attachment),
         )
         .map(|value| env.auto_local(value))
-        .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
+        .map_err(|err| zerror!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(&query.key_expr().to_string())
         .map(|key_expr| env.auto_local(key_expr))
         .map_err(|err| {
-            jni_error!(
+            zerror!(
                 "Could not create a JString through JNI for the Query key expression: {}.",
                 err
             )
@@ -679,7 +673,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> R
                 Arc::from_raw(query_ptr);
             };
             _ = env.exception_describe();
-            jni_error!(err)
+            zerror!(err)
         });
     result
 }
@@ -711,13 +705,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareKeyExprViaJNI(
     key_expr_str: JString,
 ) -> *const KeyExpr<'static> {
     let session: Arc<Session> = Arc::from_raw(session_ptr);
-    let key_expr_ptr = || -> Result<*const KeyExpr<'static>> {
+    let key_expr_ptr = || -> ZResult<*const KeyExpr<'static>> {
         let key_expr_str = decode_string(&mut env, &key_expr_str)?;
         let key_expr = session
             .declare_keyexpr(key_expr_str.to_owned())
             .wait()
             .map_err(|err| {
-                session_error!(
+                zerror!(
                     "Unable to declare key expression '{}': {}",
                     key_expr_str,
                     err
@@ -769,7 +763,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
         Err(err) => {
             throw_exception!(
                 env,
-                session_error!("Unable to declare key expression '{}': {}", key_expr, err)
+                zerror!("Unable to declare key expression '{}': {}", key_expr, err)
             );
         }
     }
@@ -828,7 +822,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     encoding_schema: /*nullable*/ JString,
 ) {
     let session = Arc::from_raw(session_ptr);
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
@@ -846,11 +840,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let mut get_builder = session
             .get(selector)
             .callback(move |reply| {
-                || -> Result<()> {
+                || -> ZResult<()> {
                     on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
                     tracing::debug!("Receiving reply through JNI: {:?}", reply);
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        jni_error!("Unable to attach thread for GET query callback: {}.", err)
+                        zerror!("Unable to attach thread for GET query callback: {}.", err)
                     })?;
 
                     match reply.result() {
@@ -888,7 +882,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         get_builder
             .wait()
             .map(|_| tracing::trace!("Performing get on '{key_expr}'.",))
-            .map_err(|err| session_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(session);
@@ -899,13 +893,13 @@ fn on_reply_success(
     replier_id: Option<ZenohId>,
     sample: &Sample,
     callback_global_ref: &GlobalRef,
-) -> Result<()> {
+) -> ZResult<()> {
     let zenoh_id = replier_id
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
                 env.byte_array_from_slice(&replier_id.to_le_bytes())
-                    .map_err(|err| jni_error!(err))
+                    .map_err(|err| zerror!(err))
             },
         )
         .map(|value| env.auto_local(value))?;
@@ -935,13 +929,13 @@ fn on_reply_success(
             |attachment| bytes_to_java_array(env, attachment),
         )
         .map(|value| env.auto_local(value))
-        .map_err(|err| jni_error!("Error processing attachment of reply: {}.", err))?;
+        .map_err(|err| zerror!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
         .new_string(sample.key_expr().to_string())
         .map(|value| env.auto_local(value))
         .map_err(|err| {
-            jni_error!(
+            zerror!(
                 "Could not create a JString through JNI for the Sample key expression. {}",
                 err
             )
@@ -974,7 +968,7 @@ fn on_reply_success(
         Ok(_) => Ok(()),
         Err(err) => {
             _ = env.exception_describe();
-            Err(jni_error!("On GET callback error: {}", err))
+            Err(zerror!("On GET callback error: {}", err))
         }
     };
     result
@@ -985,13 +979,13 @@ fn on_reply_error(
     replier_id: Option<ZenohId>,
     reply_error: &ReplyError,
     callback_global_ref: &GlobalRef,
-) -> Result<()> {
+) -> ZResult<()> {
     let zenoh_id = replier_id
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
                 env.byte_array_from_slice(&replier_id.to_le_bytes())
-                    .map_err(|err| jni_error!(err))
+                    .map_err(|err| zerror!(err))
             },
         )
         .map(|value| env.auto_local(value))?;
@@ -1031,7 +1025,7 @@ fn on_reply_error(
         Ok(_) => Ok(()),
         Err(err) => {
             _ = env.exception_describe();
-            Err(jni_error!("On GET callback error: {}", err))
+            Err(zerror!("On GET callback error: {}", err))
         }
     };
     result

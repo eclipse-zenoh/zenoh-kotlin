@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.exceptions.SessionException
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.SetIntersectionLevel
 import io.zenoh.keyexpr.intoKeyExpr
@@ -116,13 +115,11 @@ class KeyExprTest {
         // Undeclaring twice a key expression shall fail.
         val undeclare2 = session.undeclare(keyExpr)
         assertTrue(undeclare2.isFailure)
-        assertTrue(undeclare2.exceptionOrNull() is SessionException)
 
         // Undeclaring a key expr that was not declared through a session.
         val keyExpr2 = "x/y/z".intoKeyExpr().getOrThrow()
         val undeclare3 = session.undeclare(keyExpr2)
         assertTrue(undeclare3.isFailure)
-        assertTrue(undeclare3.exceptionOrNull() is SessionException)
 
         session.close()
         keyExpr.close()

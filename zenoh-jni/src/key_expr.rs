@@ -20,10 +20,9 @@ use jni::sys::{jboolean, jint, jstring};
 use jni::{objects::JString, JNIEnv};
 use zenoh::key_expr::KeyExpr;
 
-use crate::errors::Error;
-use crate::errors::Result;
+use crate::errors::ZResult;
 use crate::utils::decode_string;
-use crate::{jni_error, key_expr_error, throw_exception};
+use crate::{throw_exception, zerror};
 
 /// Validates the provided `key_expr` to be a valid key expression, returning it back
 /// in case of success or throwing an exception in case of failure.
@@ -67,7 +66,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI
         .and_then(|key_expr| {
             env.new_string(key_expr.to_string())
                 .map(|kexp| kexp.as_raw())
-                .map_err(|err| jni_error!(err))
+                .map_err(|err| zerror!(err))
         })
         .unwrap_or_else(|err| {
             throw_exception!(env, err);
@@ -99,7 +98,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
     key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str_2: JString,
 ) -> jboolean {
-    || -> Result<jboolean> {
+    || -> ZResult<jboolean> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
         Ok(key_expr_1.intersects(&key_expr_2) as jboolean)
@@ -134,7 +133,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
     key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str_2: JString,
 ) -> jboolean {
-    || -> Result<jboolean> {
+    || -> ZResult<jboolean> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
         Ok(key_expr_1.includes(&key_expr_2) as jboolean)
@@ -170,7 +169,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToV
     key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str_2: JString,
 ) -> jint {
-    || -> Result<jint> {
+    || -> ZResult<jint> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
         Ok(key_expr_1.relation_to(&key_expr_2) as jint)
@@ -204,15 +203,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
     key_expr_str_1: JString,
     key_expr_2: JString,
 ) -> jstring {
-    || -> Result<jstring> {
+    || -> ZResult<jstring> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
         let result = key_expr_1
             .join(key_expr_2_str.as_str())
-            .map_err(|err| key_expr_error!(err))?;
+            .map_err(|err| zerror!(err))?;
         env.new_string(result.to_string())
             .map(|kexp| kexp.as_raw())
-            .map_err(|err| jni_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -243,15 +242,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_concatViaJN
     key_expr_str_1: JString,
     key_expr_2: JString,
 ) -> jstring {
-    || -> Result<jstring> {
+    || -> ZResult<jstring> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
         let result = key_expr_1
             .concat(key_expr_2_str.as_str())
-            .map_err(|err| key_expr_error!(err))?;
+            .map_err(|err| zerror!(err))?;
         env.new_string(result.to_string())
             .map(|kexp| kexp.as_raw())
-            .map_err(|err| jni_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -281,20 +280,20 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     Arc::from_raw(key_expr_ptr);
 }
 
-fn validate_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
+fn validate_key_expr(env: &mut JNIEnv, key_expr: &JString) -> ZResult<KeyExpr<'static>> {
     let key_expr_str = decode_string(env, key_expr)
-        .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))?;
+        .map_err(|err| zerror!("Unable to get key expression string value: '{}'.", err))?;
 
     KeyExpr::try_from(key_expr_str)
-        .map_err(|err| key_expr_error!("Unable to create key expression: '{}'.", err))
+        .map_err(|err| zerror!("Unable to create key expression: '{}'.", err))
 }
 
-fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> Result<KeyExpr<'static>> {
+fn autocanonize_key_expr(env: &mut JNIEnv, key_expr: &JString) -> ZResult<KeyExpr<'static>> {
     decode_string(env, key_expr)
-        .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))
+        .map_err(|err| zerror!("Unable to get key expression string value: '{}'.", err))
         .and_then(|key_expr_str| {
             KeyExpr::autocanonize(key_expr_str)
-                .map_err(|err| key_expr_error!("Unable to create key expression: '{}'", err))
+                .map_err(|err| zerror!("Unable to create key expression: '{}'", err))
         })
 }
 
@@ -315,10 +314,10 @@ pub(crate) unsafe fn process_kotlin_key_expr(
     env: &mut JNIEnv,
     key_expr_str: &JString,
     key_expr_ptr: *const KeyExpr<'static>,
-) -> Result<KeyExpr<'static>> {
+) -> ZResult<KeyExpr<'static>> {
     if key_expr_ptr.is_null() {
         let key_expr = decode_string(env, key_expr_str)
-            .map_err(|err| jni_error!("Unable to get key expression string value: '{}'.", err))?;
+            .map_err(|err| zerror!("Unable to get key expression string value: '{}'.", err))?;
         Ok(KeyExpr::from_string_unchecked(key_expr))
     } else {
         let key_expr = Arc::from_raw(key_expr_ptr);

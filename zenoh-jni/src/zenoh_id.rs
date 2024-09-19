@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-use crate::{errors::Result, jni_error, throw_exception, utils::decode_byte_array, zerror};
+use crate::{errors::ZResult, throw_exception, utils::decode_byte_array, zerror};
 use jni::{
     objects::{JByteArray, JClass, JString},
     sys::jstring,
@@ -28,11 +28,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZenohID_toStringViaJNI(
     _class: JClass,
     zenoh_id: JByteArray,
 ) -> jstring {
-    || -> Result<JString> {
+    || -> ZResult<JString> {
         let bytes = decode_byte_array(&env, zenoh_id)?;
         let zenohid = ZenohId::try_from(bytes.as_slice()).map_err(|err| zerror!(err))?;
         env.new_string(zenohid.to_string())
-            .map_err(|err| jni_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
