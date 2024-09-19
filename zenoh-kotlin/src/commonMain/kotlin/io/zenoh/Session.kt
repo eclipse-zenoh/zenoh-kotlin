@@ -801,8 +801,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /** Returns if session is open or has been closed. */
-    fun isOpen(): Boolean {
-        return jniSession != null
+    fun isClosed(): Boolean {
+        return jniSession == null
     }
 
     fun info(): SessionInfo {

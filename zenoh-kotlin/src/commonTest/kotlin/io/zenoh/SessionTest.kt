@@ -36,9 +36,9 @@ class SessionTest {
     @Test
     fun sessionStartCloseTest() {
         val session = Session.open(Config.default()).getOrThrow()
-        assertTrue(session.isOpen())
+        assertFalse(session.isClosed())
         session.close()
-        assertFalse(session.isOpen())
+        assertTrue(session.isClosed())
     }
 
     @Test
