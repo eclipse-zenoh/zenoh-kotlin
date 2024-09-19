@@ -29,17 +29,7 @@ class ScoutTest {
 
     @Test
     fun `scouting detects session test`() {
-
-        val config = Config.fromJson("""
-        {
-            "mode": "peer",
-            "connect": {
-                "endpoints": ["tcp/localhost:7450"]
-            },
-        }
-        """.trimIndent()).getOrThrow()
-
-        val session = Session.open(config).getOrThrow()
+        val session = Session.open(Config.default()).getOrThrow()
 
         var hello: Hello? = null
         Zenoh.scout(callback = {
@@ -50,5 +40,10 @@ class ScoutTest {
 
         assertNotNull(hello)
         session.close()
+    }
+
+    @Test
+    fun `scouting loads config successfully test`() {
+        Zenoh.scout({}, config = Config.default()).getOrThrow()
     }
 }
