@@ -21,11 +21,12 @@ use jni::{
 };
 use zenoh::{pubsub::Publisher, Wait};
 
+use crate::throw_exception;
 use crate::{
     errors::ZResult,
-    utils::{decode_byte_array, decode_encoding}, zerror,
+    utils::{decode_byte_array, decode_encoding},
+    zerror,
 };
-use crate::{throw_exception};
 
 /// Performs a PUT operation on a Zenoh publisher via JNI.
 ///
