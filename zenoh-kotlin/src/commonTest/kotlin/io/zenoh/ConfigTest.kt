@@ -14,6 +14,7 @@
 package io.zenoh
 
 import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.protocol.into
 import io.zenoh.sample.Sample
@@ -197,7 +198,7 @@ class ConfigTest {
         """.trimIndent()
         val config = Config.fromJson(illFormatedConfig)
         assertTrue(config.isFailure)
-        assertThrows<SessionException> { config.getOrThrow() }
+        assertThrows<ZError> { config.getOrThrow() }
     }
 
     @Test
@@ -211,7 +212,7 @@ class ConfigTest {
         """.trimIndent()
         val config = Config.fromJson(illFormatedConfig)
         assertTrue(config.isFailure)
-        assertThrows<SessionException> { config.getOrThrow() }
+        assertThrows<ZError> { config.getOrThrow() }
     }
 
     @Test
