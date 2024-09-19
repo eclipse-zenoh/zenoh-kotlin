@@ -21,7 +21,7 @@ use jni::{
 };
 use zenoh::Config;
 
-use crate::{errors::Result, jni_error};
+use crate::{errors::Result, jni_error, zerror};
 use crate::{session_error, throw_exception, utils::decode_string};
 
 /// Loads the default configuration, returning a raw pointer to it.
@@ -79,10 +79,10 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadJsonConfigViaJN
     || -> Result<*const Config> {
         let json_config = decode_string(&mut env, &json_config)?;
         let mut deserializer =
-            json5::Deserializer::from_str(&json_config).map_err(|err| session_error!(err))?;
+            json5::Deserializer::from_str(&json_config).map_err(|err| zerror!(err))?;
         let config = Config::from_deserializer(&mut deserializer).map_err(|err| match err {
-            Ok(c) => session_error!("Invalid configuration: {}", c),
-            Err(e) => session_error!("JSON error: {}", e),
+            Ok(c) => zerror!("Invalid configuration: {}", c),
+            Err(e) => zerror!("JSON error: {}", e),
         })?;
         Ok(Arc::into_raw(Arc::new(config)))
     }()
@@ -109,8 +109,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
         let yaml_config = decode_string(&mut env, &yaml_config)?;
         let deserializer = serde_yaml::Deserializer::from_str(&yaml_config);
         let config = Config::from_deserializer(deserializer).map_err(|err| match err {
-            Ok(c) => session_error!("Invalid configuration: {}", c),
-            Err(e) => session_error!("YAML error: {}", e),
+            Ok(c) => zerror!("Invalid configuration: {}", c),
+            Err(e) => zerror!("YAML error: {}", e),
         })?;
         Ok(Arc::into_raw(Arc::new(config)))
     }()
@@ -133,7 +133,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJN
     let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
     let result = || -> Result<jstring> {
         let key = decode_string(&mut env, &key)?;
-        let json = arc_cfg.get_json(&key).map_err(|err| session_error!(err))?;
+        let json = arc_cfg.get_json(&key).map_err(|err| zerror!(err))?;
         let java_json = env.new_string(json).map_err(|err| jni_error!(err))?;
         Ok(java_json.as_raw())
     }()
@@ -162,7 +162,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_insertJson5V
         let mut config = core::ptr::read(cfg_ptr);
         let insert_result = config
             .insert_json5(&key, &value)
-            .map_err(|err| session_error!(err));
+            .map_err(|err| zerror!(err));
         core::ptr::write(cfg_ptr as *mut _, config);
         insert_result
     }()

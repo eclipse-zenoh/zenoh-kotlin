@@ -26,6 +26,16 @@ macro_rules! throw_exception {
 }
 
 #[macro_export]
+macro_rules! zerror {
+    ($arg:expr) => {
+        $crate::errors::Error::ZenohErr($arg.to_string())
+    };
+    ($fmt:expr, $($arg:tt)*) => {
+        $crate::errors::Error::ZenohErr(format!($fmt, $($arg)*))
+    };
+}
+
+#[macro_export]
 macro_rules! jni_error {
     ($arg:expr) => {
         $crate::errors::Error::Jni($arg.to_string())
@@ -63,6 +73,7 @@ pub(crate) enum Error {
     Session(String),
     KeyExpr(String),
     Jni(String),
+    ZenohErr(String),
 }
 
 impl fmt::Display for Error {
@@ -71,6 +82,7 @@ impl fmt::Display for Error {
             Error::Session(msg) => write!(f, "{}", msg),
             Error::KeyExpr(msg) => write!(f, "{}", msg),
             Error::Jni(msg) => write!(f, "{}", msg),
+            Error::ZenohErr(msg) => write!(f, "{}", msg),
         }
     }
 }
@@ -81,6 +93,7 @@ impl Error {
             Error::Session(_) => "io/zenoh/exceptions/SessionException",
             Error::KeyExpr(_) => "io/zenoh/exceptions/KeyExprException",
             Error::Jni(_) => "io/zenoh/exceptions/JNIException",
+            Error::ZenohErr(_) => "io/zenoh/exceptions/ZError",
         };
         class.to_string()
     }

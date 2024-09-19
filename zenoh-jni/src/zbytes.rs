@@ -21,7 +21,7 @@ use jni::{
 };
 use zenoh::bytes::ZBytes;
 
-use crate::{errors::Result, jni_error, session_error, utils::bytes_to_java_array};
+use crate::{errors::Result, jni_error, utils::bytes_to_java_array, zerror};
 use crate::{throw_exception, utils::decode_byte_array};
 
 ///
@@ -89,7 +89,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeIntoMapViaJNI(
         let zbytes = ZBytes::new(payload);
         let deserialization: HashMap<Vec<u8>, Vec<u8>> = zbytes
             .deserialize::<HashMap<Vec<u8>, Vec<u8>>>()
-            .map_err(|err| session_error!(err))?;
+            .map_err(|err| zerror!(err))?;
         hashmap_to_java_map(&mut env, &deserialization).map_err(|err| jni_error!(err))
     }()
     .unwrap_or_else(|err| {

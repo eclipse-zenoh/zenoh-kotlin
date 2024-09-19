@@ -23,7 +23,7 @@ use zenoh::key_expr::KeyExpr;
 use crate::errors::Error;
 use crate::errors::Result;
 use crate::utils::decode_string;
-use crate::{jni_error, key_expr_error, session_error, throw_exception};
+use crate::{jni_error, key_expr_error, throw_exception};
 
 /// Validates the provided `key_expr` to be a valid key expression, returning it back
 /// in case of success or throwing an exception in case of failure.
@@ -209,7 +209,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
         let result = key_expr_1
             .join(key_expr_2_str.as_str())
-            .map_err(|err| session_error!(err))?;
+            .map_err(|err| key_expr_error!(err))?;
         env.new_string(result.to_string())
             .map(|kexp| kexp.as_raw())
             .map_err(|err| jni_error!(err))
@@ -248,7 +248,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_concatViaJN
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
         let result = key_expr_1
             .concat(key_expr_2_str.as_str())
-            .map_err(|err| session_error!(err))?;
+            .map_err(|err| key_expr_error!(err))?;
         env.new_string(result.to_string())
             .map(|kexp| kexp.as_raw())
             .map_err(|err| jni_error!(err))
