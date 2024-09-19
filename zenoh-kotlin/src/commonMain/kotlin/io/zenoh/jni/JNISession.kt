@@ -63,7 +63,7 @@ internal class JNISession {
         closeSessionViaJNI(sessionPtr.get())
     }
 
-    fun declarePublisher(keyExpr: KeyExpr, qos: QoS, reliability: Reliability): Result<Publisher> = runCatching {
+    fun declarePublisher(keyExpr: KeyExpr, qos: QoS, encoding: Encoding, reliability: Reliability): Result<Publisher> = runCatching {
         val publisherRawPtr = declarePublisherViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
@@ -76,6 +76,7 @@ internal class JNISession {
         Publisher(
             keyExpr,
             qos,
+            encoding,
             JNIPublisher(publisherRawPtr),
         )
     }
