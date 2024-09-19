@@ -14,6 +14,7 @@
 
 package io.zenoh.jni
 
+import io.zenoh.exceptions.ZError
 import io.zenoh.prelude.Encoding
 import io.zenoh.protocol.IntoZBytes
 
@@ -54,12 +55,12 @@ internal class JNIPublisher(private val ptr: Long) {
         freePtrViaJNI(ptr)
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun putViaJNI(
         valuePayload: ByteArray, encodingId: Int, encodingSchema: String?, attachment: ByteArray?, ptr: Long
     )
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun deleteViaJNI(attachment: ByteArray?, ptr: Long)
 
     private external fun freePtrViaJNI(ptr: Long)

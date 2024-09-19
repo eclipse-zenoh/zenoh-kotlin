@@ -14,6 +14,8 @@
 
 package io.zenoh
 
+import io.zenoh.exceptions.ZError
+
 /** Logger class to redirect the Rust logs from Zenoh to the kotlin environment. */
 internal class Logger {
 
@@ -31,7 +33,7 @@ internal class Logger {
          *
          * See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
          */
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun startLogsViaJNI(filter: String)
     }
 }

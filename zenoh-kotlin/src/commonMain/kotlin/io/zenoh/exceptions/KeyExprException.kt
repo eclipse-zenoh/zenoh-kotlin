@@ -17,8 +17,8 @@ package io.zenoh.exceptions
 /**
  * Key expression exception.
  *
- * This kind of exceptions are thrown from the native code when something goes wrong regarding a key expression,
+ * This kind of exception is thrown from the native code when something goes wrong regarding a key expression,
  * for instance when attempting to create a [io.zenoh.keyexpr.KeyExpr] from a string that does not respect the
  * key expression conventions.
  */
-class KeyExprException(val msg: String) : Exception()
+class KeyExprException(msg: String?) : ZError(msg)
