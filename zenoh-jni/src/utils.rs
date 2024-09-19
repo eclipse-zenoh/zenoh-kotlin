@@ -23,8 +23,7 @@ use jni::{
 use zenoh::{
     bytes::{Encoding, ZBytes},
     internal::buffers::ZSlice,
-    pubsub::Reliability,
-    qos::{CongestionControl, Priority},
+    qos::{CongestionControl, Priority, Reliability},
     query::{ConsolidationMode, QueryTarget},
 };
 
