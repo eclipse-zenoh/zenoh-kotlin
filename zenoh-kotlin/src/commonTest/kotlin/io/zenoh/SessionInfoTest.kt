@@ -44,9 +44,9 @@ class SessionInfoTest {
         val sessionA = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
         val sessionB = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
 
-        val idA = sessionA.info().id().getOrThrow()
-        val idB = sessionB.info().id().getOrThrow()
-        val peers = sessionC.info().peersId().getOrThrow()
+        val idA = sessionA.info().zid().getOrThrow()
+        val idB = sessionB.info().zid().getOrThrow()
+        val peers = sessionC.info().peersZid().getOrThrow()
         assertTrue(peers.contains(idA))
         assertTrue(peers.contains(idB))
 
@@ -83,9 +83,9 @@ class SessionInfoTest {
         val sessionA = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
         val sessionB = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
 
-        val idA = sessionA.info().id().getOrThrow()
-        val idB = sessionB.info().id().getOrThrow()
-        val routers = sessionC.info().routersId().getOrThrow()
+        val idA = sessionA.info().zid().getOrThrow()
+        val idB = sessionB.info().zid().getOrThrow()
+        val routers = sessionC.info().routersZid().getOrThrow()
         assertTrue(routers.contains(idA))
         assertTrue(routers.contains(idB))
 
@@ -103,7 +103,7 @@ class SessionInfoTest {
         """.trimIndent()
 
         val session = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
-        assertEquals("123456", session.info().id().getOrThrow().toString())
+        assertEquals("123456", session.info().zid().getOrThrow().toString())
         session.close()
     }
 }
