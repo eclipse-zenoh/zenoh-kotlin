@@ -17,7 +17,7 @@ use jni::{
     JNIEnv,
 };
 
-use crate::{errors::Result, jni_error, throw_exception};
+use crate::{errors::ZResult, throw_exception, zerror};
 
 /// Redirects the Rust logs either to logcat for Android systems or to the standard output (for non-Android systems).
 ///
@@ -41,7 +41,7 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
     _class: JClass,
     filter: JString,
 ) {
-    || -> Result<()> {
+    || -> ZResult<()> {
         let log_level = parse_filter(&mut env, filter)?;
         android_logd_logger::builder()
             .parse_filters(log_level.as_str())
@@ -53,10 +53,10 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
     .unwrap_or_else(|err| throw_exception!(env, err))
 }
 
-fn parse_filter(env: &mut JNIEnv, log_level: JString) -> Result<String> {
-    let log_level = env.get_string(&log_level).map_err(|err| jni_error!(err))?;
+fn parse_filter(env: &mut JNIEnv, log_level: JString) -> ZResult<String> {
+    let log_level = env.get_string(&log_level).map_err(|err| zerror!(err))?;
     log_level
         .to_str()
         .map(|level| Ok(level.to_string()))
-        .map_err(|err| jni_error!(err))?
+        .map_err(|err| zerror!(err))?
 }

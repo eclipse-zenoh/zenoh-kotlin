@@ -21,11 +21,12 @@ use jni::{
 };
 use zenoh::{pubsub::Publisher, Wait};
 
+use crate::throw_exception;
 use crate::{
-    errors::Result,
+    errors::ZResult,
     utils::{decode_byte_array, decode_encoding},
+    zerror,
 };
-use crate::{session_error, throw_exception};
 
 /// Performs a PUT operation on a Zenoh publisher via JNI.
 ///
@@ -56,7 +57,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
     publisher_ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(publisher_ptr);
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let payload = decode_byte_array(&env, payload)?;
         let mut publication = publisher.put(payload);
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
@@ -65,7 +66,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
             let attachment = decode_byte_array(&env, attachment)?;
             publication = publication.attachment::<Vec<u8>>(attachment)
         };
-        publication.wait().map_err(|err| session_error!(err))
+        publication.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(publisher);
@@ -94,13 +95,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
     publisher_ptr: *const Publisher<'static>,
 ) {
     let publisher = Arc::from_raw(publisher_ptr);
-    let _ = || -> Result<()> {
+    let _ = || -> ZResult<()> {
         let mut delete = publisher.delete();
         if !attachment.is_null() {
             let attachment = decode_byte_array(&env, attachment)?;
             delete = delete.attachment::<Vec<u8>>(attachment)
         };
-        delete.wait().map_err(|err| session_error!(err))
+        delete.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
     std::mem::forget(publisher)

@@ -15,6 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.Config
+import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback
 import io.zenoh.protocol.ZenohID
@@ -44,14 +45,14 @@ internal class JNIScout(private val ptr: Long) {
             Scout(receiver, JNIScout(ptr))
         }
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         private external fun scoutViaJNI(
             whatAmI: Int,
             callback: JNIScoutCallback,
             configPtr: Long,
         ): Long
 
-        @Throws(Exception::class)
+        @Throws(ZError::class)
         external fun freePtrViaJNI(ptr: Long)
     }
 

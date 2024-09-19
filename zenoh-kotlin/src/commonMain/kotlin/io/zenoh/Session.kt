@@ -14,7 +14,7 @@
 
 package io.zenoh
 
-import io.zenoh.exceptions.SessionException
+import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
@@ -62,7 +62,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     companion object {
 
-        private val sessionClosedException = SessionException("Session is closed.")
+        private val sessionClosedException = ZError("Session is closed.")
 
         /**
          * Open a [Session] with the provided [Config].

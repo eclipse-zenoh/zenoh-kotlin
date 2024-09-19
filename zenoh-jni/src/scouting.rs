@@ -22,11 +22,8 @@ use jni::{
 use zenoh::{config::WhatAmIMatcher, prelude::Wait};
 use zenoh::{scouting::Scout, Config};
 
-use crate::{errors::Result, throw_exception};
-use crate::{
-    session_error,
-    utils::{get_callback_global_ref, get_java_vm},
-};
+use crate::utils::{get_callback_global_ref, get_java_vm};
+use crate::{errors::ZResult, throw_exception, zerror};
 
 /// Start a scout.
 ///
@@ -47,7 +44,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
     callback: JObject,
     config_ptr: /*nullable=*/ *const Config,
 ) -> *const Scout<()> {
-    || -> Result<*const Scout<()>> {
+    || -> ZResult<*const Scout<()>> {
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
         let whatAmIMatcher: WhatAmIMatcher = (whatAmI as u8).try_into().unwrap(); // The validity of the operation is guaranteed on the kotlin layer.
@@ -92,7 +89,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
             })
             .wait()
             .map(|scout| Arc::into_raw(Arc::new(scout)))
-            .map_err(|err| session_error!(err))
+            .map_err(|err| zerror!(err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);

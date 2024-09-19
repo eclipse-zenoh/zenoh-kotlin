@@ -14,7 +14,7 @@
 
 use std::sync::Arc;
 
-use crate::{errors::Result, jni_error, session_error, throw_exception};
+use crate::{errors::ZResult, throw_exception, zerror};
 use jni::{
     objects::{JByteArray, JObject, JString},
     sys::jint,
@@ -28,13 +28,13 @@ use zenoh::{
 };
 
 /// Converts a JString into a rust String.
-pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> Result<String> {
+pub(crate) fn decode_string(env: &mut JNIEnv, string: &JString) -> ZResult<String> {
     let binding = env
         .get_string(string)
-        .map_err(|err| jni_error!("Error while retrieving JString: {}", err))?;
+        .map_err(|err| zerror!("Error while retrieving JString: {}", err))?;
     let value = binding
         .to_str()
-        .map_err(|err| jni_error!("Error decoding JString: {}", err))?;
+        .map_err(|err| zerror!("Error decoding JString: {}", err))?;
     Ok(value.to_string())
 }
 
@@ -42,99 +42,98 @@ pub(crate) fn decode_encoding(
     env: &mut JNIEnv,
     encoding: jint,
     schema: &JString,
-) -> Result<Encoding> {
+) -> ZResult<Encoding> {
     let schema: Option<ZSlice> = if schema.is_null() {
         None
     } else {
         Some(decode_string(env, schema)?.into_bytes().into())
     };
     let encoding_id =
-        u16::try_from(encoding).map_err(|err| jni_error!("Failed to decode encoding: {}", err))?;
+        u16::try_from(encoding).map_err(|err| zerror!("Failed to decode encoding: {}", err))?;
     Ok(Encoding::new(encoding_id, schema))
 }
 
-pub(crate) fn get_java_vm(env: &mut JNIEnv) -> Result<JavaVM> {
+pub(crate) fn get_java_vm(env: &mut JNIEnv) -> ZResult<JavaVM> {
     env.get_java_vm()
-        .map_err(|err| jni_error!("Unable to retrieve JVM reference: {}", err))
+        .map_err(|err| zerror!("Unable to retrieve JVM reference: {}", err))
 }
 
 pub(crate) fn get_callback_global_ref(
     env: &mut JNIEnv,
     callback: JObject,
-) -> crate::errors::Result<jni::objects::GlobalRef> {
+) -> crate::errors::ZResult<jni::objects::GlobalRef> {
     env.new_global_ref(callback)
-        .map_err(|err| jni_error!("Unable to get reference to the provided callback: {}", err))
+        .map_err(|err| zerror!("Unable to get reference to the provided callback: {}", err))
 }
 
 /// Helper function to convert a JByteArray into a Vec<u8>.
-pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> Result<Vec<u8>> {
+pub(crate) fn decode_byte_array(env: &JNIEnv<'_>, payload: JByteArray) -> ZResult<Vec<u8>> {
     let payload_len = env
         .get_array_length(&payload)
         .map(|length| length as usize)
-        .map_err(|err| jni_error!(err))?;
+        .map_err(|err| zerror!(err))?;
     let mut buff = vec![0; payload_len];
     env.get_byte_array_region(payload, 0, &mut buff[..])
-        .map_err(|err| jni_error!(err))?;
+        .map_err(|err| zerror!(err))?;
     let buff: Vec<u8> = unsafe { std::mem::transmute::<Vec<i8>, Vec<u8>>(buff) };
     Ok(buff)
 }
 
-pub(crate) fn decode_priority(priority: jint) -> Result<Priority> {
-    Priority::try_from(priority as u8)
-        .map_err(|err| session_error!("Error retrieving priority: {}.", err))
+pub(crate) fn decode_priority(priority: jint) -> ZResult<Priority> {
+    Priority::try_from(priority as u8).map_err(|err| zerror!("Error retrieving priority: {}.", err))
 }
 
-pub(crate) fn decode_congestion_control(congestion_control: jint) -> Result<CongestionControl> {
+pub(crate) fn decode_congestion_control(congestion_control: jint) -> ZResult<CongestionControl> {
     match congestion_control {
         1 => Ok(CongestionControl::Block),
         0 => Ok(CongestionControl::Drop),
-        value => Err(session_error!("Unknown congestion control '{}'.", value)),
+        value => Err(zerror!("Unknown congestion control '{}'.", value)),
     }
 }
 
-pub(crate) fn decode_query_target(target: jint) -> Result<QueryTarget> {
+pub(crate) fn decode_query_target(target: jint) -> ZResult<QueryTarget> {
     match target {
         0 => Ok(QueryTarget::BestMatching),
         1 => Ok(QueryTarget::All),
         2 => Ok(QueryTarget::AllComplete),
-        value => Err(session_error!("Unable to decode QueryTarget '{}'.", value)),
+        value => Err(zerror!("Unable to decode QueryTarget '{}'.", value)),
     }
 }
 
-pub(crate) fn decode_consolidation(consolidation: jint) -> Result<ConsolidationMode> {
+pub(crate) fn decode_consolidation(consolidation: jint) -> ZResult<ConsolidationMode> {
     match consolidation {
         0 => Ok(ConsolidationMode::Auto),
         1 => Ok(ConsolidationMode::None),
         2 => Ok(ConsolidationMode::Monotonic),
         3 => Ok(ConsolidationMode::Latest),
-        value => Err(session_error!("Unable to decode consolidation '{}'", value)),
+        value => Err(zerror!("Unable to decode consolidation '{}'", value)),
     }
 }
 
-pub(crate) fn decode_reliability(reliability: jint) -> Result<Reliability> {
+pub(crate) fn decode_reliability(reliability: jint) -> ZResult<Reliability> {
     match reliability {
         0 => Ok(Reliability::BestEffort),
         1 => Ok(Reliability::Reliable),
-        value => Err(session_error!("Unable to decode reliability '{}'", value)),
+        value => Err(zerror!("Unable to decode reliability '{}'", value)),
     }
 }
 
-pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> Result<JByteArray<'a>> {
+pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> ZResult<JByteArray<'a>> {
     env.byte_array_from_slice(
         slice
             .deserialize::<Vec<u8>>()
-            .map_err(|err| session_error!("Unable to deserialize slice: {}", err))?
+            .map_err(|err| zerror!("Unable to deserialize slice: {}", err))?
             .as_ref(),
     )
-    .map_err(|err| jni_error!(err))
+    .map_err(|err| zerror!(err))
 }
 
-pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> Result<JString<'a>> {
+pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> ZResult<JString<'a>> {
     env.new_string(
         String::from_utf8(slice.to_vec())
-            .map_err(|err| session_error!("Unable to decode string: {}", err))?,
+            .map_err(|err| zerror!("Unable to decode string: {}", err))?,
     )
-    .map_err(|err| jni_error!(err))
+    .map_err(|err| zerror!(err))
 }
 
 /// A type that calls a function when dropped
@@ -178,7 +177,7 @@ pub(crate) fn load_on_close(
                     _ = env.exception_describe();
                     throw_exception!(
                         env,
-                        jni_error!("Error while running 'onClose' callback: {}", err)
+                        zerror!("Error while running 'onClose' callback: {}", err)
                     );
                 }
             }
