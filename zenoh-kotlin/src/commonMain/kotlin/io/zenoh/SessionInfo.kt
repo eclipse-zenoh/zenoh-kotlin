@@ -18,15 +18,15 @@ import io.zenoh.protocol.ZenohID
 
 class SessionInfo(private val session: Session) {
 
-    fun id(): ZenohID {
-        TODO()
+    fun id(): Result<ZenohID> {
+        return session.zid()
     }
 
-    fun peersId(): List<ZenohID> {
+    fun peersId(): Result<List<ZenohID>> {
         return session.getPeersId()
     }
 
-    fun routersId(): List<ZenohID> {
+    fun routersId(): Result<List<ZenohID>> {
         return session.getRoutersId()
     }
 }

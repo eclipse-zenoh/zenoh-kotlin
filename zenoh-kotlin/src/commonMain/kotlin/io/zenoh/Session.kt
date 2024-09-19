@@ -872,12 +872,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         jniSession?.run { performDelete(keyExpr, delete) }
     }
 
-    internal fun getPeersId(): List<ZenohID> {
-        return jniSession?.peersZid() ?: emptyList()
+    internal fun zid(): Result<ZenohID> {
+        return jniSession?.zid() ?: Result.failure(sessionClosedException)
     }
 
-    internal fun getRoutersId(): List<ZenohID> {
-        return jniSession?.routersZid() ?: emptyList()
+    internal fun getPeersId(): Result<List<ZenohID>> {
+        return jniSession?.peersZid() ?: Result.failure(sessionClosedException)
+    }
+
+    internal fun getRoutersId(): Result<List<ZenohID>> {
+        return jniSession?.routersZid() ?: Result.failure(sessionClosedException)
     }
 
     /** Launches the session through the jni session, returning the [Session] on success. */

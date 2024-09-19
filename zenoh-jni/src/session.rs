@@ -16,7 +16,7 @@ use std::{mem, ops::Deref, ptr::null, sync::Arc, time::Duration};
 
 use jni::{
     objects::{GlobalRef, JByteArray, JClass, JList, JObject, JString, JValue},
-    sys::{jboolean, jint, jlong, jobject},
+    sys::{jboolean, jbyteArray, jint, jlong, jobject},
     JNIEnv,
 };
 use zenoh::{
@@ -1074,6 +1074,28 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getRoutersZidViaJNI(
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         JObject::default().as_raw()
+    });
+    std::mem::forget(session);
+    ids
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getZidViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    session_ptr: *const Session,
+) -> jbyteArray {
+    let session = Arc::from_raw(session_ptr);
+    let ids = || -> Result<jbyteArray> {
+        let zid = session.info().zid().wait();
+        env.byte_array_from_slice(&zid.to_le_bytes())
+            .map(|x| x.as_raw())
+            .map_err(|err| jni_error!(err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JByteArray::default().as_raw()
     });
     std::mem::forget(session);
     ids

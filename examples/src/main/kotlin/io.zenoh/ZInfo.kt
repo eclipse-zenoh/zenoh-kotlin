@@ -29,10 +29,11 @@ class ZInfo(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.open(config).onSuccess { session ->
             session.use {
                 val info = session.info()
+                println("zid: ${info.id().getOrThrow()}")
 
-                println("routers zid: ${info.routersId()}")
+                println("routers zid: ${info.routersId().getOrThrow()}")
 
-                println("peers zid: ${info.peersId()}")
+                println("peers zid: ${info.peersId().getOrThrow()}")
             }
         }.onFailure { exception -> println(exception.message) }
     }
