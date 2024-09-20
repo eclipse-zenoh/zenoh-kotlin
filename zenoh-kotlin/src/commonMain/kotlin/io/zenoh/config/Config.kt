@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh
+package io.zenoh.config
 
 import io.zenoh.jni.JNIConfig
 import java.io.File

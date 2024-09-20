@@ -15,11 +15,10 @@
 package io.zenoh.sample
 
 import io.zenoh.ZenohType
-import io.zenoh.prelude.SampleKind
-import io.zenoh.prelude.QoS
+import io.zenoh.qos.QoS
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.ZBytes
+import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.ZBytes
 import org.apache.commons.net.ntp.TimeStamp
 
 /**

@@ -15,8 +15,8 @@
 package io.zenoh.jni
 
 import io.zenoh.exceptions.ZError
-import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.IntoZBytes
+import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.IntoZBytes
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].

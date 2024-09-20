@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh
+package io.zenoh.session
 
 /**
  * Session declaration.

@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.config.Config
 import io.zenoh.scouting.Hello
 import kotlinx.coroutines.channels.Channel
 import kotlin.test.Test

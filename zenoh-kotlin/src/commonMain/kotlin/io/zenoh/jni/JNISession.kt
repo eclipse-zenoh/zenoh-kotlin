@@ -15,7 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.*
-import io.zenoh.prelude.Encoding
+import io.zenoh.bytes.Encoding
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIOnCloseCallback
@@ -24,19 +24,24 @@ import io.zenoh.jni.callbacks.JNIQueryableCallback
 import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
-import io.zenoh.protocol.IntoZBytes
-import io.zenoh.protocol.ZenohId
-import io.zenoh.protocol.into
+import io.zenoh.bytes.IntoZBytes
+import io.zenoh.config.ZenohId
+import io.zenoh.bytes.into
+import io.zenoh.config.Config
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.Priority
+import io.zenoh.qos.QoS
 import io.zenoh.query.*
 import io.zenoh.queryable.Query
 import io.zenoh.queryable.Queryable
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Parameters
 import io.zenoh.selector.Selector
-import io.zenoh.subscriber.Reliability
+import io.zenoh.qos.Reliability
+import io.zenoh.sample.SampleKind
 import io.zenoh.subscriber.Subscriber
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration

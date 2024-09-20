@@ -1,4 +1,4 @@
-package io.zenoh.protocol
+package io.zenoh.bytes
 
 /**
  * IntoZBytes interface.

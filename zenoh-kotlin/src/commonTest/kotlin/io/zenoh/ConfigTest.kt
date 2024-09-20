@@ -15,7 +15,8 @@ package io.zenoh
 
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.protocol.into
+import io.zenoh.bytes.into
+import io.zenoh.config.Config
 import io.zenoh.sample.Sample
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay

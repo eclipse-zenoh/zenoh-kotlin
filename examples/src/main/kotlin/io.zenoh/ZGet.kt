@@ -17,8 +17,8 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
-import io.zenoh.prelude.SampleKind
-import io.zenoh.protocol.into
+import io.zenoh.sample.SampleKind
+import io.zenoh.bytes.into
 import io.zenoh.query.QueryTarget
 import io.zenoh.selector.intoSelector
 import kotlinx.coroutines.channels.Channel

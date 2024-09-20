@@ -17,7 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.protocol.into
+import io.zenoh.bytes.into
 
 class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Pub example"

@@ -14,9 +14,8 @@
 
 package io.zenoh
 
-import io.zenoh.protocol.IntoZBytes
-import io.zenoh.protocol.ZBytes
-import io.zenoh.protocol.into
+import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.into
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 
 import org.junit.jupiter.api.Assertions.assertEquals

@@ -18,6 +18,7 @@ import io.zenoh.*
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQueryable
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
 /**

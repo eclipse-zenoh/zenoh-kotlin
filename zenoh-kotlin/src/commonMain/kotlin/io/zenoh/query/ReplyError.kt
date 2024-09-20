@@ -14,8 +14,8 @@
 
 package io.zenoh.query
 
-import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.ZBytes
+import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.ZBytes
 
 /**
  * Reply error class.

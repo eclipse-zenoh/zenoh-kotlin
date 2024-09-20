@@ -16,7 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
-import io.zenoh.protocol.ZenohId
+import io.zenoh.config.ZenohId
 import io.zenoh.queryable.Query
 
 /**

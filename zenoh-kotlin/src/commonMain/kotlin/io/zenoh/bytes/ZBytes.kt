@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.protocol
+package io.zenoh.bytes
 
 import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIZBytes

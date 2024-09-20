@@ -16,8 +16,9 @@ package io.zenoh
 
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.protocol.ZBytes
-import io.zenoh.protocol.into
+import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.into
+import io.zenoh.config.Config
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector

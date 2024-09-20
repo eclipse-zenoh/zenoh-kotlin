@@ -12,24 +12,21 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.prelude
+package io.zenoh.qos
 
-/**
- * The Priority of Zenoh messages.
- *
- * A Priority is identified by a numeric value. Lower the value, higher the priority. Higher the value, lower the priority.
- *
- * - Highest priority: 1 ([REALTIME])
- * - Lowest priority: 7 ([BACKGROUND])
- */
-enum class Priority(val value: Int) {
-    REALTIME(1),
-    INTERACTIVE_HIGH(2),
-    INTERACTIVE_LOW(3),
-    DATA_HIGH(4),
-    DATA(5),
-    DATA_LOW(6),
-    BACKGROUND(7);
+/** The congestion control to be applied when routing the data. */
+enum class CongestionControl (internal val value: Int) {
+    
+    /**
+     * Allows the message to be dropped if all buffers are full.
+     */
+    DROP(0),
+
+    /**
+     * Prevents the message from being dropped at all cost.
+     * In the face of heavy congestion on a part of the network, this could result in your publisher node blocking.
+     */
+    BLOCK(1);
 
     internal companion object {
         fun fromInt(value: Int) = entries.first { it.value == value }

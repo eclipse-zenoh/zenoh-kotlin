@@ -14,11 +14,11 @@
 
 package io.zenoh.jni
 
-import io.zenoh.Config
+import io.zenoh.config.Config
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback
-import io.zenoh.protocol.ZenohId
+import io.zenoh.config.ZenohId
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
 import io.zenoh.scouting.WhatAmI
