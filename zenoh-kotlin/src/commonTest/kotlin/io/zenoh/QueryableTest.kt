@@ -25,7 +25,7 @@ import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
 import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
-import io.zenoh.queryable.Query
+import io.zenoh.query.Query
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
 import io.zenoh.selector.Selector

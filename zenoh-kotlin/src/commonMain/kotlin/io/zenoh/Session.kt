@@ -30,8 +30,8 @@ import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
 import io.zenoh.publication.Put
 import io.zenoh.query.*
-import io.zenoh.queryable.Query
-import io.zenoh.queryable.Queryable
+import io.zenoh.query.Query
+import io.zenoh.query.Queryable
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Selector
 import io.zenoh.qos.Reliability

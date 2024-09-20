@@ -35,8 +35,8 @@ import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
 import io.zenoh.query.*
-import io.zenoh.queryable.Query
-import io.zenoh.queryable.Queryable
+import io.zenoh.query.Query
+import io.zenoh.query.Queryable
 import io.zenoh.sample.Sample
 import io.zenoh.selector.Parameters
 import io.zenoh.selector.Selector

@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.queryable
+package io.zenoh.query
 
 import io.zenoh.*
 import io.zenoh.handlers.Handler
