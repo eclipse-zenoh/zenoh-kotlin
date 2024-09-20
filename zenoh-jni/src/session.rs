@@ -22,11 +22,11 @@ use jni::{
 use zenoh::{
     config::Config,
     key_expr::KeyExpr,
-    prelude::Wait,
     pubsub::{Publisher, Subscriber},
     query::{Query, Queryable, ReplyError, Selector},
     sample::Sample,
     session::{Session, ZenohId},
+    Wait,
 };
 
 use crate::{

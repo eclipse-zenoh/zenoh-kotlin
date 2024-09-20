@@ -25,10 +25,10 @@ use jni::{
 use uhlc::ID;
 use zenoh::{
     key_expr::KeyExpr,
-    prelude::Wait,
     qos::{CongestionControl, Priority},
     query::Query,
     time::{Timestamp, NTP64},
+    Wait,
 };
 
 /// Replies with `success` to a Zenoh [Query] via JNI, freeing the query in the process.

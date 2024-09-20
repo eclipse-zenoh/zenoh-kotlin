@@ -19,7 +19,7 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use zenoh::{config::WhatAmIMatcher, prelude::Wait};
+use zenoh::{config::WhatAmIMatcher, Wait};
 use zenoh::{scouting::Scout, Config};
 
 use crate::utils::{get_callback_global_ref, get_java_vm};
