@@ -15,8 +15,8 @@
 package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
-import io.zenoh.protocol.ZBytes
-import io.zenoh.protocol.into
+import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.into
 
 internal object JNIZBytes {
 

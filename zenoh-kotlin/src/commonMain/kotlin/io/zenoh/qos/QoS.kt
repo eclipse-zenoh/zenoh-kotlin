@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.prelude
+package io.zenoh.qos
 
 /**
  * Quality of service settings used to send zenoh message.

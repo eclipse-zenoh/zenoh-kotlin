@@ -15,10 +15,10 @@
 package io.zenoh.publication
 
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.QoS
-import io.zenoh.protocol.ZBytes
-import io.zenoh.subscriber.Reliability
+import io.zenoh.bytes.Encoding
+import io.zenoh.qos.QoS
+import io.zenoh.bytes.ZBytes
+import io.zenoh.qos.Reliability
 
 /**
  * Put operation.

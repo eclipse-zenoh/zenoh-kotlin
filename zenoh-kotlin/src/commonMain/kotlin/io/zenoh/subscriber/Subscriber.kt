@@ -18,6 +18,7 @@ import io.zenoh.*
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNISubscriber
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.session.SessionDeclaration
 
 /**
  * # Subscriber

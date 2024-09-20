@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.config.Config
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.SetIntersectionLevel
 import io.zenoh.keyexpr.intoKeyExpr

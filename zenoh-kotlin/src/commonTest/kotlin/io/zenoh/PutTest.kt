@@ -15,8 +15,9 @@
 package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.protocol.into
+import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.into
+import io.zenoh.config.Config
 import io.zenoh.sample.Sample
 import kotlin.test.Test
 import kotlin.test.assertEquals

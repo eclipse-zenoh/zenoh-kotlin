@@ -18,10 +18,11 @@ import io.zenoh.*
 import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIPublisher
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.QoS
-import io.zenoh.protocol.IntoZBytes
-import io.zenoh.protocol.into
+import io.zenoh.bytes.Encoding
+import io.zenoh.qos.QoS
+import io.zenoh.bytes.IntoZBytes
+import io.zenoh.bytes.into
+import io.zenoh.session.SessionDeclaration
 
 /**
  * # Publisher

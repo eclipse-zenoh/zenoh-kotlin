@@ -14,8 +14,9 @@
 
 package io.zenoh
 
+import io.zenoh.config.Config
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.SampleKind
+import io.zenoh.sample.SampleKind
 import io.zenoh.sample.Sample
 import kotlin.test.Test
 import kotlin.test.assertEquals

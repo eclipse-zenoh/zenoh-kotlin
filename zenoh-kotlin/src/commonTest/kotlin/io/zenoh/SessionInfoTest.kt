@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.config.Config
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

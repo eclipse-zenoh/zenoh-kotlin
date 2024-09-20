@@ -12,9 +12,10 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh
+package io.zenoh.session
 
-import io.zenoh.protocol.ZenohId
+import io.zenoh.Session
+import io.zenoh.config.ZenohId
 
 /**
  * Class allowing to obtain the information of a [Session].

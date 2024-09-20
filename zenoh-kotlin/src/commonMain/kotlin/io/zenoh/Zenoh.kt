@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.Logger.Companion.LOG_ENV
+import io.zenoh.config.Config
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler

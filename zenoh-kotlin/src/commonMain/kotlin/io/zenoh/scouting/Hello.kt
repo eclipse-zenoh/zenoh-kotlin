@@ -15,7 +15,7 @@
 package io.zenoh.scouting
 
 import io.zenoh.ZenohType
-import io.zenoh.protocol.ZenohId
+import io.zenoh.config.ZenohId
 
 /**
  * Hello message received while scouting.

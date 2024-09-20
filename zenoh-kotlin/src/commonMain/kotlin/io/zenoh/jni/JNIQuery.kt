@@ -16,9 +16,9 @@ package io.zenoh.jni
 
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.prelude.Encoding
-import io.zenoh.prelude.QoS
-import io.zenoh.protocol.IntoZBytes
+import io.zenoh.bytes.Encoding
+import io.zenoh.qos.QoS
+import io.zenoh.bytes.IntoZBytes
 import io.zenoh.sample.Sample
 import org.apache.commons.net.ntp.TimeStamp
 

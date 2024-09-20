@@ -16,8 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
-import io.zenoh.protocol.ZenohId
-import io.zenoh.queryable.Query
+import io.zenoh.config.ZenohId
 
 /**
  * Class to represent a Zenoh Reply to a get query and to a remote [Query].

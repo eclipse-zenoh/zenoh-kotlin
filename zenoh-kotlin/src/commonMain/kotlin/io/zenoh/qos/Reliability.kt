@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.subscriber
+package io.zenoh.qos
 
 /**
  * The reliability policy.

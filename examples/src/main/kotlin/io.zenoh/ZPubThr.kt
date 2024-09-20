@@ -22,10 +22,10 @@ import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.prelude.CongestionControl
-import io.zenoh.prelude.Priority
-import io.zenoh.prelude.QoS
-import io.zenoh.protocol.into
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.Priority
+import io.zenoh.qos.QoS
+import io.zenoh.bytes.into
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"

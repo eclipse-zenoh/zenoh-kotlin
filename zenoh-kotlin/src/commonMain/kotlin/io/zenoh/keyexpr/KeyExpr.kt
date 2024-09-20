@@ -15,7 +15,7 @@
 package io.zenoh.keyexpr
 
 import io.zenoh.Session
-import io.zenoh.SessionDeclaration
+import io.zenoh.session.SessionDeclaration
 import io.zenoh.jni.JNIKeyExpr
 
 /**
@@ -59,7 +59,8 @@ import io.zenoh.jni.JNIKeyExpr
  * @param jniKeyExpr An optional [JNIKeyExpr] instance, present when the key expression was declared through [Session.declareKeyExpr],
  *  it represents the native instance of the key expression.
  */
-class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable, SessionDeclaration {
+class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable,
+    SessionDeclaration {
 
     companion object {
 

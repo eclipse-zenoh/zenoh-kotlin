@@ -15,10 +15,11 @@
 package io.zenoh
 
 import io.zenoh.handlers.Handler
-import io.zenoh.prelude.SampleKind
-import io.zenoh.protocol.into
+import io.zenoh.sample.SampleKind
+import io.zenoh.bytes.into
+import io.zenoh.config.Config
 import io.zenoh.query.Reply
-import io.zenoh.queryable.Queryable
+import io.zenoh.query.Queryable
 import io.zenoh.selector.Parameters
 import io.zenoh.selector.Selector
 import io.zenoh.selector.intoSelector
