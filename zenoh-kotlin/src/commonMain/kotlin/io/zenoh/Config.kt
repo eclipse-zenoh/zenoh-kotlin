@@ -15,7 +15,6 @@
 package io.zenoh
 
 import io.zenoh.jni.JNIConfig
-import io.zenoh.protocol.ZenohID
 import java.io.File
 import java.nio.file.Path
 import kotlinx.serialization.json.JsonElement

@@ -16,7 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.ZenohType
 import io.zenoh.sample.Sample
-import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.ZenohId
 import io.zenoh.queryable.Query
 
 /**
@@ -44,4 +44,4 @@ import io.zenoh.queryable.Query
  * @property replierId: unique ID identifying the replier, may be null in case the network cannot provide it
  *   (@see https://github.com/eclipse-zenoh/zenoh/issues/709#issuecomment-2202763630).
  */
-data class Reply(val replierId: ZenohID?, val result: Result<Sample>) : ZenohType
+data class Reply(val replierId: ZenohId?, val result: Result<Sample>) : ZenohType

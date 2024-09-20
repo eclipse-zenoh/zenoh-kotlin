@@ -16,7 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.ZenohLoad
 
-internal object JNIZenohID {
+internal object JNIZenohId {
 
     init {
         ZenohLoad

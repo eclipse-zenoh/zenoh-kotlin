@@ -25,7 +25,7 @@ import io.zenoh.jni.callbacks.JNISubscriberCallback
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.prelude.*
 import io.zenoh.protocol.IntoZBytes
-import io.zenoh.protocol.ZenohID
+import io.zenoh.protocol.ZenohId
 import io.zenoh.protocol.into
 import io.zenoh.publication.Delete
 import io.zenoh.publication.Publisher
@@ -171,10 +171,10 @@ internal class JNISession {
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
                     attachmentBytes?.into()
                 )
-                reply = Reply(replierId?.let { ZenohID(it) }, Result.success(sample))
+                reply = Reply(replierId?.let { ZenohId(it) }, Result.success(sample))
             } else {
                 reply = Reply(
-                    replierId?.let { ZenohID(it) }, Result.failure(
+                    replierId?.let { ZenohId(it) }, Result.failure(
                         ReplyError(
                             payload.into(),
                             Encoding(encodingId, schema = encodingSchema)
@@ -252,25 +252,25 @@ internal class JNISession {
         )
     }
 
-    fun zid(): Result<ZenohID> = runCatching {
-        ZenohID(getZidViaJNI(sessionPtr.get()))
+    fun zid(): Result<ZenohId> = runCatching {
+        ZenohId(getZidViaJNI(sessionPtr.get()))
     }
 
-    fun peersZid(): Result<List<ZenohID>> = runCatching {
-        getPeersZidViaJNI(sessionPtr.get()).map { ZenohID(it) }
+    fun peersZid(): Result<List<ZenohId>> = runCatching {
+        getPeersZidViaJNI(sessionPtr.get()).map { ZenohId(it) }
     }
 
-    fun routersZid(): Result<List<ZenohID>> = runCatching {
-        getRoutersZidViaJNI(sessionPtr.get()).map { ZenohID(it) }
+    fun routersZid(): Result<List<ZenohId>> = runCatching {
+        getRoutersZidViaJNI(sessionPtr.get()).map { ZenohId(it) }
     }
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getZidViaJNI(ptr: Long): ByteArray
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getPeersZidViaJNI(ptr: Long): List<ByteArray>
 
-    @Throws(Exception::class)
+    @Throws(ZError::class)
     private external fun getRoutersZidViaJNI(ptr: Long): List<ByteArray>
 
     @Throws(ZError::class)
