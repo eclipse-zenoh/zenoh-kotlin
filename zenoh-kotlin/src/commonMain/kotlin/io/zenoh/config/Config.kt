@@ -38,7 +38,7 @@ import kotlinx.serialization.json.JsonElement
  *
  * ```kotlin
  * val config = Config.default()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *   // ...
  * }
  * ```
@@ -47,7 +47,7 @@ import kotlinx.serialization.json.JsonElement
  * Using [Path]:
  * ```kotlin
  * val config = Config.fromFile(Path("example/path/config.json5")).getOrThrow()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *   // ...
  * }
  * ```
@@ -55,7 +55,7 @@ import kotlinx.serialization.json.JsonElement
  * or alternatively, using [File]
  * ```kotlin
  * val config = Config.fromFile(File("example/path/config.json5")).getOrThrow()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *   // ...
  * }
  * ```
@@ -76,7 +76,7 @@ import kotlinx.serialization.json.JsonElement
  *     }
  *     """.trimIndent()
  * val config = Config.fromJson5(json5config).getOrThrow()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *     // ...
  * }
  * ```
@@ -97,7 +97,7 @@ import kotlinx.serialization.json.JsonElement
  *     }
  *     """.trimIndent()
  * val config = Config.fromJson(jsonConfig).getOrThrow()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *     // ...
  * }
  * ```
@@ -114,7 +114,7 @@ import kotlinx.serialization.json.JsonElement
  *         enabled: false
  *     """.trimIndent()
  * val config = Config.fromYaml(yamlConfig).getOrThrow()
- * Session.open(config).onSuccess {
+ * Zenoh.open(config).onSuccess {
  *     // ...
  * }
  * ```
@@ -178,7 +178,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          *     """.trimIndent()
          * ).getOrThrow()
          *
-         * Session.open(config).onSuccess {
+         * Zenoh.open(config).onSuccess {
          *  // ...
          * }
          * ```
@@ -214,7 +214,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          *     """.trimIndent()
          * ).getOrThrow()
          *
-         * Session.open(config).onSuccess {
+         * Zenoh.open(config).onSuccess {
          *  // ...
          * }
          * ```
@@ -246,7 +246,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          *     """.trimIndent()
          * ).getOrThrow()
          *
-         * Session.open(config).onSuccess {
+         * Zenoh.open(config).onSuccess {
          *  // ...
          * }
          * ```
