@@ -15,7 +15,9 @@
 package io.zenoh
 
 import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.deserialize
 import io.zenoh.bytes.into
+import io.zenoh.bytes.serialize
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -175,8 +177,8 @@ class ZBytesTests {
         val originalItem = testCase.originalItem
         val clazz = testCase.clazz
 
-        val bytes = ZBytes.serialize(originalItem, clazz = clazz).getOrThrow()
-        val deserializedItem = bytes.deserialize(clazz = clazz).getOrThrow()
+        val bytes = serialize(originalItem, clazz = clazz).getOrThrow()
+        val deserializedItem = deserialize(bytes, clazz = clazz).getOrThrow()
 
         if (originalItem is ByteArray) {
             assertArrayEquals(originalItem, deserializedItem as ByteArray)
@@ -191,9 +193,9 @@ class ZBytesTests {
         val originalList = testCase.originalList
         val itemClass = testCase.itemclazz
 
-        val bytes = ZBytes.serialize(originalList).getOrThrow()
+        val bytes = serialize(originalList).getOrThrow()
 
-        val deserializedList = bytes.deserialize(clazz = List::class, arg1clazz = itemClass).getOrThrow()
+        val deserializedList = deserialize(bytes, clazz = List::class, arg1clazz = itemClass).getOrThrow()
 
         if (originalList.isNotEmpty() && originalList[0] is ByteArray) {
             originalList.forEachIndexed { index, value ->
@@ -211,9 +213,10 @@ class ZBytesTests {
         val keyClass = testCase.keyclazz
         val valueClass = testCase.valueclazz
 
-        val bytes = ZBytes.serialize(originalMap).getOrThrow()
+        val bytes = serialize(originalMap).getOrThrow()
 
-        val deserializedMap = bytes.deserialize(
+        val deserializedMap = deserialize(
+            bytes,
             clazz = Map::class,
             arg1clazz = keyClass,
             arg2clazz = valueClass
@@ -261,30 +264,29 @@ class ZBytesTests {
             typeOf<List<Pair<ZBytes, ZBytes>>>() to ::deserializeIntoListOfPairs,
         )
 
-        val deserializedMap = serializedBytes.deserialize<Map<ZBytes, ZBytes>>(customDeserializers).getOrThrow()
+        val deserializedMap = deserialize<Map<ZBytes, ZBytes>>(serializedBytes, customDeserializers).getOrThrow()
         assertEquals(zbytesMap, deserializedMap)
 
-        val deserializedMap2 = serializedBytes.deserialize<Map<String, String>>(customDeserializers).getOrThrow()
+        val deserializedMap2 = deserialize<Map<String, String>>(serializedBytes, customDeserializers).getOrThrow()
         assertEquals(stringMap, deserializedMap2)
 
         val intMapBytes = serializeIntoIntMap(intMap)
-        val deserializedMap3 = intMapBytes.deserialize<Map<Int, Int>>(customDeserializers).getOrThrow()
+        val deserializedMap3 = deserialize<Map<Int, Int>>(intMapBytes, customDeserializers).getOrThrow()
         assertEquals(intMap, deserializedMap3)
 
         val serializedZBytesList = serializeZBytesList(zbytesList)
-        val deserializedList = serializedZBytesList.deserialize<List<ZBytes>>(customDeserializers).getOrThrow()
+        val deserializedList = deserialize<List<ZBytes>>(serializedZBytesList, customDeserializers).getOrThrow()
         assertEquals(zbytesList, deserializedList)
 
         val serializedZBytesPairList = serializeZBytesMap(zbytesListOfPairs.toMap())
-        val deserializedZBytesPairList =
-            serializedZBytesPairList.deserialize<List<Pair<ZBytes, ZBytes>>>(customDeserializers).getOrThrow()
+        val deserializedZBytesPairList = deserialize<List<Pair<ZBytes, ZBytes>>>(serializedZBytesPairList, customDeserializers).getOrThrow()
         assertEquals(zbytesListOfPairs, deserializedZBytesPairList)
     }
 
     /**
-     * A series of tests to verify the correct functioning of the [ZBytes.deserialize] function.
+     * A series of tests to verify the correct functioning of the [deserialize] function.
      *
-     * The [ZBytes.deserialize] function with reification can not be tested in a parametrized fashion because
+     * The [deserialize] function with reification can not be tested in a parametrized fashion because
      * it uses reified parameters which causes the testing framework (designed for Java) to fail to properly
      * set up the tests.
      */
@@ -297,50 +299,50 @@ class ZBytesTests {
         /** Numeric: byte, short, int, float, double */
         val intInput = 1234
         var payload = ZBytes.from(intInput)
-        val intOutput = payload.deserialize<Int>().getOrThrow()
+        val intOutput = deserialize<Int>(payload).getOrThrow()
         assertEquals(intInput, intOutput)
 
         // Another example with float
         val floatInput = 3.1415f
         payload = ZBytes.from(floatInput)
-        val floatOutput = payload.deserialize<Float>().getOrThrow()
+        val floatOutput = deserialize<Float>(payload).getOrThrow()
         assertEquals(floatInput, floatOutput)
 
         /** String serialization and deserialization. */
         val stringInput = "example"
         payload = ZBytes.from(stringInput)
-        val stringOutput = payload.deserialize<String>().getOrThrow()
+        val stringOutput = deserialize<String>(payload).getOrThrow()
         assertEquals(stringInput, stringOutput)
 
         /** ByteArray serialization and deserialization. */
         val byteArrayInput = "example".toByteArray()
         payload = ZBytes.from(byteArrayInput) // Equivalent to `byteArrayInput.into()`
-        val byteArrayOutput = payload.deserialize<ByteArray>().getOrThrow()
+        val byteArrayOutput = deserialize<ByteArray>(payload).getOrThrow()
         assertTrue(byteArrayInput.contentEquals(byteArrayOutput))
 
         val inputList = listOf("sample1", "sample2", "sample3")
-        payload = ZBytes.serialize(inputList).getOrThrow()
-        val outputList = payload.deserialize<List<String>>().getOrThrow()
+        payload = serialize(inputList).getOrThrow()
+        val outputList = deserialize<List<String>>(payload).getOrThrow()
         assertEquals(inputList, outputList)
 
         val inputListZBytes = inputList.map { value -> value.into() }
-        payload = ZBytes.serialize(inputListZBytes).getOrThrow()
-        val outputListZBytes = payload.deserialize<List<ZBytes>>().getOrThrow()
+        payload = serialize(inputListZBytes).getOrThrow()
+        val outputListZBytes = deserialize<List<ZBytes>>(payload).getOrThrow()
         assertEquals(inputListZBytes, outputListZBytes)
 
         val inputListByteArray = inputList.map { value -> value.toByteArray() }
-        payload = ZBytes.serialize(inputListByteArray).getOrThrow()
-        val outputListByteArray = payload.deserialize<List<ByteArray>>().getOrThrow()
+        payload = serialize(inputListByteArray).getOrThrow()
+        val outputListByteArray = deserialize<List<ByteArray>>(payload).getOrThrow()
         assertTrue(compareByteArrayLists(inputListByteArray, outputListByteArray))
 
         val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
-        payload = ZBytes.serialize(inputMap).getOrThrow()
-        val outputMap = payload.deserialize<Map<String, String>>().getOrThrow()
+        payload = serialize(inputMap).getOrThrow()
+        val outputMap = deserialize<Map<String, String>>(payload).getOrThrow()
         assertEquals(inputMap, outputMap)
 
         val combinedInputMap = mapOf("key1" to ZBytes.from("zbytes1"), "key2" to ZBytes.from("zbytes2"))
-        payload = ZBytes.serialize(combinedInputMap).getOrThrow()
-        val combinedOutputMap = payload.deserialize<Map<String, ZBytes>>().getOrThrow()
+        payload = serialize(combinedInputMap).getOrThrow()
+        val combinedOutputMap = deserialize<Map<String, ZBytes>>(payload).getOrThrow()
         assertEquals(combinedInputMap, combinedOutputMap)
 
         /*********************************************
@@ -353,7 +355,7 @@ class ZBytesTests {
         val fooMap = mapOf(Foo("foo1") to Foo("bar1"), Foo("foo2") to Foo("bar2"))
         val fooMapSerialized = ZBytes.from(serializeFooMap(fooMap))
         val deserializersMap = mapOf(typeOf<Map<Foo, Foo>>() to ::deserializeFooMap)
-        val deserializedFooMap = fooMapSerialized.deserialize<Map<Foo, Foo>>(deserializersMap).getOrThrow()
+        val deserializedFooMap = deserialize<Map<Foo, Foo>>(fooMapSerialized, deserializersMap).getOrThrow()
         assertEquals(fooMap, deserializedFooMap)
     }
 
@@ -480,7 +482,7 @@ class ZBytesTests {
 
     private fun deserializeIntoIntMap(serializerMap: ZBytes): Map<Int, Int> {
         return deserializeIntoZBytesMap(serializerMap).map { (k, v) ->
-            k.deserialize<Int>().getOrThrow() to v.deserialize<Int>().getOrThrow()
+            deserialize<Int>(k).getOrThrow() to deserialize<Int>(v).getOrThrow()
         }.toMap()
     }
 
