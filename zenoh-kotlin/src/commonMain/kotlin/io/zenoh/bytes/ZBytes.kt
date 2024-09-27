@@ -57,7 +57,7 @@ import kotlin.reflect.typeOf
  * * using the serialize syntax:
  * ```kotlin
  * val exampleInt: Int = 256
- * val zbytes: ZBytes = ZBytes.serialize<Int>(exampleInt).getOrThrow()
+ * val zbytes: ZBytes = serialize<Int>(exampleInt).getOrThrow()
  * ```
  * This approach works as well for the other mentioned types.
  *
@@ -72,7 +72,7 @@ import kotlin.reflect.typeOf
  * The serialize syntax must be used:
  * ```kotlin
  * val myList = listOf(1, 2, 5, 8, 13, 21)
- * val zbytes = ZBytes.serialize<List<Int>>(myList).getOrThrow()
+ * val zbytes = serialize<List<Int>>(myList).getOrThrow()
  * ```
  *
  * ## Maps
@@ -85,7 +85,7 @@ import kotlin.reflect.typeOf
  *
  * ```kotlin
  * val myMap: Map<String, Int> = mapOf("foo" to 1, "bar" to 2)
- * val zbytes = ZBytes.serialize<Map<String, Int>>(myMap).getOrThrow()
+ * val zbytes = serialize<Map<String, Int>>(myMap).getOrThrow()
  * ```
  *
  * # Deserialization
@@ -118,7 +118,7 @@ import kotlin.reflect.typeOf
  * ```kotlin
  * val exampleInt: Int = 256
  * val zbytes: ZBytes = exampleInt.into()
- * val deserializedInt = zbytes.deserialize<Int>().getOrThrow()
+ * val deserializedInt = deserialize<Int>(zbytes).getOrThrow()
  * ```
  *
  * ## Lists
@@ -131,8 +131,8 @@ import kotlin.reflect.typeOf
  * To deserialize into a list, we need to use the deserialize syntax as follows:
  * ```kotlin
  * val inputList = listOf("sample1", "sample2", "sample3")
- * payload = ZBytes.serialize(inputList).getOrThrow()
- * val outputList = payload.deserialize<List<String>>().getOrThrow()
+ * payload = serialize(inputList).getOrThrow()
+ * val outputList = deserialize<List<String>>(payload).getOrThrow()
  * ```
  *
  * ## Maps
@@ -144,8 +144,8 @@ import kotlin.reflect.typeOf
  *
  * ```kotlin
  * val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
- * payload = ZBytes.serialize(inputMap).getOrThrow()
- * val outputMap = payload.deserialize<Map<String, String>>().getOrThrow()
+ * payload = serialize(inputMap).getOrThrow()
+ * val outputMap = deserialize<Map<String, String>>(payload).getOrThrow()
  * check(inputMap == outputMap)
  * ```
  *
@@ -167,14 +167,14 @@ import kotlin.reflect.typeOf
  * This way, we can do:
  * ```kotlin
  * val foo = Foo("bar")
- * val serialization = ZBytes.serialize<Foo>(foo).getOrThrow()
+ * val serialization = serialize<Foo>(foo).getOrThrow()
  * ```
  *
  * Implementing the [IntoZBytes] interface on a class enables the possibility of serializing lists and maps
  * of that type, for instance:
  * ```kotlin
  * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
- * val zbytes = ZBytes.serialize<List<Foo>>(list)
+ * val zbytes = serialize<List<Foo>>(list)
  * ```
  *
  * ## Deserialization
@@ -187,20 +187,20 @@ import kotlin.reflect.typeOf
  *
  * ```kotlin
  * val inputFoo = Foo("example")
- * payload = ZBytes.serialize(inputFoo).getOrThrow()
+ * payload = serialize(inputFoo).getOrThrow()
  * val outputFoo = Foo.from(payload)
  * check(inputFoo == outputFoo)
  *
  * // List of Foo.
  * val inputListFoo = inputList.map { value -> Foo(value) }
- * payload = ZBytes.serialize<List<Foo>>(inputListFoo).getOrThrow()
- * val outputListFoo = payload.deserialize<List<ZBytes>>().getOrThrow().map { zbytes -> Foo.from(zbytes) }
+ * payload = serialize<List<Foo>>(inputListFoo).getOrThrow()
+ * val outputListFoo = deserialize<List<ZBytes>>(payload).getOrThrow().map { zbytes -> Foo.from(zbytes) }
  * check(inputListFoo == outputListFoo)
  *
  * // Map of Foo.
  * val inputMapFoo = inputMap.map { (k, v) -> Foo(k) to Foo(v) }.toMap()
- * payload = ZBytes.serialize<Map<Foo, Foo>>(inputMapFoo).getOrThrow()
- * val outputMapFoo = payload.deserialize<Map<ZBytes, ZBytes>>().getOrThrow()
+ * payload = serialize<Map<Foo, Foo>>(inputMapFoo).getOrThrow()
+ * val outputMapFoo = deserialize<Map<ZBytes, ZBytes>>(payload).getOrThrow()
  *     .map { (key, value) -> Foo.from(key) to Foo.from(value) }.toMap()
  * check(inputMapFoo == outputMapFoo)
  * ```
@@ -220,8 +220,8 @@ import kotlin.reflect.typeOf
  * }
  *
  * val foo = Foo("bar")
- * val zbytes = ZBytes.serialize<Foo>(foo)
- * val deserialization = zbytes.deserialize<Foo>(mapOf(typeOf<Foo>() to ::deserializeFoo)).getOrThrow()
+ * val zbytes = serialize<Foo>(foo)
+ * val deserialization = deserialize<Foo>(zbytes, mapOf(typeOf<Foo>() to ::deserializeFoo)).getOrThrow()
  * ```
  */
 class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
