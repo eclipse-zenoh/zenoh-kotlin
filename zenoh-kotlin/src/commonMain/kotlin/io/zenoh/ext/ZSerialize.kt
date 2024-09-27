@@ -1,5 +1,7 @@
-package io.zenoh.bytes
+package io.zenoh.ext
 
+import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.into
 import io.zenoh.jni.JNIZBytes
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -20,11 +22,11 @@ import kotlin.reflect.typeOf
  * @see ZBytes
  * @return a [Result] with the serialized [ZBytes].
  */
-inline fun <reified T: Any> serialize(t: T): Result<ZBytes> = runCatching {
-    return serialize(t, T::class)
+inline fun <reified T: Any> zSerialize(t: T): Result<ZBytes> = runCatching {
+    return zSerialize(t, T::class)
 }
 
-fun <T: Any> serialize(t: T, clazz: KClass<T>): Result<ZBytes> = runCatching {
+fun <T: Any> zSerialize(t: T, clazz: KClass<T>): Result<ZBytes> = runCatching {
     val type: KType = when (clazz) {
         List::class -> typeOf<List<*>>()
         Map::class -> typeOf<Map<*, *>>()

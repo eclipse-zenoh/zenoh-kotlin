@@ -1,5 +1,7 @@
-package io.zenoh.bytes
+package io.zenoh.ext
 
+import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.intoAny
 import io.zenoh.jni.JNIZBytes
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction1
@@ -38,8 +40,8 @@ import kotlin.reflect.typeOf
  * @see ZBytes
  * @return a [Result] with the deserialization.
  */
-inline fun <reified T: Any> deserialize(zbytes: ZBytes,
-    deserializers: Map<KType, KFunction1<ZBytes, Any>> = emptyMap()
+inline fun <reified T: Any> zDeserialize(zbytes: ZBytes,
+                                         deserializers: Map<KType, KFunction1<ZBytes, Any>> = emptyMap()
 ): Result<T> {
     val type = typeOf<T>()
     val deserializer = deserializers[type]
@@ -49,15 +51,15 @@ inline fun <reified T: Any> deserialize(zbytes: ZBytes,
     when {
         typeOf<List<*>>().isSupertypeOf(type) -> {
             val itemsClass = type.arguments.firstOrNull()?.type?.jvmErasure
-            return deserialize(zbytes, T::class, arg1clazz = itemsClass)
+            return zDeserialize(zbytes, T::class, arg1clazz = itemsClass)
         }
         typeOf<Map<*, *>>().isSupertypeOf(type) -> {
             val keyClass = type.arguments.getOrNull(0)?.type?.jvmErasure
             val valueClass = type.arguments.getOrNull(1)?.type?.jvmErasure
-            return deserialize(zbytes, T::class, arg1clazz = keyClass, arg2clazz = valueClass)
+            return zDeserialize(zbytes, T::class, arg1clazz = keyClass, arg2clazz = valueClass)
         }
         typeOf<Any>().isSupertypeOf(type) -> {
-            return deserialize(zbytes, T::class)
+            return zDeserialize(zbytes, T::class)
         }
     }
     throw IllegalArgumentException("Unsupported type for deserialization: '$type'.")
@@ -66,7 +68,7 @@ inline fun <reified T: Any> deserialize(zbytes: ZBytes,
 /**
  * Deserialize the [ZBytes] into an element of class [clazz].
  *
- * It's generally preferable to use the [deserialize] function with reification, however
+ * It's generally preferable to use the [zDeserialize] function with reification, however
  * this function is exposed for cases when reification needs to be avoided.
  *
  * Example:
@@ -83,7 +85,7 @@ inline fun <reified T: Any> deserialize(zbytes: ZBytes,
  * - [ByteArray]
  * - Lists and Maps of the above-mentioned types.
  *
- * @see [deserialize]
+ * @see [zDeserialize]
  *
  *
  * @param clazz: the [KClass] of the type to be serialized.
@@ -95,7 +97,7 @@ inline fun <reified T: Any> deserialize(zbytes: ZBytes,
  *  Can be null if providing a basic type.
  */
 @Suppress("UNCHECKED_CAST")
-fun <T: Any> deserialize(
+fun <T: Any> zDeserialize(
     zbytes: ZBytes,
     clazz: KClass<T>,
     arg1clazz: KClass<*>? = null,

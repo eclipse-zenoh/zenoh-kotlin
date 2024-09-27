@@ -17,7 +17,7 @@ package io.zenoh
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.ZBytes
-import io.zenoh.bytes.deserialize
+import io.zenoh.ext.zDeserialize
 import io.zenoh.bytes.into
 import io.zenoh.config.Config
 import io.zenoh.query.Reply
@@ -80,7 +80,7 @@ class UserAttachmentTest {
 
         assertNotNull(receivedSample) {
             val receivedAttachment = it.attachment!!
-            assertEquals(attachment, deserialize<String>(receivedAttachment).getOrNull())
+            assertEquals(attachment, zDeserialize<String>(receivedAttachment).getOrNull())
         }
     }
 
