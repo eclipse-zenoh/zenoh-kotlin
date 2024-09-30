@@ -20,34 +20,11 @@ import kotlin.reflect.typeOf
  * - [ByteArray]
  * - Lists and Maps of the above-mentioned types.
  *
- *
- * A map of types and functions for deserialization can also be provided.
- *
- * For instance:
- * ```kotlin
- * fun deserializeFoo(zbytes: ZBytes): Foo {
- *   return Foo(zbytes.toString())
- * }
- *
- * val foo = Foo("bar")
- * val zbytes = serialize<Foo>(foo)
- * val deserialization = deserialize<Foo>(zbytes, mapOf(typeOf<Foo>() to ::deserializeFoo)).getOrThrow()
- * ```
- *
- * In case the provided type isn't associated with any of the functions provided in the [deserializers] map
- * (if provided), the deserialization will carry on with the default behavior.
- *
  * @see ZBytes
  * @return a [Result] with the deserialization.
  */
-inline fun <reified T: Any> zDeserialize(zbytes: ZBytes,
-                                         deserializers: Map<KType, KFunction1<ZBytes, Any>> = emptyMap()
-): Result<T> {
+inline fun <reified T: Any> zDeserialize(zbytes: ZBytes): Result<T> {
     val type = typeOf<T>()
-    val deserializer = deserializers[type]
-    if (deserializer != null) {
-        return Result.success(deserializer(zbytes) as T)
-    }
     when {
         typeOf<List<*>>().isSupertypeOf(type) -> {
             val itemsClass = type.arguments.firstOrNull()?.type?.jvmErasure

@@ -3,9 +3,6 @@ package io.zenoh
 import io.zenoh.bytes.*
 import io.zenoh.ext.zDeserialize
 import io.zenoh.ext.zSerialize
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.reflect.typeOf
 
 fun main() {
 
@@ -124,21 +121,6 @@ fun main() {
         .map { (key, value) -> MyZBytes.from(key) to MyZBytes.from(value) }.toMap()
     check(inputMapMyZBytes == outputMapMyZBytes)
 
-    /**
-     * Providing a map of deserializers.
-     *
-     * Alternatively, [zDeserialize] also accepts a deserializers parameter of type
-     * `Map<KType, KFunction1<ByteArray, Any>>`. That is, a map of types that is associated
-     * to a function receiving a ByteArray, that returns Any. This way, you can provide a series
-     * of deserializer functions that extend the deserialization mechanisms we provide by default.
-     *
-     * For example, let's say we have a custom map serializer, with its own deserializer:
-     */
-    val fooMap = mapOf(Foo("foo1") to Foo("bar1"), Foo("foo2") to Foo("bar2"))
-    val fooMapSerialized = ZBytes.from(serializeFooMap(fooMap))
-    val deserializersMap = mapOf(typeOf<Map<Foo, Foo>>() to ::deserializeFooMap)
-    val deserializedFooMap = zDeserialize<Map<Foo, Foo>>(fooMapSerialized, deserializersMap).getOrThrow()
-    check(fooMap == deserializedFooMap)
 }
 
 data class MyZBytes(val content: String) : IntoZBytes {
@@ -150,47 +132,6 @@ data class MyZBytes(val content: String) : IntoZBytes {
             return MyZBytes(zbytes.toString())
         }
     }
-}
-
-/** Example class for the deserialization map examples. */
-data class Foo(val content: String)
-
-/** Example serializer and deserializer. */
-private fun serializeFooMap(testMap: Map<Foo, Foo>): ByteArray {
-    return testMap.map {
-        val key = it.key.content.toByteArray()
-        val keyLength = ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(key.size).array()
-        val value = it.value.content.toByteArray()
-        val valueLength =
-            ByteBuffer.allocate(Int.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN).putInt(value.size).array()
-        keyLength + key + valueLength + value
-    }.reduce { acc, bytes -> acc + bytes }
-}
-
-private fun deserializeFooMap(serializedMap: ZBytes): Map<Foo, Foo> {
-    var idx = 0
-    var sliceSize: Int
-    val bytes = serializedMap.toByteArray()
-    val decodedMap = mutableMapOf<Foo, Foo>()
-    while (idx < bytes.size) {
-        sliceSize = ByteBuffer.wrap(bytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1)))
-            .order(ByteOrder.LITTLE_ENDIAN).int
-        idx += Int.SIZE_BYTES
-
-        val key = bytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
-        idx += sliceSize
-
-        sliceSize = ByteBuffer.wrap(bytes.sliceArray(IntRange(idx, idx + Int.SIZE_BYTES - 1))).order(
-            ByteOrder.LITTLE_ENDIAN
-        ).int
-        idx += Int.SIZE_BYTES
-
-        val value = bytes.sliceArray(IntRange(idx, idx + sliceSize - 1))
-        idx += sliceSize
-
-        decodedMap[Foo(key.decodeToString())] = Foo(value.decodeToString())
-    }
-    return decodedMap
 }
 
 /** Utils for this example. */
