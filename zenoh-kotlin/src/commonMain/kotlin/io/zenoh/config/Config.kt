@@ -22,7 +22,7 @@ import kotlinx.serialization.json.JsonElement
 /**
  * # Config
  *
- * Config class to set the Zenoh configuration to be used through a [Session].
+ * Config class to set the Zenoh configuration to be used through a [io.zenoh.Session].
  *
  * The configuration can be specified in two different ways:
  * - By providing a file or a path to a file with the configuration

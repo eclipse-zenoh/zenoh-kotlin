@@ -45,7 +45,7 @@ import io.zenoh.ZenohType
  * val subscriber = session.declareSubscriber(keyExpr, handler = QueueHandler<Sample>()).getOrThrow()
  * ```
  *
- * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.queryable.Query].
+ * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.query.Query].
  * @param R An arbitrary receiver.
  */
 interface Handler<T: ZenohType, R> {
