@@ -119,13 +119,8 @@ pub(crate) fn decode_reliability(reliability: jint) -> ZResult<Reliability> {
 }
 
 pub(crate) fn bytes_to_java_array<'a>(env: &JNIEnv<'a>, slice: &ZBytes) -> ZResult<JByteArray<'a>> {
-    env.byte_array_from_slice(
-        slice
-            .deserialize::<Vec<u8>>()
-            .map_err(|err| zerror!("Unable to deserialize slice: {}", err))?
-            .as_ref(),
-    )
-    .map_err(|err| zerror!(err))
+    env.byte_array_from_slice(&slice.to_bytes())
+        .map_err(|err| zerror!(err))
 }
 
 pub(crate) fn slice_to_java_string<'a>(env: &JNIEnv<'a>, slice: &ZSlice) -> ZResult<JString<'a>> {
