@@ -35,7 +35,7 @@ import io.zenoh.session.SessionDeclaration
  * Example of a publisher declaration:
  * ```kotlin
  * val keyExpr = "demo/kotlin/greeting"
- * Session.open(Config.default()).onSuccess {
+ * Zenoh.open(Config.default()).onSuccess {
  *     it.use { session ->
  *         session
  *             .declarePublisher(keyExpr)

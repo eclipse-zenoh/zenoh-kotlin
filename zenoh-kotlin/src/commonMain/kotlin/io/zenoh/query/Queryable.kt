@@ -30,7 +30,7 @@ import kotlinx.coroutines.channels.Channel
  *
  * Example using the default [Channel] handler:
  * ```kotlin
- * Session.open(Config.default()).onSuccess { session -> session.use {
+ * Zenoh.open(Config.default()).onSuccess { session -> session.use {
  *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
  *         println("Declaring Queryable")
  *         session.declareQueryable(keyExpr).wait().onSuccess { queryable ->

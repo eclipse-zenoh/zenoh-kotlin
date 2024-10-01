@@ -101,7 +101,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess {
+     * Zenoh.open(Config.default()).onSuccess {
      *     it.use { session ->
      *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declarePublisher(keyExpr).onSuccess { pub ->
@@ -142,7 +142,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declareSubscriber(keyExpr, callback = { sample -> println(sample) }).onSuccess {
@@ -183,7 +183,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     override fun onClose() = println("Closing handler")
      * }
      *
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             session.declareSubscriber(keyExpr, handler = ExampleHandler())
@@ -220,7 +220,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Example:
      * ```kotlin
      *
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
      *             val samplesChannel = Channel()
@@ -260,7 +260,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session -> session.use {
+     * Zenoh.open(Config.default()).onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
@@ -306,7 +306,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Then we'd use it as follows:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session -> session.use {
+     * Zenoh.open(Config.default()).onSuccess { session -> session.use {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val exampleHandler = ExampleHandler()
@@ -340,7 +340,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(config).onSuccess { session ->
+     * Zenoh.open(config).onSuccess { session ->
      *     session.use {
      *         key.intoKeyExpr().onSuccess { keyExpr ->
      *             println("Declaring Queryable on $key...")
@@ -400,7 +400,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session -> session.use {
+     * Zenoh.open(Config.default()).onSuccess { session -> session.use {
      *     val keyExpr = session.declareKeyExpr("demo/kotlin/example").getOrThrow()
      *     for (i in 0..999) {
      *         put(keyExpr, "Put number $i!")
@@ -438,7 +438,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * A callback must be provided to handle the incoming replies. A basic query can be achieved
      * as follows:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             session.get(selector, callback = { reply -> println(reply) })
@@ -452,7 +452,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             session.get(
@@ -536,7 +536,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * then we could use it as follows:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               val handler = QueueHandler<Reply>()
@@ -555,7 +555,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *             val handler = QueueHandler<Reply>()
@@ -627,7 +627,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               session.get(selector, channel = Channel()).onSuccess { channel ->
@@ -650,7 +650,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Example:
      *
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoSelector().onSuccess { selector ->
      *               session.get(selector,
@@ -721,7 +721,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(config).onSuccess { session ->
+     * Zenoh.open(config).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
      *             session.put(keyExpr, payload = "Example payload".into()).getOrThrow()
@@ -733,7 +733,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
      * ```kotlin
-     * Session.open(Config.default()).onSuccess { session ->
+     * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
      *             val exampleQoS = QoS(
@@ -777,7 +777,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * Example:
      * ```kotlin
-     * Session.open(config).onSuccess { session ->
+     * Zenoh.open(config).onSuccess { session ->
      *     session.use {
      *         key.intoKeyExpr().onSuccess { keyExpr ->
      *             println("Deleting resources matching '$keyExpr'...")
