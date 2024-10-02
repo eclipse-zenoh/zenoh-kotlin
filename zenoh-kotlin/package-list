@@ -71,6 +71,7 @@ $dokka.location:io.zenoh.bytes/Encoding.Companion/ZENOH_UINT16/#/PointingToDecla
 $dokka.location:io.zenoh.bytes/Encoding.Companion/ZENOH_UINT32/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-z-e-n-o-h_-u-i-n-t32.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion/ZENOH_UINT64/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-z-e-n-o-h_-u-i-n-t64.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion/ZENOH_UINT8/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-z-e-n-o-h_-u-i-n-t8.html
+$dokka.location:io.zenoh.bytes/Encoding.Companion/default/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/default.html
 $dokka.location:io.zenoh.bytes/Encoding///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/index.html
 $dokka.location:io.zenoh.bytes/Encoding/Encoding/#kotlin.Int#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-encoding.html
 $dokka.location:io.zenoh.bytes/Encoding/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/equals.html
@@ -86,11 +87,7 @@ $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#io.zenoh.bytes.IntoZBytes/
 $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.ByteArray/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.Number/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
-$dokka.location:io.zenoh.bytes/ZBytes.Companion/serialize/#TypeParam(bounds=[kotlin.Any])#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/serialize.html
-$dokka.location:io.zenoh.bytes/ZBytes.Companion/serialize/#TypeParam(bounds=[kotlin.Any])/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/serialize.html
 $dokka.location:io.zenoh.bytes/ZBytes///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/index.html
-$dokka.location:io.zenoh.bytes/ZBytes/deserialize/#kotlin.collections.Map[kotlin.reflect.KType,kotlin.reflect.KFunction1[io.zenoh.bytes.ZBytes,kotlin.Any]]/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/deserialize.html
-$dokka.location:io.zenoh.bytes/ZBytes/deserialize/#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]#kotlin.reflect.KClass[*]?#kotlin.reflect.KClass[*]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/deserialize.html
 $dokka.location:io.zenoh.bytes/ZBytes/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/equals.html
 $dokka.location:io.zenoh.bytes/ZBytes/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/hash-code.html
 $dokka.location:io.zenoh.bytes/ZBytes/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/into.html
@@ -123,6 +120,11 @@ $dokka.location:io.zenoh.exceptions////PointingToDeclaration/zenoh-kotlin/io.ze
 $dokka.location:io.zenoh.exceptions/ZError///PointingToDeclaration/zenoh-kotlin/io.zenoh.exceptions/-z-error/index.html
 $dokka.location:io.zenoh.exceptions/ZError/ZError/#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.exceptions/-z-error/-z-error.html
 $dokka.location:io.zenoh.exceptions/ZError/message/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.exceptions/-z-error/message.html
+$dokka.location:io.zenoh.ext////PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/index.html
+$dokka.location:io.zenoh.ext//zDeserialize/#io.zenoh.bytes.ZBytes#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]#kotlin.reflect.KClass[*]?#kotlin.reflect.KClass[*]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-deserialize.html
+$dokka.location:io.zenoh.ext//zDeserialize/#io.zenoh.bytes.ZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-deserialize.html
+$dokka.location:io.zenoh.ext//zSerialize/#TypeParam(bounds=[kotlin.Any])#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-serialize.html
+$dokka.location:io.zenoh.ext//zSerialize/#TypeParam(bounds=[kotlin.Any])/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-serialize.html
 $dokka.location:io.zenoh.handlers////PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/index.html
 $dokka.location:io.zenoh.handlers/Callback///PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-callback/index.html
 $dokka.location:io.zenoh.handlers/Callback/run/#TypeParam(bounds=[io.zenoh.ZenohType])/PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-callback/run.html
@@ -342,6 +344,7 @@ io.zenoh
 io.zenoh.bytes
 io.zenoh.config
 io.zenoh.exceptions
+io.zenoh.ext
 io.zenoh.handlers
 io.zenoh.keyexpr
 io.zenoh.publication
