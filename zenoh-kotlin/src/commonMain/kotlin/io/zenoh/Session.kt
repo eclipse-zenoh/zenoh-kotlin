@@ -26,9 +26,9 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.config.Config
 import io.zenoh.config.ZenohId
-import io.zenoh.publication.Delete
-import io.zenoh.publication.Publisher
-import io.zenoh.publication.Put
+import io.zenoh.pubsub.Delete
+import io.zenoh.pubsub.Publisher
+import io.zenoh.pubsub.Put
 import io.zenoh.query.*
 import io.zenoh.query.Query
 import io.zenoh.query.Queryable
@@ -37,7 +37,7 @@ import io.zenoh.selector.Selector
 import io.zenoh.qos.Reliability
 import io.zenoh.session.SessionDeclaration
 import io.zenoh.session.SessionInfo
-import io.zenoh.subscriber.Subscriber
+import io.zenoh.pubsub.Subscriber
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 

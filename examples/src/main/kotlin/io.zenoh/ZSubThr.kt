@@ -18,7 +18,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.ulong
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.subscriber.Subscriber
+import io.zenoh.pubsub.Subscriber
 import kotlin.system.exitProcess
 
 class ZSubThr(private val emptyArgs: Boolean) : CliktCommand(
