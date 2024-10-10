@@ -19,10 +19,9 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.ZBytes
 import io.zenoh.ext.zDeserialize
 import io.zenoh.bytes.into
-import io.zenoh.config.Config
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
-import io.zenoh.selector.Selector
+import io.zenoh.query.Selector
 import java.time.Duration
 import kotlin.test.*
 

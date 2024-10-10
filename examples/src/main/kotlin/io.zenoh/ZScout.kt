@@ -15,7 +15,7 @@
 package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
-import io.zenoh.scouting.WhatAmI
+import io.zenoh.config.WhatAmI
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 

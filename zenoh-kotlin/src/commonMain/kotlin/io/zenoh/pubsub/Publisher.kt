@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.publication
+package io.zenoh.pubsub
 
 import io.zenoh.*
 import io.zenoh.exceptions.ZError

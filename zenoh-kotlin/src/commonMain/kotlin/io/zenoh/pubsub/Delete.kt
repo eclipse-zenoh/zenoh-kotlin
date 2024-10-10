@@ -12,29 +12,21 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.publication
+package io.zenoh.pubsub
 
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
 import io.zenoh.bytes.ZBytes
 import io.zenoh.qos.Reliability
 
 /**
- * Put operation.
+ * Delete operation.
  *
- * @property keyExpr The [KeyExpr] to which the put operation will be performed.
- * @property payload The [ZBytes] to put.
- * @property encoding The [Encoding] of the payload.
+ * @property keyExpr The [KeyExpr] for the delete operation.
  * @property qos The [QoS] configuration.
- * @property attachment An optional user attachment.
+ * @property attachment Optional attachment.
  * @property reliability The [Reliability] configuration.
  */
-internal data class Put (
-    val keyExpr: KeyExpr,
-    val payload: ZBytes,
-    val encoding: Encoding,
-    val qos: QoS,
-    val attachment: ZBytes?,
-    val reliability: Reliability
+internal class Delete (
+    val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?, val reliability: Reliability
 )

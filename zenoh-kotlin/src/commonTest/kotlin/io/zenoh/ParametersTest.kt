@@ -1,6 +1,6 @@
 package io.zenoh
 
-import io.zenoh.selector.Parameters
+import io.zenoh.query.Parameters
 import org.junit.jupiter.api.Assertions.assertFalse
 import kotlin.test.*
 

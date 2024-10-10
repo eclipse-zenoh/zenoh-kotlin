@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.config.Config
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.SampleKind
 import io.zenoh.sample.Sample

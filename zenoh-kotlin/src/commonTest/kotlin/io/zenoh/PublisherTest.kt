@@ -19,10 +19,9 @@ import io.zenoh.bytes.Encoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.SampleKind
 import io.zenoh.bytes.into
-import io.zenoh.config.Config
-import io.zenoh.publication.Publisher
+import io.zenoh.pubsub.Publisher
 import io.zenoh.sample.Sample
-import io.zenoh.subscriber.Subscriber
+import io.zenoh.pubsub.Subscriber
 import kotlin.test.*
 
 class PublisherTest {
