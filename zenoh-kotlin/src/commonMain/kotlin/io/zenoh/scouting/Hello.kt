@@ -15,6 +15,7 @@
 package io.zenoh.scouting
 
 import io.zenoh.ZenohType
+import io.zenoh.config.WhatAmI
 import io.zenoh.config.ZenohId
 
 /**

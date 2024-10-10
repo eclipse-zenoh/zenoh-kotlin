@@ -22,8 +22,8 @@ import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIScout
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
-import io.zenoh.scouting.WhatAmI
-import io.zenoh.scouting.WhatAmI.*
+import io.zenoh.config.WhatAmI
+import io.zenoh.config.WhatAmI.*
 import kotlinx.coroutines.channels.Channel
 
 object Zenoh {

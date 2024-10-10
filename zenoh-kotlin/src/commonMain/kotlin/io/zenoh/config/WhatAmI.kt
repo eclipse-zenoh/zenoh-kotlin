@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.scouting
+package io.zenoh.config
 
 /**
  * WhatAmI
