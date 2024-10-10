@@ -14,7 +14,7 @@
 
 package io.zenoh.jni
 
-import io.zenoh.config.Config
+import io.zenoh.Config
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback

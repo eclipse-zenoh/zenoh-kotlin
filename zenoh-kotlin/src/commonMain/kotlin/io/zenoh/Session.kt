@@ -24,7 +24,6 @@ import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
-import io.zenoh.config.Config
 import io.zenoh.config.ZenohId
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher

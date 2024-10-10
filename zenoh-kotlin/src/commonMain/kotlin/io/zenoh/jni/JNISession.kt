@@ -26,7 +26,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
-import io.zenoh.config.Config
+import io.zenoh.Config
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
