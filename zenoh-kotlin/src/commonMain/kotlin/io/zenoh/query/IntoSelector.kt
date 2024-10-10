@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.selector
+package io.zenoh.query
 
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr

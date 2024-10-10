@@ -37,8 +37,8 @@ import io.zenoh.query.*
 import io.zenoh.query.Query
 import io.zenoh.query.Queryable
 import io.zenoh.sample.Sample
-import io.zenoh.selector.Parameters
-import io.zenoh.selector.Selector
+import io.zenoh.query.Parameters
+import io.zenoh.query.Selector
 import io.zenoh.qos.Reliability
 import io.zenoh.sample.SampleKind
 import io.zenoh.pubsub.Subscriber

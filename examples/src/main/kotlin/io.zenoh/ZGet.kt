@@ -20,7 +20,7 @@ import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.sample.SampleKind
 import io.zenoh.bytes.into
 import io.zenoh.query.QueryTarget
-import io.zenoh.selector.intoSelector
+import io.zenoh.query.intoSelector
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.time.Duration

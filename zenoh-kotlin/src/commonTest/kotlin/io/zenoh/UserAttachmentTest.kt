@@ -22,7 +22,7 @@ import io.zenoh.bytes.into
 import io.zenoh.config.Config
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
-import io.zenoh.selector.Selector
+import io.zenoh.query.Selector
 import java.time.Duration
 import kotlin.test.*
 

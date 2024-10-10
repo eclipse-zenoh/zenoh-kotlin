@@ -7,7 +7,7 @@ import io.zenoh.bytes.into
 import io.zenoh.config.Config
 import io.zenoh.query.ReplyError
 import io.zenoh.sample.Sample
-import io.zenoh.selector.intoSelector
+import io.zenoh.query.intoSelector
 import kotlin.test.*
 
 class EncodingTest {

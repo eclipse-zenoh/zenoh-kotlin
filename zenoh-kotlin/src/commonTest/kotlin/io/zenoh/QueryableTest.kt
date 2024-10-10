@@ -28,7 +28,7 @@ import io.zenoh.query.ReplyError
 import io.zenoh.query.Query
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
-import io.zenoh.selector.Selector
+import io.zenoh.query.Selector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
