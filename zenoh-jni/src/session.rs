@@ -439,7 +439,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 
         let result = session
             .declare_subscriber(key_expr.to_owned())
-            .with(move |sample: Sample| {
+            .callback(move |sample: Sample| {
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
@@ -565,7 +565,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQueryableViaJNI(
         tracing::debug!("Declaring queryable through JNI on {}", key_expr);
         let builder = session
             .declare_queryable(key_expr)
-            .with(move |query: Query| {
+            .callback(move |query: Query| {
                 on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
                 let env = match java_vm.attach_current_thread_as_daemon() {
                     Ok(env) => env,
