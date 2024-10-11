@@ -14,14 +14,14 @@
 
 package io.zenoh.jni
 
-import io.zenoh.config.Config
+import io.zenoh.Config
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIScoutCallback
 import io.zenoh.config.ZenohId
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
-import io.zenoh.scouting.WhatAmI
+import io.zenoh.config.WhatAmI
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.scouting.Scout]

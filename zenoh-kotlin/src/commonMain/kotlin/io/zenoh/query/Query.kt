@@ -15,7 +15,6 @@
 package io.zenoh.query
 
 import io.zenoh.ZenohType
-import io.zenoh.selector.Selector
 import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr

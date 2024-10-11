@@ -12,21 +12,18 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.publication
+package io.zenoh.query
 
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.qos.QoS
-import io.zenoh.bytes.ZBytes
-import io.zenoh.qos.Reliability
 
-/**
- * Delete operation.
- *
- * @property keyExpr The [KeyExpr] for the delete operation.
- * @property qos The [QoS] configuration.
- * @property attachment Optional attachment.
- * @property reliability The [Reliability] configuration.
- */
-internal class Delete (
-    val keyExpr: KeyExpr, val qos: QoS, val attachment: ZBytes?, val reliability: Reliability
-)
+fun String.intoSelector(): Result<Selector> = runCatching {
+    if (this.isEmpty()) {
+        throw ZError("Attempting to create a KeyExpr from an empty string.")
+    }
+    val result = this.split('?', limit = 2)
+    val keyExpr = KeyExpr.autocanonize(result[0]).getOrThrow()
+    val params = if (result.size == 2) Parameters.from(result[1]).getOrThrow() else null
+
+    Selector(keyExpr, params)
+}

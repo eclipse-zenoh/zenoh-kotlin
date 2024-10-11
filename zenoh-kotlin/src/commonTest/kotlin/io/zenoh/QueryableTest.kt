@@ -19,7 +19,6 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.into
-import io.zenoh.config.Config
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
@@ -28,7 +27,7 @@ import io.zenoh.query.ReplyError
 import io.zenoh.query.Query
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
-import io.zenoh.selector.Selector
+import io.zenoh.query.Selector
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay

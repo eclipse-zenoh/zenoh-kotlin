@@ -14,7 +14,6 @@
 
 package io.zenoh
 
-import io.zenoh.config.Config
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
