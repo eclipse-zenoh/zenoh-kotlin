@@ -26,10 +26,12 @@ package io.zenoh.bytes
  * This is particularly useful in helping Zenoh to perform additional network optimizations.
  */
 class Encoding private constructor(
-    private val id: Int,
-    private val schema: String? = null,
+    internal val id: Int,
+    internal val schema: String? = null,
     private val description: String? = null
 ) {
+    internal constructor(id: Int, schema: String? = null) : this(id, schema, null)
+
     companion object {
         /**
          * Just some bytes.
