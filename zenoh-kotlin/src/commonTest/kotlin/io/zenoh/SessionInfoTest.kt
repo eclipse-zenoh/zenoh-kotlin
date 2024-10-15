@@ -55,10 +55,31 @@ class SessionInfoTest {
         sessionC.close()
     }
 
-
     @Test
     fun `routersZid test`() {
-        val jsonConfig = """
+
+        val listenerRouter = Zenoh.open(Config.fromJson("""
+        {
+            mode: "router",
+            listen: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+        }
+        """.trimIndent()).getOrThrow()).getOrThrow()
+
+        val connectedRouterA = Zenoh.open(Config.fromJson("""
+        {
+            mode: "router",
+            connect: {
+                endpoints: ["tcp/localhost:7450"],
+            },
+            listen: {
+                endpoints: ["tcp/localhost:7451"],
+            },
+        }
+        """.trimIndent()).getOrThrow()).getOrThrow()
+
+        val connectedRouterB = Zenoh.open(Config.fromJson("""
         {
             mode: "router",
             connect: {
@@ -68,30 +89,19 @@ class SessionInfoTest {
                 endpoints: ["tcp/localhost:7452"],
             },
         }
-        """.trimIndent()
+        """.trimIndent()).getOrThrow()).getOrThrow()
 
-        val listenConfig = Config.fromJson("""
-        {
-            mode: "router",
-            listen: {
-                endpoints: ["tcp/localhost:7450"],
-            },
-        }
-        """.trimIndent()).getOrThrow()
+        val idA = connectedRouterA.info().zid().getOrThrow()
+        val idB = connectedRouterB.info().zid().getOrThrow()
 
-        val sessionC = Zenoh.open(listenConfig).getOrThrow()
-        val sessionA = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
-        val sessionB = Zenoh.open(Config.fromJson(jsonConfig).getOrThrow()).getOrThrow()
+        val routers = listenerRouter.info().routersZid().getOrThrow()
 
-        val idA = sessionA.info().zid().getOrThrow()
-        val idB = sessionB.info().zid().getOrThrow()
-        val routers = sessionC.info().routersZid().getOrThrow()
         assertTrue(routers.contains(idA))
         assertTrue(routers.contains(idB))
 
-        sessionA.close()
-        sessionB.close()
-        sessionC.close()
+        connectedRouterA.close()
+        connectedRouterB.close()
+        listenerRouter.close()
     }
 
     @Test
