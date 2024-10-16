@@ -32,11 +32,15 @@ fun <T: Any> zSerialize(t: T, clazz: KClass<T>): Result<ZBytes> = runCatching {
         Map::class -> typeOf<Map<*, *>>()
         else -> clazz.createType()
     }
+
     when {
         typeOf<List<*>>().isSupertypeOf(type) -> {
             val list = t as List<*>
             val zbytesList = list.map { it.into() }
-            return Result.success(JNIZBytes.serializeIntoList(zbytesList))
+            if (zbytesList.isEmpty()) {
+                TODO()
+            }
+            return Result.success(JNIZBytes.serializeIntoList(zbytesList, zbytesList.first().type))
         }
 
         typeOf<Map<*, *>>().isSupertypeOf(type) -> {
@@ -45,8 +49,8 @@ fun <T: Any> zSerialize(t: T, clazz: KClass<T>): Result<ZBytes> = runCatching {
             if (zbytesMap.isEmpty()) {
                 TODO()
             }
-            val types = zbytesMap.entries.first()
-            return Result.success(JNIZBytes.serializeIntoMap(zbytesMap, types.key.type, types.value.type))
+            val entry = zbytesMap.entries.first() // TODO: refactor
+            return Result.success(JNIZBytes.serializeIntoMap(zbytesMap, entry.key.type, entry.value.type))
         }
 
         typeOf<Any>().isSupertypeOf(type) -> {

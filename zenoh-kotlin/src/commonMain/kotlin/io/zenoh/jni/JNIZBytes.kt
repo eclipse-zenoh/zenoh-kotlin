@@ -24,8 +24,8 @@ internal object JNIZBytes {
         ZenohLoad
     }
 
-    fun serializeIntoList(list: List<ZBytes>): ZBytes {
-        return serializeIntoListViaJNI(list.map { it.bytes }).into()
+    fun serializeIntoList(list: List<ZBytes>, type: String): ZBytes {
+        return serializeIntoListViaJNI(list.map { it.bytes }, type).into()
     }
 
     fun deserializeIntoList(zbytes: ZBytes): List<ZBytes> {
@@ -42,7 +42,7 @@ internal object JNIZBytes {
 
     private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>, keyType: String, valueType: String): ByteArray
 
-    private external fun serializeIntoListViaJNI(list: List<ByteArray>): ByteArray
+    private external fun serializeIntoListViaJNI(list: List<ByteArray>, type: String): ByteArray
 
     private external fun deserializeIntoMapViaJNI(payload: ByteArray): Map<ByteArray, ByteArray>
 
