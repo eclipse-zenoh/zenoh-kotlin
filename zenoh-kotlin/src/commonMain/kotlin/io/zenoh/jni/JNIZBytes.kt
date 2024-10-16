@@ -32,15 +32,15 @@ internal object JNIZBytes {
         return deserializeIntoListViaJNI(zbytes.bytes).map { it.into() }.toList()
     }
 
-    fun serializeIntoMap(map: Map<ZBytes, ZBytes>): ZBytes {
-        return serializeIntoMapViaJNI(map.map { (k, v) -> k.bytes to v.bytes }.toMap()).into()
+    fun serializeIntoMap(map: Map<ZBytes, ZBytes>, keyType: String, valueType: String): ZBytes {
+        return serializeIntoMapViaJNI(map.map { (k, v) -> k.bytes to v.bytes }.toMap(), keyType, valueType).into()
     }
 
     fun deserializeIntoMap(bytes: ZBytes): Map<ZBytes, ZBytes> {
         return deserializeIntoMapViaJNI(bytes.bytes).map { (k, v) -> k.into() to v.into() }.toMap()
     }
 
-    private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>): ByteArray
+    private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>, keyType: String, valueType: String): ByteArray
 
     private external fun serializeIntoListViaJNI(list: List<ByteArray>): ByteArray
 
