@@ -17,6 +17,7 @@ package io.zenoh.jni
 import io.zenoh.ZenohLoad
 import io.zenoh.bytes.ZBytes
 import io.zenoh.bytes.into
+import kotlin.reflect.KType
 
 internal object JNIZBytes {
 
@@ -24,27 +25,31 @@ internal object JNIZBytes {
         ZenohLoad
     }
 
-    fun serializeIntoList(list: List<ZBytes>, type: String): ZBytes {
-        return serializeIntoListViaJNI(list.map { it.bytes }, type).into()
-    }
+    external fun serializeViaJNI(any: Any, kType: KType): ZBytes
 
-    fun deserializeIntoList(zbytes: ZBytes): List<ZBytes> {
-        return deserializeIntoListViaJNI(zbytes.bytes).map { it.into() }.toList()
-    }
+    external fun deserializeViaJNI(zBytes: ZBytes, kType: KType): Any
 
-    fun serializeIntoMap(map: Map<ZBytes, ZBytes>, keyType: String, valueType: String): ZBytes {
-        return serializeIntoMapViaJNI(map.map { (k, v) -> k.bytes to v.bytes }.toMap(), keyType, valueType).into()
-    }
-
-    fun deserializeIntoMap(bytes: ZBytes): Map<ZBytes, ZBytes> {
-        return deserializeIntoMapViaJNI(bytes.bytes).map { (k, v) -> k.into() to v.into() }.toMap()
-    }
-
-    private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>, keyType: String, valueType: String): ByteArray
-
-    private external fun serializeIntoListViaJNI(list: List<ByteArray>, type: String): ByteArray
-
-    private external fun deserializeIntoMapViaJNI(payload: ByteArray): Map<ByteArray, ByteArray>
-
-    private external fun deserializeIntoListViaJNI(payload: ByteArray): List<ByteArray>
+//    fun serializeIntoList(list: List<ZBytes>, type: String): ZBytes {
+//        return serializeIntoListViaJNI(list.map { it.bytes }, type).into()
+//    }
+//
+//    fun deserializeIntoList(zbytes: ZBytes): List<ZBytes> {
+//        return deserializeIntoListViaJNI(zbytes.bytes).map { it.into() }.toList()
+//    }
+//
+//    fun serializeIntoMap(map: Map<ZBytes, ZBytes>, keyType: String, valueType: String): ZBytes {
+//        return serializeIntoMapViaJNI(map.map { (k, v) -> k.bytes to v.bytes }.toMap(), keyType, valueType).into()
+//    }
+//
+//    fun deserializeIntoMap(bytes: ZBytes): Map<ZBytes, ZBytes> {
+//        return deserializeIntoMapViaJNI(bytes.bytes).map { (k, v) -> k.into() to v.into() }.toMap()
+//    }
+//
+//    private external fun serializeIntoMapViaJNI(map: Map<ByteArray, ByteArray>, keyType: String, valueType: String): ByteArray
+//
+//    private external fun serializeIntoListViaJNI(list: List<ByteArray>, type: String): ByteArray
+//
+//    private external fun deserializeIntoMapViaJNI(payload: ByteArray): Map<ByteArray, ByteArray>
+//
+//    private external fun deserializeIntoListViaJNI(payload: ByteArray): List<ByteArray>
 }

@@ -15,12 +15,12 @@
 use std::collections::HashMap;
 
 use jni::{
-    objects::{JByteArray, JClass, JList, JMap, JObject, JString},
-    sys::{jbyteArray, jobject},
+    objects::{JByteArray, JClass, JList, JMap, JObject, JString, JValue},
+    sys::{jbyte, jbyteArray, jobject},
     JNIEnv,
 };
 use zenoh::bytes::ZBytes;
-use zenoh_ext::{z_deserialize, z_serialize, Serialize};
+use zenoh_ext::{z_deserialize, z_serialize, Serialize, VarInt, ZDeserializer, ZSerializer};
 
 use crate::{
     errors::ZResult,
@@ -32,6 +32,229 @@ use crate::{throw_exception, utils::decode_byte_array};
 ///
 /// Map serialization and deserialization
 ///
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    any: JObject,
+    ktype: JObject,
+) -> jobject {
+    let mut serializer = ZSerializer::new();
+    let ktype = decode_ktype(ktype).unwrap();
+    serialize(&mut env, &mut serializer, any, &ktype).unwrap();
+    todo!()
+    // return serializer.finish() as jobject
+}
+
+enum KotlinType {
+    // TODO: complete
+    // Boolean
+    Byte,
+    Short,
+    Int,
+    Long,
+    Float,
+    Double,
+    List(Box<KotlinType>),
+    Map(Box<KotlinType>, Box<KotlinType>),
+    // Pair(Box<KotlinType>, Box<KotlinType>),
+    // Triple(Box<KotlinType>, Box<KotlinType>),
+}
+
+fn decode_ktype(ktype: JObject) -> ZResult<KotlinType> {
+    todo!()
+}
+
+fn serialize(
+    env: &mut JNIEnv,
+    serializer: &mut ZSerializer,
+    any: JObject,
+    ktype: &KotlinType,
+) -> ZResult<()> {
+    match ktype {
+        KotlinType::Byte => {
+            let byte_value = env
+                .call_method(any, "byteValue", "()B", &[])
+                .map_err(|err| zerror!(err))?
+                .b()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(byte_value);
+        }
+        KotlinType::Short => {
+            let short_value = env
+                .call_method(any, "shortValue", "()S", &[])
+                .map_err(|err| zerror!(err))?
+                .s()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(short_value);
+        }
+        KotlinType::Int => {
+            let int_value = env
+                .call_method(any, "intValue", "()I", &[])
+                .map_err(|err| zerror!(err))?
+                .i()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(int_value);
+        }
+        KotlinType::Long => {
+            let long_value = env
+                .call_method(any, "longValue", "()J", &[])
+                .map_err(|err| zerror!(err))?
+                .s()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(long_value);
+        }
+        KotlinType::Float => {
+            let float_value = env
+                .call_method(any, "floatValue", "()F", &[])
+                .map_err(|err| zerror!(err))?
+                .f()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(float_value);
+        }
+        KotlinType::Double => {
+            let double_value = env
+                .call_method(any, "doubleValue", "()D", &[])
+                .map_err(|err| zerror!(err))?
+                .d()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(double_value);
+        }
+        KotlinType::List(kotlin_type) => {
+            let jlist: JList<'_, '_, '_> =
+                JList::from_env(env, &any).map_err(|err| zerror!(err))?;
+            let mut iterator = jlist.iter(env).map_err(|err| zerror!(err))?;
+            let list_size = jlist.size(env).unwrap();
+            serializer.serialize(zenoh_ext::VarInt(list_size as usize));
+            while let Some(value) = iterator.next(env).map_err(|err| zerror!(err))? {
+                serialize(env, serializer, value, &kotlin_type)?;
+            }
+        }
+        KotlinType::Map(key_type, value_type) => {
+            let jmap = JMap::from_env(env, &any).map_err(|err| zerror!(err))?;
+
+            let map_size = env
+                .call_method(&jmap, "size", "()I", &[])
+                .map_err(|err| zerror!(err))?
+                .i()
+                .map_err(|err| zerror!(err))?;
+
+            serializer.serialize(zenoh_ext::VarInt(map_size as usize));
+
+            let mut iterator = jmap.iter(env).map_err(|err| zerror!(err))?;
+            while let Some((key, value)) = iterator.next(env).map_err(|err| zerror!(err))? {
+                serialize(env, serializer, key, &key_type)?;
+                serialize(env, serializer, value, &value_type)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    zbytes: JByteArray,
+    ktype: JObject,
+) -> jobject {
+    let decoded_bytes: Vec<u8> = decode_byte_array(&env, zbytes).unwrap();
+    let zbytes = ZBytes::from(decoded_bytes);
+    let mut deserializer = ZDeserializer::new(&zbytes);
+    let ktype = decode_ktype(ktype).unwrap();
+    deserialize(&mut env, &mut deserializer, &ktype).unwrap()
+}
+
+fn deserialize(
+    env: &mut JNIEnv,
+    deserializer: &mut ZDeserializer,
+    ktype: &KotlinType,
+) -> ZResult<jobject> {
+    match ktype {
+        KotlinType::Byte => {
+            let byte = deserializer.deserialize::<i8>().unwrap();
+            let byte_obj = env
+                .new_object("java/lang/Byte", "(B)V", &[JValue::Byte(byte)])
+                .map_err(|err| zerror!(err))?;
+            Ok(byte_obj.as_raw())
+        }
+        KotlinType::Short => {
+            let short = deserializer.deserialize::<i16>().unwrap();
+            let short_obj = env
+                .new_object("java/lang/Short", "(S)V", &[JValue::Short(short)])
+                .map_err(|err| zerror!(err))?;
+            Ok(short_obj.as_raw())
+        }
+        KotlinType::Int => {
+            let integer = deserializer.deserialize::<i32>().unwrap();
+            let integer_obj = env
+                .new_object("java/lang/Integer", "(I)V", &[JValue::Int(integer)])
+                .map_err(|err| zerror!(err))?;
+            Ok(integer_obj.as_raw())
+        }
+        KotlinType::Long => {
+            let long = deserializer.deserialize::<i64>().unwrap();
+            let long_obj = env
+                .new_object("java/lang/Long", "(J)V", &[JValue::Long(long)])
+                .map_err(|err| zerror!(err))?;
+            Ok(long_obj.as_raw())
+        }
+        KotlinType::Float => {
+            let float = deserializer.deserialize::<f32>().unwrap();
+            let float_obj = env
+                .new_object("java/lang/Float", "(F)V", &[JValue::Float(float)])
+                .map_err(|err| zerror!(err))?;
+            Ok(float_obj.as_raw())
+        }
+        KotlinType::Double => {
+            let double = deserializer.deserialize::<f64>().unwrap();
+            let double_obj = env
+                .new_object("java/lang/Double", "(D)V", &[JValue::Double(double)])
+                .map_err(|err| zerror!(err))?;
+            Ok(double_obj.as_raw())
+        }
+        KotlinType::List(kotlin_type) => {
+            let list_size = deserializer
+                .deserialize::<VarInt<usize>>()
+                .map_err(|err| zerror!(err))?
+                .0;
+            let array_list = env
+                .new_object("java/util/ArrayList", "()V", &[])
+                .map_err(|err| zerror!(err))?;
+            let jlist = JList::from_env(env, &array_list).map_err(|err| zerror!(err))?;
+
+            for _ in 0..list_size {
+                let item = deserialize(env, deserializer, &kotlin_type)?;
+                let item_obj = unsafe { JObject::from_raw(item) };
+                jlist.add(env, &item_obj).map_err(|err| zerror!(err))?;
+            }
+            Ok(array_list.as_raw())
+        }
+        KotlinType::Map(key_type, value_type) => {
+            let map_size = deserializer
+                .deserialize::<VarInt<usize>>()
+                .map_err(|err| zerror!(err))?
+                .0;
+            let map = env
+                .new_object("java/util/HashMap", "()V", &[])
+                .map_err(|err| zerror!(err))?;
+            let jmap = JMap::from_env(env, &map).map_err(|err| zerror!(err))?;
+
+            for _ in 0..map_size {
+                let key = deserialize(env, deserializer, key_type)?;
+                let key_obj = unsafe { JObject::from_raw(key) };
+                let value = deserialize(env, deserializer, &value_type)?;
+                let value_obj = unsafe { JObject::from_raw(value) };
+                jmap.put(env, &key_obj, &value_obj)
+                    .map_err(|err| zerror!(err))?;
+            }
+            Ok(map.as_raw())
+        }
+    }
+}
 
 /// Serializes a Map<ByteArray, ByteArray>, returning the resulting ByteArray.
 ///
@@ -175,8 +398,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeIntoListViaJNI(
 }
 
 fn java_list_to_zbytes(env: &mut JNIEnv, list: &JObject, list_type: String) -> ZResult<ZBytes> {
-    let jmap = JList::from_env(env, list).map_err(|err| zerror!(err))?;
-    let mut iterator = jmap.iter(env).map_err(|err| zerror!(err))?;
+    let jlist: JList<'_, '_, '_> = JList::from_env(env, list).map_err(|err| zerror!(err))?;
+    let mut iterator = jlist.iter(env).map_err(|err| zerror!(err))?;
     let mut rust_vec: Vec<Vec<u8>> = Vec::new();
     while let Some(value) = iterator.next(env).map_err(|err| zerror!(err))? {
         let value_bytes = env.auto_local(JByteArray::from(value));
