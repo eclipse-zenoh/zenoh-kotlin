@@ -20,8 +20,12 @@ use jni::{
 use zenoh::bytes::ZBytes;
 use zenoh_ext::{VarInt, ZDeserializer, ZSerializer};
 
-use crate::{errors::ZResult, utils::bytes_to_java_array, zerror};
-use crate::{throw_exception, utils::decode_byte_array};
+use crate::{
+    errors::ZResult,
+    throw_exception,
+    utils::{bytes_to_java_array, decode_byte_array},
+    zerror,
+};
 
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -272,40 +276,36 @@ fn serialize(
             serializer.serialize(bytes);
         }
         KotlinType::UByte => {
-            let int_value = env
-                .call_method(any, "toInt", "()I", &[])
+            let byte = env
+                .get_field(any, "data", "B")
                 .map_err(|err| zerror!(err))?
-                .i()
+                .b()
                 .map_err(|err| zerror!(err))?;
-            let ubyte_value = int_value as u8;
-            serializer.serialize(ubyte_value);
+            serializer.serialize(byte as u8);
         }
         KotlinType::UShort => {
-            let int_value = env
-                .call_method(any, "toInt", "()I", &[])
+            let short = env
+                .get_field(any, "data", "S")
                 .map_err(|err| zerror!(err))?
-                .i()
+                .s()
                 .map_err(|err| zerror!(err))?;
-            let ushort_value = int_value as u16;
-            serializer.serialize(ushort_value);
+            serializer.serialize(short as u16);
         }
         KotlinType::UInt => {
-            let int_value = env
-                .call_method(any, "toInt", "()I", &[])
+            let int = env
+                .get_field(any, "data", "I")
                 .map_err(|err| zerror!(err))?
                 .i()
                 .map_err(|err| zerror!(err))?;
-            let uint_value = int_value as u32;
-            serializer.serialize(uint_value);
+            serializer.serialize(int as u32);
         }
         KotlinType::ULong => {
-            let long_value = env
-                .call_method(any, "toLong", "()J", &[])
+            let long = env
+                .get_field(any, "data", "J")
                 .map_err(|err| zerror!(err))?
                 .j()
                 .map_err(|err| zerror!(err))?;
-            let ulong_value = long_value as u64;
-            serializer.serialize(ulong_value);
+            serializer.serialize(long as u64);
         }
         KotlinType::List(kotlin_type) => {
             let jlist: JList<'_, '_, '_> =
@@ -452,70 +452,38 @@ fn deserialize(
             Ok(jbytes.into_raw())
         }
         KotlinType::UByte => {
-            let ubyte_value = deserializer
+            let ubyte = deserializer
                 .deserialize::<u8>()
                 .map_err(|err| zerror!(err))?;
-            let byte_value = ubyte_value as i8;
             let ubyte_obj = env
-                .call_static_method(
-                    "kotlin/UByte",
-                    "constructor-impl",
-                    "(B)Lkotlin/UByte;",
-                    &[JValue::Byte(byte_value)],
-                )
-                .map_err(|err| zerror!(err))?
-                .l()
+                .new_object("kotlin/UByte", "(B)V", &[JValue::Byte(ubyte as i8)])
                 .map_err(|err| zerror!(err))?;
             Ok(ubyte_obj.as_raw())
         }
         KotlinType::UShort => {
-            let ushort_value = deserializer
+            let ushort = deserializer
                 .deserialize::<u16>()
                 .map_err(|err| zerror!(err))?;
-            let short_value = ushort_value as i16;
             let ushort_obj = env
-                .call_static_method(
-                    "kotlin/UShort",
-                    "constructor-impl",
-                    "(S)Lkotlin/UShort;",
-                    &[JValue::Short(short_value)],
-                )
-                .map_err(|err| zerror!(err))?
-                .l()
+                .new_object("kotlin/UShort", "(S)V", &[JValue::Short(ushort as i16)])
                 .map_err(|err| zerror!(err))?;
             Ok(ushort_obj.as_raw())
         }
         KotlinType::UInt => {
-            let uint_value = deserializer
+            let uint = deserializer
                 .deserialize::<u32>()
                 .map_err(|err| zerror!(err))?;
-            let int_value = uint_value as i32;
             let uint_obj = env
-                .call_static_method(
-                    "kotlin/UInt",
-                    "constructor-impl",
-                    "(I)Lkotlin/UInt;",
-                    &[JValue::Int(int_value)],
-                )
-                .map_err(|err| zerror!(err))?
-                .l()
+                .new_object("kotlin/UInt", "(I)V", &[JValue::Int(uint as i32)])
                 .map_err(|err| zerror!(err))?;
             Ok(uint_obj.as_raw())
         }
         KotlinType::ULong => {
-            let ulong_value = deserializer
+            let ulong = deserializer
                 .deserialize::<u64>()
                 .map_err(|err| zerror!(err))?;
-            let long_value = ulong_value as i64;
             let ulong_obj = env
-                .call_static_method(
-                    "kotlin/ULong",
-                    "constructor-impl",
-                    "(J)Lkotlin/ULong;",
-                    &[JValue::Long(long_value)],
-                )
-                .map_err(|err| zerror!(err))?
-                .l()
+                .new_object("kotlin/ULong", "(J)V", &[JValue::Long(ulong as i64)])
                 .map_err(|err| zerror!(err))?;
             Ok(ulong_obj.as_raw())
         }

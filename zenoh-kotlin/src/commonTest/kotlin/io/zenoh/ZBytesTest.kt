@@ -103,38 +103,37 @@ class ZBytesTests {
         assertEquals(booleanInput, booleanOutput)
     }
 
-//    TODO: enable tests below after fixing UByte serialization and deserialization issue.
-//    @Test
-//    fun `test UByte serialization and deserialization`() {
-//        val ubyteInput: UByte = 100u
-//        val payload = zSerialize(ubyteInput).getOrThrow()
-//        val ubyteOutput = zDeserialize<UByte>(payload).getOrThrow()
-//        assertEquals(ubyteInput, ubyteOutput)
-//    }
-//
-//    @Test
-//    fun `test UShort serialization and deserialization`() {
-//        val ushortInput: UShort = 300u
-//        val payload = zSerialize(ushortInput).getOrThrow()
-//        val ushortOutput = zDeserialize<UShort>(payload).getOrThrow()
-//        assertEquals(ushortInput, ushortOutput)
-//    }
-//
-//    @Test
-//    fun `test UInt serialization and deserialization`() {
-//        val uintInput: UInt = 123456789u
-//        val payload = zSerialize(uintInput).getOrThrow()
-//        val uintOutput = zDeserialize<UInt>(payload).getOrThrow()
-//        assertEquals(uintInput, uintOutput)
-//    }
-//
-//    @Test
-//    fun `test ULong serialization and deserialization`() {
-//        val ulongInput: ULong = 9876543210uL
-//        val payload = zSerialize(ulongInput).getOrThrow()
-//        val ulongOutput = zDeserialize<ULong>(payload).getOrThrow()
-//        assertEquals(ulongInput, ulongOutput)
-//    }
+    @Test
+    fun `test UByte serialization and deserialization`() {
+        val ubyteInput: UByte = 100u
+        val payload = zSerialize(ubyteInput).getOrThrow()
+        val ubyteOutput = zDeserialize<UByte>(payload).getOrThrow()
+        assertEquals(ubyteInput, ubyteOutput)
+    }
+
+    @Test
+    fun `test UShort serialization and deserialization`() {
+        val ushortInput: UShort = 300u
+        val payload = zSerialize(ushortInput).getOrThrow()
+        val ushortOutput = zDeserialize<UShort>(payload).getOrThrow()
+        assertEquals(ushortInput, ushortOutput)
+    }
+
+    @Test
+    fun `test UInt serialization and deserialization`() {
+        val uintInput: UInt = 123456789u
+        val payload = zSerialize(uintInput).getOrThrow()
+        val uintOutput = zDeserialize<UInt>(payload).getOrThrow()
+        assertEquals(uintInput, uintOutput)
+    }
+
+    @Test
+    fun `test ULong serialization and deserialization`() {
+        val ulongInput: ULong = 9876543210uL
+        val payload = zSerialize(ulongInput).getOrThrow()
+        val ulongOutput = zDeserialize<ULong>(payload).getOrThrow()
+        assertEquals(ulongInput, ulongOutput)
+    }
 
     /**********************************************
      * Tests for collections with new types       *
