@@ -55,15 +55,19 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeViaJNI(
 }
 
 enum KotlinType {
-    // TODO: complete
-    // Boolean
-    // String
+    Boolean,
+    String,
+    ByteArray,
     Byte,
     Short,
     Int,
     Long,
     Float,
     Double,
+    UByte,
+    UShort,
+    UInt,
+    ULong,
     List(Box<KotlinType>),
     Map(Box<KotlinType>, Box<KotlinType>),
     // Pair(Box<KotlinType>, Box<KotlinType>),
@@ -107,20 +111,23 @@ fn decode_ktype(env: &mut JNIEnv, ktype: JObject) -> ZResult<KotlinType> {
             .into();
 
         match qualified_name.as_str() {
+            "kotlin.Boolean" => Ok(KotlinType::Boolean),
+            "kotlin.String" => Ok(KotlinType::String),
+            "kotlin.ByteArray" => Ok(KotlinType::ByteArray),
             "kotlin.Byte" => Ok(KotlinType::Byte),
             "kotlin.Short" => Ok(KotlinType::Short),
             "kotlin.Int" => Ok(KotlinType::Int),
             "kotlin.Long" => Ok(KotlinType::Long),
             "kotlin.Float" => Ok(KotlinType::Float),
             "kotlin.Double" => Ok(KotlinType::Double),
-            "kotlin.collections.List" => {
-                decode_generic_type(env, &ktype, |element_type| {
-                    Ok(KotlinType::List(Box::new(element_type)))
-                })
-            }
-            "kotlin.collections.Map" => {
-                decode_generic_map_type(env, &ktype)
-            }
+            "kotlin.UByte" => Ok(KotlinType::UByte),
+            "kotlin.UShort" => Ok(KotlinType::UShort),
+            "kotlin.UInt" => Ok(KotlinType::UInt),
+            "kotlin.ULong" => Ok(KotlinType::ULong),
+            "kotlin.collections.List" => decode_generic_type(env, &ktype, |element_type| {
+                Ok(KotlinType::List(Box::new(element_type)))
+            }),
+            "kotlin.collections.Map" => decode_generic_map_type(env, &ktype),
             _ => Err(zerror!("Unsupported type: {}", qualified_name)),
         }
     } else {
@@ -226,7 +233,7 @@ fn serialize(
             let long_value = env
                 .call_method(any, "longValue", "()J", &[])
                 .map_err(|err| zerror!(err))?
-                .s()
+                .j()
                 .map_err(|err| zerror!(err))?;
             serializer.serialize(long_value);
         }
@@ -245,6 +252,60 @@ fn serialize(
                 .d()
                 .map_err(|err| zerror!(err))?;
             serializer.serialize(double_value);
+        }
+        KotlinType::Boolean => {
+            let boolean_value = env
+                .call_method(any, "booleanValue", "()Z", &[])
+                .map_err(|err| zerror!(err))?
+                .z()
+                .map_err(|err| zerror!(err))?;
+            serializer.serialize(boolean_value);
+        }
+        KotlinType::String => {
+            let jstring = JString::from(any);
+            let string_value: String = env.get_string(&jstring).map_err(|err| zerror!(err))?.into();
+            serializer.serialize(string_value);
+        }
+        KotlinType::ByteArray => {
+            let jbyte_array = JByteArray::from(any);
+            let bytes = decode_byte_array(env, jbyte_array).map_err(|err| zerror!(err))?;
+            serializer.serialize(bytes);
+        }
+        KotlinType::UByte => {
+            let int_value = env
+                .call_method(any, "toInt", "()I", &[])
+                .map_err(|err| zerror!(err))?
+                .i()
+                .map_err(|err| zerror!(err))?;
+            let ubyte_value = int_value as u8;
+            serializer.serialize(ubyte_value);
+        }
+        KotlinType::UShort => {
+            let int_value = env
+                .call_method(any, "toInt", "()I", &[])
+                .map_err(|err| zerror!(err))?
+                .i()
+                .map_err(|err| zerror!(err))?;
+            let ushort_value = int_value as u16;
+            serializer.serialize(ushort_value);
+        }
+        KotlinType::UInt => {
+            let int_value = env
+                .call_method(any, "toInt", "()I", &[])
+                .map_err(|err| zerror!(err))?
+                .i()
+                .map_err(|err| zerror!(err))?;
+            let uint_value = int_value as u32;
+            serializer.serialize(uint_value);
+        }
+        KotlinType::ULong => {
+            let long_value = env
+                .call_method(any, "toLong", "()J", &[])
+                .map_err(|err| zerror!(err))?
+                .j()
+                .map_err(|err| zerror!(err))?;
+            let ulong_value = long_value as u64;
+            serializer.serialize(ulong_value);
         }
         KotlinType::List(kotlin_type) => {
             let jlist: JList<'_, '_, '_> =
@@ -361,6 +422,102 @@ fn deserialize(
                 .new_object("java/lang/Double", "(D)V", &[JValue::Double(double)])
                 .map_err(|err| zerror!(err))?;
             Ok(double_obj.as_raw())
+        }
+        KotlinType::Boolean => {
+            let boolean_value = deserializer
+                .deserialize::<bool>()
+                .map_err(|err| zerror!(err))?;
+            let jboolean = if boolean_value { 1u8 } else { 0u8 };
+            let boolean_obj = env
+                .new_object("java/lang/Boolean", "(Z)V", &[JValue::Bool(jboolean)])
+                .map_err(|err| zerror!(err))?;
+            Ok(boolean_obj.as_raw())
+        }
+        KotlinType::String => {
+            let deserialized_string = deserializer
+                .deserialize::<String>()
+                .map_err(|err| zerror!(err))?;
+            let jstring = env
+                .new_string(&deserialized_string)
+                .map_err(|err| zerror!(err))?;
+            Ok(jstring.into_raw())
+        }
+        KotlinType::ByteArray => {
+            let deserialized_bytes = deserializer
+                .deserialize::<Vec<u8>>()
+                .map_err(|err| zerror!(err))?;
+            let jbytes = env
+                .byte_array_from_slice(&deserialized_bytes.as_slice())
+                .map_err(|err| zerror!(err))?;
+            Ok(jbytes.into_raw())
+        }
+        KotlinType::UByte => {
+            let ubyte_value = deserializer
+                .deserialize::<u8>()
+                .map_err(|err| zerror!(err))?;
+            let byte_value = ubyte_value as i8;
+            let ubyte_obj = env
+                .call_static_method(
+                    "kotlin/UByte",
+                    "constructor-impl",
+                    "(B)Lkotlin/UByte;",
+                    &[JValue::Byte(byte_value)],
+                )
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            Ok(ubyte_obj.as_raw())
+        }
+        KotlinType::UShort => {
+            let ushort_value = deserializer
+                .deserialize::<u16>()
+                .map_err(|err| zerror!(err))?;
+            let short_value = ushort_value as i16;
+            let ushort_obj = env
+                .call_static_method(
+                    "kotlin/UShort",
+                    "constructor-impl",
+                    "(S)Lkotlin/UShort;",
+                    &[JValue::Short(short_value)],
+                )
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            Ok(ushort_obj.as_raw())
+        }
+        KotlinType::UInt => {
+            let uint_value = deserializer
+                .deserialize::<u32>()
+                .map_err(|err| zerror!(err))?;
+            let int_value = uint_value as i32;
+            let uint_obj = env
+                .call_static_method(
+                    "kotlin/UInt",
+                    "constructor-impl",
+                    "(I)Lkotlin/UInt;",
+                    &[JValue::Int(int_value)],
+                )
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            Ok(uint_obj.as_raw())
+        }
+        KotlinType::ULong => {
+            let ulong_value = deserializer
+                .deserialize::<u64>()
+                .map_err(|err| zerror!(err))?;
+            let long_value = ulong_value as i64;
+            let ulong_obj = env
+                .call_static_method(
+                    "kotlin/ULong",
+                    "constructor-impl",
+                    "(J)Lkotlin/ULong;",
+                    &[JValue::Long(long_value)],
+                )
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            Ok(ulong_obj.as_raw())
         }
         KotlinType::List(kotlin_type) => {
             let list_size = deserializer
