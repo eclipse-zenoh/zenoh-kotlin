@@ -15,6 +15,7 @@
 package io.zenoh
 
 import io.zenoh.exceptions.ZError
+import io.zenoh.ext.zSerialize
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import kotlinx.coroutines.runBlocking
@@ -65,7 +66,7 @@ class SessionTest {
         assertFalse(publisher.isValid())
         assertFalse(subscriber.isValid())
 
-        assertTrue(publisher.put("Test").isFailure)
+        assertTrue(publisher.put(zSerialize("Test").getOrThrow()).isFailure)
     }
 
     @Test

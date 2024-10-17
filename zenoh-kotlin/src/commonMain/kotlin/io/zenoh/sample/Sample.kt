@@ -39,5 +39,10 @@ data class Sample(
     val kind: SampleKind,
     val timestamp: TimeStamp?,
     val qos: QoS,
-    val attachment: ZBytes? = null
-): ZenohType
+    val attachment: ZBytes? = null,
+): ZenohType {
+    
+    val express = qos.express
+    val congestionControl = qos.congestionControl
+    val priority = qos.priority
+}

@@ -18,7 +18,7 @@ import io.zenoh.bytes.Encoding
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
@@ -42,7 +42,7 @@ import kotlin.test.*
 class QueryableTest {
 
     companion object {
-        val testPayload = "Hello queryable".into()
+        val testPayload = zSerialize("Hello queryable").getOrThrow()
     }
 
     private lateinit var session: Session
@@ -121,8 +121,8 @@ class QueryableTest {
         assertNull(receivedQuery!!.attachment)
 
         receivedQuery = null
-        val payload = "Test value".into()
-        val attachment = "Attachment".into()
+        val payload = zSerialize("Test value").getOrThrow()
+        val attachment = zSerialize("Attachment").getOrThrow()
         session.get(Selector(testKeyExpr), callback = {}, payload = payload, encoding = Encoding.ZENOH_STRING, attachment = attachment)
 
         delay(100)
@@ -136,7 +136,7 @@ class QueryableTest {
 
     @Test
     fun queryReplySuccessTest() {
-        val message = "Test message".into()
+        val message = zSerialize("Test message").getOrThrow()
         val timestamp = TimeStamp.getCurrentTime()
         val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
         val priority = Priority.DATA_HIGH
@@ -162,7 +162,7 @@ class QueryableTest {
 
     @Test
     fun queryReplyErrorTest() {
-        val errorMessage = "Error message".into()
+        val errorMessage = zSerialize("Error message").getOrThrow()
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
             query.replyErr(error = errorMessage)
         }).getOrThrow()
@@ -233,7 +233,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
     override fun onClose() {}
 
     fun reply(query: Query) {
-        val payload = "Hello queryable $counter!".into()
+        val payload = zSerialize("Hello queryable $counter!").getOrThrow()
         counter++
         val sample = Sample(
             query.keyExpr,

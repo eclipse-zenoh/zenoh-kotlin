@@ -18,7 +18,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.ZBytes
 import io.zenoh.ext.zDeserialize
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.query.Selector
@@ -31,10 +31,10 @@ class UserAttachmentTest {
     private lateinit var keyExpr: KeyExpr
 
     companion object {
-        val payload = "test".into()
+        val payload = zSerialize("test").getOrThrow()
         const val keyExprString = "example/testing/attachment"
         const val attachment = "mock_attachment"
-        val attachmentZBytes = ZBytes.from(attachment)
+        val attachmentZBytes = zSerialize(attachment).getOrThrow()
     }
 
     @BeforeTest
@@ -60,7 +60,7 @@ class UserAttachmentTest {
 
         assertNotNull(receivedSample) {
             val receivedAttachment = it.attachment!!
-            assertEquals(attachment, receivedAttachment.toString())
+            assertEquals(attachment, zDeserialize<String>(receivedAttachment).getOrThrow())
         }
     }
 
@@ -72,7 +72,7 @@ class UserAttachmentTest {
             receivedSample = sample
         }).getOrThrow()
 
-        publisher.put("test", attachment = attachmentZBytes)
+        publisher.put(payload, attachment = attachmentZBytes)
 
         publisher.close()
         subscriber.close()
@@ -90,7 +90,7 @@ class UserAttachmentTest {
         val subscriber =
             session.declareSubscriber(keyExpr, callback = { sample -> receivedSample = sample }).getOrThrow()
 
-        publisher.put("test")
+        publisher.put(payload)
 
         publisher.close()
         subscriber.close()
@@ -114,7 +114,7 @@ class UserAttachmentTest {
 
         assertNotNull(receivedSample) {
             val receivedAttachment = it.attachment!!
-            assertEquals(attachment, receivedAttachment.toString())
+            assertEquals(attachment, zDeserialize<String>(receivedAttachment).getOrThrow())
         }
     }
 
@@ -172,7 +172,7 @@ class UserAttachmentTest {
 
         assertNotNull(reply)
         val receivedAttachment = reply!!.result.getOrThrow().attachment!!
-        assertEquals(attachment, receivedAttachment.toString())
+        assertEquals(attachment, zDeserialize<String>(receivedAttachment).getOrThrow())
     }
 
     @Test

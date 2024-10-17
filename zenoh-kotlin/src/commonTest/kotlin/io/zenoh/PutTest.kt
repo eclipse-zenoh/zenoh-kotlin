@@ -16,7 +16,7 @@ package io.zenoh
 
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.Encoding
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.sample.Sample
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +26,7 @@ class PutTest {
 
     companion object {
         const val TEST_KEY_EXP = "example/testing/keyexpr"
-        val TEST_PAYLOAD = "Hello".into()
+        val TEST_PAYLOAD = zSerialize("Hello").getOrThrow()
     }
 
     @Test

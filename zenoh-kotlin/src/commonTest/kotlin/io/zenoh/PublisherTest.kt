@@ -18,7 +18,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.SampleKind
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.pubsub.Publisher
 import io.zenoh.sample.Sample
 import io.zenoh.pubsub.Subscriber
@@ -55,9 +55,9 @@ class PublisherTest {
     fun putTest() {
 
         val testPayloads = arrayListOf(
-            Pair("Test 1".into(), Encoding.TEXT_PLAIN),
-            Pair("Test 2".into(), Encoding.TEXT_JSON),
-            Pair("Test 3".into(), Encoding.TEXT_CSV),
+            Pair(zSerialize("Test 1").getOrThrow(), Encoding.TEXT_PLAIN),
+            Pair(zSerialize("Test 2").getOrThrow(), Encoding.TEXT_JSON),
+            Pair(zSerialize("Test 3").getOrThrow(), Encoding.TEXT_CSV),
         )
 
         testPayloads.forEach() { value -> publisher.put(value.first, encoding = value.second) }
@@ -78,7 +78,7 @@ class PublisherTest {
 
     @Test
     fun `when encoding is not provided a put should fallback to the publisher encoding`() {
-        publisher.put("Test")
+        publisher.put(zSerialize("Test").getOrThrow())
         assertEquals(1, receivedSamples.size)
         assertEquals(Encoding.ZENOH_STRING, receivedSamples[0].encoding)
     }
