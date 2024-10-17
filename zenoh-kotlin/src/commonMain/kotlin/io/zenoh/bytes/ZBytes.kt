@@ -15,185 +15,102 @@
 package io.zenoh.bytes
 
 /**
- * //TODO: update documentation
- *
  * The ZBytes class (Zenoh bytes) represents the bytes received through the Zenoh network.
  *
- * It provides many utilities to serialize an object into a ZBytes, as well as to deserialize from a ZBytes instance.
- *
- * # Serialization
+ * To serialize a type into a ZBytes it must be done through [io.zenoh.ext.zSerialize], while for deserialization
+ * [io.zenoh.ext.zDeserialize] must be called.
  *
  * Supported types:
+ * - Boolean
+ * - Byte
+ * - Short
+ * - Int
+ * - Long
+ * - Float
+ * - Double
+ * - List
+ * - Map
  *
- * ## Raw types
+ * Lists and Maps support nested types, that is, you could have any combination of the above types, for instance
+ * List of Lists, List of Maps, Maps of Maps...
  *
- * * Numeric: Byte, Short, Int, Long, Float and Double.**
- * * String
- * * ByteArray
- *
- * For the raw types, there are basically three ways to serialize them into a ZBytes, for instance let's suppose
- * we want to serialize an `Int`, we could achieve it by::
- * * using the `into()` syntax:
- *  ```kotlin
- *  val exampleInt: Int = 256
- *  val zbytes: ZBytes = exampleInt.into()
- *  ```
- *
- * * using the `from()` syntax:
- *  ```kotlin
- *  val exampleInt: Int = 256
- *  val zbytes: ZBytes = ZBytes.from(exampleInt)
- *  ```
- *
- * * using the serialize syntax:
- * ```kotlin
- * val exampleInt: Int = 256
- * val zbytes: ZBytes = zSerialize<Int>(exampleInt).getOrThrow()
- * ```
- * This approach works as well for the other mentioned types.
- *
- * ## Lists
- *
- * Lists are supported, but they must be either:
- * - List of [Number] (Byte, Short, Int, Long, Float or Double)
- * - List of [String]
- * - List of [ByteArray]
- * - List of [IntoZBytes]
- *
- * The serialize syntax must be used:
- * ```kotlin
- * val myList = listOf(1, 2, 5, 8, 13, 21)
- * val zbytes = zSerialize<List<Int>>(myList).getOrThrow()
- * ```
- *
- * ## Maps
- *
- * Maps are supported as well, with the restriction that their inner types must be either:
- * - [Number]
- * - [String]
- * - [ByteArray]
- * - [IntoZBytes]
+ * Checkout the example below from the ZBytes example:
  *
  * ```kotlin
- * val myMap: Map<String, Int> = mapOf("foo" to 1, "bar" to 2)
- * val zbytes = zSerialize<Map<String, Int>>(myMap).getOrThrow()
- * ```
+ * /***********************************************
+ *  * Standard serialization and deserialization. *
+ * ***********************************************/
  *
- * # Deserialization
+ * /** Numeric: byte, short, int, float, double */
+ * val intInput = 1234
+ * var payload = zSerialize(intInput).getOrThrow()
+ * val intOutput = zDeserialize<Int>(payload).getOrThrow()
+ * check(intInput == intOutput)
  *
- * ## Raw types
+ * // Another example with float
+ * val floatInput = 3.1415f
+ * payload = zSerialize(floatInput).getOrThrow()
+ * val floatOutput = zDeserialize<Float>(payload).getOrThrow()
+ * check(floatInput == floatOutput)
  *
- * * Numeric: Byte, Short, Int, Long, Float and Double
- * * String
- * * ByteArray
+ * /** String serialization and deserialization. */
+ * val stringInput = "example"
+ * payload = zSerialize(stringInput).getOrThrow()
+ * var stringOutput = zDeserialize<String>(payload).getOrThrow()
+ * check(stringInput == stringOutput)
  *
- * Example:
+ * /** ByteArray serialization and deserialization. */
+ * val byteArrayInput = "example".toByteArray()
+ * payload = zSerialize(byteArrayInput).getOrThrow()
+ * val byteArrayOutput = zDeserialize<ByteArray>(payload).getOrThrow()
+ * check(byteArrayInput.contentEquals(byteArrayOutput))
  *
- * For these raw types, you can use the functions `to<Type>`, that is
- * - [toByte]
- * - [toShort]
- * - [toInt]
- * - [toLong]
- * - [toDouble]
- * - [toString]
- * - [toByteArray]
- *
- * For instance, for an Int:
- * ```kotlin
- * val example: Int = 256
- * val zbytes: ZBytes = exampleInt.into()
- * val deserializedInt = zbytes.toInt()
- * ```
- *
- * Alternatively, the deserialize syntax can be used as well:
- * ```kotlin
- * val exampleInt: Int = 256
- * val zbytes: ZBytes = exampleInt.into()
- * val deserializedInt = zDeserializeInt>(zbytes).getOrThrow()
- * ```
- *
- * ## Lists
- *
- * Lists are supported, but they must be deserialized either into a:
- * - List of [Number] (Byte, Short, Int, Long, Float or Double)
- * - List of [String]
- * - List of [ByteArray]
- *
- * To deserialize into a list, we need to use the deserialize syntax as follows:
- * ```kotlin
+ * /**
+ *  * List serialization and deserialization.
+ *  *
+ *  * Supported types: String, ByteArray, Byte, Short, Int, Long, Float and Double.
+ * */
  * val inputList = listOf("sample1", "sample2", "sample3")
- * payload = serialize(inputList).getOrThrow()
- * val outputList = zDeserializeList<String>>(payload).getOrThrow()
- * ```
+ * payload = zSerialize(inputList).getOrThrow()
+ * val outputList = zDeserialize<List<String>>(payload).getOrThrow()
+ * check(inputList == outputList)
  *
- * ## Maps
+ * val inputListInt = listOf(1, 2, 3)
+ * payload = zSerialize(inputListInt).getOrThrow()
+ * val outputListInt = zDeserialize<List<Int>>(payload).getOrThrow()
+ * check(inputListInt == outputListInt)
  *
- * Maps are supported as well, with the restriction that their inner types must be either:
- * - [Number]
- * - [String]
- * - [ByteArray]
+ * val inputListByteArray = inputList.map { value -> value.toByteArray() }
+ * payload = zSerialize(inputListByteArray).getOrThrow()
+ * val outputListByteArray = zDeserialize<List<ByteArray>>(payload).getOrThrow()
+ * check(compareByteArrayLists(inputListByteArray, outputListByteArray))
  *
- * ```kotlin
+ * /** Nested lists */
+ * val nestedList = listOf(listOf(1, 2, 3))
+ * payload = zSerialize(nestedList).getOrThrow()
+ * val outputNestedList = zDeserialize<List<List<Int>>>(payload).getOrThrow()
+ * check(nestedList == outputNestedList)
+ *
+ * /** Combined types */
+ * val combinedList = listOf(mapOf("a" to 1, "b" to 2))
+ * payload = zSerialize(combinedList).getOrThrow()
+ * val outputCombinedList = zDeserialize<List<Map<String, Int>>>(payload).getOrThrow()
+ * check(combinedList == outputCombinedList)
+ *
+ * /**
+ *  * Map serialization and deserialization.
+ *  *
+ *  * Maps with the following Type combinations are supported: String, ByteArray, Byte, Short, Int, Long, Float and Double.
+ *  */
  * val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
- * payload = serialize(inputMap).getOrThrow()
- * val outputMap = zDeserializeMap<String, String>>(payload).getOrThrow()
+ * payload = zSerialize(inputMap).getOrThrow()
+ * val outputMap = zDeserialize<Map<String, String>>(payload).getOrThrow()
  * check(inputMap == outputMap)
- * ```
  *
- * # Custom serialization and deserialization
- *
- * ## Serialization
- *
- * For custom serialization, classes to be serialized need to implement the [IntoZBytes] interface.
- * For instance:
- *
- * ```kotlin
- * class Foo(val content: String) : IntoZBytes {
- *
- *   /*Inherits: IntoZBytes*/
- *   override fun into(): ZBytes = content.into()
- * }
- * ```
- *
- * This way, we can do:
- * ```kotlin
- * val foo = Foo("bar")
- * val serialization = zSerialize<Foo>(foo).getOrThrow()
- * ```
- *
- * Implementing the [IntoZBytes] interface on a class enables the possibility of serializing lists and maps
- * of that type, for instance:
- * ```kotlin
- * val list = listOf(Foo("bar"), Foo("buz"), Foo("fizz"))
- * val zbytes = zSerialize<List<Foo>>(list)
- * ```
- *
- * ## Deserialization
- *
- * In order for the serialization to be successful on a custom class,
- * it must override the `into(): ZBytes` function from the [IntoZBytes] interface.
- *
- * Regarding deserialization for custom objects, for the time being (this API will be expanded to
- * provide further utilities) you need to manually convert the ZBytes into the type you want.
- *
- * ```kotlin
- * val inputFoo = Foo("example")
- * payload = serialize(inputFoo).getOrThrow()
- * val outputFoo = Foo.from(payload)
- * check(inputFoo == outputFoo)
- *
- * // List of Foo.
- * val inputListFoo = inputList.map { value -> Foo(value) }
- * payload = zSerialize<List<Foo>>(inputListFoo).getOrThrow()
- * val outputListFoo = zDeserializeList<ZBytes>>(payload).getOrThrow().map { zbytes -> Foo.from(zbytes) }
- * check(inputListFoo == outputListFoo)
- *
- * // Map of Foo.
- * val inputMapFoo = inputMap.map { (k, v) -> Foo(k) to Foo(v) }.toMap()
- * payload = zSerialize<Map<Foo, Foo>>(inputMapFoo).getOrThrow()
- * val outputMapFoo = zDeserializeMap<ZBytes, ZBytes>>(payload).getOrThrow()
- *     .map { (key, value) -> Foo.from(key) to Foo.from(value) }.toMap()
- * check(inputMapFoo == outputMapFoo)
+ * val combinedInputMap = mapOf("key1" to 1, "key2" to 2)
+ * payload = zSerialize(combinedInputMap).getOrThrow()
+ * val combinedOutputMap = zDeserialize<Map<String, Int>>(payload).getOrThrow()
+ * check(combinedInputMap == combinedOutputMap)
  * ```
  */
 class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
