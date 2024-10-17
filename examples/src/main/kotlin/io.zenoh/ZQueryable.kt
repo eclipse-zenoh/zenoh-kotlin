@@ -17,7 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
@@ -42,7 +42,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                                 println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
                                 query.reply(
                                     keyExpr,
-                                    payload = value.into(),
+                                    payload = zSerialize(value).getOrThrow(),
                                     timestamp = TimeStamp.getCurrentTime()
                                 ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
                             }

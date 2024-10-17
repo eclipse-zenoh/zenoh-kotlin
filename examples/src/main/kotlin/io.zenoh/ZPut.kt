@@ -17,7 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 
 class ZPut(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Put example"
@@ -33,7 +33,8 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
                     keyExpr.use {
-                        session.put(keyExpr, value.into(), attachment = attachment?.into())
+                        val payload = zSerialize(value).getOrThrow()
+                        session.put(keyExpr, payload, attachment = attachment?.let { zSerialize(it).getOrThrow() })
                             .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
                     }
                 }

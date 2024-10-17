@@ -83,9 +83,6 @@ class Publisher internal constructor(
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
     fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
 
-    /** Performs a PUT operation on the specified [keyExpr] with the specified string [message]. */
-    fun put(message: String, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(message.into(), encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
-
     /**
      * Performs a DELETE operation on the specified [keyExpr]
      */

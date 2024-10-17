@@ -78,7 +78,7 @@ class PublisherTest {
 
     @Test
     fun `when encoding is not provided a put should fallback to the publisher encoding`() {
-        publisher.put("Test")
+        publisher.put(zSerialize("Test").getOrThrow())
         assertEquals(1, receivedSamples.size)
         assertEquals(Encoding.ZENOH_STRING, receivedSamples[0].encoding)
     }

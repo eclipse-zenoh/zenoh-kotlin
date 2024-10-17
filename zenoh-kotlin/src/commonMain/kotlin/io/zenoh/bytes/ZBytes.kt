@@ -14,14 +14,9 @@
 
 package io.zenoh.bytes
 
-import io.zenoh.exceptions.ZError
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.reflect.KType
-import kotlin.reflect.full.*
-import kotlin.reflect.typeOf
-
 /**
+ * //TODO: update documentation
+ *
  * The ZBytes class (Zenoh bytes) represents the bytes received through the Zenoh network.
  *
  * It provides many utilities to serialize an object into a ZBytes, as well as to deserialize from a ZBytes instance.
@@ -203,15 +198,6 @@ import kotlin.reflect.typeOf
  */
 class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
 
-    companion object {
-
-        internal fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
-
-        internal fun from(string: String) = ZBytes(string.toByteArray())
-    }
-
-    override fun toString() = bytes.decodeToString()
-
     override fun into(): ZBytes = this
 
     override fun equals(other: Any?) = other is ZBytes && bytes.contentEquals(other.bytes)
@@ -219,10 +205,6 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
     override fun hashCode() = bytes.contentHashCode()
 }
 
-fun ByteArray.into(): ZBytes {
+internal fun ByteArray.into(): ZBytes {
     return ZBytes(this)
-}
-
-fun String.into(): ZBytes {
-    return ZBytes.from(this)
 }

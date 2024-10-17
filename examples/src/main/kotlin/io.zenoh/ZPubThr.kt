@@ -21,11 +21,11 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
+import io.zenoh.ext.zSerialize
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
-import io.zenoh.bytes.into
 
 class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Throughput example"
@@ -38,7 +38,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         for (i in 0..<payloadSize) {
             data[i] = (i % 10).toByte()
         }
-        val payload = data.into()
+        val payload = zSerialize(data).getOrThrow()
 
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
