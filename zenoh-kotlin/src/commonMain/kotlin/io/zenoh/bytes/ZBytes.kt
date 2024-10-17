@@ -115,6 +115,18 @@ package io.zenoh.bytes
  */
 class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
 
+    companion object {
+        fun from(string: String) = ZBytes(string.encodeToByteArray())
+
+        fun from(bytes: ByteArray) = ZBytes(bytes)
+    }
+
+    fun toBytes(): ByteArray = bytes
+
+    fun tryToString(): Result<String> = runCatching { bytes.decodeToString(throwOnInvalidSequence = true) }
+
+    override fun toString(): String = bytes.decodeToString()
+
     override fun into(): ZBytes = this
 
     override fun equals(other: Any?) = other is ZBytes && bytes.contentEquals(other.bytes)

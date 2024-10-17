@@ -21,7 +21,7 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.boolean
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.ulong
-import io.zenoh.ext.zSerialize
+import io.zenoh.bytes.ZBytes
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
@@ -38,7 +38,7 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
         for (i in 0..<payloadSize) {
             data[i] = (i % 10).toByte()
         }
-        val payload = zSerialize(data).getOrThrow()
+        val payload = ZBytes.from(data)
 
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 

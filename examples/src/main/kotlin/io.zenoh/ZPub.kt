@@ -16,8 +16,8 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
+import io.zenoh.bytes.ZBytes
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.ext.zSerialize
 
 class ZPub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Pub example"
@@ -45,8 +45,8 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
                                 "Putting Data ('$keyExpr': '$payload')..."
                             )
                             attachment?.let {
-                                pub.put(zSerialize(payload).getOrThrow(), attachment = zSerialize(it).getOrThrow() )
-                            } ?: let { pub.put(zSerialize(payload).getOrThrow()) }
+                                pub.put(ZBytes.from(payload), attachment = ZBytes.from(it) )
+                            } ?: let { pub.put(ZBytes.from(payload)) }
                             idx++
                         }
                     }

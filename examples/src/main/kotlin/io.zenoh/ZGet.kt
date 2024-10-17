@@ -17,8 +17,8 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
+import io.zenoh.bytes.ZBytes
 import io.zenoh.sample.SampleKind
-import io.zenoh.ext.zSerialize
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.intoSelector
 import kotlinx.coroutines.channels.Channel
@@ -39,9 +39,9 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
                 selector.intoSelector().onSuccess { selector ->
                     session.get(selector,
                         channel = Channel(),
-                        payload = payload?.let { zSerialize(it).getOrThrow() },
+                        payload = payload?.let { ZBytes.from(it) },
                         target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
-                        attachment = attachment?.let { zSerialize(it).getOrThrow() },
+                        attachment = attachment?.let { ZBytes.from(it) },
                         timeout = Duration.ofMillis(timeout))
                         .onSuccess { channelReceiver ->
                             runBlocking {
