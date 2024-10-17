@@ -37,7 +37,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeViaJNI(
         serialize(&mut env, &mut serializer, any, &ktype)?;
         let zbytes = serializer.finish();
 
-        let byte_array = bytes_to_java_array(&mut env, &zbytes).map_err(|err| zerror!(err))?;
+        let byte_array = bytes_to_java_array(&env, &zbytes).map_err(|err| zerror!(err))?;
         let zbytes_obj = env
             .new_object(
                 "io/zenoh/bytes/ZBytes",
@@ -314,7 +314,7 @@ fn serialize(
             let list_size = jlist.size(env).unwrap();
             serializer.serialize(zenoh_ext::VarInt(list_size as usize));
             while let Some(value) = iterator.next(env).map_err(|err| zerror!(err))? {
-                serialize(env, serializer, value, &kotlin_type)?;
+                serialize(env, serializer, value, kotlin_type)?;
             }
         }
         KotlinType::Map(key_type, value_type) => {
@@ -330,8 +330,8 @@ fn serialize(
 
             let mut iterator = jmap.iter(env).map_err(|err| zerror!(err))?;
             while let Some((key, value)) = iterator.next(env).map_err(|err| zerror!(err))? {
-                serialize(env, serializer, key, &key_type)?;
-                serialize(env, serializer, value, &value_type)?;
+                serialize(env, serializer, key, key_type)?;
+                serialize(env, serializer, value, value_type)?;
             }
         }
     }
@@ -447,7 +447,7 @@ fn deserialize(
                 .deserialize::<Vec<u8>>()
                 .map_err(|err| zerror!(err))?;
             let jbytes = env
-                .byte_array_from_slice(&deserialized_bytes.as_slice())
+                .byte_array_from_slice(deserialized_bytes.as_slice())
                 .map_err(|err| zerror!(err))?;
             Ok(jbytes.into_raw())
         }
@@ -530,7 +530,7 @@ fn deserialize(
             let jlist = JList::from_env(env, &array_list).map_err(|err| zerror!(err))?;
 
             for _ in 0..list_size {
-                let item = deserialize(env, deserializer, &kotlin_type)?;
+                let item = deserialize(env, deserializer, kotlin_type)?;
                 let item_obj = unsafe { JObject::from_raw(item) };
                 jlist.add(env, &item_obj).map_err(|err| zerror!(err))?;
             }
@@ -549,7 +549,7 @@ fn deserialize(
             for _ in 0..map_size {
                 let key = deserialize(env, deserializer, key_type)?;
                 let key_obj = unsafe { JObject::from_raw(key) };
-                let value = deserialize(env, deserializer, &value_type)?;
+                let value = deserialize(env, deserializer, value_type)?;
                 let value_obj = unsafe { JObject::from_raw(value) };
                 jmap.put(env, &key_obj, &value_obj)
                     .map_err(|err| zerror!(err))?;
