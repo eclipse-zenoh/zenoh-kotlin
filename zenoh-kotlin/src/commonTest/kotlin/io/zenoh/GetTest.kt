@@ -16,7 +16,7 @@ package io.zenoh
 
 import io.zenoh.handlers.Handler
 import io.zenoh.sample.SampleKind
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.query.Reply
 import io.zenoh.query.Queryable
 import io.zenoh.query.Parameters
@@ -30,7 +30,7 @@ import kotlin.test.*
 class GetTest {
 
     companion object {
-        val payload = "Test".into()
+        val payload = zSerialize("Test").getOrThrow()
         val timestamp = TimeStamp.getCurrentTime()
         val kind = SampleKind.PUT
     }

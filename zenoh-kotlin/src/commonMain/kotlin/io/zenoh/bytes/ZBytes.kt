@@ -201,139 +201,13 @@ import kotlin.reflect.typeOf
  * check(inputMapFoo == outputMapFoo)
  * ```
  */
-class ZBytes internal constructor(internal val bytes: ByteArray, internal val type: String) : IntoZBytes {
+class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
 
     companion object {
-        fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
-        fun from(string: String) = ZBytes(string.toByteArray(), "String")
-        fun from(byteArray: ByteArray) = ZBytes(byteArray, "ByteArray")
-        fun from(number: Byte): ZBytes {
-            val byteArray = byteArrayOf(number)
-            return ZBytes(byteArray, "Byte")
-        }
 
-        fun from(number: UByte): ZBytes {
-            val byteArray = byteArrayOf(number.toByte())
-            return ZBytes(byteArray, "UByte")
-        }
+        internal fun from(intoZBytes: IntoZBytes) = intoZBytes.into()
 
-        fun from(number: Short): ZBytes {
-            val byteArray = ByteBuffer.allocate(Short.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putShort(number)
-            }.array()
-            return ZBytes(byteArray, "Short")
-        }
-
-        fun from(number: UShort): ZBytes {
-            val byteArray = ByteBuffer.allocate(UShort.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putShort(number.toShort())
-            }.array()
-            return ZBytes(byteArray, "UShort")
-        }
-
-        fun from(number: Int): ZBytes {
-            val byteArray = ByteBuffer.allocate(Int.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putInt(number)
-            }.array()
-            return ZBytes(byteArray, "Int")
-        }
-
-        fun from(number: UInt): ZBytes {
-            val byteArray = ByteBuffer.allocate(UInt.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putInt(number.toInt())
-            }.array()
-            return ZBytes(byteArray, "UInt")
-        }
-
-        fun from(number: Long): ZBytes {
-            val byteArray = ByteBuffer.allocate(Long.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putLong(number)
-            }.array()
-            return ZBytes(byteArray, "Long")
-        }
-
-        fun from(number: ULong): ZBytes {
-            val byteArray = ByteBuffer.allocate(ULong.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putLong(number.toLong())
-            }.array()
-            return ZBytes(byteArray, "ULong")
-        }
-
-        fun from(number: Float): ZBytes {
-            val byteArray = ByteBuffer.allocate(Float.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putFloat(number)
-            }.array()
-            return ZBytes(byteArray, "Float")
-        }
-
-        fun from(number: Double): ZBytes {
-            val byteArray = ByteBuffer.allocate(Double.SIZE_BYTES).apply {
-                order(ByteOrder.LITTLE_ENDIAN)
-                putDouble(number)
-            }.array()
-            return ZBytes(byteArray, "Double")
-        }
-
-        fun from(number: Number): ZBytes {
-            return when (number) {
-                is Byte -> from(number)
-                is Short -> from(number)
-                is Int -> from(number)
-                is Long -> from(number)
-                is Float -> from(number)
-                is Double -> from(number)
-                else -> throw IllegalArgumentException("Unsupported number type")
-            }
-        }
-    }
-
-    fun toByteArray() = bytes
-
-    fun toByte(): Byte {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).get()
-    }
-
-    fun toShort(): Short {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).short
-    }
-
-    fun toInt(): Int {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).int
-    }
-
-    fun toLong(): Long {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).long
-    }
-
-    fun toFloat(): Float {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).float
-    }
-
-    fun toDouble(): Double {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).double
-    }
-
-    fun toUByte(): UByte {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).get().toUByte()
-    }
-
-    fun toUShort(): UShort {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).short.toUShort()
-    }
-
-    fun toUInt(): UInt {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).int.toUInt()
-    }
-
-    fun toULong(): ULong {
-        return ByteBuffer.wrap(this.bytes).order(ByteOrder.LITTLE_ENDIAN).long.toULong()
+        internal fun from(string: String) = ZBytes(string.toByteArray())
     }
 
     override fun toString() = bytes.decodeToString()
@@ -345,49 +219,10 @@ class ZBytes internal constructor(internal val bytes: ByteArray, internal val ty
     override fun hashCode() = bytes.contentHashCode()
 }
 
-fun Number.into(): ZBytes {
-    return ZBytes.from(this)
+fun ByteArray.into(): ZBytes {
+    return ZBytes(this)
 }
 
 fun String.into(): ZBytes {
     return ZBytes.from(this)
-}
-
-fun ByteArray.into(): ZBytes {
-    return ZBytes(this, ByteArray::class.java.simpleName)
-}
-
-@Throws(ZError::class)
-internal fun Any?.into(): ZBytes {
-    return when (this) {
-        is String -> this.into()
-        is Number -> this.into()
-        is ByteArray -> this.into()
-        is IntoZBytes -> this.into()
-        is UByte -> ZBytes.from(this)
-        is UShort -> ZBytes.from(this)
-        is UInt -> ZBytes.from(this)
-        is ULong -> ZBytes.from(this)
-        else -> throw IllegalArgumentException("Unsupported serializable type")
-    }
-}
-
-@Throws(ZError::class)
-internal fun ZBytes.intoAny(type: KType): Any {
-    return when (type) {
-        typeOf<String>() -> this.toString()
-        typeOf<Byte>() -> this.toByte()
-        typeOf<UByte>() -> this.toUByte()
-        typeOf<Short>() -> this.toShort()
-        typeOf<UShort>() -> this.toUShort()
-        typeOf<Int>() -> this.toInt()
-        typeOf<UInt>() -> this.toUInt()
-        typeOf<Long>() -> this.toLong()
-        typeOf<ULong>() -> this.toULong()
-        typeOf<Float>() -> this.toFloat()
-        typeOf<Double>() -> this.toDouble()
-        typeOf<ByteArray>() -> this.toByteArray()
-        typeOf<ZBytes>() -> this
-        else -> throw IllegalArgumentException("Unsupported type '$type' for deserialization.")
-    }
 }

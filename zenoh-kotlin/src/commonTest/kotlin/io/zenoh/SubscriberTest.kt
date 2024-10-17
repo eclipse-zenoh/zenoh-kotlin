@@ -18,11 +18,11 @@ import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.Encoding
+import io.zenoh.ext.zSerialize
 import io.zenoh.sample.Sample
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
-import io.zenoh.bytes.into
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -38,9 +38,9 @@ class SubscriberTest {
         val TEST_CONGESTION_CONTROL = CongestionControl.BLOCK
 
         val testValues = arrayListOf(
-            Pair("Test 1".into(), Encoding.TEXT_PLAIN),
-            Pair("Test 2".into(), Encoding.TEXT_JSON),
-            Pair("Test 3".into(), Encoding.TEXT_CSV),
+            Pair(zSerialize("Test 1").getOrThrow(), Encoding.TEXT_PLAIN),
+            Pair(zSerialize("Test 2").getOrThrow(), Encoding.TEXT_JSON),
+            Pair(zSerialize("Test 3").getOrThrow(), Encoding.TEXT_CSV),
         )
     }
 

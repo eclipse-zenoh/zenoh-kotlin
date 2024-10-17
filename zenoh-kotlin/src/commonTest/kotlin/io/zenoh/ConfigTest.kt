@@ -14,8 +14,8 @@
 package io.zenoh
 
 import io.zenoh.exceptions.ZError
+import io.zenoh.ext.zSerialize
 import io.zenoh.keyexpr.intoKeyExpr
-import io.zenoh.bytes.into
 import io.zenoh.sample.Sample
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
@@ -142,7 +142,7 @@ class ConfigTest {
                 receivedSample = sample
             }).getOrThrow()
 
-            val payload = "example message".into()
+            val payload = zSerialize("example message").getOrThrow()
             sessionClient.put(TEST_KEY_EXP, payload).getOrThrow()
 
             delay(1000)

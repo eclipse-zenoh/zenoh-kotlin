@@ -3,7 +3,7 @@ package io.zenoh
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.ZBytes
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.query.ReplyError
 import io.zenoh.sample.Sample
 import io.zenoh.query.intoSelector
@@ -13,6 +13,13 @@ class EncodingTest {
 
     private val without_schema = Encoding.TEXT_CSV
     private val with_schema = Encoding.APPLICATION_JSON.withSchema("test_schema")
+
+    private lateinit var payload: ZBytes
+
+    @BeforeTest
+    fun setUp() {
+        payload = zSerialize("test").getOrThrow()
+    }
 
     @Test
     fun encoding_subscriberTest() {
@@ -26,7 +33,7 @@ class EncodingTest {
         }).getOrThrow()
         session.put(
             keyExpr,
-            payload = "test".into(),
+            payload = payload,
             encoding = with_schema
         )
         Thread.sleep(200)
@@ -35,7 +42,7 @@ class EncodingTest {
 
         // Testing null schema
         receivedSample = null
-        session.put(keyExpr, payload = "test2".into(), encoding = without_schema)
+        session.put(keyExpr, payload, encoding = without_schema)
         Thread.sleep(200)
 
         assertEquals(receivedSample?.encoding, without_schema)
@@ -55,13 +62,13 @@ class EncodingTest {
             when (query.keyExpr) {
                 test1.keyExpr -> query.reply(
                     query.keyExpr,
-                    payload = "test".into(),
+                    payload = payload,
                     encoding = without_schema
                 )
 
                 test2.keyExpr -> query.reply(
                     query.keyExpr,
-                    payload = "test".into(),
+                    payload = payload,
                     encoding = with_schema
                 )
             }
@@ -99,10 +106,11 @@ class EncodingTest {
         val test1 = "example/testing/reply_error".intoSelector().getOrThrow()
         val test2 = "example/testing/reply_error_with_schema".intoSelector().getOrThrow()
 
+        val replyPayload = zSerialize("test").getOrThrow()
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             when (query.keyExpr) {
-                test1.keyExpr -> query.replyErr("test".into(), without_schema)
-                test2.keyExpr -> query.replyErr("test".into(), with_schema)
+                test1.keyExpr -> query.replyErr(replyPayload, without_schema)
+                test2.keyExpr -> query.replyErr(replyPayload, with_schema)
             }
         }).getOrThrow()
 
@@ -156,7 +164,7 @@ class EncodingTest {
         }).getOrThrow()
 
         // Testing with null schema
-        session.get(selector, callback = {}, payload = "test".into(), encoding = without_schema)
+        session.get(selector, callback = {}, payload = payload, encoding = without_schema)
         Thread.sleep(200)
 
         assertEquals(receivedEncoding, without_schema)
@@ -165,7 +173,7 @@ class EncodingTest {
 
         // Testing non-null schema
         receivedEncoding = null
-        session.get(selector, callback = {}, payload = "test".into(), encoding = with_schema)
+        session.get(selector, callback = {}, payload = payload, encoding = with_schema)
         Thread.sleep(200)
 
         assertEquals(receivedEncoding, with_schema)

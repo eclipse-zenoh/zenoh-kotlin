@@ -18,7 +18,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.bytes.ZBytes
 import io.zenoh.ext.zDeserialize
-import io.zenoh.bytes.into
+import io.zenoh.ext.zSerialize
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.query.Selector
@@ -31,7 +31,7 @@ class UserAttachmentTest {
     private lateinit var keyExpr: KeyExpr
 
     companion object {
-        val payload = "test".into()
+        val payload = zSerialize("test").getOrThrow()
         const val keyExprString = "example/testing/attachment"
         const val attachment = "mock_attachment"
         val attachmentZBytes = ZBytes.from(attachment)
