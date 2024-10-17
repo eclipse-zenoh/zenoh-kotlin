@@ -135,6 +135,22 @@ class ZBytesTests {
         assertEquals(ulongInput, ulongOutput)
     }
 
+    @Test
+    fun `test Pair serialization and deserialization`() {
+        val pairInput = Pair(42, 0.5)
+        val payload = zSerialize(pairInput).getOrThrow()
+        val pairOutput = zDeserialize<Pair<Int, Double>>(payload).getOrThrow()
+        assertEquals(pairInput, pairOutput)
+    }
+
+    @Test
+    fun `test Triple serialization and deserialization`() {
+        val tripleInput = Triple(42, 0.5, listOf(true, false))
+        val payload = zSerialize(tripleInput).getOrThrow()
+        val tripleOutput = zDeserialize<Triple<Int, Double, List<Boolean>>>(payload).getOrThrow()
+        assertEquals(tripleInput, tripleOutput)
+    }
+
     /**********************************************
      * Tests for collections with new types       *
      **********************************************/
@@ -147,25 +163,24 @@ class ZBytesTests {
         assertEquals(listBooleanInput, listBooleanOutput)
     }
 
-//    TODO: enable tests below after fixing UByte serialization and deserialization issue.
-//    @Test
-//    fun `test map of string to ULong serialization and deserialization`() {
-//        val mapStringULongInput = mapOf("key1" to 1uL, "key2" to 2uL, "key3" to 3uL)
-//        val payload = zSerialize(mapStringULongInput).getOrThrow()
-//        val mapStringULongOutput = zDeserialize<Map<String, ULong>>(payload).getOrThrow()
-//        assertEquals(mapStringULongInput, mapStringULongOutput)
-//    }
-//
-//    @Test
-//    fun `test list of maps serialization and deserialization`() {
-//        val listOfMapsInput = listOf(
-//            mapOf("key1" to 1uL, "key2" to 2uL),
-//            mapOf("key3" to 3uL, "key4" to 4uL)
-//        )
-//        val payload = zSerialize(listOfMapsInput).getOrThrow()
-//        val listOfMapsOutput = zDeserialize<List<Map<String, ULong>>>(payload).getOrThrow()
-//        assertEquals(listOfMapsInput, listOfMapsOutput)
-//    }
+    @Test
+    fun `test map of string to ULong serialization and deserialization`() {
+        val mapStringULongInput = mapOf("key1" to 1uL, "key2" to 2uL, "key3" to 3uL)
+        val payload = zSerialize(mapStringULongInput).getOrThrow()
+        val mapStringULongOutput = zDeserialize<Map<String, ULong>>(payload).getOrThrow()
+        assertEquals(mapStringULongInput, mapStringULongOutput)
+    }
+
+    @Test
+    fun `test list of maps serialization and deserialization`() {
+        val listOfMapsInput = listOf(
+            mapOf("key1" to 1uL, "key2" to 2uL),
+            mapOf("key3" to 3uL, "key4" to 4uL)
+        )
+        val payload = zSerialize(listOfMapsInput).getOrThrow()
+        val listOfMapsOutput = zDeserialize<List<Map<String, ULong>>>(payload).getOrThrow()
+        assertEquals(listOfMapsInput, listOfMapsOutput)
+    }
 
     @Test
     fun `test map of string to list of int serialization and deserialization`() {
@@ -173,6 +188,14 @@ class ZBytesTests {
         val payload = zSerialize(mapOfListInput).getOrThrow()
         val mapOfListOutput = zDeserialize<Map<String, List<Int>>>(payload).getOrThrow()
         assertEquals(mapOfListInput, mapOfListOutput)
+    }
+
+    @Test
+    fun `test nested pairs serialization and deserialization`() {
+        val pairInput = Pair(42, Pair(0.5, true))
+        val payload = zSerialize(pairInput).getOrThrow()
+        val pairOutput = zDeserialize<Pair<Int, Pair<Double, Boolean>>>(payload).getOrThrow()
+        assertEquals(pairInput, pairOutput)
     }
 
     /*****************

@@ -30,9 +30,8 @@ package io.zenoh.bytes
  * - Double
  * - List
  * - Map
- *
- * Lists and Maps support nested types, that is, you could have any combination of the above types, for instance
- * List of Lists, List of Maps, Maps of Maps...
+ * - Pair
+ * - Triple
  *
  * Checkout the example below from the ZBytes example:
  *
@@ -123,7 +122,8 @@ class ZBytes internal constructor(internal val bytes: ByteArray) : IntoZBytes {
 
     fun toBytes(): ByteArray = bytes
 
-    fun tryToString(): Result<String> = runCatching { bytes.decodeToString(throwOnInvalidSequence = true) }
+    fun tryToString(): Result<String> =
+        runCatching { bytes.decodeToString(throwOnInvalidSequence = true) }
 
     override fun toString(): String = bytes.decodeToString()
 

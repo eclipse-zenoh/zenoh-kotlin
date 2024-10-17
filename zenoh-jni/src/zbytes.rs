@@ -18,7 +18,7 @@ use jni::{
     JNIEnv,
 };
 use zenoh::bytes::ZBytes;
-use zenoh_ext::{VarInt, ZDeserializer, ZSerializer};
+use zenoh_ext::{VarInt, ZDeserializeError, ZDeserializer, ZSerializer};
 
 use crate::{
     errors::ZResult,
@@ -26,37 +26,6 @@ use crate::{
     utils::{bytes_to_java_array, decode_byte_array},
     zerror,
 };
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    any: JObject,
-    ktype: JObject,
-) -> jobject {
-    || -> ZResult<jobject> {
-        let mut serializer = ZSerializer::new();
-        let ktype = decode_ktype(&mut env, ktype)?;
-        serialize(&mut env, &mut serializer, any, &ktype)?;
-        let zbytes = serializer.finish();
-
-        let byte_array = bytes_to_java_array(&env, &zbytes).map_err(|err| zerror!(err))?;
-        let zbytes_obj = env
-            .new_object(
-                "io/zenoh/bytes/ZBytes",
-                "([B)V",
-                &[JValue::Object(&JObject::from(byte_array))],
-            )
-            .map_err(|err| zerror!(err))?;
-
-        Ok(zbytes_obj.as_raw())
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        JObject::default().as_raw()
-    })
-}
 
 enum KotlinType {
     Boolean,
@@ -74,8 +43,8 @@ enum KotlinType {
     ULong,
     List(Box<KotlinType>),
     Map(Box<KotlinType>, Box<KotlinType>),
-    // Pair(Box<KotlinType>, Box<KotlinType>),
-    // Triple(Box<KotlinType>, Box<KotlinType>),
+    Pair(Box<KotlinType>, Box<KotlinType>),
+    Triple(Box<KotlinType>, Box<KotlinType>, Box<KotlinType>),
 }
 
 fn decode_ktype(env: &mut JNIEnv, ktype: JObject) -> ZResult<KotlinType> {
@@ -128,10 +97,22 @@ fn decode_ktype(env: &mut JNIEnv, ktype: JObject) -> ZResult<KotlinType> {
             "kotlin.UShort" => Ok(KotlinType::UShort),
             "kotlin.UInt" => Ok(KotlinType::UInt),
             "kotlin.ULong" => Ok(KotlinType::ULong),
-            "kotlin.collections.List" => decode_generic_type(env, &ktype, |element_type| {
-                Ok(KotlinType::List(Box::new(element_type)))
-            }),
-            "kotlin.collections.Map" => decode_generic_map_type(env, &ktype),
+            "kotlin.collections.List" => Ok(KotlinType::List(Box::new(decode_ktype_arg(
+                env, &ktype, 0,
+            )?))),
+            "kotlin.collections.Map" => Ok(KotlinType::Map(
+                Box::new(decode_ktype_arg(env, &ktype, 0)?),
+                Box::new(decode_ktype_arg(env, &ktype, 1)?),
+            )),
+            "kotlin.Pair" => Ok(KotlinType::Pair(
+                Box::new(decode_ktype_arg(env, &ktype, 0)?),
+                Box::new(decode_ktype_arg(env, &ktype, 1)?),
+            )),
+            "kotlin.Triple" => Ok(KotlinType::Triple(
+                Box::new(decode_ktype_arg(env, &ktype, 0)?),
+                Box::new(decode_ktype_arg(env, &ktype, 1)?),
+                Box::new(decode_ktype_arg(env, &ktype, 2)?),
+            )),
             _ => Err(zerror!("Unsupported type: {}", qualified_name)),
         }
     } else {
@@ -139,67 +120,59 @@ fn decode_ktype(env: &mut JNIEnv, ktype: JObject) -> ZResult<KotlinType> {
     }
 }
 
-fn decode_generic_type<F>(env: &mut JNIEnv, ktype: &JObject, constructor: F) -> ZResult<KotlinType>
-where
-    F: FnOnce(KotlinType) -> ZResult<KotlinType>,
-{
-    let args_jobject = env
+fn decode_ktype_arg(env: &mut JNIEnv, ktype: &JObject, idx: i32) -> ZResult<KotlinType> {
+    let arguments = env
         .call_method(ktype, "getArguments", "()Ljava/util/List;", &[])
         .map_err(|err| zerror!(err))?
         .l()
         .map_err(|err| zerror!(err))?;
-    let args_list = JList::from_env(env, &args_jobject).map_err(|err| zerror!(err))?;
-    let size = args_list.size(env).map_err(|err| zerror!(err))?;
-    if size != 1 {
-        return Err(zerror!(
-            "Generic type should have exactly one type argument"
-        ));
-    }
-    let arg = args_list.get(env, 0).map_err(|err| zerror!(err))?.unwrap();
-    let arg_type_jobject = env
-        .call_method(&arg, "getType", "()Lkotlin/reflect/KType;", &[])
+    let arg = env
+        .call_method(
+            &arguments,
+            "get",
+            "(I)Ljava/lang/Object;",
+            &[JValue::Int(idx)],
+        )
         .map_err(|err| zerror!(err))?
         .l()
         .map_err(|err| zerror!(err))?;
-    if arg_type_jobject.is_null() {
-        return Err(zerror!("Type argument is null"));
-    }
-    let arg_type = decode_ktype(env, arg_type_jobject)?;
-    constructor(arg_type)
+    let ktype = env
+        .call_method(arg, "getType", "()Lkotlin/reflect/KType;", &[])
+        .map_err(|err| zerror!(err))?
+        .l()
+        .map_err(|err| zerror!(err))?;
+    decode_ktype(env, ktype)
 }
 
-fn decode_generic_map_type(env: &mut JNIEnv, ktype: &JObject) -> ZResult<KotlinType> {
-    let args_jobject = env
-        .call_method(ktype, "getArguments", "()Ljava/util/List;", &[])
-        .map_err(|err| zerror!(err))?
-        .l()
-        .map_err(|err| zerror!(err))?;
-    let args_list = JList::from_env(env, &args_jobject).map_err(|err| zerror!(err))?;
-    let size = args_list.size(env).map_err(|err| zerror!(err))?;
-    if size != 2 {
-        return Err(zerror!("Map should have exactly two type arguments"));
-    }
-    let key_arg = args_list.get(env, 0).map_err(|err| zerror!(err))?.unwrap();
-    let key_type_jobject = env
-        .call_method(&key_arg, "getType", "()Lkotlin/reflect/KType;", &[])
-        .map_err(|err| zerror!(err))?
-        .l()
-        .map_err(|err| zerror!(err))?;
-    if key_type_jobject.is_null() {
-        return Err(zerror!("Key type argument is null"));
-    }
-    let key_type = decode_ktype(env, key_type_jobject)?;
-    let value_arg = args_list.get(env, 1).map_err(|err| zerror!(err))?.unwrap();
-    let value_type_jobject = env
-        .call_method(&value_arg, "getType", "()Lkotlin/reflect/KType;", &[])
-        .map_err(|err| zerror!(err))?
-        .l()
-        .map_err(|err| zerror!(err))?;
-    if value_type_jobject.is_null() {
-        return Err(zerror!("Value type argument is null"));
-    }
-    let value_type = decode_ktype(env, value_type_jobject)?;
-    Ok(KotlinType::Map(Box::new(key_type), Box::new(value_type)))
+#[no_mangle]
+#[allow(non_snake_case)]
+pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_serializeViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    any: JObject,
+    ktype: JObject,
+) -> jobject {
+    || -> ZResult<jobject> {
+        let mut serializer = ZSerializer::new();
+        let ktype = decode_ktype(&mut env, ktype)?;
+        serialize(&mut env, &mut serializer, any, &ktype)?;
+        let zbytes = serializer.finish();
+
+        let byte_array = bytes_to_java_array(&env, &zbytes).map_err(|err| zerror!(err))?;
+        let zbytes_obj = env
+            .new_object(
+                "io/zenoh/bytes/ZBytes",
+                "([B)V",
+                &[JValue::Object(&JObject::from(byte_array))],
+            )
+            .map_err(|err| zerror!(err))?;
+
+        Ok(zbytes_obj.as_raw())
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        JObject::default().as_raw()
+    })
 }
 
 fn serialize(
@@ -334,6 +307,40 @@ fn serialize(
                 serialize(env, serializer, value, value_type)?;
             }
         }
+        KotlinType::Pair(first_type, second_type) => {
+            let first = env
+                .call_method(&any, "getFirst", "()Ljava/lang/Object;", &[])
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            let second = env
+                .call_method(&any, "getSecond", "()Ljava/lang/Object;", &[])
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            serialize(env, serializer, first, first_type)?;
+            serialize(env, serializer, second, second_type)?;
+        }
+        KotlinType::Triple(first_type, second_type, third_type) => {
+            let first = env
+                .call_method(&any, "getFirst", "()Ljava/lang/Object;", &[])
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            let second = env
+                .call_method(&any, "getSecond", "()Ljava/lang/Object;", &[])
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            let third = env
+                .call_method(&any, "getThird", "()Ljava/lang/Object;", &[])
+                .map_err(|err| zerror!(err))?
+                .l()
+                .map_err(|err| zerror!(err))?;
+            serialize(env, serializer, first, first_type)?;
+            serialize(env, serializer, second, second_type)?;
+            serialize(env, serializer, third, third_type)?;
+        }
     }
     Ok(())
 }
@@ -355,7 +362,11 @@ pub extern "C" fn Java_io_zenoh_jni_JNIZBytes_deserializeViaJNI(
         let zbytes = ZBytes::from(decoded_bytes);
         let mut deserializer = ZDeserializer::new(&zbytes);
         let ktype = decode_ktype(&mut env, ktype)?;
-        deserialize(&mut env, &mut deserializer, &ktype)
+        let obj = deserialize(&mut env, &mut deserializer, &ktype)?;
+        if !deserializer.done() {
+            return Err(zerror!(ZDeserializeError));
+        }
+        Ok(obj)
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -523,6 +534,38 @@ fn deserialize(
                     .map_err(|err| zerror!(err))?;
             }
             Ok(map.as_raw())
+        }
+        KotlinType::Pair(first_type, second_type) => {
+            let first = deserialize(env, deserializer, first_type)?;
+            let second = deserialize(env, deserializer, second_type)?;
+            let pair = env
+                .new_object(
+                    "kotlin/Pair",
+                    "(Ljava/lang/Object;Ljava/lang/Object;)V",
+                    &[
+                        JValue::Object(&unsafe { JObject::from_raw(first) }),
+                        JValue::Object(&unsafe { JObject::from_raw(second) }),
+                    ],
+                )
+                .map_err(|err| zerror!(err))?;
+            Ok(pair.as_raw())
+        }
+        KotlinType::Triple(first_type, second_type, third_type) => {
+            let first = deserialize(env, deserializer, first_type)?;
+            let second = deserialize(env, deserializer, second_type)?;
+            let third = deserialize(env, deserializer, third_type)?;
+            let triple = env
+                .new_object(
+                    "kotlin/Triple",
+                    "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V",
+                    &[
+                        JValue::Object(&unsafe { JObject::from_raw(first) }),
+                        JValue::Object(&unsafe { JObject::from_raw(second) }),
+                        JValue::Object(&unsafe { JObject::from_raw(third) }),
+                    ],
+                )
+                .map_err(|err| zerror!(err))?;
+            Ok(triple.as_raw())
         }
     }
 }
