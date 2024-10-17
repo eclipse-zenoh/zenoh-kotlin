@@ -40,8 +40,7 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
                         session.declareSubscriber(keyExpr, Channel()).onSuccess { subscriber ->
                             runBlocking {
                                 for (sample in subscriber.receiver) {
-                                    val payload = sample.payload
-                                    val deserialization = zDeserialize<Map<String, String>>(payload).getOrThrow();
+                                    val deserialization = zDeserialize<String>(sample.payload).getOrThrow();
                                     println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${deserialization}'" + "${
                                         sample.attachment?.let {
                                             ", with attachment: $it"
