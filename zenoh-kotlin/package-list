@@ -1,9 +1,6 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
 $dokka.location:io.zenoh.bytes////PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/index.html
-$dokka.location:io.zenoh.bytes//into/kotlin.ByteArray#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/into.html
-$dokka.location:io.zenoh.bytes//into/kotlin.Number#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/into.html
-$dokka.location:io.zenoh.bytes//into/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/into.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/index.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion/APPLICATION_CBOR/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-a-p-p-l-i-c-a-t-i-o-n_-c-b-o-r.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion/APPLICATION_CDR/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-a-p-p-l-i-c-a-t-i-o-n_-c-d-r.html
@@ -67,22 +64,15 @@ $dokka.location:io.zenoh.bytes/Encoding/withSchema/#kotlin.String/PointingToDecl
 $dokka.location:io.zenoh.bytes/IntoZBytes///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-into-z-bytes/index.html
 $dokka.location:io.zenoh.bytes/IntoZBytes/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-into-z-bytes/into.html
 $dokka.location:io.zenoh.bytes/ZBytes.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/index.html
-$dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#io.zenoh.bytes.IntoZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.ByteArray/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
-$dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.Number/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.bytes/ZBytes.Companion/from/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/-companion/from.html
 $dokka.location:io.zenoh.bytes/ZBytes///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/index.html
 $dokka.location:io.zenoh.bytes/ZBytes/equals/#kotlin.Any?/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/equals.html
 $dokka.location:io.zenoh.bytes/ZBytes/hashCode/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/hash-code.html
 $dokka.location:io.zenoh.bytes/ZBytes/into/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/into.html
-$dokka.location:io.zenoh.bytes/ZBytes/toByte/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-byte.html
-$dokka.location:io.zenoh.bytes/ZBytes/toByteArray/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-byte-array.html
-$dokka.location:io.zenoh.bytes/ZBytes/toDouble/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-double.html
-$dokka.location:io.zenoh.bytes/ZBytes/toFloat/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-float.html
-$dokka.location:io.zenoh.bytes/ZBytes/toInt/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-int.html
-$dokka.location:io.zenoh.bytes/ZBytes/toLong/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-long.html
-$dokka.location:io.zenoh.bytes/ZBytes/toShort/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-short.html
+$dokka.location:io.zenoh.bytes/ZBytes/toBytes/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-bytes.html
 $dokka.location:io.zenoh.bytes/ZBytes/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-string.html
+$dokka.location:io.zenoh.bytes/ZBytes/tryToString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/try-to-string.html
 $dokka.location:io.zenoh.config////PointingToDeclaration/zenoh-kotlin/io.zenoh.config/index.html
 $dokka.location:io.zenoh.config/WhatAmI.Client///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.config/-what-am-i/-client/index.html
 $dokka.location:io.zenoh.config/WhatAmI.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.config/-what-am-i/-companion/index.html
@@ -100,9 +90,7 @@ $dokka.location:io.zenoh.exceptions/ZError///PointingToDeclaration/zenoh-kotlin
 $dokka.location:io.zenoh.exceptions/ZError/ZError/#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.exceptions/-z-error/-z-error.html
 $dokka.location:io.zenoh.exceptions/ZError/message/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.exceptions/-z-error/message.html
 $dokka.location:io.zenoh.ext////PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/index.html
-$dokka.location:io.zenoh.ext//zDeserialize/#io.zenoh.bytes.ZBytes#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]#kotlin.reflect.KClass[*]?#kotlin.reflect.KClass[*]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-deserialize.html
 $dokka.location:io.zenoh.ext//zDeserialize/#io.zenoh.bytes.ZBytes/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-deserialize.html
-$dokka.location:io.zenoh.ext//zSerialize/#TypeParam(bounds=[kotlin.Any])#kotlin.reflect.KClass[TypeParam(bounds=[kotlin.Any])]/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-serialize.html
 $dokka.location:io.zenoh.ext//zSerialize/#TypeParam(bounds=[kotlin.Any])/PointingToDeclaration/zenoh-kotlin/io.zenoh.ext/z-serialize.html
 $dokka.location:io.zenoh.handlers////PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/index.html
 $dokka.location:io.zenoh.handlers/Callback///PointingToDeclaration/zenoh-kotlin/io.zenoh.handlers/-callback/index.html
@@ -146,7 +134,6 @@ $dokka.location:io.zenoh.pubsub/Publisher/isValid/#/PointingToDeclaration/zenoh
 $dokka.location:io.zenoh.pubsub/Publisher/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/key-expr.html
 $dokka.location:io.zenoh.pubsub/Publisher/priority/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/priority.html
 $dokka.location:io.zenoh.pubsub/Publisher/put/#io.zenoh.bytes.IntoZBytes#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/put.html
-$dokka.location:io.zenoh.pubsub/Publisher/put/#kotlin.String#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/put.html
 $dokka.location:io.zenoh.pubsub/Publisher/qos/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/qos.html
 $dokka.location:io.zenoh.pubsub/Publisher/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/undeclare.html
 $dokka.location:io.zenoh.pubsub/Subscriber///PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-subscriber/index.html
@@ -253,10 +240,13 @@ $dokka.location:io.zenoh.sample////PointingToDeclaration/zenoh-kotlin/io.zenoh.
 $dokka.location:io.zenoh.sample/Sample///PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/index.html
 $dokka.location:io.zenoh.sample/Sample/Sample/#io.zenoh.keyexpr.KeyExpr#io.zenoh.bytes.ZBytes#io.zenoh.bytes.Encoding#io.zenoh.sample.SampleKind#[Error type: Unresolved type for TimeStamp]?#io.zenoh.qos.QoS#io.zenoh.bytes.ZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/-sample.html
 $dokka.location:io.zenoh.sample/Sample/attachment/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/attachment.html
+$dokka.location:io.zenoh.sample/Sample/congestionControl/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/congestion-control.html
 $dokka.location:io.zenoh.sample/Sample/encoding/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/encoding.html
+$dokka.location:io.zenoh.sample/Sample/express/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/express.html
 $dokka.location:io.zenoh.sample/Sample/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/key-expr.html
 $dokka.location:io.zenoh.sample/Sample/kind/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/kind.html
 $dokka.location:io.zenoh.sample/Sample/payload/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/payload.html
+$dokka.location:io.zenoh.sample/Sample/priority/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/priority.html
 $dokka.location:io.zenoh.sample/Sample/qos/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/qos.html
 $dokka.location:io.zenoh.sample/Sample/timestamp/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.sample/-sample/timestamp.html
 $dokka.location:io.zenoh.sample/SampleKind.DELETE///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.sample/-sample-kind/-d-e-l-e-t-e/index.html
