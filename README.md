@@ -35,23 +35,14 @@ Alternatively, you can build it locally as [explained below](#building-the-docum
 ----
 # How to import
 
-:warning: Note nº1: **Breaking changes incoming**
-
-We are currently working to provide an upgraded API across all the languages supported by the Zenoh ecosystem.
-
-Therefore a series of alpha and beta versions are currently being released, the latest one being currently the 
-[1.0.0-beta.1](https://github.com/eclipse-zenoh/zenoh-kotlin/releases/tag/1.0.0-beta.1), which contains a considerable
-amount of changes on the API with respect to `0.11.0`.
-However, please consider changes on Zenoh Kotlin are still going on and the API isn't fully stable yet.
-
-:warning: Note nº2: **About the released packages**
+:warning: Note nº1: **About the released packages**
 
 The released packages can be found in the "packages" section of this repository, or in the links below:
 * [Android packages](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/1968034/versions)
 * [JVM packages](https://github.com/eclipse-zenoh/zenoh-kotlin/packages/2016733/versions)
 
 These are 'nightly' packages that need to be imported as explained in the following sections of this README.
-We plan to publish our packages into Maven central for the `1.0.0` stable release.
+We plan to publish our packages into Maven central in the very short term.
 
 
 
@@ -87,7 +78,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-android:0.11.0")
+implementation("io.zenoh:zenoh-kotlin-android:1.0.0")
 ```
 
 ### Platforms
@@ -142,7 +133,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-jvm:0.11.0")
+implementation("io.zenoh:zenoh-kotlin-jvm:1.0.0")
 ```
 
 ### Platforms
@@ -184,7 +175,7 @@ as a resource that will be loaded during runtime.
 :warning: The native library will be compiled against the default rustup target on your machine, so although it may work fine
 for you on your desktop, the generated publication may not be working on another computer with a different operating system and/or a different cpu architecture.
 
-Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/0.11.0`.
+Once we have published the package, we should be able to find it under `~/.m2/repository/io/zenoh/zenoh-kotlin-jvm/1.0.0`.
 
 Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
 
@@ -196,7 +187,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("io.zenoh:zenoh-kotlin-jvm:0.11.0")
+    implementation("io.zenoh:zenoh-kotlin-jvm:1.0.0")
 }
 ```
 
@@ -237,13 +228,13 @@ gradle -Pandroid=true publishAndroidReleasePublicationToMavenLocal
 This will first trigger the compilation of the Zenoh-JNI for the previously mentioned targets, and secondly will
 publish the library, containing the native binaries.
 
-You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/0.11.0`
+You should now be able to see the package under `~/.m2/repository/io/zenoh/zenoh-kotlin-android/1.0.0`
 with the following files:
 ```
-zenoh-kotlin-android-0.11.0-sources.jar
-zenoh-kotlin-android-0.11.0.aar
-zenoh-kotlin-android-0.11.0.module
-zenoh-kotlin-android-0.11.0.pom
+zenoh-kotlin-android-1.0.0-sources.jar
+zenoh-kotlin-android-1.0.0.aar
+zenoh-kotlin-android-1.0.0.module
+zenoh-kotlin-android-1.0.0.pom
 ```
 
 Now the library is published on maven local, let's now see how to import it into an Android project.
@@ -260,7 +251,7 @@ repositories {
 
 Then in your app's `build.gradle.kts` filen add the dependency:
 ```
-implementation("io.zenoh:zenoh-kotlin-android:0.11.0")
+implementation("io.zenoh:zenoh-kotlin-android:1.0.0")
 ```
 
 And finally, do not forget to add the required internet permissions on your manifest!
@@ -321,25 +312,3 @@ For instance in order to run the [ZPub](examples/src/main/kotlin/io.zenoh/ZPub.k
 ```
 
 You can find more info about these examples on the [examples README file](/examples/README.md).
-
-
-
-
-
-----
-
-# :warning: Considerations & Future work
-
-### Packaging
-
-We intend to publish this code on Maven in the short term in order to ease the installation, but for the moment, until we
-add some extra functionalities and test this library a bit further, we will only publish packages to Github packages.
-
-
-### Performance
-
-The communication between the Kotlin code and the Rust code through the java native interface (JNI) has its toll on performance.
-
-Some preliminary performance evaluations done on an M2 Mac indicate around a 50% performance drop regarding the publication throughput
-(compared to Rust-Rust communication), and for subscription throughput the performance is similar to that of zenoh-python, with around 500K messages per second
-for an 8 bytes payload messages.
