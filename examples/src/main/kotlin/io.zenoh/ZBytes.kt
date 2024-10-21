@@ -2,97 +2,184 @@ package io.zenoh
 
 import io.zenoh.ext.zDeserialize
 import io.zenoh.ext.zSerialize
+import io.zenoh.bytes.ZBytes
 
 fun main() {
 
-    /***********************************************
-     * Standard serialization and deserialization. *
-     ***********************************************/
-
-    /** Numeric: byte, short, int, float, double */
-    val intInput = 1234
-    var payload = zSerialize(intInput).getOrThrow()
-    val intOutput = zDeserialize<Int>(payload).getOrThrow()
-    check(intInput == intOutput)
-
-    // Another example with float
-    val floatInput = 3.1415f
-    payload = zSerialize(floatInput).getOrThrow()
-    val floatOutput = zDeserialize<Float>(payload).getOrThrow()
-    check(floatInput == floatOutput)
-
-    /** String serialization and deserialization. */
-    val stringInput = "example"
-    payload = zSerialize(stringInput).getOrThrow()
-    var stringOutput = zDeserialize<String>(payload).getOrThrow()
-    check(stringInput == stringOutput)
-
-    /** ByteArray serialization and deserialization. */
-    val byteArrayInput = "example".toByteArray()
-    payload = zSerialize(byteArrayInput).getOrThrow()
-    val byteArrayOutput = zDeserialize<ByteArray>(payload).getOrThrow()
-    check(byteArrayInput.contentEquals(byteArrayOutput))
-
     /**
-     * List serialization and deserialization.
+     * # ZBytes
      *
-     * Supported types: String, ByteArray, Byte, Short, Int, Long, Float and Double.
-     */
-    val inputList = listOf("sample1", "sample2", "sample3")
-    payload = zSerialize(inputList).getOrThrow()
-    val outputList = zDeserialize<List<String>>(payload).getOrThrow()
-    check(inputList == outputList)
-
-    val inputListInt = listOf(1, 2, 3)
-    payload = zSerialize(inputListInt).getOrThrow()
-    val outputListInt = zDeserialize<List<Int>>(payload).getOrThrow()
-    check(inputListInt == outputListInt)
-
-    val inputListByteArray = inputList.map { value -> value.toByteArray() }
-    payload = zSerialize(inputListByteArray).getOrThrow()
-    val outputListByteArray = zDeserialize<List<ByteArray>>(payload).getOrThrow()
-    check(compareByteArrayLists(inputListByteArray, outputListByteArray))
-
-    /** Nested lists */
-    val nestedList = listOf(listOf(1, 2, 3))
-    payload = zSerialize(nestedList).getOrThrow()
-    val outputNestedList = zDeserialize<List<List<Int>>>(payload).getOrThrow()
-    check(nestedList == outputNestedList)
-
-    /** Combined types */
-    val combinedList = listOf(mapOf("a" to 1, "b" to 2))
-    payload = zSerialize(combinedList).getOrThrow()
-    val outputCombinedList = zDeserialize<List<Map<String, Int>>>(payload).getOrThrow()
-    check(combinedList == outputCombinedList)
-
-    /**
-     * Map serialization and deserialization.
+     * A ZBytes instance can be created from a [String] and from a [ByteArray] with the `ZBytes.from(string: String)`
+     * and `ZBytes.from(bytes: ByteArray)` functions.
      *
-     * Maps with the following Type combinations are supported: String, ByteArray, Byte, Short, Int, Long, Float and Double.
+     * A ZBytes can be converted back into a [String] with the functions [ZBytes.toString] and [ZBytes.tryToString].
+     * Similarly, with [ZBytes.toBytes] you can get the inner byte representation.
      */
-    val inputMap = mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3")
-    payload = zSerialize(inputMap).getOrThrow()
-    val outputMap = zDeserialize<Map<String, String>>(payload).getOrThrow()
-    check(inputMap == outputMap)
 
-    val combinedInputMap = mapOf("key1" to 1, "key2" to 2)
-    payload = zSerialize(combinedInputMap).getOrThrow()
-    val combinedOutputMap = zDeserialize<Map<String, Int>>(payload).getOrThrow()
-    check(combinedInputMap == combinedOutputMap)
-}
+    // String examples
+    val inputA = "Example"
+    val zbytesA = ZBytes.from(inputA)
 
-/** Utils for this example. */
+    val outputA = zbytesA.toString()
+    check(inputA == outputA)
 
-private fun compareByteArrayLists(list1: List<ByteArray>, list2: List<ByteArray>): Boolean {
-    if (list1.size != list2.size) {
-        return false
+    zbytesA.tryToString().onSuccess {
+        check(inputA == it)
+    }.onFailure { error ->
+        throw error
     }
 
-    for (i in list1.indices) {
-        if (!list1[i].contentEquals(list2[i])) {
-            return false
-        }
-    }
+    // Bytes example
+    val inputC = "Example2".toByteArray()
+    val zbytesC = ZBytes.from(inputC)
+    val outputC = zbytesC.toBytes()
+    check(inputC.contentEquals(outputC))
 
-    return true
+    /**
+     * # Serialization and deserialization.
+     *
+     * Additionally, the Zenoh API provides a series of serialization and deserialization utilities for processing
+     * the received payloads.
+     *
+     * Serialization and deserialization supports the following types:
+     * - [Boolean]
+     * - [Byte]
+     * - [Short]
+     * - [Int]
+     * - [Long]
+     * - [Float]
+     * - [Double]
+     * - [UByte]
+     * - [UShort]
+     * - [UInt]
+     * - [ULong]
+     * - [List]
+     * - [String]
+     * - [ByteArray]
+     * - [Map]
+     * - [Pair]
+     * - [Triple]
+     *
+     * For `List`, `Pair` and `Triple`, the inner types can be a combination of the above types, including themselves.
+     *
+     * These serialization and deserialization utilities can be used across the Zenoh ecosystem with Zenoh
+     * versions based on other supported languages such as Rust, Python, C and C++.
+     * This works when the types are equivalent (a `Byte` corresponds to an `i8` in Rust, a `Short` to an `i16`, etc).
+     *
+     */
+
+    /** Boolean example */
+    val input1: Boolean = true
+    val zbytes1 = zSerialize(input1).getOrThrow()
+    val output1 = zDeserialize<Boolean>(zbytes1).getOrThrow()
+    check(input1 == output1)
+
+    /** Byte example */
+    val input2: Byte = 126.toByte()
+    val zbytes2 = zSerialize(input2).getOrThrow()
+    val output2 = zDeserialize<Byte>(zbytes2).getOrThrow()
+    check(input2 == output2)
+
+    /** Short example */
+    val input3: Short = 256.toShort()
+    val zbytes3 = zSerialize(input3).getOrThrow()
+    val output3 = zDeserialize<Short>(zbytes3).getOrThrow()
+    check(input3 == output3)
+
+    /** Int example */
+    val input4: Int = 123456
+    val zbytes4 = zSerialize(input4).getOrThrow()
+    val output4 = zDeserialize<Int>(zbytes4).getOrThrow()
+    check(input4 == output4)
+
+    /** Long example */
+    val input5: Long = 123456789L
+    val zbytes5 = zSerialize(input5).getOrThrow()
+    val output5 = zDeserialize<Long>(zbytes5).getOrThrow()
+    check(input5 == output5)
+
+    /** Float example */
+    val input6: Float = 123.45f
+    val zbytes6 = zSerialize(input6).getOrThrow()
+    val output6 = zDeserialize<Float>(zbytes6).getOrThrow()
+    check(input6 == output6)
+
+    /** Double example */
+    val input7: Double = 12345.6789
+    val zbytes7 = zSerialize(input7).getOrThrow()
+    val output7 = zDeserialize<Double>(zbytes7).getOrThrow()
+    check(input7 == output7)
+
+    /** UByte example */
+    val input8: UByte = 255.toUByte()
+    val zbytes8 = zSerialize(input8).getOrThrow()
+    val output8 = zDeserialize<UByte>(zbytes8).getOrThrow()
+    check(input8 == output8)
+
+    /** UShort example */
+    val input9: UShort = 65535.toUShort()
+    val zbytes9 = zSerialize(input9).getOrThrow()
+    val output9 = zDeserialize<UShort>(zbytes9).getOrThrow()
+    check(input9 == output9)
+
+    /** UInt example */
+    val input10: UInt = 123456789u
+    val zbytes10 = zSerialize(input10).getOrThrow()
+    val output10 = zDeserialize<UInt>(zbytes10).getOrThrow()
+    check(input10 == output10)
+
+    /** ULong example */
+    val input11: ULong = 1234567890123456789uL
+    val zbytes11 = zSerialize(input11).getOrThrow()
+    val output11 = zDeserialize<ULong>(zbytes11).getOrThrow()
+    check(input11 == output11)
+
+    /** List example */
+    val input12: List<Int> = listOf(1, 2, 3, 4, 5)
+    val zbytes12 = zSerialize(input12).getOrThrow()
+    val output12 = zDeserialize<List<Int>>(zbytes12).getOrThrow()
+    check(input12 == output12)
+
+    /** String example */
+    val input13: String = "Hello, World!"
+    val zbytes13 = zSerialize(input13).getOrThrow()
+    val output13 = zDeserialize<String>(zbytes13).getOrThrow()
+    check(input13 == output13)
+
+    /** ByteArray example */
+    val input14: ByteArray = byteArrayOf(1, 2, 3, 4, 5)
+    val zbytes14 = zSerialize(input14).getOrThrow()
+    val output14 = zDeserialize<ByteArray>(zbytes14).getOrThrow()
+    check(input14.contentEquals(output14))
+
+    /** Map example */
+    val input15: Map<String, Int> = mapOf("one" to 1, "two" to 2, "three" to 3)
+    val zbytes15 = zSerialize(input15).getOrThrow()
+    val output15 = zDeserialize<Map<String, Int>>(zbytes15).getOrThrow()
+    check(input15 == output15)
+
+    /** Pair example */
+    val input16: Pair<String, Int> = Pair("one", 1)
+    val zbytes16 = zSerialize(input16).getOrThrow()
+    val output16 = zDeserialize<Pair<String, Int>>(zbytes16).getOrThrow()
+    check(input16 == output16)
+
+    /** Triple example */
+    val input17: Triple<String, Int, Boolean> = Triple("one", 1, true)
+    val zbytes17 = zSerialize(input17).getOrThrow()
+    val output17 = zDeserialize<Triple<String, Int, Boolean>>(zbytes17).getOrThrow()
+    check(input17 == output17)
+
+    /** Nested List example */
+    val input18: List<List<Int>> = listOf(listOf(1, 2, 3))
+    val zbytes18 = zSerialize(input18).getOrThrow()
+    val output18 = zDeserialize<List<List<Int>>>(zbytes18).getOrThrow()
+    check(input18 == output18)
+
+    /** Combined types example */
+    val input19: List<Map<String, Int>> = listOf(mapOf("a" to 1, "b" to 2))
+    val zbytes19 = zSerialize(input19).getOrThrow()
+    val output19 = zDeserialize<List<Map<String, Int>>>(zbytes19).getOrThrow()
+    check(input19 == output19)
+
 }
