@@ -43,22 +43,31 @@ import io.zenoh.session.SessionDeclaration
  * @param R Receiver type of the [Handler] implementation.
  * @property keyExpr The [KeyExpr] to which the subscriber is associated.
  * @property receiver Optional [R] that is provided when specifying a [Handler] for the subscriber.
- * @property jniSubscriber Delegate object in charge of communicating with the underlying native code.
  * @see Session.declareSubscriber
  */
 class Subscriber<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R, private var jniSubscriber: JNISubscriber?
 ) : AutoCloseable, SessionDeclaration {
 
+    /**
+     * Returns `true` if the subscriber is still running.
+     */
     fun isValid(): Boolean {
         return jniSubscriber != null
     }
 
+    /**
+     * Undeclares the subscriber. After calling this function, the subscriber won't be receiving messages anymore.
+     */
     override fun undeclare() {
         jniSubscriber?.close()
         jniSubscriber = null
     }
 
+    /**
+     * Closes the subscriber. This function is equivalent to [undeclare] and is called automatically when using
+     * try-with-resources.
+     */
     override fun close() {
         undeclare()
     }

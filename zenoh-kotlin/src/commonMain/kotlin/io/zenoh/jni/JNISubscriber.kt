@@ -14,8 +14,10 @@
 
 package io.zenoh.jni
 
+import io.zenoh.pubsub.Subscriber
+
 /**
- * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.subscriber.Subscriber]
+ * Adapter class to handle the interactions with Zenoh through JNI for a [Subscriber]
  *
  * @property ptr: raw pointer to the underlying native Subscriber.
  */

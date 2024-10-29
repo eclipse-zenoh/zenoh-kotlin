@@ -49,15 +49,9 @@ import io.zenoh.jni.JNIKeyExpr
  * A [KeyExpr] acts as a container for the string representation of a key expression. Operations like `intersects`,
  * `includes`, and `equals` are processed at the native layer using this string representation. For improved performance,
  * consider initializing a [KeyExpr] through [Session.declareKeyExpr]. This method associates the [KeyExpr] with a native
- * instance, thereby optimizing operation execution. However, it is crucial to manually invoke [close] on each [KeyExpr]
- * instance before it is garbage collected to prevent memory leaks.
+ * instance, thereby optimizing operation execution.
  *
- * As an alternative, employing a try-with-resources pattern using Kotlin's `use` block is recommended. This approach
- * ensures that [close] is automatically called, safely managing the lifecycle of the [KeyExpr] instance.
- *
- * @param keyExpr The string representation of the key expression.
- * @param jniKeyExpr An optional [JNIKeyExpr] instance, present when the key expression was declared through [Session.declareKeyExpr],
- *  it represents the native instance of the key expression.
+ * For more information, checkout the [key expressions RFC](https://github.com/eclipse-zenoh/roadmap/blob/main/rfcs/ALL/Key%20Expressions.md).
  */
 class KeyExpr internal constructor(internal val keyExpr: String, internal var jniKeyExpr: JNIKeyExpr? = null): AutoCloseable,
     SessionDeclaration {
@@ -94,26 +88,26 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
     }
 
     /**
-     * Intersects operation. This method returns `True` if there exists at least one key that belongs to both sets
-     * defined by `this` and `other`.
-     * Will return false as well if the key expression is not valid anymore.
+     * Intersects operation.
+     *
+     * This method returns `True` if there exists at least one key that belongs to both sets defined by `this` and the `other` key expressions.
      */
     fun intersects(other: KeyExpr): Boolean {
          return JNIKeyExpr.intersects(this, other)
     }
 
     /**
-     * Includes operation. This method returns `true` when all the keys defined by `other` also belong to the set
-     * defined by `this`.
-     * Will return false as well if the key expression is not valid anymore.
+     * Includes operation.
+     *
+     * This method returns `true` when all the keys defined by `other` also belong to the set defined by `this`.
      */
     fun includes(other: KeyExpr): Boolean {
         return JNIKeyExpr.includes(this, other)
     }
 
     /**
-     * Returns the relation between 'this' and other from 'this''s point of view (SetIntersectionLevel::Includes
-     * signifies that self includes other). Note that this is slower than [intersects] and [includes],
+     * Returns the relation between 'this' and `other` from 'this''s point of view (`SetIntersectionLevel::Includes`
+     * signifies that `this` includes other). Note that this is slower than [intersects] and [includes],
      * so you should favor these methods for most applications.
      */
     fun relationTo(other: KeyExpr): SetIntersectionLevel {
@@ -121,7 +115,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
     }
 
     /**
-     * Joins both sides, inserting a / in between them.
+     * Joins both sides, inserting a `/` in between them.
      * This should be your preferred method when concatenating path segments.
      */
     fun join(other: String): Result<KeyExpr> {
@@ -129,7 +123,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
     }
 
     /**
-     * Performs string concatenation and returns the result as a KeyExpr if possible.
+     * Performs string concatenation and returns the result as a `KeyExpr` if possible.
      * You should probably prefer [join] as Zenoh may then take advantage of the hierarchical separation it inserts.
      */
     fun concat(other: String): Result<KeyExpr> {

@@ -21,7 +21,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
-import io.zenoh.bytes.into
+import io.zenoh.bytes.ZBytes
 import io.zenoh.session.SessionDeclaration
 
 /**
@@ -34,7 +34,7 @@ import io.zenoh.session.SessionDeclaration
  *
  * Example of a publisher declaration:
  * ```kotlin
- * val keyExpr = "demo/kotlin/greeting"
+ * val keyExpr = "demo/kotlin/greeting".intoKeyExpr().getOrThrow()
  * Zenoh.open(Config.default()).onSuccess {
  *     it.use { session ->
  *         session
@@ -42,7 +42,7 @@ import io.zenoh.session.SessionDeclaration
  *             .onSuccess { pub ->
  *                 var i = 0
  *                 while (true) {
- *                     pub.put("Hello for the ${i}th time!")
+ *                     pub.put(ZBytes.from("Hello for the ${i}th time!"))
  *                     Thread.sleep(1000)
  *                     i++
  *                 }
@@ -59,8 +59,8 @@ import io.zenoh.session.SessionDeclaration
  *
  * @property keyExpr The key expression the publisher will be associated to.
  * @property qos [QoS] configuration of the publisher.
- * @property jniPublisher Delegate class handling the communication with the native code.
- * @constructor Create empty Publisher with the default configuration.
+ * @property encoding Default [Encoding] of the data to be published. A different encoding can be later provided when performing
+ *  a `put` operation.
  * @see Session.declarePublisher
  */
 class Publisher internal constructor(
@@ -84,18 +84,30 @@ class Publisher internal constructor(
     fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
 
     /**
-     * Performs a DELETE operation on the specified [keyExpr]
+     * Performs a DELETE operation on the specified [keyExpr].
      */
     fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
 
+    /**
+     * Returns `true` if the publisher is still running.
+     */
     fun isValid(): Boolean {
         return jniPublisher != null
     }
 
+    /**
+     * Closes the publisher. This function is equivalent to [undeclare] and is called automatically when using
+     * try-with-resources.
+     */
     override fun close() {
         undeclare()
     }
 
+    /**
+     * Undeclares the publisher.
+     *
+     * Further operations performed with the publisher will not be valid anymore.
+     */
     override fun undeclare() {
         jniPublisher?.close()
         jniPublisher = null
