@@ -56,7 +56,7 @@ internal class JNISession {
     }
 
     /* Pointer to the underlying Rust zenoh session. */
-    private var sessionPtr: AtomicLong = AtomicLong(0)
+    internal var sessionPtr: AtomicLong = AtomicLong(0)
 
     fun open(config: Config): Result<Unit> = runCatching {
         val session = openSessionViaJNI(config.jniConfig.ptr)

@@ -51,10 +51,10 @@ data class Multicast(
 internal fun loadConfig(
     emptyArgs: Boolean,
     configFile: String?,
-    connectEndpoints: List<String>,
-    listenEndpoints: List<String>,
-    noMulticastScouting: Boolean,
-    mode: String?
+    connectEndpoints: List<String>? = null,
+    listenEndpoints: List<String>? = null,
+    noMulticastScouting: Boolean? = null,
+    mode: String? = null
 ): Config {
     return if (emptyArgs) {
         Config.default()
@@ -62,9 +62,9 @@ internal fun loadConfig(
         configFile?.let {
             Config.fromFile(path = Path(it)).getOrThrow()
         } ?: run {
-            val connect = Connect(connectEndpoints)
-            val listen = Listen(listenEndpoints)
-            val scouting = Scouting(Multicast(!noMulticastScouting))
+            val connect = connectEndpoints?.let {Connect(it)}
+            val listen = listenEndpoints?.let {Listen(it) }
+            val scouting = noMulticastScouting?.let {Scouting(Multicast(!it)) }
             val configData = ConfigData(connect, listen, mode, scouting)
             val jsonConfig = Json.encodeToJsonElement(configData)
             Config.fromJsonElement(jsonConfig).getOrThrow()

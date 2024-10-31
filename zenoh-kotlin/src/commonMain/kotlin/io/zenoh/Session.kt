@@ -25,6 +25,7 @@ import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.config.ZenohId
+import io.zenoh.liveliness.Liveliness
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
@@ -58,13 +59,13 @@ import java.time.Duration
  */
 class Session private constructor(private val config: Config) : AutoCloseable {
 
-    private var jniSession: JNISession? = null
+    internal var jniSession: JNISession? = null
 
     private var declarations = mutableListOf<SessionDeclaration>()
 
     companion object {
 
-        private val sessionClosedException = ZError("Session is closed.")
+        internal val sessionClosedException = ZError("Session is closed.")
 
         /**
          * Open a [Session] with the provided [Config].
@@ -692,6 +693,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     ): Result<Unit> {
         val delete = Delete(keyExpr, qos, attachment?.into(), reliability)
         return resolveDelete(keyExpr, delete)
+    }
+
+    /**
+     * Obtain a [Liveliness] instance tied to this Zenoh session.
+     */
+    fun liveliness(): Liveliness {
+        return Liveliness(this)
     }
 
     /** Returns if session is open or has been closed. */
