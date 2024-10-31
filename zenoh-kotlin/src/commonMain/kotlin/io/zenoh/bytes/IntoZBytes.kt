@@ -9,7 +9,7 @@ package io.zenoh.bytes
  * ```kotlin
  * class Foo(val content: String) : IntoZBytes {
  *
- *   override fun into(): ZBytes = content.into()
+ *   override fun into(): ZBytes = ZBytes.from(content)
  * }
  * ```
  */

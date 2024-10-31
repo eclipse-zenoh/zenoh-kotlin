@@ -28,34 +28,16 @@ import kotlinx.coroutines.channels.Channel
  *
  * Its main purpose is to keep the queryable active as long as it exists.
  *
- * Example using the default [Channel] handler:
+ * Example using a callback:
  * ```kotlin
- * Zenoh.open(Config.default()).onSuccess { session -> session.use {
- *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
- *         println("Declaring Queryable")
- *         session.declareQueryable(keyExpr).wait().onSuccess { queryable ->
- *             queryable.use {
- *                 it.receiver?.let { receiverChannel ->
- *                     runBlocking {
- *                         val iterator = receiverChannel.iterator()
- *                         while (iterator.hasNext()) {
- *                             iterator.next().use { query ->
- *                                 println("Received query at ${query.keyExpr}")
- *                                 query.reply(keyExpr)
- *                                      .success("Hello!")
- *                                      .withKind(SampleKind.PUT)
- *                                      .withTimeStamp(TimeStamp.getCurrentTime())
- *                                      .wait()
- *                                      .onSuccess { println("Replied hello.") }
- *                                      .onFailure { println(it) }
- *                             }
- *                         }
- *                     }
- *                 }
- *             }
- *         }
- *     }
- * }}
+ * session.declareQueryable(keyExpr, callback = { query ->
+ *     val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
+ *     println(">> Received Query '${query.selector}' $valueInfo")
+ *     query.reply(
+ *         keyExpr,
+ *         payload = ZBytes.from("Example reply"),
+ *     )}
+ * )
  * ```
  * ## Lifespan
  *
@@ -66,22 +48,30 @@ import kotlinx.coroutines.channels.Channel
  * @param R Receiver type of the [Handler] implementation.
  * @property keyExpr The [KeyExpr] to which the subscriber is associated.
  * @property receiver Optional [R] that is provided when specifying a [Handler] for the subscriber.
- * @property jniQueryable Delegate object in charge of communicating with the underlying native code.
  * @see Session.declareQueryable
  */
 class Queryable<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R, private var jniQueryable: JNIQueryable?
 ) : AutoCloseable, SessionDeclaration {
 
+    /**
+     * Returns `true` if the queryable is still running.
+     */
     fun isValid(): Boolean {
         return jniQueryable != null
     }
 
+    /**
+     * Undeclares the queryable. After this function is called, no more queries will be received.
+     */
     override fun undeclare() {
         jniQueryable?.close()
         jniQueryable = null
     }
 
+    /**
+     * Closes the queryable. Equivalent to [undeclare]. This function is automatically called when using try-with-resources.
+     */
     override fun close() {
         undeclare()
     }

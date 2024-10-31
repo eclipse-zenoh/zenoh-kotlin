@@ -65,7 +65,7 @@ interface Handler<T: ZenohType, R> {
     /**
      * This callback is invoked by Zenoh at the conclusion of the handler's lifecycle.
      *
-     * For instances of [io.zenoh.queryable.Queryable] and [io.zenoh.subscriber.Subscriber],
+     * For instances of [io.zenoh.query.Queryable] and [io.zenoh.pubsub.Subscriber],
      * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
      * it is invoked when no more elements of type [T] are expected to be received.
      */

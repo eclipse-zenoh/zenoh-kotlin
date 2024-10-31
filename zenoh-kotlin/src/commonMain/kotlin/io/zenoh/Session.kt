@@ -214,11 +214,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
-     * Declare a [Subscriber] on the session, specifying a channel pipe the received samples.
+     * Declare a [Subscriber] on the session, specifying a [Channel] to pipe the received samples.
      *
      * Example:
      * ```kotlin
-     *
      * Zenoh.open(Config.default()).onSuccess { session ->
      *     session.use {
      *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
@@ -263,7 +262,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *     "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
      *         println("Declaring Queryable")
      *         val queryable = session.declareQueryable(keyExpr, callback = { query ->
-     *              query.replySuccess(keyExpr, payload = "Hello!".into())
+     *              query.reply(keyExpr, payload = ZBytes.from("Hello!"))
      *                   .onSuccess { println("Replied hello.") }
      *                   .onFailure { println(it) }
      *         }).getOrThrow()
@@ -273,7 +272,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
      * @param callback The callback to handle the received queries.
-     * @param onClose Callback to be run upon closing the queryable.
+     * @param onClose Optional callback to be run upon closing the queryable.
      * @param complete The queryable completeness.
      * @return A result with the queryable.
      * @see Query
@@ -295,7 +294,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *
      * ```kotlin
      * class ExampleHandler: Handler<Query, Unit> {
-     *     override fun handle(t: Query) = query.replySuccess(query.keyExpr, "Hello!".into())
+     *     override fun handle(t: Query) = query.reply(query.keyExpr, ZBytes.from("Hello!"))
      *
      *     override fun receiver() = Unit
      *
@@ -318,7 +317,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param keyExpr The [KeyExpr] the queryable will be associated to.
      * @param handler The [Handler] to handle the incoming queries. [Handler.onClose] will be called upon
      *  closing the queryable.
-     * @param onClose Callback to be run upon closing the queryable.
+     * @param onClose Optional callback to be run upon closing the queryable.
      * @param complete The completeness of the queryable.
      * @return A result with the queryable.
      */
@@ -348,7 +347,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *                     for (query in queryable.receiver) {
      *                         val valueInfo = query.value?.let { value -> " with value '$value'" } ?: ""
      *                         println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-     *                         query.replySuccess(keyExpr, payload = "Example reply".into())
+     *                         query.reply(keyExpr, payload = ZBytes.from("Example reply"))
      *                             .onSuccess { println(">> [Queryable ] Performed reply...") }
      *                             .onFailure { println(">> [Queryable ] Error sending reply: $it") }
      *                     }
@@ -446,38 +445,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * }
      * ```
      *
-     * Additionally, other optional parameters to the query can be specified, and the result
-     * of the operation can be checked as well:
-     *
-     * Example:
-     * ```kotlin
-     * Zenoh.open(Config.default()).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoSelector().onSuccess { selector ->
-     *             session.get(
-     *                 selector,
-     *                 callback = { reply -> println(reply) },
-     *                 payload = "Example payload".into(),
-     *                 encoding = Encoding(TEXT_PLAIN),
-     *                 target = QueryTarget.BEST_MATCHING,
-     *                 attachment = ZBytes.from("Example attachment"),
-     *                 timeout = Duration.ofMillis(1000),
-     *                 onClose = { println("Query terminated.") }
-     *             ).onSuccess {
-     *                 println("Get query launched...")
-     *             }.onFailure {
-     *                 println("Error: $it")
-     *             }
-     *         }
-     *     }
-     * }
-     * ```
-     *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param callback [Callback] to handle the replies.
-     * @param payload Optional [ZBytes] payload for the query.
+     * @param payload Optional payload for the query.
      * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
+     * @param timeout Timeout of the query.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
@@ -549,43 +522,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * }
      * ```
      *
-     * Additionally, other optional parameters to the query can be specified, and the result
-     * of the operation can be checked as well:
-     *
-     * Example:
-     * ```kotlin
-     * Zenoh.open(Config.default()).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoSelector().onSuccess { selector ->
-     *             val handler = QueueHandler<Reply>()
-     *             session.get(
-     *                 selector,
-     *                 handler,
-     *                 payload = "Example payload".into(),
-     *                 encoding = Encoding.TEXT_PLAIN,
-     *                 target = QueryTarget.BEST_MATCHING,
-     *                 attachment = ZBytes.from("Example attachment"),
-     *                 timeout = Duration.ofMillis(1000),
-     *                 onClose = { println("Query terminated.") }
-     *             ).onSuccess { receiver ->
-     *                 println("Get query launched...")
-     *                 // ...
-     *                 for (reply in receiver) {
-     *                     println(reply)
-     *                 }
-     *             }.onFailure {
-     *                 println("Error: $it")
-     *             }
-     *         }
-     *     }
-     * }
-     * ```
-     *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param handler [Handler] to handle the replies.
-     * @param payload Optional [ZBytes] payload for the query.
+     * @param payload Optional payload for the query.
      * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
+     * @param timeout Timeout of the query.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
@@ -643,42 +585,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * }
      * ```
      *
-     * Additionally, other optional parameters to the query can be specified, and the result
-     * of the operation can be checked as well:
-     *
-     * Example:
-     *
-     * ```kotlin
-     * Zenoh.open(Config.default()).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoSelector().onSuccess { selector ->
-     *               session.get(selector,
-     *                   channel = Channel(),
-     *                   payload = "Example payload".into(),
-     *                   encoding = Encoding.TEXT_PLAIN,
-     *                   target = QueryTarget.BEST_MATCHING,
-     *                   attachment = ZBytes.from("Example attachment"),
-     *                   timeout = Duration.ofMillis(1000),
-     *                   onClose = { println("Query terminated.") }
-     *               ).onSuccess { channel ->
-     *                   runBlocking {
-     *                       for (reply in channel) {
-     *                           println("Received $reply")
-     *                       }
-     *                   }
-     *               }.onFailure {
-     *                    println("Error: $it")
-     *               }
-     *          }
-     *     }
-     * }
-     * ```
-     *
      * @param selector The [Selector] on top of which the get query will be performed.
      * @param channel Blocking [Channel] to handle the replies.
-     * @param payload Optional [ZBytes] payload for the query.
+     * @param payload Optional payload for the query.
      * @param encoding Encoding of the [payload].
      * @param attachment Optional attachment.
+     * @param timeout Timeout of the query.
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
@@ -723,29 +635,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Zenoh.open(config).onSuccess { session ->
      *     session.use {
      *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
-     *             session.put(keyExpr, payload = "Example payload".into()).getOrThrow()
-     *         }
-     *         // ...
-     *     }
-     * }
-     * ```
-     *
-     * Additionally, a [QoS] configuration can be specified as well as an attachment, for instance:
-     * ```kotlin
-     * Zenoh.open(Config.default()).onSuccess { session ->
-     *     session.use {
-     *         "a/b/c".intoKeyExpr().onSuccess { keyExpr ->
-     *             val exampleQoS = QoS(
-     *                  congestionControl = CongestionControl.DROP,
-     *                  express = true,
-     *                  priority = Priority.DATA_HIGH)
-     *             val exampleAttachment = "exampleAttachment".into()
-     *             session.put(
-     *                  keyExpr,
-     *                  payload = "Example payload".into(),
-     *                  encoding = Encoding.TEXT_PLAIN,
-     *                  qos = exampleQoS,
-     *                  attachment = exampleAttachment).getOrThrow()
+     *             session.put(keyExpr, payload = ZBytes.from("Example payload")).getOrThrow()
      *         }
      *         // ...
      *     }
@@ -753,7 +643,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * ```
      *
      * @param keyExpr The [KeyExpr] to be used for the put operation.
-     * @param payload The [ZBytes] to be put.
+     * @param payload The payload to be put.
+     * @param encoding The [Encoding] of the payload.
      * @param qos The [QoS] configuration.
      * @param attachment Optional attachment.
      * @param reliability The [Reliability] configuration.
@@ -762,12 +653,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun put(
         keyExpr: KeyExpr,
         payload: IntoZBytes,
-        encoding: Encoding? = null,
+        encoding: Encoding = Encoding.default(),
         qos: QoS = QoS.default(),
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
-        val put = Put(keyExpr, payload.into(), encoding ?: Encoding.default(), qos, attachment?.into(), reliability)
+        val put = Put(keyExpr, payload.into(), encoding, qos, attachment?.into(), reliability)
         return resolvePut(keyExpr, put)
     }
 
@@ -779,8 +670,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * Zenoh.open(config).onSuccess { session ->
      *     session.use {
      *         key.intoKeyExpr().onSuccess { keyExpr ->
-     *             println("Deleting resources matching '$keyExpr'...")
-     *             session.delete(keyExpr)
+     *             session.delete(keyExpr).onSuccess {
+     *                 println("Deleting resources matching '$keyExpr'...")
+     *             }
      *         }
      *     }
      * }

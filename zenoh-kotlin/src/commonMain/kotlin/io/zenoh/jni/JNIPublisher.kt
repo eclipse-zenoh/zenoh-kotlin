@@ -17,9 +17,10 @@ package io.zenoh.jni
 import io.zenoh.exceptions.ZError
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.IntoZBytes
+import io.zenoh.pubsub.Publisher
 
 /**
- * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.publication.Publisher].
+ * Adapter class to handle the interactions with Zenoh through JNI for a [Publisher].
  *
  * @property ptr: raw pointer to the underlying native Publisher.
  */

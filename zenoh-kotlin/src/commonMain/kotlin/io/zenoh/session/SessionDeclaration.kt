@@ -14,11 +14,17 @@
 
 package io.zenoh.session
 
+import io.zenoh.pubsub.Publisher
+import io.zenoh.pubsub.Subscriber
+import io.zenoh.query.Queryable
+import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.Session
+
 /**
  * Session declaration.
  *
- * A session declaration is either a [io.zenoh.publication.Publisher],
- * a [io.zenoh.subscriber.Subscriber], a [io.zenoh.queryable.Queryable] or a [io.zenoh.keyexpr.KeyExpr] declared from a [Session].
+ * A session declaration is either a [Publisher],
+ * a [Subscriber], a [Queryable] or a [KeyExpr] declared from a [Session].
  */
 interface SessionDeclaration {
 

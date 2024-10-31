@@ -36,9 +36,6 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property payload Optional payload in case the received query was declared using "with query".
  * @property encoding Encoding of the [payload].
  * @property attachment Optional attachment.
- * @property jniQuery Delegate object in charge of communicating with the underlying native code.
- * @constructor Instances of Query objects are only meant to be created through the JNI upon receiving
- * a query request. Therefore, the constructor is private.
  */
 class Query internal constructor(
     val keyExpr: KeyExpr,
