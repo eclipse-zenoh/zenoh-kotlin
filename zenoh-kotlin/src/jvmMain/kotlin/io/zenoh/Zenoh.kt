@@ -45,24 +45,31 @@ internal actual object ZenohLoad {
      */
     private fun determineTarget(): Result<Target> = runCatching {
         val osName = System.getProperty("os.name").lowercase()
-        val osArch = System.getProperty("os.arch")
+        val osArch = System.getProperty("os.arch").lowercase()
 
         val target = when {
             osName.contains("win") -> when {
-                osArch.contains("x86_64") || osArch.contains("amd64") -> Target.WINDOWS_X86_64_MSVC
-                else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
+                osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
+                    Target.WINDOWS_X86_64_MSVC
+                osArch.contains("aarch64") || osArch.contains("arm64") ->
+                    Target.WINDOWS_AARCH64_MSVC
+                else -> throw UnsupportedOperationException("Unsupported architecture on Windows: $osArch")
             }
 
-            osName.contains("mac") -> when {
-                osArch.contains("x86_64") || osArch.contains("amd64") -> Target.APPLE_X86_64
-                osArch.contains("aarch64") -> Target.APPLE_AARCH64
-                else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
+            osName.contains("mac") || osName.contains("darwin") || osName.contains("os x") -> when {
+                osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
+                    Target.APPLE_X86_64
+                osArch.contains("aarch64") || osArch.contains("arm64") ->
+                    Target.APPLE_AARCH64
+                else -> throw UnsupportedOperationException("Unsupported architecture on macOS: $osArch")
             }
 
             osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> when {
-                osArch.contains("x86_64") || osArch.contains("amd64") -> Target.LINUX_X86_64
-                osArch.contains("aarch64") -> Target.LINUX_AARCH64
-                else -> throw UnsupportedOperationException("Unsupported architecture: $osArch")
+                osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
+                    Target.LINUX_X86_64
+                osArch.contains("aarch64") || osArch.contains("arm64") ->
+                    Target.LINUX_AARCH64
+                else -> throw UnsupportedOperationException("Unsupported architecture on Linux/Unix: $osArch")
             }
 
             else -> throw UnsupportedOperationException("Unsupported platform: $osName")
