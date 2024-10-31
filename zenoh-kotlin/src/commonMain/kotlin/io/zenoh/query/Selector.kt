@@ -14,6 +14,7 @@
 
 package io.zenoh.query
 
+import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 
 /**
@@ -50,6 +51,38 @@ import io.zenoh.keyexpr.KeyExpr
  */
 data class Selector(val keyExpr: KeyExpr, val parameters: Parameters? = null) : AutoCloseable {
 
+    companion object {
+
+        /**
+         * Try from.
+         *
+         * The default way to construct a Selector.
+         *
+         * When in string form, selectors look a lot like a URI, with similar semantics:
+         * - the `key_expr` before the first `?` must be a valid key expression.
+         * - the `parameters` after the first `?` should be encoded like the query section of a URL:
+         *     - parameters are separated by `;`,
+         *     - the parameter name and value are separated by the first `=`,
+         *     - in the absence of `=`, the parameter value is considered to be the empty string,
+         *     - both name and value should use percent-encoding to escape characters,
+         *     - defining a value for the same parameter name twice is considered undefined behavior,
+         *       with the encouraged behaviour being to reject operations when a duplicate parameter is detected.
+         *
+         * @param selector The selector expression as a String.
+         * @return a Result with the constructed Selector.
+         */
+        fun tryFrom(selector: String): Result<Selector> = runCatching {
+            if (selector.isEmpty()) {
+                throw ZError("Attempting to create a selector from an empty string.")
+            }
+            val result = selector.split('?', limit = 2)
+            val keyExpr = KeyExpr.autocanonize(result[0]).getOrThrow()
+            val params = if (result.size == 2) Parameters.from(result[1]).getOrThrow() else null
+
+            Selector(keyExpr, params)
+        }
+    }
+
     override fun toString(): String {
         return parameters?.let { "$keyExpr?$parameters" } ?: keyExpr.toString()
     }
@@ -59,3 +92,5 @@ data class Selector(val keyExpr: KeyExpr, val parameters: Parameters? = null) : 
         keyExpr.close()
     }
 }
+
+fun String.intoSelector(): Result<Selector> = Selector.tryFrom(this)
