@@ -179,13 +179,13 @@ jobs:
         run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PremotePublication=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGP_SIGNING_KEY: ${{ secrets.PGP_SIGNING_KEY }}
-          PGP_SIGNING_PASSWORD: ${{ secrets.PGP_SIGNING_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
 
       - name: Gradle Publish JVM Package to Maven Central repository
         run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }}
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
-          PGP_SIGNING_KEY: ${{ secrets.PGP_SIGNING_KEY }}
-          PGP_SIGNING_PASSWORD: ${{ secrets.PGP_SIGNING_PASSWORD }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}

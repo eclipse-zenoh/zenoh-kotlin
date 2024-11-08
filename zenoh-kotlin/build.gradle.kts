@@ -175,7 +175,7 @@ kotlin {
 
 signing {
     isRequired = isRemotePublication
-    useInMemoryPgpKeys(System.getenv("PGP_SIGNING_KEY"), System.getenv("PGP_SIGNING_PASSWORD"))
+    useInMemoryPgpKeys(System.getenv("SSH_PRIVATE_KEY"), System.getenv("SSH_PASSPHRASE"))
     sign(publishing.publications)
 }
 
