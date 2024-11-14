@@ -20,11 +20,15 @@ plugins {
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
     `maven-publish`
+    signing
 }
 
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
 val release = project.findProperty("release")?.toString()?.toBoolean() == true
-val githubPublish = project.findProperty("githubPublish")?.toString()?.toBoolean() == true
+
+// If the publication is meant to be done on a remote repository (GitHub packages or Maven central).
+// Modifying this property will affect the release workflows!
+val isRemotePublication = project.findProperty("remotePublication")?.toString()?.toBoolean() == true
 
 var buildMode = if (release) BuildMode.RELEASE else BuildMode.DEBUG
 
@@ -79,7 +83,7 @@ kotlin {
             }
         }
         val jvmMain by getting {
-            if (githubPublish) {
+            if (isRemotePublication) {
                 // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
                 resources.srcDir("../jni-libs").include("*/**")
             } else {
@@ -94,7 +98,54 @@ kotlin {
 
     publishing {
         publications.withType<MavenPublication> {
+            groupId = "io.zenoh"
+            artifactId = "zenoh-kotlin"
             version = project.version.toString() + if (project.hasProperty("SNAPSHOT")) "-SNAPSHOT" else ""
+
+            pom {
+                name.set("Zenoh Kotlin")
+                description.set("The Eclipse Zenoh: Zero Overhead Pub/sub, Store/Query and Compute.")
+                url.set("https://zenoh.io/")
+
+                licenses {
+                    license {
+                        name.set("Eclipse Public License 2.0 OR Apache License 2.0")
+                        url.set("http://www.eclipse.org/legal/epl-2.0")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("ZettaScale")
+                        name.set("ZettaScale Zenoh Team")
+                        email.set("zenoh@zettascale.tech")
+                    }
+                    developer {
+                        id.set("DariusIMP")
+                        name.set("Darius Maitia")
+                        email.set("darius@zettascale.tech")
+                    }
+                    developer {
+                        id.set("Mallets")
+                        name.set("Luca Cominardi")
+                        email.set("luca@zettascale.tech")
+                    }
+                    developer {
+                        id.set("Kydos")
+                        name.set("Angelo Corsaro")
+                        email.set("angelo@zettascale.tech")
+                    }
+                    developer {
+                        id.set("Wyfo")
+                        name.set("Joseph Perez")
+                        email.set("joseph.perez@zettascale.tech")
+                    }
+                }
+                scm {
+                    connection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
+                    developerConnection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
+                    url.set("https://github.com/eclipse-zenoh/zenoh-kotlin")
+                }
+            }
         }
 
         repositories {
@@ -106,9 +157,32 @@ kotlin {
                     password = System.getenv("GITHUB_TOKEN")
                 }
             }
+            maven {
+                name = "MavenCentral"
+                url = uri(if (project.hasProperty("SNAPSHOT"))
+                    "https://oss.sonatype.org/content/repositories/snapshots/"
+                else
+                    "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                )
+                credentials {
+                    username = System.getenv("ORG_OSSRH_USERNAME")
+                    password = System.getenv("ORG_OSSRH_PASSWORD")
+                }
+            }
         }
     }
 }
+
+signing {
+    isRequired = isRemotePublication
+    useInMemoryPgpKeys(System.getenv("ORG_GPG_PRIVATE_KEY"), System.getenv("ORG_GPG_PASSPHRASE"))
+    sign(publishing.publications)
+}
+
+tasks.withType<PublishToMavenRepository>().configureEach {
+    dependsOn(tasks.withType<Sign>())
+}
+
 tasks.withType<Test> {
     doFirst {
         // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
@@ -130,7 +204,7 @@ tasks.named("compileKotlinJvm") {
 
 tasks.register("buildZenohJni") {
     doLast {
-        if (!githubPublish) {
+        if (!isRemotePublication) {
             // This is intended for local publications. For publications done through GitHub workflows,
             // the zenoh-jni build is achieved and loaded differently from the CI
             buildZenohJNI(buildMode)

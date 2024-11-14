@@ -70,7 +70,17 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - name: Gradle Publish Android Package
-        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -Pandroid=true ${{ env.PUB_MODE }}
+      - name: Gradle Publish Android Package to GitHub packages repository
+        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
+          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
+
+      - name: Gradle Publish Android Package to Maven Central repository
+        run: ./gradlew publishAndroidReleasePublicationToMavenCentralRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+        env:
+          ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
+          ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
+          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
+          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}

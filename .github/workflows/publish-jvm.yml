@@ -175,7 +175,17 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - name: Gradle Publish JVM Package
-        run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PgithubPublish=true ${{ env.PUB_MODE }}
+      - name: Gradle Publish JVM Package to GitHub packages repository
+        run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PremotePublication=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
+          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
+
+      - name: Gradle Publish JVM Package to Maven Central repository
+        run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }}
+        env:
+          ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
+          ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
+          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
+          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
