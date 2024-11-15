@@ -26,6 +26,16 @@ import io.zenoh.sample.Sample
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 
+/**
+ * A structure with functions to declare a [LivelinessToken],
+ * query existing [LivelinessToken]s and subscribe to liveliness changes.
+ *
+ * A [LivelinessToken] is a token which liveliness is tied
+ * to the Zenoh [Session] and can be monitored by remote applications.
+ *
+ * The [Liveliness] instance can be obtained with the [Session.liveliness] function
+ * of the [Session] instance.
+ */
 class Liveliness internal constructor(private val session: Session) {
 
     /**
@@ -37,24 +47,32 @@ class Liveliness internal constructor(private val session: Session) {
     }
 
     /**
-     * Query liveliness tokens with matching key expressions.
+     * Query the liveliness tokens with matching key expressions.
+     *
+     * @param keyExpr The [KeyExpr] for the query.
+     * @param callback [Callback] to handle the incoming replies.
+     * @param timeout Optional timeout of the query, defaults to 10 secs.
+     * @return A [Result] with the [Handler]'s receiver.
      */
     fun get(
-        keyExpr: KeyExpr, callback: Callback<Reply>, timeout: Duration = Duration.ofMillis(10000),
-        onClose: (() -> Unit)? = null
+        keyExpr: KeyExpr, callback: Callback<Reply>, timeout: Duration = Duration.ofMillis(10000)
     ): Result<Unit> =
         runCatching {
             val jniSession = session.jniSession ?: throw Session.sessionClosedException
-            return JNILiveliness.get(jniSession, keyExpr, callback, Unit, timeout,
-                fun() { onClose?.invoke() })
+            return JNILiveliness.get(jniSession, keyExpr, callback, Unit, timeout, {})
         }
 
     /**
-     * Query liveliness tokens with matching key expressions.
+     * Query the liveliness tokens with matching key expressions.
+     *
+     * @param R The [Handler.receiver] type.
+     * @param keyExpr The [KeyExpr] for the query.
+     * @param handler [Handler] to deal with the incoming replies.
+     * @param timeout Optional timeout of the query, defaults to 10 secs.
+     * @return A [Result] with the [Handler]'s receiver.
      */
     fun <R> get(
-        keyExpr: KeyExpr, handler: Handler<Reply, R>, timeout: Duration = Duration.ofMillis(10000),
-        onClose: (() -> Unit)? = null
+        keyExpr: KeyExpr, handler: Handler<Reply, R>, timeout: Duration = Duration.ofMillis(10000)
     ): Result<R> =
         runCatching {
             val jniSession = session.jniSession ?: throw Session.sessionClosedException
@@ -65,18 +83,24 @@ class Liveliness internal constructor(private val session: Session) {
                 callback,
                 handler.receiver(),
                 timeout,
-                onClose = fun() { onClose?.invoke() })
+                onClose = handler::onClose
+            )
 
         }
 
     /**
-     * Query liveliness tokens with matching key expressions.
+     * Query the liveliness tokens with matching key expressions.
+     *
+     * @param keyExpr The [KeyExpr] for the query.
+     * @param channel [Channel] to deal with the incoming replies. The channel will get automatically closed
+     *  after the query is performed.
+     * @param timeout Optional timeout of the query, defaults to 10 secs.
+     * @return A [Result] with the provided [channel].
      */
     fun get(
         keyExpr: KeyExpr,
         channel: Channel<Reply>,
         timeout: Duration = Duration.ofMillis(10000),
-        onClose: (() -> Unit)? = null
     ): Result<Channel<Reply>> {
         return session.jniSession?.let {
             val channelHandler = ChannelHandler(channel)
@@ -85,15 +109,19 @@ class Liveliness internal constructor(private val session: Session) {
                 channelHandler::handle,
                 receiver = channelHandler.receiver(),
                 timeout,
-                onClose = fun() {
-                    channelHandler.onClose()
-                    onClose?.invoke()
-                })
+                onClose = channelHandler::onClose
+            )
         } ?: Result.failure(Session.sessionClosedException)
     }
 
     /**
-     * Create a Subscriber for liveliness changes matching the given key expression.
+     * Create a [Subscriber] for liveliness changes matching the given key expression.
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be listening to.
+     * @param callback The [Callback] to be run when a liveliness change is received.
+     * @param history Optional parameter to get historical liveliness tokens.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @return A [Result] with the subscriber.
      */
     fun declareSubscriber(
         keyExpr: KeyExpr,
@@ -112,7 +140,14 @@ class Liveliness internal constructor(private val session: Session) {
     }
 
     /**
-     * Create a Subscriber for liveliness changes matching the given key expression.
+     * Create a [Subscriber] for liveliness changes matching the given key expression.
+     *
+     * @param R The [Handler.receiver] type.
+     * @param keyExpr The [KeyExpr] the subscriber will be listening to.
+     * @param handler [Handler] to handle liveliness changes events.
+     * @param history Optional parameter to get historical liveliness tokens.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @return A [Result] with the subscriber.
      */
     fun <R> declareSubscriber(
         keyExpr: KeyExpr,
@@ -134,7 +169,13 @@ class Liveliness internal constructor(private val session: Session) {
     }
 
     /**
-     * Create a Subscriber for liveliness changes matching the given key expression.
+     * Create a [Subscriber] for liveliness changes matching the given key expression.
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be listening to.
+     * @param channel [Channel] to handle liveliness changes events.
+     * @param history Optional parameter to get historical liveliness tokens.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @return A [Result] with the subscriber.
      */
     fun declareSubscriber(
         keyExpr: KeyExpr,

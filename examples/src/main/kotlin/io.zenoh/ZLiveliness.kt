@@ -40,7 +40,7 @@ class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
-        "-k", "--key", help = "The key expression to subscribe to [default: demo/example/**]", metavar = "key"
+        "-k", "--key", help = "The key expression to subscribe to [default: group1/**]", metavar = "key"
     ).default("group1/**")
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"

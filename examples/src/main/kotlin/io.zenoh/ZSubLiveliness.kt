@@ -33,7 +33,7 @@ class ZSubLiveliness(private val emptyArgs: Boolean) : CliktCommand(
         println("Opening session...")
         Zenoh.open(config).onSuccess { session ->
             key.intoKeyExpr().onSuccess { keyExpr ->
-                session.liveliness().declareSubscriber(keyExpr, channel = Channel())
+                session.liveliness().declareSubscriber(keyExpr, channel = Channel(), history = history)
                     .onSuccess { subscriber ->
                         runBlocking {
                             for (sample in subscriber.receiver) {
@@ -50,7 +50,7 @@ class ZSubLiveliness(private val emptyArgs: Boolean) : CliktCommand(
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
-        "-k", "--key", help = "The key expression to subscribe to [default: demo/example/**]", metavar = "key"
+        "-k", "--key", help = "The key expression to subscribe to [default: group1/**]", metavar = "key"
     ).default("group1/**")
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"

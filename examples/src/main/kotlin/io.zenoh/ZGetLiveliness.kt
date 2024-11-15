@@ -27,7 +27,7 @@ class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
 ) {
 
     override fun run() {
-        val config = loadConfig(emptyArgs, configFile)
+        val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         Zenoh.initLogFromEnvOr("error")
 
@@ -62,6 +62,21 @@ class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
     private val timeout by option(
         "-o", "--timeout", help = "The query timeout in milliseconds [default: 10000]", metavar = "timeout"
     ).long().default(10000)
+    private val connect: List<String> by option(
+        "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
+    ).multiple()
+    private val listen: List<String> by option(
+        "-l", "--listen", help = "Endpoints to listen on.", metavar = "listen"
+    ).multiple()
+    private val mode by option(
+        "-m",
+        "--mode",
+        help = "The session mode. Default: peer. Possible values: [peer, client, router]",
+        metavar = "mode"
+    ).default("peer")
+    private val noMulticastScouting: Boolean by option(
+        "--no-multicast-scouting", help = "Disable the multicast-based scouting mechanism."
+    ).flag(default = false)
 }
 
 fun main(args: Array<String>) = ZGetLiveliness(args.isEmpty()).main(args)
