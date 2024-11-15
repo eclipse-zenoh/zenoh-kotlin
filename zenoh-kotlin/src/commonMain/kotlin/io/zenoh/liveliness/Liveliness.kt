@@ -78,13 +78,11 @@ class Liveliness internal constructor(private val session: Session) {
         timeout: Duration = Duration.ofMillis(10000),
         onClose: (() -> Unit)? = null
     ): Result<Channel<Reply>> {
-        println("XASDASD")
-
-        val x = session.jniSession?.let {
+        return session.jniSession?.let {
             val channelHandler = ChannelHandler(channel)
             JNILiveliness.get(it,
                 keyExpr,
-                callback = { r: Reply -> channelHandler.handle(r) },
+                channelHandler::handle,
                 receiver = channelHandler.receiver(),
                 timeout,
                 onClose = fun() {
@@ -92,8 +90,6 @@ class Liveliness internal constructor(private val session: Session) {
                     onClose?.invoke()
                 })
         } ?: Result.failure(Session.sessionClosedException)
-        println("SARASA")
-        return x
     }
 
     /**

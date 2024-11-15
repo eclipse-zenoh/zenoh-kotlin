@@ -92,7 +92,7 @@ internal object JNILiveliness {
             timeout.toMillis(),
             onClose
         )
-        return Result.success(receiver)
+        receiver
     }
 
     fun declareToken(jniSession: JNISession, keyExpr: KeyExpr): LivelinessToken {

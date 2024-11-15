@@ -19,9 +19,10 @@ use jni::{
     sys::{jboolean, jint, jlong},
     JNIEnv,
 };
+
 use zenoh::{
-    key_expr::KeyExpr, liveliness::LivelinessToken, pubsub::Subscriber, sample::Sample, Session,
-    Wait,
+    internal::runtime::ZRuntime, key_expr::KeyExpr, liveliness::LivelinessToken,
+    pubsub::Subscriber, sample::Sample, Session, Wait,
 };
 
 use crate::{
@@ -56,12 +57,17 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
         let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
         let on_close = load_on_close(&java_vm, on_close_global_ref);
         let timeout = Duration::from_millis(timeout_ms as u64);
-        let get_builder = session
+        let replies = session
             .liveliness()
-            .get(key_expr.clone())
-            .callback(move |reply| {
+            .get(key_expr.to_owned())
+            .timeout(timeout)
+            .wait()
+            .map_err(|err| zerror!(err))?;
+
+        ZRuntime::Application.spawn(async move {
+            on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
+            while let Ok(reply) = replies.recv_async().await {
                 || -> ZResult<()> {
-                    on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
                     tracing::debug!("Receiving liveliness reply through JNI: {:?}", reply);
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
                         zerror!(
@@ -84,20 +90,14 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
                         ),
                     }
                 }()
-                .unwrap_or_else(|err| tracing::error!("Error on get callback: {}", err));
-            })
-            .timeout(timeout);
-
-        println!("AAAA");
-        let result = get_builder
-            .wait()
-            .map(|_| println!("BBBB"))
-            .map(|_| tracing::trace!("Performing get liveliness on '{}'.", key_expr))
-            .map_err(|err| zerror!(err));
-        print!("CCCC");
-        result
+                .unwrap_or_else(|err| tracing::error!("Error on get liveliness callback: {err}."));
+            }
+        });
+        Ok(())
     }()
-    .map_err(|err| throw_exception!(env, err));
+    .map_err(|err| {
+        throw_exception!(env, err);
+    });
     std::mem::forget(session);
 }
 

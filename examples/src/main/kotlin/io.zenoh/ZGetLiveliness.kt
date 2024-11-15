@@ -33,19 +33,21 @@ class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
 
         println("Opening session...")
         Zenoh.open(config).onSuccess { session ->
-            key.intoKeyExpr().onSuccess { keyExpr ->
-                session.liveliness().get(keyExpr, channel = Channel(), timeout = Duration.ofMillis(timeout))
-                    .onSuccess { channel ->
-                        runBlocking {
-                            for (reply in channel) {
-                                reply.result.onSuccess {
-                                    println(">> Alive token ('${it.keyExpr}')")
-                                }.onFailure {
-                                    println(">> Received (ERROR: '${it.message}')")
+            session.use {
+                key.intoKeyExpr().onSuccess { keyExpr ->
+                    session.liveliness().get(keyExpr, channel = Channel(), timeout = Duration.ofMillis(timeout))
+                        .onSuccess { channel ->
+                            runBlocking {
+                                for (reply in channel) {
+                                    reply.result.onSuccess {
+                                        println(">> Alive token ('${it.keyExpr}')")
+                                    }.onFailure {
+                                        println(">> Received (ERROR: '${it.message}')")
+                                    }
                                 }
                             }
                         }
-                    }
+                }
             }
         }.onFailure { exception -> println(exception.message) }
     }
