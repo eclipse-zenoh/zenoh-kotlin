@@ -15,9 +15,14 @@
 package io.zenoh
 
 import io.zenoh.scouting.Hello
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class ScoutTest {
 
@@ -28,11 +33,11 @@ class ScoutTest {
     }
 
     @Test
-    fun `scouting detects session test`() {
+    fun `scouting with callback test`() {
         val session = Session.open(Config.default()).getOrThrow()
 
         var hello: Hello? = null
-        Zenoh.scout(callback = {
+        val scout = Zenoh.scout(callback = {
             hello = it
         }).getOrThrow()
 
@@ -40,6 +45,35 @@ class ScoutTest {
 
         assertNotNull(hello)
         session.close()
+        scout.close()
+    }
+
+    @Test
+    @OptIn(DelicateCoroutinesApi::class)
+    fun `scouting with channel test`() {
+        val session = Session.open(Config.default()).getOrThrow()
+
+        var hello: Hello? = null
+        val scout = Zenoh.scout(Channel()).getOrThrow()
+
+        Thread.sleep(1000)
+
+        runBlocking {
+            launch {
+                delay(1000)
+                scout.close()
+            }
+
+            // Start receiving messages
+            for (receivedHello in scout.receiver) {
+                hello = receivedHello
+            }
+        }
+
+        assertNotNull(hello)
+        session.close()
+
+        assertTrue { scout.receiver.isClosedForReceive }
     }
 
     @Test
