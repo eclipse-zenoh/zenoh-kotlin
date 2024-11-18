@@ -12,6 +12,10 @@ on:
         description: Target branch
         type: string
         required: false
+      debug:
+        description: "Pass --debug to gradle"
+        type: boolean
+        required: false
   workflow_dispatch:
 
 env:
@@ -175,15 +179,21 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
+      - name: Set debug env var
+        run: |
+          if [[ "${{ inputs.debug }}" == "true" ]]; then
+            echo "DEBUG=--debug" >> $GITHUB_ENV
+          fi
+
       - name: Gradle Publish JVM Package to GitHub packages repository
-        run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PremotePublication=true ${{ env.PUB_MODE }}
+        run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PremotePublication=true ${{ env.PUB_MODE }} ${{ env.DEBUG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
       - name: Gradle Publish JVM Package to Maven Central repository
-        run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }}
+        run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }} ${{ env.DEBUG }}
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
