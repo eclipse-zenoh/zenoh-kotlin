@@ -85,6 +85,7 @@ jobs:
     with:
       snapshot: true
       branch: ${{ github.ref_name }}
+    secrets: inherit
 
   publish_android_snapshot_package:
     name: Publish Android snapshot package
@@ -97,3 +98,4 @@ jobs:
     with:
       snapshot: true
       branch: ${{ github.ref_name }}
+    secrets: inherit
