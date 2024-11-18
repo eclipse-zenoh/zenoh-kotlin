@@ -78,6 +78,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+    secrets: inherit
 
   publish-android:
     name: Publish Android package
@@ -89,6 +90,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+    secrets: inherit
 
   publish-dokka:
     name: Publish documentation
