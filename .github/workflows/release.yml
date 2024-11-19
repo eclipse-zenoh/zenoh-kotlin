@@ -34,10 +34,6 @@ on:
         type: string
         description: Release branch
         required: false
-      debug:
-        type: boolean
-        description: Pass --debug flag to gradle
-        required: false
 
 jobs:
   tag:
@@ -79,7 +75,6 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      debug: ${{ inputs.debug  || false }}
     permissions:
       contents: read
       packages: write
@@ -92,7 +87,6 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      debug: ${{ inputs.debug || false }}
     permissions:
       contents: read
       packages: write
