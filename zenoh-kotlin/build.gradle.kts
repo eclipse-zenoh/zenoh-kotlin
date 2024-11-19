@@ -149,33 +149,20 @@ kotlin {
 
         repositories {
             maven {
-                name = "GithubPackages"
+                name = "githubPackages"
                 url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-            maven {
-                name = "MavenCentral"
-                url = uri(if (project.hasProperty("SNAPSHOT"))
-                    "https://oss.sonatype.org/content/repositories/snapshots/"
-                else
-                    "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                )
-                credentials {
-                    username = System.getenv("ORG_OSSRH_USERNAME")
-                    password = System.getenv("ORG_OSSRH_PASSWORD")
-                }
+                // username and password (a personal Github access token) should be specified as
+                // `githubPackagesUsername` and `githubPackagesPassword` Gradle properties or alternatively
+                // as `ORG_GRADLE_PROJECT_githubPackagesUsername` and `ORG_GRADLE_PROJECT_githubPackagesPassword`
+                // environment variables
+                credentials(PasswordCredentials::class)
             }
         }
     }
-}
 
-signing {
-    isRequired = isRemotePublication
-    useInMemoryPgpKeys(System.getenv("ORG_GPG_SUBKEY_ID"), System.getenv("ORG_GPG_PRIVATE_KEY"), System.getenv("ORG_GPG_PASSPHRASE"))
-    sign(publishing.publications)
+    publishToMavenCentral()
+
+    signAllPublications()
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach {
