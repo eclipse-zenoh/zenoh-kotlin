@@ -43,11 +43,25 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
 ) {
     || -> ZResult<()> {
         let log_level = parse_filter(&mut env, filter)?;
-        android_logd_logger::builder()
-            .parse_filters(log_level.as_str())
-            .tag_target_strip()
-            .prepend_module(true)
-            .init();
+        #[cfg(target_os = "android")]
+        {
+            android_logd_logger::builder()
+                .parse_filters(log_level.as_str())
+                .tag_target_strip()
+                .prepend_module(true)
+                .pstore(false)
+                .init();
+        }
+
+        #[cfg(not(target_os = "android"))]
+        {
+            android_logd_logger::builder()
+                .parse_filters(log_level.as_str())
+                .tag_target_strip()
+                .prepend_module(true)
+                .init();
+        }
+
         Ok(())
     }()
     .unwrap_or_else(|err| throw_exception!(env, err))
