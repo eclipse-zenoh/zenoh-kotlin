@@ -95,74 +95,68 @@ kotlin {
         }
     }
 
-    publishing {
-        publications.withType<MavenPublication> {
-            groupId = "io.zenoh"
-            artifactId = "zenoh-kotlin"
-            version = project.version.toString() + if (project.hasProperty("SNAPSHOT")) "-SNAPSHOT" else ""
+    mavenPublishing {
+        pom {
+            name.set("Zenoh Kotlin")
+            description.set("The Eclipse Zenoh: Zero Overhead Pub/sub, Store/Query and Compute.")
+            url.set("https://zenoh.io/")
 
-            pom {
-                name.set("Zenoh Kotlin")
-                description.set("The Eclipse Zenoh: Zero Overhead Pub/sub, Store/Query and Compute.")
-                url.set("https://zenoh.io/")
-
-                licenses {
-                    license {
-                        name.set("Eclipse Public License 2.0 OR Apache License 2.0")
-                        url.set("http://www.eclipse.org/legal/epl-2.0")
-                    }
+            licenses {
+                license {
+                    name.set("Eclipse Public License 2.0 OR Apache License 2.0")
+                    url.set("http://www.eclipse.org/legal/epl-2.0")
                 }
-                developers {
-                    developer {
-                        id.set("ZettaScale")
-                        name.set("ZettaScale Zenoh Team")
-                        email.set("zenoh@zettascale.tech")
-                    }
-                    developer {
-                        id.set("DariusIMP")
-                        name.set("Darius Maitia")
-                        email.set("darius@zettascale.tech")
-                    }
-                    developer {
-                        id.set("Mallets")
-                        name.set("Luca Cominardi")
-                        email.set("luca@zettascale.tech")
-                    }
-                    developer {
-                        id.set("Kydos")
-                        name.set("Angelo Corsaro")
-                        email.set("angelo@zettascale.tech")
-                    }
-                    developer {
-                        id.set("Wyfo")
-                        name.set("Joseph Perez")
-                        email.set("joseph.perez@zettascale.tech")
-                    }
+            }
+            developers {
+                developer {
+                    id.set("ZettaScale")
+                    name.set("ZettaScale Zenoh Team")
+                    email.set("zenoh@zettascale.tech")
                 }
-                scm {
-                    connection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
-                    developerConnection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
-                    url.set("https://github.com/eclipse-zenoh/zenoh-kotlin")
+                developer {
+                    id.set("DariusIMP")
+                    name.set("Darius Maitia")
+                    email.set("darius@zettascale.tech")
                 }
+                developer {
+                    id.set("Mallets")
+                    name.set("Luca Cominardi")
+                    email.set("luca@zettascale.tech")
+                }
+                developer {
+                    id.set("Kydos")
+                    name.set("Angelo Corsaro")
+                    email.set("angelo@zettascale.tech")
+                }
+                developer {
+                    id.set("Wyfo")
+                    name.set("Joseph Perez")
+                    email.set("joseph.perez@zettascale.tech")
+                }
+            }
+            scm {
+                connection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
+                developerConnection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
+                url.set("https://github.com/eclipse-zenoh/zenoh-kotlin")
             }
         }
 
-        repositories {
-            maven {
-                name = "githubPackages"
-                url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
-                // username and password (a personal Github access token) should be specified as
-                // `githubPackagesUsername` and `githubPackagesPassword` Gradle properties or alternatively
-                // as `ORG_GRADLE_PROJECT_githubPackagesUsername` and `ORG_GRADLE_PROJECT_githubPackagesPassword`
-                // environment variables
-                credentials(PasswordCredentials::class)
-            }
+    repositories {
+        maven {
+            name = "githubPackages"
+            url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
+            // username and password (a personal Github access token) should be specified as
+            // `githubPackagesUsername` and `githubPackagesPassword` Gradle properties or alternatively
+            // as `ORG_GRADLE_PROJECT_githubPackagesUsername` and `ORG_GRADLE_PROJECT_githubPackagesPassword`
+            // environment variables
+            credentials(PasswordCredentials::class)
         }
     }
 
     publishToMavenCentral()
 
     signAllPublications()
+    }
 }
 
 tasks.withType<PublishToMavenRepository>().configureEach {
