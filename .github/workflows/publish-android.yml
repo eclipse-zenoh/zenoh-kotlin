@@ -84,6 +84,8 @@ jobs:
         run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }} ${{ env.DEBUG }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
+          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
@@ -92,5 +94,7 @@ jobs:
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
+          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
+          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
