@@ -19,8 +19,7 @@ plugins {
     kotlin("plugin.serialization")
     id("com.adarshr.test-logger")
     id("org.jetbrains.dokka")
-    `maven-publish`
-    signing
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
