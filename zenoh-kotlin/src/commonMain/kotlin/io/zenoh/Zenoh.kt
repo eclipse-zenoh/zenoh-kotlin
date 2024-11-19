@@ -54,7 +54,7 @@ object Zenoh {
         config: Config? = null
     ): Result<Scout<Unit>> {
         ZenohLoad
-        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, config = config)
+        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, onClose = {}, config = config)
     }
 
     /**
@@ -78,6 +78,7 @@ object Zenoh {
             whatAmI = whatAmI,
             callback = { hello -> handler.handle(hello) },
             receiver = handler.receiver(),
+            onClose = handler::onClose,
             config = config
         )
     }
@@ -104,6 +105,7 @@ object Zenoh {
             whatAmI = whatAmI,
             callback = { hello -> handler.handle(hello) },
             receiver = handler.receiver(),
+            onClose = handler::onClose,
             config = config
         )
     }

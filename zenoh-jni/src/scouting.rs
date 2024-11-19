@@ -15,14 +15,14 @@
 use std::{ptr::null, sync::Arc};
 
 use jni::{
-    objects::{JClass, JList, JObject, JValue},
+    objects::{GlobalRef, JClass, JList, JObject, JValue},
     sys::jint,
     JNIEnv,
 };
 use zenoh::{config::WhatAmIMatcher, Wait};
 use zenoh::{scouting::Scout, Config};
 
-use crate::utils::{get_callback_global_ref, get_java_vm};
+use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
 use crate::{errors::ZResult, throw_exception, zerror};
 
 /// Start a scout.
@@ -42,11 +42,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
     _class: JClass,
     whatAmI: jint,
     callback: JObject,
+    on_close: JObject,
     config_ptr: /*nullable=*/ *const Config,
 ) -> *const Scout<()> {
     || -> ZResult<*const Scout<()>> {
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let on_close_global_ref: GlobalRef = get_callback_global_ref(&mut env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
         let whatAmIMatcher: WhatAmIMatcher = (whatAmI as u8).try_into().unwrap(); // The validity of the operation is guaranteed on the kotlin layer.
         let config = if config_ptr.is_null() {
             Config::default()
@@ -58,6 +61,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
         };
         zenoh::scout(whatAmIMatcher, config)
             .callback(move |hello| {
+                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 tracing::debug!("Received hello: {hello}");
                 let _ = || -> jni::errors::Result<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon()?;

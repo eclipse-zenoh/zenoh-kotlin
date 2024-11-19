@@ -22,6 +22,7 @@ import io.zenoh.config.ZenohId
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
 import io.zenoh.config.WhatAmI
+import io.zenoh.jni.callbacks.JNIOnCloseCallback
 
 /**
  * Adapter class to handle the interactions with Zenoh through JNI for a [io.zenoh.scouting.Scout]
@@ -34,6 +35,7 @@ internal class JNIScout(private val ptr: Long) {
         fun <R> scout(
             whatAmI: Set<WhatAmI>,
             callback: Callback<Hello>,
+            onClose: () -> Unit,
             config: Config?,
             receiver: R
         ): Result<Scout<R>> = runCatching {
@@ -41,7 +43,7 @@ internal class JNIScout(private val ptr: Long) {
                 callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(id), locators))
             }
             val binaryWhatAmI: Int = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
-            val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, config?.jniConfig?.ptr ?: 0)
+            val ptr = scoutViaJNI(binaryWhatAmI, scoutCallback, onClose,config?.jniConfig?.ptr ?: 0)
             Scout(receiver, JNIScout(ptr))
         }
 
@@ -49,6 +51,7 @@ internal class JNIScout(private val ptr: Long) {
         private external fun scoutViaJNI(
             whatAmI: Int,
             callback: JNIScoutCallback,
+            onCloseCallback: JNIOnCloseCallback,
             configPtr: Long,
         ): Long
 
