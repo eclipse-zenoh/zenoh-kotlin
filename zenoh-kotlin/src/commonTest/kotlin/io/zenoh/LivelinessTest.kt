@@ -27,7 +27,7 @@ class LivelinessTest {
         val sessionA = Zenoh.open(Config.default()).getOrThrow()
         val sessionB = Zenoh.open(Config.default()).getOrThrow()
 
-        sessionA.liveliness().declareToken("test/liveliness".intoKeyExpr().getOrThrow()).getOrThrow()
+        val token = sessionA.liveliness().declareToken("test/liveliness".intoKeyExpr().getOrThrow()).getOrThrow()
 
         var receivedReply: Reply? = null
         sessionB.liveliness().get(keyExpr = "test/**".intoKeyExpr().getOrThrow(), callback = { reply: Reply ->
@@ -37,7 +37,7 @@ class LivelinessTest {
         Thread.sleep(1000)
 
         assertNotNull(receivedReply)
-
+        token.close()
         sessionA.close()
         sessionB.close()
     }
