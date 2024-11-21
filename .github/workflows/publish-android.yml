@@ -12,10 +12,6 @@ on:
         description: Target branch
         type: string
         required: false
-      debug:
-        description: If true, pass --debug flag to gradle
-        type: boolean
-        required: false
   workflow_dispatch:
 
 env:
@@ -74,14 +70,8 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - name: Set debug env var
-        run: |
-          if [[ "${{ inputs.debug }}" == "true" ]]; then
-            echo "DEBUG=--debug" >> $GITHUB_ENV
-          fi
-
       - name: Gradle Publish Android Package to GitHub packages repository
-        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }} ${{ env.DEBUG }}
+        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
@@ -90,7 +80,7 @@ jobs:
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
       - name: Gradle Publish Android Package to Maven Central repository
-        run: ./gradlew publishAndroidReleasePublicationToMavenCentralRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }} ${{ env.DEBUG }}
+        run: ./gradlew publishAndroidReleasePublicationToMavenCentralRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
