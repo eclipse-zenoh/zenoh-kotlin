@@ -98,7 +98,7 @@ kotlin {
 
     publishing {
         publications.withType<MavenPublication> {
-            groupId = "io.zenoh"
+            groupId = "org.eclipse.zenoh"
             artifactId = "zenoh-kotlin"
             version = project.version.toString() + if (project.hasProperty("SNAPSHOT")) "-SNAPSHOT" else ""
 
