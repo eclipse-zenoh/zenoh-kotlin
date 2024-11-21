@@ -16,12 +16,14 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.keyexpr.intoKeyExpr
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 
-class ZSub(private val emptyArgs: Boolean) : CliktCommand(
-    help = "Zenoh Sub example"
+class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh Sub Liveliness example"
 ) {
 
     override fun run() {
@@ -33,21 +35,18 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.open(config).onSuccess { session ->
             session.use {
                 key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Subscriber on '$keyExpr'...")
-
-                        session.declareSubscriber(keyExpr, Channel()).onSuccess { subscriber ->
+                    session.liveliness().get(keyExpr, channel = Channel(), timeout = Duration.ofMillis(timeout))
+                        .onSuccess { channel ->
                             runBlocking {
-                                for (sample in subscriber.receiver) {
-                                    println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
-                                        sample.attachment?.let {
-                                            ", with attachment: $it"
-                                        } ?: ""
-                                    })")
+                                for (reply in channel) {
+                                    reply.result.onSuccess {
+                                        println(">> Alive token ('${it.keyExpr}')")
+                                    }.onFailure {
+                                        println(">> Received (ERROR: '${it.message}')")
+                                    }
                                 }
                             }
                         }
-                    }
                 }
             }
         }.onFailure { exception -> println(exception.message) }
@@ -55,8 +54,14 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
-        "-k", "--key", help = "The key expression to subscribe to [default: demo/example/**]", metavar = "key"
-    ).default("demo/example/**")
+        "-k",
+        "--key",
+        help = "The key expression matching liveliness tokens to query. [default: group1/**]",
+        metavar = "key"
+    ).default("group1/**")
+    private val timeout by option(
+        "-o", "--timeout", help = "The query timeout in milliseconds [default: 10000]", metavar = "timeout"
+    ).long().default(10000)
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
     ).multiple()
@@ -74,4 +79,4 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     ).flag(default = false)
 }
 
-fun main(args: Array<String>) = ZSub(args.isEmpty()).main(args)
+fun main(args: Array<String>) = ZGetLiveliness(args.isEmpty()).main(args)

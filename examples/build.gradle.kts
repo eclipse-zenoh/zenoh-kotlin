@@ -34,13 +34,16 @@ tasks {
         "ZBytes",
         "ZDelete",
         "ZGet",
+        "ZGetLiveliness",
         "ZInfo",
+        "ZLiveliness",
         "ZPub",
         "ZPubThr",
         "ZPut",
         "ZQueryable",
         "ZScout",
         "ZSub",
+        "ZSubLiveliness",
         "ZSubThr"
     )
 

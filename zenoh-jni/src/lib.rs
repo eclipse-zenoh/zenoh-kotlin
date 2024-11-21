@@ -15,6 +15,7 @@
 mod config;
 mod errors;
 mod key_expr;
+mod liveliness;
 mod logger;
 mod publisher;
 mod query;

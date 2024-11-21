@@ -17,11 +17,9 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
 
-class ZSub(private val emptyArgs: Boolean) : CliktCommand(
-    help = "Zenoh Sub example"
+class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh Liveliness example"
 ) {
 
     override fun run() {
@@ -31,23 +29,10 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
 
         println("Opening session...")
         Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Subscriber on '$keyExpr'...")
-
-                        session.declareSubscriber(keyExpr, Channel()).onSuccess { subscriber ->
-                            runBlocking {
-                                for (sample in subscriber.receiver) {
-                                    println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
-                                        sample.attachment?.let {
-                                            ", with attachment: $it"
-                                        } ?: ""
-                                    })")
-                                }
-                            }
-                        }
-                    }
+            key.intoKeyExpr().onSuccess { keyExpr ->
+                session.liveliness().declareToken(keyExpr)
+                while (true) {
+                    Thread.sleep(1000)
                 }
             }
         }.onFailure { exception -> println(exception.message) }
@@ -55,8 +40,8 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
     private val key by option(
-        "-k", "--key", help = "The key expression to subscribe to [default: demo/example/**]", metavar = "key"
-    ).default("demo/example/**")
+        "-k", "--key", help = "The key expression to subscribe to [default: group1/**]", metavar = "key"
+    ).default("group1/**")
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
     ).multiple()
@@ -74,4 +59,4 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     ).flag(default = false)
 }
 
-fun main(args: Array<String>) = ZSub(args.isEmpty()).main(args)
+fun main(args: Array<String>) = ZLiveliness(args.isEmpty()).main(args)

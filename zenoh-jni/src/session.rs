@@ -888,7 +888,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     std::mem::forget(session);
 }
 
-fn on_reply_success(
+pub(crate) fn on_reply_success(
     env: &mut JNIEnv,
     replier_id: Option<ZenohId>,
     sample: &Sample,
@@ -974,7 +974,7 @@ fn on_reply_success(
     result
 }
 
-fn on_reply_error(
+pub(crate) fn on_reply_error(
     env: &mut JNIEnv,
     replier_id: Option<ZenohId>,
     reply_error: &ReplyError,
