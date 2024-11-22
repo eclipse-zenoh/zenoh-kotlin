@@ -78,7 +78,7 @@ This is required by Github in order to import the package, even if it's from a p
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("io.zenoh:zenoh-kotlin-android:1.0.0")
+implementation("org.eclipse.zenoh:zenoh-kotlin-android:1.0.0")
 ```
 
 ### Platforms
