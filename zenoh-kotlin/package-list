@@ -123,6 +123,18 @@ $dokka.location:io.zenoh.keyexpr/SetIntersectionLevel.INTERSECTS///PointingToDec
 $dokka.location:io.zenoh.keyexpr/SetIntersectionLevel///PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/index.html
 $dokka.location:io.zenoh.keyexpr/SetIntersectionLevel/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/value-of.html
 $dokka.location:io.zenoh.keyexpr/SetIntersectionLevel/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.keyexpr/-set-intersection-level/values.html
+$dokka.location:io.zenoh.liveliness////PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/index.html
+$dokka.location:io.zenoh.liveliness/Liveliness///PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/index.html
+$dokka.location:io.zenoh.liveliness/Liveliness/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.sample.Sample]#kotlin.Boolean#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/declare-subscriber.html
+$dokka.location:io.zenoh.liveliness/Liveliness/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.sample.Sample,TypeParam(bounds=[kotlin.Any?])]#kotlin.Boolean#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/declare-subscriber.html
+$dokka.location:io.zenoh.liveliness/Liveliness/declareSubscriber/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.sample.Sample]#kotlin.Boolean#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/declare-subscriber.html
+$dokka.location:io.zenoh.liveliness/Liveliness/declareToken/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/declare-token.html
+$dokka.location:io.zenoh.liveliness/Liveliness/get/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.query.Reply]#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/get.html
+$dokka.location:io.zenoh.liveliness/Liveliness/get/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.query.Reply,TypeParam(bounds=[kotlin.Any?])]#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/get.html
+$dokka.location:io.zenoh.liveliness/Liveliness/get/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness/get.html
+$dokka.location:io.zenoh.liveliness/LivelinessToken///PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness-token/index.html
+$dokka.location:io.zenoh.liveliness/LivelinessToken/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness-token/close.html
+$dokka.location:io.zenoh.liveliness/LivelinessToken/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.liveliness/-liveliness-token/undeclare.html
 $dokka.location:io.zenoh.pubsub////PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/index.html
 $dokka.location:io.zenoh.pubsub/Publisher.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/-companion/index.html
 $dokka.location:io.zenoh.pubsub/Publisher///PointingToDeclaration/zenoh-kotlin/io.zenoh.pubsub/-publisher/index.html
@@ -304,6 +316,7 @@ $dokka.location:io.zenoh/Session/get/#io.zenoh.query.Selector#io.zenoh.handlers.
 $dokka.location:io.zenoh/Session/get/#io.zenoh.query.Selector#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]#io.zenoh.bytes.IntoZBytes?#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?#[Error type: Unresolved type for Duration]#io.zenoh.query.QueryTarget#io.zenoh.query.ConsolidationMode#kotlin.Function0[kotlin.Unit]?/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/get.html
 $dokka.location:io.zenoh/Session/info/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/info.html
 $dokka.location:io.zenoh/Session/isClosed/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/is-closed.html
+$dokka.location:io.zenoh/Session/liveliness/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/liveliness.html
 $dokka.location:io.zenoh/Session/put/#io.zenoh.keyexpr.KeyExpr#io.zenoh.bytes.IntoZBytes#io.zenoh.bytes.Encoding#io.zenoh.qos.QoS#io.zenoh.bytes.IntoZBytes?#io.zenoh.qos.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/put.html
 $dokka.location:io.zenoh/Session/undeclare/#io.zenoh.keyexpr.KeyExpr/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/undeclare.html
 $dokka.location:io.zenoh/Zenoh///PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/index.html
@@ -321,6 +334,7 @@ io.zenoh.exceptions
 io.zenoh.ext
 io.zenoh.handlers
 io.zenoh.keyexpr
+io.zenoh.liveliness
 io.zenoh.pubsub
 io.zenoh.qos
 io.zenoh.query
