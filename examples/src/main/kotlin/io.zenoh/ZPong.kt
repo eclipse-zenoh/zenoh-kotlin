@@ -20,10 +20,13 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.QoS
 import io.zenoh.sample.Sample
+import java.util.concurrent.CountDownLatch
 
 class ZPong(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh ZPong example"
 ) {
+    val latch = CountDownLatch(1)
+
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
@@ -37,7 +40,7 @@ class ZPong(private val emptyArgs: Boolean) : CliktCommand(
         val publisher = session.declarePublisher(keyExprPong, qos = QoS(CongestionControl.BLOCK, express = !noExpress)).getOrThrow()
         session.declareSubscriber(keyExprPing, callback = { sample: Sample -> publisher.put(sample.payload).getOrThrow() }).getOrThrow()
 
-        while (true) { Thread.sleep(1000)}
+        latch.await()
     }
 
 
@@ -63,4 +66,7 @@ class ZPong(private val emptyArgs: Boolean) : CliktCommand(
     ).flag(default = false)
 }
 
-fun main(args: Array<String>) = ZPong(args.isEmpty()).main(args)
+fun main(args: Array<String>) {
+    val zPong = ZPong(args.isEmpty())
+    zPong.main(args)
+}
