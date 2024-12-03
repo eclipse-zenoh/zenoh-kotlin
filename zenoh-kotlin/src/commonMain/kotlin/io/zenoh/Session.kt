@@ -378,6 +378,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         }, handler.receiver(), complete)
     }
 
+    fun declareQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        qos: QoS = QoS.default(),
+        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        timeout: Duration = Duration.ofMillis(10000)
+    ): Result<Querier> {
+        return resolveQuerier(keyExpr, target, consolidation, qos, timeout)
+    }
+
     /**
      * Declare a [KeyExpr].
      *
@@ -740,6 +750,18 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     ): Result<Queryable<R>> {
         return jniSession?.run {
             declareQueryable(keyExpr, callback, onClose, receiver, complete).onSuccess { declarations.add(it) }
+        } ?: Result.failure(sessionClosedException)
+    }
+
+    private fun resolveQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget,
+        consolidation: ConsolidationMode,
+        qos: QoS,
+        timeout: Duration
+    ): Result<Querier> {
+        return jniSession?.run {
+            declareQuerier(keyExpr, target, consolidation, qos, timeout).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 

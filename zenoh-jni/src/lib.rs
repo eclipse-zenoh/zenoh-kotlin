@@ -18,6 +18,7 @@ mod key_expr;
 mod liveliness;
 mod logger;
 mod publisher;
+mod querier;
 mod query;
 mod queryable;
 mod scouting;

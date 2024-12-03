@@ -136,6 +136,20 @@ internal class JNISession {
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
+    fun declareQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget,
+        consolidation: ConsolidationMode,
+        qos: QoS,
+        timeout: Duration
+    ): Result<Querier> = runCatching {
+        val querierRawPtr = declareQuerierViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), target.ordinal, consolidation.ordinal,
+            qos.congestionControl.ordinal, qos.priority.ordinal, qos.express, timeout.toMillis()
+        )
+        Querier(keyExpr, qos, JNIQuerier(querierRawPtr))
+    }
+
     fun <R> performGet(
         selector: Selector,
         callback: Callback<Reply>,
@@ -311,6 +325,19 @@ internal class JNISession {
         callback: JNIQueryableCallback,
         onClose: JNIOnCloseCallback,
         complete: Boolean
+    ): Long
+
+    @Throws(ZError::class)
+    private external fun declareQuerierViaJNI(
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        target: Int,
+        consolidation: Int,
+        congestionControl: Int,
+        priority: Int,
+        express: Boolean,
+        timeoutMs: Long
     ): Long
 
     @Throws(ZError::class)
