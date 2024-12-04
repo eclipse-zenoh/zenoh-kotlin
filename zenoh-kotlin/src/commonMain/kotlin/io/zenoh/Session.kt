@@ -378,6 +378,29 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         }, handler.receiver(), complete)
     }
 
+    /**
+     * Declare a [Querier].
+     *
+     * A querier allows to send queries to a queryable.
+     *
+     * Queriers are automatically undeclared when dropped.
+     *
+     * Example:
+     * ```kotlin
+     * val session = Zenoh.open(config).getOrThrow();
+     * val keyExpr = "a/b/c".intoKeyExpr().getOrThrow();
+     *
+     * val querier = session.declareQuerier(keyExpr).getOrThrow();
+     * querier.get(callback = {
+     *         it.result.onSuccess { sample ->
+     *             println(">> Received ('${sample.keyExpr}': '${sample.payload}')")
+     *         }.onFailure { error ->
+     *             println(">> Received (ERROR: '${error.message}')")
+     *         }
+     *     }
+     * )
+     * ```
+     */
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -761,7 +784,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration
     ): Result<Querier> {
         return jniSession?.run {
-            declareQuerier(keyExpr, target, consolidation, qos, timeout).onSuccess { declarations.add(it) }
+            declareQuerier(keyExpr, target, consolidation, qos, timeout)
         } ?: Result.failure(sessionClosedException)
     }
 

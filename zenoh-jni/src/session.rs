@@ -514,6 +514,23 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     })
 }
 
+/// Declare a Zenoh querier via JNI.
+/// 
+/// This function is meant to be called from Java/Kotlin code through JNI.
+/// 
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the querier. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the querier.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `target`: The ordinal value of the query target enum value.
+/// - `consolidation`: The ordinal value of the consolidation enum value.
+/// - `congestion_control`: The ordinal value of the congestion control enum value.
+/// - `priority`: The ordinal value of the priority enum value.
+/// - `is_express`: The boolean express value of the QoS provided.
+/// - `timeout_ms`: The timeout in milliseconds.
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQuerierViaJNI(

@@ -26,9 +26,42 @@ import io.zenoh.qos.QoS
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
+/**
+ * A querier that allows to send queries to a [Queryable].
+ *
+ * Queriers are automatically undeclared when dropped.
+ *
+ * Example:
+ * ```kotlin
+ * val session = Zenoh.open(config).getOrThrow();
+ * val keyExpr = "a/b/c".intoKeyExpr().getOrThrow();
+ *
+ * val querier = session.declareQuerier(keyExpr).getOrThrow();
+ * querier.get(callback = {
+ *         it.result.onSuccess { sample ->
+ *             println(">> Received ('${sample.keyExpr}': '${sample.payload}')")
+ *         }.onFailure { error ->
+ *             println(">> Received (ERROR: '${error.message}')")
+ *         }
+ *     }
+ * )
+ * ```
+ *
+ */
 class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private var jniQuerier: JNIQuerier?) :
     SessionDeclaration, AutoCloseable {
 
+    /**
+     * Perform a get operation to the [keyExpr] from the Querier and pipe the incoming
+     * replies into the [channel] provided.
+     *
+     * @param channel The [Channel] that will receive the replies.
+     * @param parameters Optional [Parameters] for the query.
+     * @param payload Optional payload for the query.
+     * @param encoding Optional encoding for the payload of the query.
+     * @param attachment Optional attachment for the query.
+     * @return A result with the provided channel.
+     */
     fun get(
         channel: Channel<Reply>,
         parameters: Parameters? = null,
@@ -49,6 +82,17 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         ) ?: throw ZError("Querier is not valid.")
     }
 
+    /**
+     * Perform a get operation to the [keyExpr] from the Querier and handle the incoming replies
+     * with the [callback] provided.
+     *
+     * @param callback [Callback] to be run upon receiving a [Reply] to the query.
+     * @param parameters Optional [Parameters] for the query.
+     * @param payload Optional payload for the query.
+     * @param encoding Optional encoding for the payload of the query.
+     * @param attachment Optional attachment for the query.
+     * @return A result with the status of the operation.
+     */
     fun get(
         callback: Callback<Reply>,
         parameters: Parameters? = null,
@@ -68,6 +112,17 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         ) ?: throw ZError("Querier is not valid.")
     }
 
+    /**
+     * Perform a get operation to the [keyExpr] from the Querier and handle the incoming replies
+     * with the [handler] provided.
+     *
+     * @param handler [Handler] to handle the receiving replies to the query.
+     * @param parameters Optional [Parameters] for the query.
+     * @param payload Optional payload for the query.
+     * @param encoding Optional encoding for the payload of the query.
+     * @param attachment Optional attachment for the query.
+     * @return A result with the status of the operation.
+     */
     fun <R> get(
         handler: Handler<Reply, R>,
         parameters: Parameters? = null,
@@ -87,20 +142,35 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         ) ?: throw ZError("Querier is not valid.")
     }
 
+    /**
+     * Get the [QoS.congestionControl] of the querier.
+     */
     fun congestionControl() = qos.congestionControl
 
+    /**
+     * Get the [QoS.priority] of the querier.
+     */
     fun priority() = qos.priority
 
+    /**
+     * Undeclares the querier. After calling this function, the querier won't be valid anymore and get operations
+     * performed on it will fail.
+     */
     override fun undeclare() {
         jniQuerier?.close()
         jniQuerier = null
     }
 
+    /**
+     * Closes the querier. Equivalent to [undeclare], this function is automatically called when using
+     * try-with-resources.
+     */
     override fun close() {
         undeclare()
     }
 
-    // matching status
-    // matching listener
-    // accepts replies
+    protected fun finalize() {
+        undeclare()
+    }
+
 }
