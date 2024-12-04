@@ -34,7 +34,7 @@ use crate::{
 };
 
 /// Perform a Zenoh GET through a querier.
-/// 
+///
 /// This function is meant to be called from Java/Kotlin code through JNI.
 ///
 /// Parameters:
@@ -52,7 +52,7 @@ use crate::{
 /// - `payload`: Optional payload for the query.
 /// - `encoding_id`: Encoding id of the payload provided.
 /// - `encoding_schema`: Encoding schema of the payload provided.
-/// 
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_getViaJNI(
@@ -121,11 +121,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_getViaJNI(
     std::mem::forget(querier);
 }
 
-/// 
-/// Frees the pointer of the querier. 
+///
+/// Frees the pointer of the querier.
 ///
 /// After a call to this function, no further jni operations should be performed using the querier associated to the raw pointer provided.
-/// 
+///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_freePtrViaJNI(

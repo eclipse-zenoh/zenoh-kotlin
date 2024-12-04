@@ -515,9 +515,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
 }
 
 /// Declare a Zenoh querier via JNI.
-/// 
+///
 /// This function is meant to be called from Java/Kotlin code through JNI.
-/// 
+///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
