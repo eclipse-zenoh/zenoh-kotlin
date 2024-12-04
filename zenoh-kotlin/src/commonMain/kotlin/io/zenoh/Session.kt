@@ -405,7 +405,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         qos: QoS = QoS.default(),
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         timeout: Duration = Duration.ofMillis(10000)
     ): Result<Querier> {
         return resolveQuerier(keyExpr, target, consolidation, qos, timeout)
@@ -500,7 +500,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null
     ): Result<Unit> {
         return resolveGet(
@@ -577,7 +577,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null
     ): Result<R> {
         return resolveGet(
