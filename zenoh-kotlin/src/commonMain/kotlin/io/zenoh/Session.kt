@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
@@ -401,6 +402,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * )
      * ```
      */
+    @Unstable
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -776,6 +778,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
+    @OptIn(Unstable::class)
     private fun resolveQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget,

@@ -27,6 +27,7 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
 import io.zenoh.Config
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
@@ -136,6 +137,7 @@ internal class JNISession {
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
+    @OptIn(Unstable::class)
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget,

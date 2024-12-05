@@ -17,6 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
+import io.zenoh.annotations.Unstable
 import io.zenoh.bytes.ZBytes
 import io.zenoh.query.QueryTarget
 import io.zenoh.query.intoSelector
@@ -26,6 +27,7 @@ class ZQuerier(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Querier example"
 ) {
 
+    @OptIn(Unstable::class)
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
