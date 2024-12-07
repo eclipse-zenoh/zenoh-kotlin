@@ -14,6 +14,7 @@
 
 package io.zenoh
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
@@ -379,6 +380,40 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
+     * Declare a [Querier].
+     *
+     * A querier allows to send queries to a queryable.
+     *
+     * Queriers are automatically undeclared when dropped.
+     *
+     * Example:
+     * ```kotlin
+     * val session = Zenoh.open(config).getOrThrow();
+     * val keyExpr = "a/b/c".intoKeyExpr().getOrThrow();
+     *
+     * val querier = session.declareQuerier(keyExpr).getOrThrow();
+     * querier.get(callback = {
+     *         it.result.onSuccess { sample ->
+     *             println(">> Received ('${sample.keyExpr}': '${sample.payload}')")
+     *         }.onFailure { error ->
+     *             println(">> Received (ERROR: '${error.message}')")
+     *         }
+     *     }
+     * )
+     * ```
+     */
+    @Unstable
+    fun declareQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        qos: QoS = QoS.default(),
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
+        timeout: Duration = Duration.ofMillis(10000)
+    ): Result<Querier> {
+        return resolveQuerier(keyExpr, target, consolidation, qos, timeout)
+    }
+
+    /**
      * Declare a [KeyExpr].
      *
      * Informs Zenoh that you intend to use the provided Key Expression repeatedly.
@@ -467,7 +502,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null
     ): Result<Unit> {
         return resolveGet(
@@ -544,7 +579,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        consolidation: ConsolidationMode = ConsolidationMode.NONE,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null
     ): Result<R> {
         return resolveGet(
@@ -740,6 +775,19 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     ): Result<Queryable<R>> {
         return jniSession?.run {
             declareQueryable(keyExpr, callback, onClose, receiver, complete).onSuccess { declarations.add(it) }
+        } ?: Result.failure(sessionClosedException)
+    }
+
+    @OptIn(Unstable::class)
+    private fun resolveQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget,
+        consolidation: ConsolidationMode,
+        qos: QoS,
+        timeout: Duration
+    ): Result<Querier> {
+        return jniSession?.run {
+            declareQuerier(keyExpr, target, consolidation, qos, timeout)
         } ?: Result.failure(sessionClosedException)
     }
 

@@ -40,6 +40,7 @@ tasks {
         "ZPub",
         "ZPubThr",
         "ZPut",
+        "ZQuerier",
         "ZQueryable",
         "ZScout",
         "ZSub",

@@ -23,7 +23,7 @@ use zenoh::{
     config::Config,
     key_expr::KeyExpr,
     pubsub::{Publisher, Subscriber},
-    query::{Query, Queryable, ReplyError, Selector},
+    query::{Querier, Query, Queryable, ReplyError, Selector},
     sample::Sample,
     session::{Session, ZenohId},
     Wait,
@@ -507,6 +507,69 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
         tracing::debug!("Subscriber declared on '{}'.", key_expr);
         std::mem::forget(session);
         Ok(Arc::into_raw(Arc::new(subscriber)))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        null()
+    })
+}
+
+/// Declare a Zenoh querier via JNI.
+///
+/// This function is meant to be called from Java/Kotlin code through JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: A raw pointer to the [KeyExpr] to be used for the querier. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the querier.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `target`: The ordinal value of the query target enum value.
+/// - `consolidation`: The ordinal value of the consolidation enum value.
+/// - `congestion_control`: The ordinal value of the congestion control enum value.
+/// - `priority`: The ordinal value of the priority enum value.
+/// - `is_express`: The boolean express value of the QoS provided.
+/// - `timeout_ms`: The timeout in milliseconds.
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareQuerierViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str: JString,
+    session_ptr: *const Session,
+    target: jint,
+    consolidation: jint,
+    congestion_control: jint,
+    priority: jint,
+    is_express: jboolean,
+    timeout_ms: jlong,
+) -> *const Querier<'static> {
+    let session = Arc::from_raw(session_ptr);
+    || -> ZResult<*const Querier<'static>> {
+        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
+        let query_target = decode_query_target(target)?;
+        let consolidation = decode_consolidation(consolidation)?;
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let timeout = Duration::from_millis(timeout_ms as u64);
+        let priority = decode_priority(priority)?;
+        tracing::debug!("Declaring querier on '{}'...", key_expr);
+
+        let querier = session
+            .declare_querier(key_expr.to_owned())
+            .congestion_control(congestion_control)
+            .consolidation(consolidation)
+            .express(is_express != 0)
+            .target(query_target)
+            .priority(priority)
+            .timeout(timeout)
+            .wait()
+            .map_err(|err| zerror!(err))?;
+
+        tracing::debug!("Querier declared on '{}'.", key_expr);
+        std::mem::forget(session);
+        Ok(Arc::into_raw(Arc::new(querier)))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
