@@ -12,26 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-mod config;
-mod errors;
-mod key_expr;
-mod liveliness;
-mod logger;
-mod publisher;
-mod querier;
-mod query;
-mod queryable;
-mod scouting;
-mod session;
-mod subscriber;
-mod utils;
-#[cfg(feature = "zenoh-ext")]
-mod zbytes;
-mod zenoh_id;
+package io.zenoh.annotations
 
-// Test should be runned with `cargo test --no-default-features`
-#[test]
-#[cfg(not(feature = "default"))]
-fn test_no_default_features() {
-    assert_eq!(zenoh::FEATURES, concat!(" zenoh/unstable"));
-}
+@RequiresOptIn(
+    level = RequiresOptIn.Level.WARNING,
+    message = "This feature is unstable and may change in future releases."
+)
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class Unstable

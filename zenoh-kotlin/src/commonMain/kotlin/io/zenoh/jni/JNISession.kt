@@ -27,6 +27,7 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
 import io.zenoh.Config
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
@@ -134,6 +135,21 @@ internal class JNISession {
             keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), queryCallback, onClose, complete
         )
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
+    }
+
+    @OptIn(Unstable::class)
+    fun declareQuerier(
+        keyExpr: KeyExpr,
+        target: QueryTarget,
+        consolidation: ConsolidationMode,
+        qos: QoS,
+        timeout: Duration
+    ): Result<Querier> = runCatching {
+        val querierRawPtr = declareQuerierViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), target.ordinal, consolidation.ordinal,
+            qos.congestionControl.ordinal, qos.priority.ordinal, qos.express, timeout.toMillis()
+        )
+        Querier(keyExpr, qos, JNIQuerier(querierRawPtr))
     }
 
     fun <R> performGet(
@@ -311,6 +327,19 @@ internal class JNISession {
         callback: JNIQueryableCallback,
         onClose: JNIOnCloseCallback,
         complete: Boolean
+    ): Long
+
+    @Throws(ZError::class)
+    private external fun declareQuerierViaJNI(
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        target: Int,
+        consolidation: Int,
+        congestionControl: Int,
+        priority: Int,
+        express: Boolean,
+        timeoutMs: Long
     ): Long
 
     @Throws(ZError::class)
