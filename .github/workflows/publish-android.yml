@@ -19,7 +19,7 @@ env:
 
 jobs:
   publish_android_package:
-    name: Publish Android Package to Github Packages
+    name: Publish Android package
     runs-on: ubuntu-latest
     permissions:
       contents: read
