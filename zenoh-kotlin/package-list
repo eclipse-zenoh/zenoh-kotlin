@@ -1,5 +1,7 @@
 $dokka.format:html-v1
 $dokka.linkExtension:html
+$dokka.location:io.zenoh.annotations////PointingToDeclaration/zenoh-kotlin/io.zenoh.annotations/index.html
+$dokka.location:io.zenoh.annotations/Unstable///PointingToDeclaration/zenoh-kotlin/io.zenoh.annotations/-unstable/index.html
 $dokka.location:io.zenoh.bytes////PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/index.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/index.html
 $dokka.location:io.zenoh.bytes/Encoding.Companion/APPLICATION_CBOR/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-encoding/-companion/-a-p-p-l-i-c-a-t-i-o-n_-c-b-o-r.html
@@ -211,6 +213,16 @@ $dokka.location:io.zenoh.query/Parameters/remove/#kotlin.String/PointingToDeclar
 $dokka.location:io.zenoh.query/Parameters/toMap/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-parameters/to-map.html
 $dokka.location:io.zenoh.query/Parameters/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-parameters/to-string.html
 $dokka.location:io.zenoh.query/Parameters/values/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-parameters/values.html
+$dokka.location:io.zenoh.query/Querier///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/index.html
+$dokka.location:io.zenoh.query/Querier/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/close.html
+$dokka.location:io.zenoh.query/Querier/congestionControl/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/congestion-control.html
+$dokka.location:io.zenoh.query/Querier/get/#io.zenoh.handlers.Callback[io.zenoh.query.Reply]#io.zenoh.query.Parameters?#io.zenoh.bytes.IntoZBytes?#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/get.html
+$dokka.location:io.zenoh.query/Querier/get/#io.zenoh.handlers.Handler[io.zenoh.query.Reply,TypeParam(bounds=[kotlin.Any?])]#io.zenoh.query.Parameters?#io.zenoh.bytes.IntoZBytes?#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/get.html
+$dokka.location:io.zenoh.query/Querier/get/#kotlinx.coroutines.channels.Channel[io.zenoh.query.Reply]#io.zenoh.query.Parameters?#io.zenoh.bytes.IntoZBytes?#io.zenoh.bytes.Encoding?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/get.html
+$dokka.location:io.zenoh.query/Querier/keyExpr/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/key-expr.html
+$dokka.location:io.zenoh.query/Querier/priority/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/priority.html
+$dokka.location:io.zenoh.query/Querier/qos/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/qos.html
+$dokka.location:io.zenoh.query/Querier/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-querier/undeclare.html
 $dokka.location:io.zenoh.query/Query///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/index.html
 $dokka.location:io.zenoh.query/Query/attachment/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/attachment.html
 $dokka.location:io.zenoh.query/Query/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/close.html
@@ -304,6 +316,7 @@ $dokka.location:io.zenoh/Session///PointingToDeclaration/zenoh-kotlin/io.zenoh/
 $dokka.location:io.zenoh/Session/close/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/close.html
 $dokka.location:io.zenoh/Session/declareKeyExpr/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-key-expr.html
 $dokka.location:io.zenoh/Session/declarePublisher/#io.zenoh.keyexpr.KeyExpr#io.zenoh.qos.QoS#io.zenoh.bytes.Encoding#io.zenoh.qos.Reliability/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-publisher.html
+$dokka.location:io.zenoh/Session/declareQuerier/#io.zenoh.keyexpr.KeyExpr#io.zenoh.query.QueryTarget#io.zenoh.qos.QoS#io.zenoh.query.ConsolidationMode#[Error type: Unresolved type for Duration]/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-querier.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Callback[io.zenoh.query.Query]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#io.zenoh.handlers.Handler[io.zenoh.query.Query,TypeParam(bounds=[kotlin.Any?])]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
 $dokka.location:io.zenoh/Session/declareQueryable/#io.zenoh.keyexpr.KeyExpr#kotlinx.coroutines.channels.Channel[io.zenoh.query.Query]#kotlin.Function0[kotlin.Unit]?#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh/-session/declare-queryable.html
@@ -328,6 +341,7 @@ $dokka.location:io.zenoh/Zenoh/scout/#kotlinx.coroutines.channels.Channel[io.zen
 $dokka.location:io.zenoh/Zenoh/tryInitLogFromEnv/#/PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh/try-init-log-from-env.html
 $dokka.location:io.zenoh/ZenohType///PointingToDeclaration/zenoh-kotlin/io.zenoh/-zenoh-type/index.html
 io.zenoh
+io.zenoh.annotations
 io.zenoh.bytes
 io.zenoh.config
 io.zenoh.exceptions
