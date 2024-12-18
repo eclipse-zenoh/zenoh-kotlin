@@ -27,7 +27,7 @@ import java.util.zip.ZipInputStream
 internal actual object ZenohLoad {
     private const val ZENOH_LIB_NAME = "zenoh_jni"
 
-    init  {
+    init {
         // Try first to load the local native library for cases in which the module was built locally,
         // otherwise try to load from the JAR.
         if (tryLoadingLocalLibrary().isFailure) {
@@ -51,24 +51,30 @@ internal actual object ZenohLoad {
             osName.contains("win") -> when {
                 osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
                     Target.WINDOWS_X86_64_MSVC
+
                 osArch.contains("aarch64") || osArch.contains("arm64") ->
                     Target.WINDOWS_AARCH64_MSVC
+
                 else -> throw UnsupportedOperationException("Unsupported architecture on Windows: $osArch")
             }
 
             osName.contains("mac") || osName.contains("darwin") || osName.contains("os x") -> when {
                 osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
                     Target.APPLE_X86_64
+
                 osArch.contains("aarch64") || osArch.contains("arm64") ->
                     Target.APPLE_AARCH64
+
                 else -> throw UnsupportedOperationException("Unsupported architecture on macOS: $osArch")
             }
 
             osName.contains("nix") || osName.contains("nux") || osName.contains("aix") -> when {
                 osArch.contains("x86_64") || osArch.contains("amd64") || osArch.contains("x64") ->
                     Target.LINUX_X86_64
+
                 osArch.contains("aarch64") || osArch.contains("arm64") ->
                     Target.LINUX_AARCH64
+
                 else -> throw UnsupportedOperationException("Unsupported architecture on Linux/Unix: $osArch")
             }
 
@@ -115,7 +121,9 @@ internal actual object ZenohLoad {
     }
 
     private fun loadLibraryAsInputStream(target: Target): Result<InputStream> = runCatching {
-        val libUrl = ClassLoader.getSystemClassLoader().getResourceAsStream("$target/$target.zip")!!
+        val targetName = "$target/$target.zip"
+        val libUrl = ClassLoader.getSystemClassLoader().getResourceAsStream(targetName)
+            ?: javaClass.classLoader.getResourceAsStream(targetName)!!
         val uncompressedLibFile = unzipLibrary(libUrl)
         return Result.success(FileInputStream(uncompressedLibFile.getOrThrow()))
     }
@@ -152,6 +160,9 @@ internal actual object ZenohLoad {
      */
     private fun tryLoadingLocalLibrary(): Result<Unit> = runCatching {
         val lib = ClassLoader.getSystemClassLoader().findLibraryStream(ZENOH_LIB_NAME)
+            ?: javaClass.classLoader.findLibraryStream(
+                ZENOH_LIB_NAME
+            )
         if (lib != null) {
             loadZenohJNI(lib)
         } else {
