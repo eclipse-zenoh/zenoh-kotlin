@@ -4,19 +4,18 @@
 
 ## Start instructions
 
-
-
 ```bash
-  gradle <example> --args="<arguments>"
+gradle <example> --args="<arguments>"
 ```
 
 for instance
 
 ```bash
-  gradle ZPub --args="-h"
+gradle ZPub --args="-h"
 ```
 
 will return
+
 ```bash
 > Task :examples:ZPub
 Usage: zpub [<options>]
@@ -44,12 +43,13 @@ The connect and listen parameters (that are common to all the examples) accept m
 For instance:
 
 ```bash
-  gradle ZPub --args="-l tcp/localhost:7447 -l tcp/localhost:7448 -l tcp/localhost:7449"
+gradle ZPub --args="-l tcp/localhost:7447 -l tcp/localhost:7448 -l tcp/localhost:7449"
 ```
 
 There is the possibility to provide a Zenoh config file as follows
+
 ```bash
-  gradle ZPub --args="-c path/to/config.json5"
+gradle ZPub --args="-c path/to/config.json5"
 ```
 
 In that case, any other provided configuration parameters through the command line interface will not be taken into consideration.
@@ -57,7 +57,7 @@ In that case, any other provided configuration parameters through the command li
 One last comment regarding Zenoh logging for the examples, remember it can be enabled through the environment variable `RUST_LOG` as follows:
 
 ```bash
-  RUST_LOG=<level> gradle ZPub
+RUST_LOG=<level> gradle ZPub
 ```
 
 where `<level>` can be either `info`, `trace`, `debug`, `warn` or `error`.
@@ -76,12 +76,15 @@ Usage:
 ```bash
 gradle ZPub
 ```
+
 or
+
 ```bash
 gradle ZPub --args="-k demo/example/test -v 'hello world'"
 ```
 
 ### ZSub
+
 Creates a subscriber with a key expression.
 The subscriber will be notified of each put made on any key expression matching
 the subscriber's key expression, and will print this notification.
@@ -91,7 +94,9 @@ Usage:
 ```bash
 gradle ZSub
 ```
+
 or
+
 ```bash
 gradle ZSub --args="-k demo/example/test"
 ```
@@ -105,6 +110,7 @@ will receive this query and reply with paths/values that will be received by the
 ```bash
 gradle ZGet
 ```
+
 or
 
 ```bash
@@ -129,6 +135,7 @@ gradle ZPut --args="-k demo/example/put -v 'Put from Kotlin!'"
 ```
 
 ### ZDelete
+
 Performs a Delete operation into a path/value into Zenoh.
 
 Usage:
