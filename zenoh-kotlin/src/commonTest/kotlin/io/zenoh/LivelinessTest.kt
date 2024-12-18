@@ -29,6 +29,7 @@ class LivelinessTest {
 
         val token = sessionA.liveliness().declareToken("test/liveliness".intoKeyExpr().getOrThrow()).getOrThrow()
 
+        Thread.sleep(1000)
         var receivedReply: Reply? = null
         sessionB.liveliness().get(keyExpr = "test/**".intoKeyExpr().getOrThrow(), callback = { reply: Reply ->
             receivedReply = reply
