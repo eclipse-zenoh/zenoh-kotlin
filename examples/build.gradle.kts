@@ -37,6 +37,8 @@ tasks {
         "ZGetLiveliness",
         "ZInfo",
         "ZLiveliness",
+        "ZPing",
+        "ZPong",
         "ZPub",
         "ZPubThr",
         "ZPut",
