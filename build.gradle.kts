@@ -34,6 +34,13 @@ plugins {
     id("org.jetbrains.dokka") version "1.8.20" apply false
     id("com.adarshr.test-logger") version "3.2.0" apply false
     kotlin("plugin.serialization") version "1.9.0" apply false
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+}
+
+nexusPublishing {
+    repositories {
+        sonatype()
+    }
 }
 
 subprojects {
