@@ -17,10 +17,15 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.QoS
+import io.zenoh.sample.Sample
+import java.util.concurrent.CountDownLatch
 
-class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
-    help = "Zenoh Liveliness example"
+class ZPong(private val emptyArgs: Boolean) : CliktCommand(
+    help = "Zenoh ZPong example"
 ) {
+    val latch = CountDownLatch(1)
 
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
@@ -28,20 +33,22 @@ class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            key.intoKeyExpr().onSuccess { keyExpr ->
-                session.liveliness().declareToken(keyExpr)
-                while (true) {
-                    Thread.sleep(1000)
-                }
-            }
-        }.onFailure { exception -> println(exception.message) }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExprPing = "test/ping".intoKeyExpr().getOrThrow()
+        val keyExprPong = "test/pong".intoKeyExpr().getOrThrow()
+
+        val publisher = session.declarePublisher(keyExprPong, qos = QoS(CongestionControl.BLOCK, express = !noExpress)).getOrThrow()
+        session.declareSubscriber(keyExprPing, callback = { sample: Sample -> publisher.put(sample.payload).getOrThrow() }).getOrThrow()
+
+        latch.await()
     }
 
+
+    private val noExpress: Boolean by option(
+        "--no-express", help = "Express for sending data."
+    ).flag(default = false)
+
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
-    private val key by option(
-        "-k", "--key", help = "The key expression to subscribe to [default: group1/zenoh-kotlin]", metavar = "key"
-    ).default("group1/zenoh-kotlin")
     private val connect: List<String> by option(
         "-e", "--connect", help = "Endpoints to connect to.", metavar = "connect"
     ).multiple()
@@ -59,4 +66,7 @@ class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
     ).flag(default = false)
 }
 
-fun main(args: Array<String>) = ZLiveliness(args.isEmpty()).main(args)
+fun main(args: Array<String>) {
+    val zPong = ZPong(args.isEmpty())
+    zPong.main(args)
+}
