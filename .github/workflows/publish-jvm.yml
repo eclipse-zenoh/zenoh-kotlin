@@ -12,7 +12,22 @@ on:
         description: Target branch
         type: string
         required: false
+      github_publish:
+        type: boolean
+        required: false
+        default: true
+      maven_publish:
+        type: boolean
+        required: false
+        default: true
   workflow_dispatch:
+    inputs:
+      github_publish:
+        description: 'Publish to github packages'
+        default: "true"
+      maven_publish:
+        description: 'Publish to Maven Central'
+        default: "true"
 
 env:
   CARGO_TERM_COLOR: always
@@ -175,7 +190,8 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - name: Gradle Publish JVM Package to GitHub packages repository
+      - if: ${{ github.event.inputs.github_publish == 'true' }}
+        name: Gradle Publish JVM Package to GitHub packages repository
         run: ./gradlew publishJvmPublicationToGithubPackagesRepository -PremotePublication=true ${{ env.PUB_MODE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -184,8 +200,8 @@ jobs:
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
-
-      - name: Gradle Publish JVM Package to Maven Central repository
+      - if: ${{ github.event.inputs.maven_publish == 'true' }}
+        name: Gradle Publish JVM Package to Maven Central repository
         run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }}
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
