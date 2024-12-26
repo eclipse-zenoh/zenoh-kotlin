@@ -39,7 +39,10 @@ plugins {
 
 nexusPublishing {
     repositories {
-        sonatype()
+        sonatype {
+            username = System.getenv("ORG_OSSRH_USERNAME")
+            password = System.getenv("ORG_OSSRH_PASSWORD")
+        }
     }
 }
 

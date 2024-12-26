@@ -157,18 +157,6 @@ kotlin {
                     password = System.getenv("GITHUB_TOKEN")
                 }
             }
-            maven {
-                name = "MavenCentral"
-                url = uri(if (project.hasProperty("SNAPSHOT"))
-                    "https://oss.sonatype.org/content/repositories/snapshots/"
-                else
-                    "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                )
-                credentials {
-                    username = System.getenv("ORG_OSSRH_USERNAME")
-                    password = System.getenv("ORG_OSSRH_PASSWORD")
-                }
-            }
         }
     }
 }

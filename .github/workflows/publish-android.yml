@@ -97,7 +97,9 @@ jobs:
 
       - if: ${{ github.event.inputs.maven_publish == 'true' }}
         name: Gradle Publish Android Package to Maven Central repository
-        run: ./gradlew publishAndroidReleasePublicationToMavenCentralRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+        run: |
+          ./gradlew publishAndroidReleasePublicationToSonatypeRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+          ./gradlew closeAndReleaseSonatypeStagingRepository
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}

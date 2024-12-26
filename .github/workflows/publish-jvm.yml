@@ -202,7 +202,9 @@ jobs:
 
       - if: ${{ github.event.inputs.maven_publish == 'true' }}
         name: Gradle Publish JVM Package to Maven Central repository
-        run: ./gradlew publishJvmPublicationToMavenCentralRepository -PremotePublication=true ${{ env.PUB_MODE }}
+        run: |
+          ./gradlew publishJvmPublicationToSonatypeRepository -PremotePublication=true ${{ env.PUB_MODE }}
+          ./gradlew closeAndReleaseSonatypeStagingRepository
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
