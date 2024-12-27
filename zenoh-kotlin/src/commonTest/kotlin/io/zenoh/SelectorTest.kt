@@ -1,6 +1,7 @@
 package io.zenoh
 
 import io.zenoh.exceptions.ZError
+import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.query.Selector
 import io.zenoh.query.intoSelector
 import org.junit.jupiter.api.Assertions.assertNull
@@ -34,5 +35,35 @@ class SelectorTest {
         "a/b/c".intoSelector().getOrThrow().use { selector: Selector ->
             assertEquals("a/b/c", selector.toString())
         }
+    }
+
+    /**
+     * Check the queryable properly receives the query's selector with and without parameters.
+     */
+    @Test
+    fun `selector query test`() {
+        val session = Zenoh.open(Config.default()).getOrThrow()
+        val queryableKeyExpr = "a/b/**".intoKeyExpr().getOrThrow()
+
+        var receivedQuerySelector: Selector? = null
+        val queryable = session.declareQueryable(queryableKeyExpr, callback = { query ->
+            receivedQuerySelector = query.selector
+            query.close()
+        }
+        ).getOrThrow()
+
+        val querySelector = "a/b/c".intoSelector().getOrThrow()
+        session.get(querySelector, callback = {}).getOrThrow()
+        Thread.sleep(1000)
+        assertEquals(querySelector, receivedQuerySelector)
+
+
+        val querySelector2 = "a/b/c?key=value".intoSelector().getOrThrow()
+        session.get(querySelector2, callback = {}).getOrThrow()
+        Thread.sleep(1000)
+        assertEquals(querySelector2, receivedQuerySelector)
+
+        queryable.close()
+        session.close()
     }
 }
