@@ -16,9 +16,13 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
+import io.zenoh.handlers.Handler
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.sample.Sample
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CountDownLatch
 
 class ZSub(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Sub example"
@@ -30,27 +34,63 @@ class ZSub(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        println("Declaring Subscriber on '$keyExpr'...")
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
 
-                        session.declareSubscriber(keyExpr, Channel()).onSuccess { subscriber ->
-                            runBlocking {
-                                for (sample in subscriber.receiver) {
-                                    println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
-                                        sample.attachment?.let {
-                                            ", with attachment: $it"
-                                        } ?: ""
-                                    })")
-                                }
-                            }
-                        }
-                    }
-                }
+        println("Declaring Subscriber on '$keyExpr'...")
+
+        runChannelExample(session, keyExpr)
+    }
+
+    private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
+        val subscriber = session.declareSubscriber(keyExpr, Channel()).getOrThrow()
+        runBlocking {
+            for (sample in subscriber.receiver) {
+                println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
+                    sample.attachment?.let {
+                        ", with attachment: $it"
+                    } ?: ""
+                })")
             }
-        }.onFailure { exception -> println(exception.message) }
+        }
+
+        subscriber.close()
+    }
+
+    private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
+        val subscriber = session.declareSubscriber(keyExpr, callback = { sample ->
+                println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
+                    sample.attachment?.let {
+                        ", with attachment: $it"
+                    } ?: ""
+                })")
+        }).getOrThrow()
+
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while samples are received.
+                                         // Typically, this wouldn't be needed.
+        subscriber.close()
+    }
+
+    private fun runHandlerExample(session: Session, keyExpr: KeyExpr) {
+        class ExampleHandler: Handler<Sample, Unit> {
+            override fun handle(t: Sample) {
+                println(">> [Subscriber] Received ${t.kind} ('${t.keyExpr}': '${t.payload}'" + "${
+                    t.attachment?.let {
+                        ", with attachment: $it"
+                    } ?: ""
+                })")
+            }
+
+            override fun receiver() {}
+            override fun onClose() {}
+        }
+
+        val subscriber = session.declareSubscriber(keyExpr, handler = ExampleHandler()).getOrThrow()
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while samples are received.
+                                         // Typically, this wouldn't be needed.
+        subscriber.close()
     }
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")

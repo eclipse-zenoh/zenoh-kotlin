@@ -26,16 +26,12 @@ class ZInfo(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                val info = session.info()
-                println("zid: ${info.zid().getOrThrow()}")
-
-                println("routers zid: ${info.routersZid().getOrThrow()}")
-
-                println("peers zid: ${info.peersZid().getOrThrow()}")
-            }
-        }.onFailure { exception -> println(exception.message) }
+        val session = Zenoh.open(config).getOrThrow()
+        val info = session.info()
+        println("zid: ${info.zid().getOrThrow()}")
+        println("routers zid: ${info.routersZid().getOrThrow()}")
+        println("peers zid: ${info.peersZid().getOrThrow()}")
+        session.close()
     }
 
 

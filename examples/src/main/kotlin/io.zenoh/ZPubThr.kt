@@ -47,27 +47,26 @@ class ZPubThr(private val emptyArgs: Boolean) : CliktCommand(
             priority = priorityInput?.let { Priority.entries[it] } ?: Priority.DATA,
         )
 
-        Zenoh.open(config).onSuccess {
-            it.use { session ->
-                session.declarePublisher("test/thr".intoKeyExpr().getOrThrow(), qos = qos).onSuccess { pub ->
-                    println("Publisher declared on test/thr.")
-                    var count: Long = 0
-                    var start = System.currentTimeMillis()
-                    val number = number.toLong()
-                    println("Press CTRL-C to quit...")
-                    while (true) {
-                        pub.put(payload).getOrThrow()
-                        if (statsPrint) {
-                            if (count < number) {
-                                count++
-                            } else {
-                                val throughput = count * 1000 / (System.currentTimeMillis() - start)
-                                println("$throughput msgs/s")
-                                count = 0
-                                start = System.currentTimeMillis()
-                            }
-                        }
-                    }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = "test/thr".intoKeyExpr().getOrThrow()
+        val publisher = session.declarePublisher(keyExpr, qos = qos).getOrThrow()
+
+        println("Publisher declared on test/thr.")
+        var count: Long = 0
+        var start = System.currentTimeMillis()
+        val number = number.toLong()
+
+        println("Press CTRL-C to quit...")
+        while (true) {
+            publisher.put(payload).getOrThrow()
+            if (statsPrint) {
+                if (count < number) {
+                    count++
+                } else {
+                    val throughput = count * 1000 / (System.currentTimeMillis() - start)
+                    println("$throughput msgs/s")
+                    count = 0
+                    start = System.currentTimeMillis()
                 }
             }
         }

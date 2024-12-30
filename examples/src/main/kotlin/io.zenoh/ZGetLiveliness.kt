@@ -17,13 +17,16 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
+import io.zenoh.handlers.Handler
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.query.Reply
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.time.Duration
 
 class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
-    help = "Zenoh Sub Liveliness example"
+    help = "Zenoh Get Liveliness example"
 ) {
 
     override fun run() {
@@ -32,24 +35,54 @@ class ZGetLiveliness(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    session.liveliness().get(keyExpr, channel = Channel(), timeout = Duration.ofMillis(timeout))
-                        .onSuccess { channel ->
-                            runBlocking {
-                                for (reply in channel) {
-                                    reply.result.onSuccess {
-                                        println(">> Alive token ('${it.keyExpr}')")
-                                    }.onFailure {
-                                        println(">> Received (ERROR: '${it.message}')")
-                                    }
-                                }
-                            }
-                        }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+
+        runChannelExample(session, keyExpr)
+
+        session.close()
+    }
+
+    private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
+        val channel =
+            session.liveliness().get(keyExpr, channel = Channel(), timeout = Duration.ofMillis(timeout)).getOrThrow()
+        runBlocking {
+            for (reply in channel) {
+                reply.result.onSuccess {
+                    println(">> Alive token ('${it.keyExpr}')")
+                }.onFailure {
+                    println(">> Received (ERROR: '${it.message}')")
                 }
             }
-        }.onFailure { exception -> println(exception.message) }
+        }
+    }
+
+    private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
+        session.liveliness().get(keyExpr, timeout = Duration.ofMillis(timeout), callback = { reply ->
+            reply.result.onSuccess {
+                println(">> Alive token ('${it.keyExpr}')")
+            }.onFailure {
+                println(">> Received (ERROR: '${it.message}')")
+            }
+        }).getOrThrow()
+    }
+
+    private fun runHandlerExample(session: Session, keyExpr: KeyExpr) {
+        // Create your own handler implementation
+        class ExampleHandler : Handler<Reply, Unit> {
+            override fun handle(t: Reply) {
+                t.result.onSuccess {
+                    println(">> Alive token ('${it.keyExpr}')")
+                }.onFailure {
+                    println(">> Received (ERROR: '${it.message}')")
+                }
+            }
+
+            override fun receiver() {}
+            override fun onClose() {}
+        }
+
+        session.liveliness().get(keyExpr, timeout = Duration.ofMillis(timeout), handler = ExampleHandler()).getOrThrow()
     }
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
