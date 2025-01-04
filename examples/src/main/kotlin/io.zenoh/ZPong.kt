@@ -25,12 +25,12 @@ import java.util.concurrent.CountDownLatch
 class ZPong(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh ZPong example"
 ) {
-    val latch = CountDownLatch(1)
 
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
         Zenoh.initLogFromEnvOr("error")
+        val latch = CountDownLatch(1)
 
         println("Opening session...")
         val session = Zenoh.open(config).getOrThrow()

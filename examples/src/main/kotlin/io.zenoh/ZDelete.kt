@@ -27,12 +27,11 @@ class ZDelete(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    println("Deleting resources matching '$keyExpr'...")
-                    session.delete(keyExpr)
-                }
+        val session = Zenoh.open(config).getOrThrow()
+        session.use {
+            key.intoKeyExpr().onSuccess { keyExpr ->
+                println("Deleting resources matching '$keyExpr'...")
+                session.delete(keyExpr)
             }
         }
     }

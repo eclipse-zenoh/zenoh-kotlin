@@ -17,10 +17,14 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.bytes.ZBytes
+import io.zenoh.handlers.Handler
+import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.query.Query
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
+import java.util.concurrent.CountDownLatch
 
 class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Queryable example"
@@ -31,26 +35,78 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
 
         Zenoh.initLogFromEnvOr("error")
 
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    println("Declaring Queryable on $key...")
-                    session.declareQueryable(keyExpr, Channel()).onSuccess { queryable ->
-                        runBlocking {
-                            for (query in queryable.receiver) {
-                                val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
-                                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
-                                query.reply(
-                                    keyExpr,
-                                    payload = ZBytes.from(value),
-                                    timestamp = TimeStamp.getCurrentTime()
-                                ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
-                            }
-                        }
-                    }
-                }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+
+        // Run the queryable example through one of the examples below:
+        runChannelExample(session, keyExpr)
+        // runCallbackExample(session, keyExpr)
+        // runHandlerExample(session, keyExpr)
+
+        session.close()
+    }
+
+    private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
+        println("Declaring Queryable on $key...")
+        val queryable = session.declareQueryable(keyExpr, Channel()).getOrThrow()
+        runBlocking {
+            for (query in queryable.receiver) {
+                val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
+                println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+                query.reply(
+                    keyExpr,
+                    payload = ZBytes.from(value),
+                    timestamp = TimeStamp.getCurrentTime()
+                ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
             }
         }
+        queryable.close()
+    }
+
+    private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
+        println("Declaring Queryable on $key...")
+        val queryable = session.declareQueryable(keyExpr, callback = { query ->
+            val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
+            println(">> [Queryable] Received Query '${query.selector}' $valueInfo")
+            query.reply(
+                keyExpr,
+                payload = ZBytes.from(value),
+                timestamp = TimeStamp.getCurrentTime()
+            ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
+        }).getOrThrow()
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while queries are received.
+                                         // Typically, this wouldn't be needed.
+
+        queryable.close()
+    }
+
+    private fun runHandlerExample(session: Session, keyExpr: KeyExpr) {
+
+        // Create your own handler implementation
+        class ExampleHandler : Handler<Query, Unit> {
+            override fun handle(t: Query) {
+                val valueInfo = t.payload?.let { value -> " with value '$value'" } ?: ""
+                println(">> [Queryable] Received Query '${t.selector}' $valueInfo")
+                t.reply(
+                    keyExpr,
+                    payload = ZBytes.from(value),
+                    timestamp = TimeStamp.getCurrentTime()
+                ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
+            }
+
+            override fun receiver() {}
+            override fun onClose() {}
+        }
+
+        // Declare the queryable, providing an instance of the handler
+        println("Declaring Queryable on $key...")
+        val queryable = session.declareQueryable(keyExpr, handler = ExampleHandler()).getOrThrow()
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while queries are received.
+                                         // Typically, this wouldn't be needed.
+
+        queryable.close()
     }
 
     private val key by option(

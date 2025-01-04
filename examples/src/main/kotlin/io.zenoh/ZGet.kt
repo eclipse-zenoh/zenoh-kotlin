@@ -18,8 +18,11 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.long
 import io.zenoh.bytes.ZBytes
+import io.zenoh.handlers.Handler
 import io.zenoh.sample.SampleKind
 import io.zenoh.query.QueryTarget
+import io.zenoh.query.Reply
+import io.zenoh.query.Selector
 import io.zenoh.query.intoSelector
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
@@ -34,32 +37,83 @@ class ZGet(private val emptyArgs: Boolean) : CliktCommand(
 
         Zenoh.initLogFromEnvOr("error")
 
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                selector.intoSelector().onSuccess { selector ->
-                    session.get(selector,
-                        channel = Channel(),
-                        payload = payload?.let { ZBytes.from(it) },
-                        target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
-                        attachment = attachment?.let { ZBytes.from(it) },
-                        timeout = Duration.ofMillis(timeout))
-                        .onSuccess { channelReceiver ->
-                            runBlocking {
-                                for (reply in channelReceiver) {
-                                    reply.result.onSuccess { sample ->
-                                        when (sample.kind) {
-                                            SampleKind.PUT -> println("Received ('${sample.keyExpr}': '${sample.payload}')")
-                                            SampleKind.DELETE -> println("Received (DELETE '${sample.keyExpr}')")
-                                        }
-                                    }.onFailure { error ->
-                                        println("Received (ERROR: '${error.message}')")
-                                    }
-                                }
-                            }
-                        }
+        val session = Zenoh.open(config).getOrThrow()
+        val selector = selector.intoSelector().getOrThrow()
+
+        // Run the Get query through one of the examples below:
+        runChannelExample(session, selector)
+        // runCallbackExample(session, selector)
+        // runHandlerExample(session, selector)
+
+        session.close()
+    }
+
+    private fun runChannelExample(session: Session, selector: Selector) {
+        val channelReceiver = session.get(selector,
+            channel = Channel(),
+            payload = payload?.let { ZBytes.from(it) },
+            target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
+            attachment = attachment?.let { ZBytes.from(it) },
+            timeout = Duration.ofMillis(timeout)
+        ).getOrThrow()
+        runBlocking {
+            for (reply in channelReceiver) {
+                reply.result.onSuccess { sample ->
+                    when (sample.kind) {
+                        SampleKind.PUT -> println("Received ('${sample.keyExpr}': '${sample.payload}')")
+                        SampleKind.DELETE -> println("Received (DELETE '${sample.keyExpr}')")
+                    }
+                }.onFailure { error ->
+                    println("Received (ERROR: '${error.message}')")
                 }
             }
         }
+    }
+
+    private fun runCallbackExample(session: Session, selector: Selector) {
+        session.get(selector,
+            payload = payload?.let { ZBytes.from(it) },
+            target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
+            attachment = attachment?.let { ZBytes.from(it) },
+            timeout = Duration.ofMillis(timeout),
+            callback = { reply ->
+                reply.result.onSuccess { sample ->
+                    when (sample.kind) {
+                        SampleKind.PUT -> println("Received ('${sample.keyExpr}': '${sample.payload}')")
+                        SampleKind.DELETE -> println("Received (DELETE '${sample.keyExpr}')")
+                    }
+                }.onFailure { error ->
+                    println("Received (ERROR: '${error.message}')")
+                }
+            },
+        ).getOrThrow()
+    }
+
+    private fun runHandlerExample(session: Session, selector: Selector) {
+        // Create your own handler implementation
+        class ExampleHandler : Handler<Reply, Unit> {
+            override fun handle(t: Reply) {
+                t.result.onSuccess { sample ->
+                    when (sample.kind) {
+                        SampleKind.PUT -> println("Received ('${sample.keyExpr}': '${sample.payload}')")
+                        SampleKind.DELETE -> println("Received (DELETE '${sample.keyExpr}')")
+                    }
+                }.onFailure { error ->
+                    println("Received (ERROR: '${error.message}')")
+                }
+            }
+
+            override fun receiver() {}
+            override fun onClose() {}
+        }
+
+        session.get(selector,
+            payload = payload?.let { ZBytes.from(it) },
+            target = target?.let { QueryTarget.valueOf(it.uppercase()) } ?: QueryTarget.BEST_MATCHING,
+            attachment = attachment?.let { ZBytes.from(it) },
+            timeout = Duration.ofMillis(timeout),
+            handler = ExampleHandler(), // Provide a handler instance
+        ).getOrThrow()
     }
 
     private val selector by option(
