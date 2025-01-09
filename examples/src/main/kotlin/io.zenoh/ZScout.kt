@@ -16,8 +16,11 @@ package io.zenoh
 
 import com.github.ajalt.clikt.core.CliktCommand
 import io.zenoh.config.WhatAmI
+import io.zenoh.handlers.Handler
+import io.zenoh.scouting.Hello
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import java.util.concurrent.CountDownLatch
 
 class ZScout : CliktCommand(
     help = "Zenoh Scouting example"
@@ -26,6 +29,13 @@ class ZScout : CliktCommand(
 
         Zenoh.initLogFromEnvOr("error")
 
+        // Run the scout example with one of the implementations below:
+        runChannelExample()
+        // runCallbackExample()
+        // runHandlerExample()
+    }
+
+    private fun runChannelExample() {
         println("Scouting...")
 
         val scout = Zenoh.scout(channel = Channel(), whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router)).getOrThrow()
@@ -35,6 +45,37 @@ class ZScout : CliktCommand(
             }
         }
 
+        scout.stop()
+    }
+
+    private fun runCallbackExample() {
+        println("Scouting...")
+
+        val scout = Zenoh.scout(whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router), callback = ::println).getOrThrow()
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while queries are received.
+                                         // Typically, this wouldn't be needed.
+        scout.stop()
+    }
+
+    private fun runHandlerExample() {
+
+        // Create your own Handler implementation:
+        class ExampleHandler: Handler<Hello, Unit> {
+            override fun handle(t: Hello) = println(t)
+
+            override fun receiver() {}
+
+            override fun onClose() {}
+        }
+
+        println("Scouting...")
+
+        // Declare the scout with the handler
+        val scout = Zenoh.scout(whatAmI = setOf(WhatAmI.Peer, WhatAmI.Router), handler = ExampleHandler()).getOrThrow()
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while queries are received.
+                                  // Typically, this wouldn't be needed.
         scout.stop()
     }
 }

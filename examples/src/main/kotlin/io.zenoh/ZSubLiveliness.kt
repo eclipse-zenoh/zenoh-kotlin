@@ -31,21 +31,21 @@ class ZSubLiveliness(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            key.intoKeyExpr().onSuccess { keyExpr ->
-                session.liveliness().declareSubscriber(keyExpr, channel = Channel(), history = history)
-                    .onSuccess { subscriber ->
-                        runBlocking {
-                            for (sample in subscriber.receiver) {
-                                when (sample.kind) {
-                                    SampleKind.PUT -> println(">> [LivelinessSubscriber] New alive token ('${sample.keyExpr}')")
-                                    SampleKind.DELETE -> println(">> [LivelinessSubscriber] Dropped token ('${sample.keyExpr}')")
-                                }
-                            }
-                        }
-                    }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+        val subscriber =
+            session.liveliness().declareSubscriber(keyExpr, channel = Channel(), history = history).getOrThrow()
+
+        runBlocking {
+            for (sample in subscriber.receiver) {
+                when (sample.kind) {
+                    SampleKind.PUT -> println(">> [LivelinessSubscriber] New alive token ('${sample.keyExpr}')")
+                    SampleKind.DELETE -> println(">> [LivelinessSubscriber] Dropped token ('${sample.keyExpr}')")
+                }
             }
-        }.onFailure { exception -> println(exception.message) }
+        }
+
+        session.close()
     }
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")

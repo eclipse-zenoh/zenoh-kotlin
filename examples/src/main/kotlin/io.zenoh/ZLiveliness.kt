@@ -17,6 +17,7 @@ package io.zenoh
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.keyexpr.intoKeyExpr
+import java.util.concurrent.CountDownLatch
 
 class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Liveliness example"
@@ -28,14 +29,13 @@ class ZLiveliness(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            key.intoKeyExpr().onSuccess { keyExpr ->
-                session.liveliness().declareToken(keyExpr)
-                while (true) {
-                    Thread.sleep(1000)
-                }
-            }
-        }.onFailure { exception -> println(exception.message) }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+        session.liveliness().declareToken(keyExpr)
+
+        CountDownLatch(1).await() // A countdown latch is used here to block execution while the liveliness token
+                                         // is declared. Typically, this wouldn't be needed.
+        session.close()
     }
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")
