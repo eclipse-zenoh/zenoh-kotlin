@@ -79,6 +79,16 @@ class Query internal constructor(
         } ?: Result.failure(ZError("Query is invalid"))
     }
 
+    fun reply(
+        keyExpr: KeyExpr,
+        payload: String,
+        encoding: Encoding = Encoding.default(),
+        qos: QoS = QoS.default(),
+        timestamp: TimeStamp? = null,
+        attachment: String? = null
+    ): Result<Unit> =
+        reply(keyExpr, ZBytes.from(payload), encoding, qos, timestamp, attachment?.let { ZBytes.from(it) })
+
     /**
      * Reply error to the remote [Query].
      *
@@ -95,6 +105,10 @@ class Query internal constructor(
             result
         } ?: Result.failure(ZError("Query is invalid"))
     }
+
+
+    fun replyErr(error: String, encoding: Encoding = Encoding.default()): Result<Unit> =
+        replyErr(ZBytes.from(error), encoding)
 
     /**
      * Perform a delete reply operation to the remote [Query].
@@ -120,6 +134,13 @@ class Query internal constructor(
             result
         } ?: Result.failure(ZError("Query is invalid"))
     }
+
+    fun replyDel(
+        keyExpr: KeyExpr,
+        qos: QoS = QoS.default(),
+        timestamp: TimeStamp? = null,
+        attachment: String,
+    ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))
 
     override fun close() {
         jniQuery?.apply {

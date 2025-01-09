@@ -519,6 +519,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         )
     }
 
+    fun get(
+        selector: Selector,
+        callback: Callback<Reply>,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
+        onClose: (() -> Unit)? = null
+    ): Result<Unit> = get(
+        selector,
+        callback,
+        ZBytes.from(payload),
+        encoding,
+        attachment?.let { ZBytes.from(it) },
+        timeout,
+        target,
+        consolidation,
+        onClose
+    )
+
     /**
      * Performs a Get query on the [selector], handling the replies with a [Handler].
      *
@@ -599,6 +621,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         )
     }
 
+    fun <R> get(
+        selector: Selector,
+        handler: Handler<Reply, R>,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
+        onClose: (() -> Unit)? = null
+    ): Result<R> = get(
+        selector,
+        handler,
+        ZBytes.from(payload),
+        encoding,
+        attachment?.let { ZBytes.from(it) },
+        timeout,
+        target,
+        consolidation,
+        onClose
+    )
+
     /**
      * Performs a Get query on the [selector], handling the replies with a blocking [Channel].
      *
@@ -663,6 +707,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         )
     }
 
+    fun get(
+        selector: Selector,
+        channel: Channel<Reply>,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null,
+        timeout: Duration = Duration.ofMillis(10000),
+        target: QueryTarget = QueryTarget.BEST_MATCHING,
+        consolidation: ConsolidationMode = ConsolidationMode.AUTO,
+        onClose: (() -> Unit)? = null
+    ): Result<Channel<Reply>> = get(
+        selector,
+        channel,
+        ZBytes.from(payload),
+        encoding,
+        attachment?.let { ZBytes.from(it) },
+        timeout,
+        target,
+        consolidation,
+        onClose
+    )
+
     /**
      * Declare a [Put] with the provided value on the specified key expression.
      *
@@ -698,6 +764,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return resolvePut(keyExpr, put)
     }
 
+    fun put(
+        keyExpr: KeyExpr,
+        payload: String,
+        encoding: Encoding = Encoding.default(),
+        qos: QoS = QoS.default(),
+        attachment: String? = null,
+        reliability: Reliability = Reliability.RELIABLE
+    ): Result<Unit> =
+        put(keyExpr, ZBytes.from(payload), encoding, qos, attachment?.let { ZBytes.from(it) }, reliability)
+
     /**
      * Perform a delete operation.
      *
@@ -730,6 +806,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return resolveDelete(keyExpr, delete)
     }
 
+    fun delete(
+        keyExpr: KeyExpr,
+        qos: QoS = QoS.default(),
+        attachment: String,
+        reliability: Reliability = Reliability.RELIABLE
+    ): Result<Unit> {
+        val delete = Delete(keyExpr, qos, ZBytes.from(attachment), reliability)
+        return resolveDelete(keyExpr, delete)
+    }
+
     /**
      * Obtain a [Liveliness] instance tied to this Zenoh session.
      */
@@ -749,7 +835,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         return SessionInfo(this)
     }
 
-    private fun resolvePublisher(keyExpr: KeyExpr, qos: QoS, encoding: Encoding, reliability: Reliability): Result<Publisher> {
+    private fun resolvePublisher(
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability
+    ): Result<Publisher> {
         return jniSession?.run {
             declarePublisher(keyExpr, qos, encoding, reliability).onSuccess { declarations.add(it) }
         } ?: Result.failure(sessionClosedException)

@@ -81,12 +81,18 @@ class Publisher internal constructor(
     fun priority() = qos.priority
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
-    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) = jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
+    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) =
+        jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
+
+    fun put(payload: String, encoding: Encoding? = null, attachment: String? = null) =
+        put(ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(attachment) })
 
     /**
      * Performs a DELETE operation on the specified [keyExpr].
      */
     fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+
+    fun delete(attachment: String) = delete(ZBytes.from(attachment))
 
     /**
      * Returns `true` if the publisher is still running.

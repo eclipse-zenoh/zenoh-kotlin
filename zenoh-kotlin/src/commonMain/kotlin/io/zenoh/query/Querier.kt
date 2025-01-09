@@ -17,6 +17,7 @@ package io.zenoh.query
 import io.zenoh.annotations.Unstable
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.IntoZBytes
+import io.zenoh.bytes.ZBytes
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
@@ -84,6 +85,14 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         ) ?: throw ZError("Querier is not valid.")
     }
 
+    fun get(
+        channel: Channel<Reply>,
+        parameters: Parameters? = null,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null
+    ): Result<Channel<Reply>> = get(channel, parameters, ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(it) })
+
     /**
      * Perform a get operation to the [keyExpr] from the Querier and handle the incoming replies
      * with the [callback] provided.
@@ -114,6 +123,14 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         ) ?: throw ZError("Querier is not valid.")
     }
 
+    fun get(
+        callback: Callback<Reply>,
+        parameters: Parameters? = null,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null
+    ): Result<Unit> = get(callback, parameters, ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(it) })
+
     /**
      * Perform a get operation to the [keyExpr] from the Querier and handle the incoming replies
      * with the [handler] provided.
@@ -143,6 +160,14 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
             encoding
         ) ?: throw ZError("Querier is not valid.")
     }
+
+    fun <R> get(
+        handler: Handler<Reply, R>,
+        parameters: Parameters? = null,
+        payload: String,
+        encoding: Encoding? = null,
+        attachment: String? = null
+    ): Result<R> = get(handler, parameters, ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(it) })
 
     /**
      * Get the [QoS.congestionControl] of the querier.
