@@ -201,6 +201,11 @@ tasks.register("buildZenohJni") {
 }
 
 fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
+    exec {
+        workingDir = project.projectDir
+        commandLine("pwd")
+    }
+
     val cargoCommand = mutableListOf("cargo", "build")
 
     if (mode == BuildMode.RELEASE) {
