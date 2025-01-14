@@ -46,10 +46,6 @@ kotlin {
         compilations.all {
             kotlinOptions.jvmTarget = "11"
         }
-        testRuns["test"].executionTask.configure {
-            val zenohPaths = "../zenoh-jni/target/$buildMode"
-            jvmArgs("-Djava.library.path=$zenohPaths")
-        }
     }
     if (androidEnabled) {
         androidTarget {
@@ -177,7 +173,6 @@ tasks.withType<Test> {
         // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
         systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
     }
-    useJUnitPlatform()
 }
 
 tasks.whenObjectAdded {
