@@ -68,25 +68,68 @@ jobs:
           GIT_USER_NAME: eclipse-zenoh-bot
           GIT_USER_EMAIL: eclipse-zenoh-bot@users.noreply.github.com
 
-  publish-jvm:
-    name: Publish JVM package
+  build-jvm: 
+    name: Build JVM package
     needs: tag
-    uses: ./.github/workflows/publish-jvm.yml
+    uses: ./.github/workflows/build-jvm.yml
     with:
-      snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
     permissions:
       contents: read
       packages: write
     secrets: inherit
 
-  publish-android:
+  publish-jvm-maven:
+    name: Publish JVM package
+    needs: [tag, build-jvm]
+    uses: ./.github/workflows/publish-jvm.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+      branch: ${{ needs.tag.outputs.branch }}
+      maven_publish: true
+      github_publish: false
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  publish-jvm-github:
+    name: Publish JVM package
+    needs: [tag, build-jvm, publish-jvm-maven]
+    uses: ./.github/workflows/publish-jvm.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+      branch: ${{ needs.tag.outputs.branch }}
+      maven_publish: false
+      github_publish: true
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  publish-android-maven:
     name: Publish Android package
     needs: tag
     uses: ./.github/workflows/publish-android.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
+      maven_publish: true
+      github_publish: false
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+
+  publish-android-github:
+    name: Publish Android package
+    needs: [tag, publish-android-maven]
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      snapshot: ${{ !(inputs.live-run || false) }}
+      branch: ${{ needs.tag.outputs.branch }}
+      maven_publish: false
+      github_publish: true
     permissions:
       contents: read
       packages: write
@@ -101,7 +144,7 @@ jobs:
       branch: ${{ needs.tag.outputs.branch }}
 
   publish-github:
-    needs: tag
+    needs: [tag, publish-android-github, publish-jvm-github]
     runs-on: macos-latest
     steps:
       - uses: eclipse-zenoh/ci/publish-crates-github@main
