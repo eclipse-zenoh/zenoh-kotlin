@@ -29,16 +29,13 @@ class ZPut(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening Session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    keyExpr.use {
-                        session.put(keyExpr, ZBytes.from(value), attachment = attachment?.let { ZBytes.from(it) })
-                            .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }
-                    }
-                }
-            }
-        }.onFailure { println(it.message) }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+
+        session.put(keyExpr, ZBytes.from(value), attachment = attachment?.let { ZBytes.from(it) })
+            .onSuccess { println("Putting Data ('$keyExpr': '$value')...") }.getOrThrow()
+
+        session.close()
     }
 
     private val configFile by option("-c", "--config", help = "A configuration file.", metavar = "config")

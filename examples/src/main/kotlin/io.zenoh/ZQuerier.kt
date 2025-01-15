@@ -52,6 +52,8 @@ class ZQuerier(private val emptyArgs: Boolean) : CliktCommand(
                 }
             }, payload = ZBytes.from(payload), parameters = selector.parameters)
         }
+
+        session.close()
     }
 
     private val selector by option(
@@ -61,12 +63,12 @@ class ZQuerier(private val emptyArgs: Boolean) : CliktCommand(
         metavar = "selector"
     ).default("demo/example/**")
     private val payload by option(
-        "-p", "--payload", help = "An optional payload to put in the query.", metavar = "payload"
+        "-p", "--payload", help = "An optional payload to put in the queries.", metavar = "payload"
     )
     private val target by option(
         "-t",
         "--target",
-        help = "The target queryables of the query. Default: BEST_MATCHING. " + "[possible values: BEST_MATCHING, ALL, ALL_COMPLETE]",
+        help = "The target queryables of the querier. Default: BEST_MATCHING. " + "[possible values: BEST_MATCHING, ALL, ALL_COMPLETE]",
         metavar = "target"
     )
     private val timeout by option(

@@ -28,31 +28,29 @@ class ZPub(private val emptyArgs: Boolean) : CliktCommand(
         Zenoh.initLogFromEnvOr("error")
 
         println("Opening session...")
-        Zenoh.open(config).onSuccess { session ->
-            session.use {
-                key.intoKeyExpr().onSuccess { keyExpr ->
-                    println("Declaring publisher on '$keyExpr'...")
-                    session.declarePublisher(keyExpr).onSuccess { pub ->
-                        println("Press CTRL-C to quit...")
-                        val attachment = attachment?.toByteArray()
-                        var idx = 0
-                        while (true) {
-                            Thread.sleep(1000)
-                            val payload = "[${
-                                idx.toString().padStart(4, ' ')
-                            }] $value"
-                            println(
-                                "Putting Data ('$keyExpr': '$payload')..."
-                            )
-                            attachment?.let {
-                                pub.put(ZBytes.from(payload), attachment = ZBytes.from(it) )
-                            } ?: let { pub.put(ZBytes.from(payload)) }
-                            idx++
-                        }
-                    }
-                }
-            }
-        }.onFailure { exception -> println(exception.message) }
+        val session = Zenoh.open(config).getOrThrow()
+        val keyExpr = key.intoKeyExpr().getOrThrow()
+
+        println("Declaring publisher on '$keyExpr'...")
+        val publisher = session.declarePublisher(keyExpr).getOrThrow()
+
+        println("Press CTRL-C to quit...")
+        val attachment = attachment?.toByteArray()
+
+        var idx = 0
+        while (true) {
+            Thread.sleep(1000)
+            val payload = "[${
+                idx.toString().padStart(4, ' ')
+            }] $value"
+            println(
+                "Putting Data ('$keyExpr': '$payload')..."
+            )
+            attachment?.let {
+                publisher.put(ZBytes.from(payload), attachment = ZBytes.from(it))
+            } ?: let { publisher.put(ZBytes.from(payload)) }
+            idx++
+        }
     }
 
 
