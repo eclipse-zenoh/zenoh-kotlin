@@ -12,7 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-val zenohGroup = "io.zenoh"
+val zenohGroup = "org.eclipse.zenoh"
 val zenohVersion = file("version.txt").readText()
 
 buildscript {
