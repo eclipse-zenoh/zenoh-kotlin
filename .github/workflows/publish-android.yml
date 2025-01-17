@@ -85,7 +85,7 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - if: ${{ github.event.inputs.github_publish == 'true' }}
+      - if: ${{ inputs.github_publish == true }}
         name: Gradle Publish Android Package to GitHub packages repository
         run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
@@ -95,7 +95,7 @@ jobs:
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
-      - if: ${{ github.event.inputs.maven_publish == 'true' }}
+      - if: ${{ inputs.maven_publish == true }}
         name: Gradle Publish Android Package to Maven Central repository
         run: |
           ./gradlew publishAndroidReleasePublicationToSonatypeRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
