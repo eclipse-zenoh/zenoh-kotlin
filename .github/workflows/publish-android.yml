@@ -107,3 +107,10 @@ jobs:
           ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
+
+      - name: "Upload gradle problems report"
+        uses: actions/upload-artifact@v4
+        with:
+          name: problem-reports.zip
+          path: ${{ github.workspace }}/build/reports/problems/
+
