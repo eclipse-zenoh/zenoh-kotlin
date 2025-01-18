@@ -12,9 +12,6 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-val zenohGroup = "org.eclipse.zenoh"
-val zenohVersion = file("version.txt").readText()
-
 buildscript {
     repositories {
         google()
@@ -37,9 +34,15 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
+group = "org.eclipse.zenoh"
+version = file("version.txt").readText()
+
 nexusPublishing {
     repositories {
         sonatype {
+            nexusUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            snapshotRepositoryUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+
             username = System.getenv("ORG_OSSRH_USERNAME")
             password = System.getenv("ORG_OSSRH_PASSWORD")
         }
@@ -47,9 +50,6 @@ nexusPublishing {
 }
 
 subprojects {
-    group = zenohGroup
-    version = zenohVersion
-
     repositories {
         google()
         mavenCentral()
