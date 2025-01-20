@@ -96,7 +96,7 @@ kotlin {
         publications.withType<MavenPublication> {
             groupId = "org.eclipse.zenoh"
             artifactId = "zenoh-kotlin"
-            version = file("../version.txt").readText() + if (project.hasProperty("SNAPSHOT")) "-SNAPSHOT" else ""
+            version = rootProject.version.toString()
 
             pom {
                 name.set("Zenoh Kotlin")
