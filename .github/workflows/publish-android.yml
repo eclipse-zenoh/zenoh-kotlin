@@ -122,5 +122,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: problem-reports.zip
+          name: problem-reports-${{ github.job }}.zip
           path: ${{ github.workspace }}/build/reports/problems/
