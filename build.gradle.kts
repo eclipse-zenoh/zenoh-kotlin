@@ -40,7 +40,7 @@ version = file("version.txt").readText()
 nexusPublishing {
     repositories {
         sonatype {
-            nexusUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            nexusUrl = uri("https://oss.sonatype.org/service/local/")
             snapshotRepositoryUrl = uri("https://oss.sonatype.org/content/repositories/snapshots/")
 
             username = System.getenv("ORG_OSSRH_USERNAME")
