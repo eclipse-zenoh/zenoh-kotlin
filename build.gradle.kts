@@ -35,7 +35,13 @@ plugins {
 }
 
 group = "org.eclipse.zenoh"
-version = file("version.txt").readText()
+
+val baseVersion = file("version.txt").readText().trim()
+version = if (project.hasProperty("SNAPSHOT")) {
+    "$baseVersion-SNAPSHOT"
+} else {
+    baseVersion
+}
 
 nexusPublishing {
     repositories {
