@@ -24,9 +24,11 @@ on:
     inputs:
       github_publish:
         description: 'Publish to github packages'
+        type: boolean
         default: true
       maven_publish:
         description: 'Publish to Maven Central'
+        type: boolean
         default: true
 
 env:
