@@ -188,8 +188,8 @@ jobs:
         run: |
           if [[ "${{ inputs.snapshot }}" == "true" ]]; then
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
-          else 
-            echo "RELEASE=closeAndReleaseSonatypeStagingRepository"
+          else
+            echo "RELEASE=closeAndReleaseSonatypeStagingRepository" >> $GITHUB_ENV
           fi
 
       - if: ${{ inputs.maven_publish == true }}
