@@ -85,16 +85,6 @@ jobs:
             echo "PUB_MODE=-PSNAPSHOT" >> $GITHUB_ENV
           fi
 
-      - if: ${{ inputs.github_publish == true }}
-        name: Gradle Publish Android Package to GitHub packages repository
-        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
-          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
-          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
-          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
-
       - if: ${{ inputs.maven_publish == true }}
         name: Gradle Publish Android Package to Maven Central repository
         run: |
@@ -118,9 +108,19 @@ jobs:
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
           ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
 
+      - if: ${{ inputs.github_publish == true }}
+        name: Gradle Publish Android Package to GitHub packages repository
+        run: ./gradlew publishAndroidReleasePublicationToGithubPackagesRepository -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
+          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
+          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
+          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
+
       - name: "Upload gradle problems report"
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: problem-reports.zip
+          name: problem-reports-${{ github.job }}.zip
           path: ${{ github.workspace }}/build/reports/problems/
