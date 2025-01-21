@@ -193,18 +193,13 @@ jobs:
       - if: ${{ inputs.maven_publish == true }}
         name: Gradle Publish JVM Package to Maven Central repository
         run: |
-          ./gradlew publishJvmPublicationToSonatypeRepository -PremotePublication=true ${{ env.PUB_MODE }}
-        env:
-          ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
-          ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
-          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
-          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
-          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
-          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
-
-      - if: ${{ inputs.maven_publish == true && inputs.snapshot == false }}
-        name: Close & Release Staging Repository
-        run: ./gradlew closeAndReleaseSonatypeStagingRepository
+          if [[ "${{ inputs.snapshot }}" == "true" ]]; then
+            ./gradlew publishJvmPublicationToSonatypeRepository -PremotePublication=true ${{ env.PUB_MODE }}
+          else
+            ./gradlew publishJvmPublicationToSonatypeRepository \
+                       closeAndReleaseSonatypeStagingRepository \
+                       -PremotePublication=true ${{ env.PUB_MODE }}
+          fi
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
