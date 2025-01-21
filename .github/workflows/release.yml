@@ -94,14 +94,14 @@ jobs:
 
   publish-dokka:
     name: Publish documentation
-    needs: tag
+    needs: [tag, publish-android, publish-jvm]
     uses: ./.github/workflows/publish-dokka.yml
     with:
       live-run: ${{ inputs.live-run || false }}
       branch: ${{ needs.tag.outputs.branch }}
 
   publish-github:
-    needs: tag
+    needs: [tag, publish-android, publish-jvm]
     runs-on: macos-latest
     steps:
       - uses: eclipse-zenoh/ci/publish-crates-github@main
