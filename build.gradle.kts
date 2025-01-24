@@ -20,6 +20,7 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0")
         classpath("org.mozilla.rust-android-gradle:plugin:0.9.6")
         classpath("com.android.tools.build:gradle:7.4.2")
+        classpath("com.gradleup.shadow:shadow-gradle-plugin:9.0.0-beta6")
     }
 }
 
