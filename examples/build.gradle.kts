@@ -12,9 +12,12 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("com.gradleup.shadow")
 }
 
 kotlin {
@@ -49,6 +52,29 @@ tasks {
         "ZSubLiveliness",
         "ZSubThr"
     )
+
+    examples.forEach { example ->
+        register<ShadowJar>("${example}Jar") {
+            group = "build"
+            description = "Build a fat JAR for the $example example"
+            from(sourceSets["main"].output)
+            manifest {
+                attributes["Main-Class"] = "io.zenoh.${example}Kt"
+            }
+            configurations.empty()
+            configurations.add(project.configurations.getByName("runtimeClasspath"))
+
+            archiveBaseName.set(example)
+            archiveVersion.set("")
+            archiveClassifier.set("")
+        }
+    }
+
+    register("buildExamples") {
+        group = "build"
+        description = "Build all fat JARs for the Zenoh Kotlin examples"
+        dependsOn(examples.map { "${it}Jar" })
+    }
 
     examples.forEach { example ->
         register(example, JavaExec::class) {
