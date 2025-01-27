@@ -20,7 +20,6 @@
 .gradle
 build/
 examples/build
-gradle.properties
 gradle/
 gradlew
 gradlew.bat
