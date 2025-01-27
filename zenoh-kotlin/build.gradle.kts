@@ -92,11 +92,19 @@ kotlin {
         }
     }
 
+    val javadocJar by tasks.registering(Jar::class) {
+        dependsOn("dokkaHtml")
+        archiveClassifier.set("javadoc")
+        from("${buildDir}/dokka/html")
+    }
+
     publishing {
         publications.withType<MavenPublication> {
             groupId = "org.eclipse.zenoh"
             artifactId = "zenoh-kotlin"
             version = rootProject.version.toString()
+
+            artifact(javadocJar)
 
             pom {
                 name.set("Zenoh Kotlin")
