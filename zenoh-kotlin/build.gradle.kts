@@ -93,7 +93,7 @@ kotlin {
     }
 
     val javadocJar by tasks.registering(Jar::class) {
-        dependsOn("dokkaHtml")
+        dependsOn("dokkaGeneratePublicationHtml")
         archiveClassifier.set("javadoc")
         from("${buildDir}/dokka/html")
     }
