@@ -12,19 +12,12 @@ on:
         description: Target branch
         type: string
         required: false
-      github_publish:
-        type: boolean
-        required: false
-        default: true
       maven_publish:
         type: boolean
         required: false
         default: true
   workflow_dispatch:
     inputs:
-      github_publish:
-        description: 'Publish to github packages'
-        default: "true"
       maven_publish:
         description: 'Publish to Maven Central'
         default: "true"
@@ -199,16 +192,6 @@ jobs:
         env:
           ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
           ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
-          ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
-          ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
-          ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
-          ORG_GPG_PASSPHRASE: ${{ secrets.ORG_GPG_PASSPHRASE }}
-
-      - if: ${{ inputs.github_publish == true }}
-        name: Gradle Publish JVM Package to GitHub packages repository
-        run: ./gradlew publishJvmPublicationToGithubPackagesRepository ${{ env.RELEASE }} --info -PremotePublication=true ${{ env.PUB_MODE }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
           ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
