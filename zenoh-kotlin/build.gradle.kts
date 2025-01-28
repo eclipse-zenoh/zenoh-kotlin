@@ -26,7 +26,7 @@ plugins {
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
 val release = project.findProperty("release")?.toString()?.toBoolean() == true
 
-// If the publication is meant to be done on a remote repository (GitHub packages or Maven central).
+// If the publication is meant to be done on a remote repository (Maven central).
 // Modifying this property will affect the release workflows!
 val isRemotePublication = project.findProperty("remotePublication")?.toString()?.toBoolean() == true
 
@@ -148,17 +148,6 @@ kotlin {
                     connection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
                     developerConnection.set("scm:git:https://github.com/eclipse-zenoh/zenoh-kotlin.git")
                     url.set("https://github.com/eclipse-zenoh/zenoh-kotlin")
-                }
-            }
-        }
-
-        repositories {
-            maven {
-                name = "GithubPackages"
-                url = uri("https://maven.pkg.github.com/eclipse-zenoh/zenoh-kotlin")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
                 }
             }
         }
