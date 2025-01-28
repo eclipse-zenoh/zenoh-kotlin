@@ -16,10 +16,6 @@ on:
         type: boolean
         required: false
         default: true
-  workflow_dispatch:
-      maven_publish:
-        description: 'Publish to Maven Central'
-        default: true
 
 env:
   CARGO_TERM_COLOR: always
