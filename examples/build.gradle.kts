@@ -91,6 +91,6 @@ tasks {
 
 tasks.register("CompileZenohJNI") {
     project.exec {
-        commandLine("cargo", "build", "--release", "--manifest-path", "./zenoh-jni/Cargo.toml")
+        commandLine("cargo", "build", "--release", "--manifest-path", "../zenoh-jni/Cargo.toml")
     }
 }
