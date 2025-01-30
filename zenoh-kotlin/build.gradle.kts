@@ -200,7 +200,7 @@ fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
     }
 
     val result = project.exec {
-        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "./zenoh-jni/Cargo.toml")
+        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "../zenoh-jni/Cargo.toml")
     }
 
     if (result.exitValue != 0) {
