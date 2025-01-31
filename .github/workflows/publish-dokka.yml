@@ -26,7 +26,7 @@ jobs:
           ref: ${{ inputs.branch }}
 
       - name: Build doc
-        run: gradle dokkaHtml
+        run: gradle dokkaGenerate
 
       - name: Deploy doc
         if: ${{ inputs.live-run || false }}
