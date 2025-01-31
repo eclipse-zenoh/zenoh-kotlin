@@ -38,6 +38,7 @@ on:
         type: boolean
         description: Publish the package to Maven Central
         required: false
+        default: true
 
 jobs:
   tag:
@@ -79,7 +80,7 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      maven_publish: ${{ !(inputs.maven_publish || true )}}
+      maven_publish: ${{ inputs.maven_publish }}
     permissions:
       contents: read
       packages: write
@@ -92,7 +93,7 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      maven_publish: ${{ !(inputs.maven_publish || true )}}
+      maven_publish: ${{ inputs.maven_publish }}
     permissions:
       contents: read
       packages: write

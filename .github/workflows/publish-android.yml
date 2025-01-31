@@ -60,6 +60,11 @@ jobs:
           rustup target add aarch64-linux-android
           rustup target add x86_64-linux-android
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.12.1
+
       - name: Gradle Wrapper
         run: |
           gradle wrapper
