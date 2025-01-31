@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>KeyExpr</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    zenoh-kotlin
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":zenoh-kotlin/commonMain">common</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":zenoh-kotlin/commonMain"
+                                       data-filter=":zenoh-kotlin/commonMain"/>
+                                <span class="checkbox--icon"></span>
+                                common
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    zenoh-kotlin
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.keyexpr/KeyExpr///PointingToDeclaration//886165161">
+  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.keyexpr</a><span class="delimiter">/</span><span class="current">KeyExpr</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Key</span><wbr></wbr><span><span>Expr</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">KeyExpr</a> : <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a>, <a href="../../io.zenoh.session/-session-declaration/index.html">SessionDeclaration</a></div><h1 class="">Address space</h1><p class="paragraph">Zenoh's address space is designed around keys which serve as the names of resources.</p><p class="paragraph">Keys are slash-separated lists of non-empty UTF8 strings. They may not contain the following characters: <code class="lang-kotlin">$*#?</code>.</p><p class="paragraph">Zenoh's operations are executed on key expressions, a small language that allows the definition of sets of keys via the use of wildcards:</p><ul><li><p class="paragraph"><code class="lang-kotlin">*</code> is the single-chunk wildcard, and will match any chunk: <code class="lang-kotlin">a/*/c</code> will match <code class="lang-kotlin">a/b/c</code>, <code class="lang-kotlin">a/hello/c</code>, etc...</p></li><li><p class="paragraph"><code class="lang-kotlin">**</code> is the 0 or more chunks wildcard: <code class="lang-kotlin">a/**/c</code> matches <code class="lang-kotlin">a/c</code>, <code class="lang-kotlin">a/b/c</code>, <code class="lang-kotlin">a/b/hello/c</code>, etc...</p></li><li><p class="paragraph"><code class="lang-kotlin">$*</code> is the sub-chunk wildcard, it will match any amount of non-/ characters: <code class="lang-kotlin">a/b$*</code> matches <code class="lang-kotlin">a/b</code>, <code class="lang-kotlin">a/because</code>, <code class="lang-kotlin">a/blue</code>... but not <code class="lang-kotlin">a/c</code> nor <code class="lang-kotlin">a/blue/c</code></p></li></ul><p class="paragraph">To allow for better performance and gain the property that two key expressions define the same set if and only if they are the same string, the rules of canon form are mandatory for a key expression to be propagated by a Zenoh network:</p><ul><li><p class="paragraph"><code class="lang-kotlin">**/**</code> may not exist, as it could always be replaced by the shorter <code class="lang-kotlin">**</code>,</p></li><li><p class="paragraph"><code class="lang-kotlin">** /*</code> may not exist, and must be written as its equivalent <code class="lang-kotlin">*/**</code> instead,</p></li><li><p class="paragraph"><code class="lang-kotlin">$*</code> may not exist alone in a chunk, as it must be written <code class="lang-kotlin">*</code> instead.</p></li></ul><p class="paragraph">The <code class="lang-kotlin">KeyExpr.autocanonize</code> constructor exists to correct eventual infringements of the canonization rules.</p><p class="paragraph">A KeyExpr is a string that has been validated to be a valid Key Expression.</p><h1 class="">Declaring a key expression from a session.</h1><p class="paragraph">A <a href="index.html">KeyExpr</a> acts as a container for the string representation of a key expression. Operations like <code class="lang-kotlin">intersects</code>, <code class="lang-kotlin">includes</code>, and <code class="lang-kotlin">equals</code> are processed at the native layer using this string representation. For improved performance, consider initializing a <a href="index.html">KeyExpr</a> through <a href="../../io.zenoh/-session/declare-key-expr.html">Session.declareKeyExpr</a>. This method associates the <a href="index.html">KeyExpr</a> with a native instance, thereby optimizing operation execution.</p><p class="paragraph">For more information, checkout the <a href="https://github.com/eclipse-zenoh/roadmap/blob/main/rfcs/ALL/Key%20Expressions.md">key expressions RFC</a>.</p></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-1880919180%2FClasslikes%2F886165161" anchor-label="Companion" id="-1880919180%2FClasslikes%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1880919180%2FClasslikes%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="1095541557%2FFunctions%2F886165161" anchor-label="close" id="1095541557%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="close.html"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1095541557%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Equivalent to <a href="undeclare.html">undeclare</a>. This function is automatically called when using try with resources.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="725377771%2FFunctions%2F886165161" anchor-label="concat" id="725377771%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="concat.html"><span><span>concat</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="725377771%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="concat.html"><span class="token function">concat</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="index.html">KeyExpr</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Performs string concatenation and returns the result as a <code class="lang-kotlin">KeyExpr</code> if possible. You should probably prefer <a href="join.html">join</a> as Zenoh may then take advantage of the hierarchical separation it inserts.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1336657196%2FFunctions%2F886165161" anchor-label="equals" id="-1336657196%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="equals.html"><span><span>equals</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1336657196%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">operator override </span><span class="token keyword">fun </span><a href="equals.html"><span class="token function">equals</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1171173266%2FFunctions%2F886165161" anchor-label="hashCode" id="1171173266%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="hash-code.html"><span>hash</span><wbr></wbr><span><span>Code</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1171173266%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="hash-code.html"><span class="token function">hashCode</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-43329246%2FFunctions%2F886165161" anchor-label="includes" id="-43329246%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="includes.html"><span><span>includes</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-43329246%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="includes.html"><span class="token function">includes</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="index.html">KeyExpr</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Includes operation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-851371559%2FFunctions%2F886165161" anchor-label="intersects" id="-851371559%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="intersects.html"><span><span>intersects</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-851371559%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="intersects.html"><span class="token function">intersects</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="index.html">KeyExpr</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Intersects operation.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1097950337%2FFunctions%2F886165161" anchor-label="join" id="1097950337%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="join.html"><span><span>join</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1097950337%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="join.html"><span class="token function">join</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="index.html">KeyExpr</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Joins both sides, inserting a <code class="lang-kotlin">/</code> in between them. This should be your preferred method when concatenating path segments.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-805641770%2FFunctions%2F886165161" anchor-label="relationTo" id="-805641770%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="relation-to.html"><span>relation</span><wbr></wbr><span><span>To</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-805641770%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="relation-to.html"><span class="token function">relationTo</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">other<span class="token operator">: </span><a href="index.html">KeyExpr</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-set-intersection-level/index.html">SetIntersectionLevel</a></div><div class="brief "><p class="paragraph">Returns the relation between 'this' and <code class="lang-kotlin">other</code> from 'this''s point of view (<code class="lang-kotlin">SetIntersectionLevel::Includes</code> signifies that <code class="lang-kotlin">this</code> includes other). Note that this is slower than <a href="intersects.html">intersects</a> and <a href="includes.html">includes</a>, so you should favor these methods for most applications.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="993007201%2FFunctions%2F886165161" anchor-label="toString" id="993007201%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="to-string.html"><span>to</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="993007201%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="to-string.html"><span class="token function">toString</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1395404132%2FFunctions%2F886165161" anchor-label="undeclare" id="-1395404132%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="undeclare.html"><span><span>undeclare</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1395404132%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">If the key expression was declared from a <a href="../../io.zenoh/-session/index.html">Session</a>, then <a href="undeclare.html">undeclare</a> frees the native key expression associated to this instance. The KeyExpr instance is downgraded into a normal KeyExpr, which still allows performing operations on it, but without the inner optimizations.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

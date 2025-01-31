@@ -1,0 +1,1 @@
+sourceset_dependencies='{":zenoh-kotlin/commonMain":[],":zenoh-kotlin/jvmMain":[":zenoh-kotlin/commonMain"]}'
