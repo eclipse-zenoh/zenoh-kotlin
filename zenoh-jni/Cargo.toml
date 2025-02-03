@@ -36,8 +36,8 @@ flume = "0.10.14"
 uhlc = "0.8.0"
 json5 = "0.4.1"
 serde_yaml = "0.9.19"
-zenoh = { version = "1.2.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "release/1.2.0", features = ["unstable", "internal"], default-features = false }
-zenoh-ext = { version = "1.2.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "release/1.2.0", features = ["internal"], default-features = false, optional = true }
+zenoh = { version = "1.2.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["unstable", "internal"], default-features = false }
+zenoh-ext = { version = "1.2.0", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["internal"], default-features = false, optional = true }
 tracing = { version = "0.1" , features = ["log"] }
 [lib]
 name = "zenoh_jni"
