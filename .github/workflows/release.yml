@@ -80,7 +80,7 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      maven_publish: ${{ inputs.maven_publish }}
+      maven_publish: ${{ !contains(inputs.maven_publish, 'false') }}
     permissions:
       contents: read
       packages: write
@@ -93,7 +93,7 @@ jobs:
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
-      maven_publish: ${{ inputs.maven_publish }}
+      maven_publish: ${{ !contains(inputs.maven_publish, 'false') }}
     permissions:
       contents: read
       packages: write
