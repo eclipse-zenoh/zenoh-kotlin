@@ -162,7 +162,8 @@ internal class JNISession {
         consolidation: ConsolidationMode,
         payload: IntoZBytes?,
         encoding: Encoding?,
-        attachment: IntoZBytes?
+        attachment: IntoZBytes?,
+        qos: QoS
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
                 replierId: ByteArray?,
@@ -218,7 +219,10 @@ internal class JNISession {
             attachment?.into()?.bytes,
             payload?.into()?.bytes,
             encoding?.id ?: Encoding.default().id,
-            encoding?.schema
+            encoding?.schema,
+            qos.congestionControl.value,
+            qos.priority.value,
+            qos.express,
         )
         receiver
     }
@@ -363,6 +367,9 @@ internal class JNISession {
         payload: ByteArray?,
         encodingId: Int,
         encodingSchema: String?,
+        congestionControl: Int,
+        priority: Int,
+        express: Boolean,
     )
 
     @Throws(ZError::class)

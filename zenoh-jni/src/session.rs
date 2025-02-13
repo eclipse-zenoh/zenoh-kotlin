@@ -854,6 +854,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_undeclareKeyExprViaJNI(
 /// - `payload`: Optional payload for the query.
 /// - `encoding_id`: The encoding of the payload.
 /// - `encoding_schema`: The encoding schema of the payload, may be null.
+/// - `congestion_control`: The ordinal value of the congestion control enum value.
+/// - `priority`: The ordinal value of the priority enum value.
+/// - `is_express`: The boolean express value of the QoS provided.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
@@ -883,6 +886,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
     payload: /*nullable*/ JByteArray,
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
+    congestion_control: jint,
+    priority: jint,
+    is_express: jboolean,
 ) {
     let session = Arc::from_raw(session_ptr);
     let _ = || -> ZResult<()> {
@@ -893,6 +899,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let query_target = decode_query_target(target)?;
         let consolidation = decode_consolidation(consolidation)?;
         let timeout = Duration::from_millis(timeout_ms as u64);
+        let congestion_control = decode_congestion_control(congestion_control)?;
+        let priority = decode_priority(priority)?;
         let on_close = load_on_close(&java_vm, on_close_global_ref);
         let selector_params = if selector_params.is_null() {
             String::new()
@@ -902,6 +910,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
         let selector = Selector::owned(&key_expr, selector_params);
         let mut get_builder = session
             .get(selector)
+            .congestion_control(congestion_control)
+            .priority(priority)
+            .express(is_express != 0)
             .callback(move |reply| {
                 || -> ZResult<()> {
                     on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
