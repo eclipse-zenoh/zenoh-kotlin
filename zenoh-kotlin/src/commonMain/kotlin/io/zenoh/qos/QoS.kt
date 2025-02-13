@@ -28,11 +28,8 @@ data class QoS (
 ) {
 
     companion object {
-        private val defaultQoS = QoS()
-
-        fun default() = defaultQoS
-        fun defaultPush() = QoS(CongestionControl.DROP, Priority.DATA, false)
-        fun defaultRequest() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
-        fun defaultResponse() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
+        internal fun defaultPush() = QoS(CongestionControl.DROP, Priority.DATA, false)
+        internal fun defaultRequest() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
+        internal fun defaultResponse() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
     }
 }

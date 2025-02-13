@@ -69,7 +69,7 @@ class QueryableTest {
             Encoding.default(),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS()
+            QoS.defaultRequest()
         )
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
             query.reply(testKeyExpr, payload = sample.payload, timestamp = sample.timestamp)
