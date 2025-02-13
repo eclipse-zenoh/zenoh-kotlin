@@ -131,7 +131,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declarePublisher(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default_push(),
+        qos: QoS = QoS.defaultPush(),
         encoding: Encoding = Encoding.default(),
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Publisher> {
@@ -406,7 +406,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        qos: QoS = QoS.default_request(),
+        qos: QoS = QoS.defaultRequest(),
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         timeout: Duration = Duration.ofMillis(10000)
     ): Result<Querier> {
@@ -500,13 +500,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         callback: Callback<Reply>,
         payload: IntoZBytes? = null,
         encoding: Encoding? = null,
-        qos: QoS = QoS.default_request(),
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<Unit> {
         return resolveGet(
             selector = selector,
@@ -528,13 +527,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         callback: Callback<Reply>,
         payload: String,
         encoding: Encoding? = null,
-        qos: QoS = QoS.default_request(),
         attachment: String? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<Unit> = get(
         selector,
         callback,
@@ -611,7 +609,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<R> {
         return resolveGet(
             selector = selector,
@@ -641,7 +639,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<R> = get(
         selector,
         handler,
@@ -695,14 +693,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         channel: Channel<Reply>,
         payload: IntoZBytes? = null,
-        qos: QoS = QoS.default_request(),
         encoding: Encoding? = null,
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<Channel<Reply>> {
         val channelHandler = ChannelHandler(channel)
         return resolveGet(
@@ -727,14 +724,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         selector: Selector,
         channel: Channel<Reply>,
         payload: String,
-        qos: QoS = QoS.default_request(),
         encoding: Encoding? = null,
         attachment: String? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.default()
+        qos: QoS = QoS.defaultRequest()
     ): Result<Channel<Reply>> = get(
         selector,
         channel,
@@ -775,7 +771,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default_push(),
+        qos: QoS = QoS.defaultPush(),
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -787,7 +783,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: String,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default_push(),
+        qos: QoS = QoS.defaultPush(),
         attachment: String? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> =
@@ -817,7 +813,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default_push(),
+        qos: QoS = QoS.defaultPush(),
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -827,7 +823,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default_push(),
+        qos: QoS = QoS.defaultPush(),
         attachment: String,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {

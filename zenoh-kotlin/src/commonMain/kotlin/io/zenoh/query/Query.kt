@@ -67,7 +67,7 @@ class Query internal constructor(
         keyExpr: KeyExpr,
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default_response(),
+        qos: QoS = QoS.defaultResponse(),
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
@@ -83,7 +83,7 @@ class Query internal constructor(
         keyExpr: KeyExpr,
         payload: String,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default_response(),
+        qos: QoS = QoS.defaultResponse(),
         timestamp: TimeStamp? = null,
         attachment: String? = null
     ): Result<Unit> =
@@ -124,7 +124,7 @@ class Query internal constructor(
      */
     fun replyDel(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default_response(),
+        qos: QoS = QoS.defaultResponse(),
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
@@ -137,7 +137,7 @@ class Query internal constructor(
 
     fun replyDel(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default_response(),
+        qos: QoS = QoS.defaultResponse(),
         timestamp: TimeStamp? = null,
         attachment: String,
     ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))

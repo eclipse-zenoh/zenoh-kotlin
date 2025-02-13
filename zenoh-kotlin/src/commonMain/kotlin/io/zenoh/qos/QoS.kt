@@ -31,8 +31,8 @@ data class QoS (
         private val defaultQoS = QoS()
 
         fun default() = defaultQoS
-        fun default_push = Qos(CongestionControl.DROP, Priority.DATA, false)
-        fun default_request = Qos(CongestionControl.BLOCK, Priority.DATA, false)
-        fun default_response = Qos(CongestionControl.BLOCK, Priority.DATA, false)
+        fun defaultPush() = QoS(CongestionControl.DROP, Priority.DATA, false)
+        fun defaultRequest() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
+        fun defaultResponse() = QoS(CongestionControl.BLOCK, Priority.DATA, false)
     }
 }
