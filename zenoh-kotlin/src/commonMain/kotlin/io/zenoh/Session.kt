@@ -131,7 +131,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declarePublisher(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_push(),
         encoding: Encoding = Encoding.default(),
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Publisher> {
@@ -406,7 +406,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_request(),
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         timeout: Duration = Duration.ofMillis(10000)
     ): Result<Querier> {
@@ -499,6 +499,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         callback: Callback<Reply>,
         payload: IntoZBytes? = null,
         encoding: Encoding? = null,
+        qos: QoS = QoS.default_request(),
         attachment: IntoZBytes? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -524,6 +525,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         callback: Callback<Reply>,
         payload: String,
         encoding: Encoding? = null,
+        qos: QoS = QoS.default_request(),
         attachment: String? = null,
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
@@ -756,7 +758,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_push(),
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -768,7 +770,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: String,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_push(),
         attachment: String? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> =
@@ -798,7 +800,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_push(),
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -808,7 +810,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.default_push(),
         attachment: String,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
