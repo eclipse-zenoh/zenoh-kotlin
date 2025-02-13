@@ -60,7 +60,7 @@ class QuerierTest {
             Encoding.default(),
             SampleKind.PUT,
             TimeStamp(Date.from(Instant.now())),
-            QoS.defaultRequest()
+            QoS.defaultRequest
         )
         val examplePayload = ZBytes.from("Example payload")
         val exampleAttachment = ZBytes.from("Example attachment")
