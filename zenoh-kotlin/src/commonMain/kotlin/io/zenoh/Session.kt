@@ -131,7 +131,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declarePublisher(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultPush,
         encoding: Encoding = Encoding.default(),
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Publisher> {
@@ -406,7 +406,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultRequest,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         timeout: Duration = Duration.ofMillis(10000)
     ): Result<Querier> {
@@ -490,6 +490,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
+     * @param qos The [QoS] configuration.
      * @return A [Result] with the status of the query. When [Result.success] is returned, that means
      *   the query was properly launched and not that it has received all the possible replies (this
      *   can't be known from the perspective of the query).
@@ -503,7 +504,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<Unit> {
         return resolveGet(
             selector = selector,
@@ -515,7 +517,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             consolidation = consolidation,
             payload = payload,
             encoding = encoding,
-            attachment = attachment
+            attachment = attachment,
+            qos = qos
         )
     }
 
@@ -528,7 +531,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<Unit> = get(
         selector,
         callback,
@@ -538,7 +542,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout,
         target,
         consolidation,
-        onClose
+        onClose,
+        qos
     )
 
     /**
@@ -589,6 +594,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
+     * @param qos The [QoS] configuration.
      * @return A [Result] with the [handler]'s receiver of type [R]. When [Result.success] is returned, that means
      *   the query was properly launched and not that it has received all the possible replies (this
      *   can't be known from the perspective of the query).
@@ -602,7 +608,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<R> {
         return resolveGet(
             selector = selector,
@@ -617,7 +624,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             consolidation = consolidation,
             payload = payload,
             encoding = encoding,
-            attachment = attachment
+            attachment = attachment,
+            qos = qos
         )
     }
 
@@ -630,7 +638,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<R> = get(
         selector,
         handler,
@@ -640,7 +649,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout,
         target,
         consolidation,
-        onClose
+        onClose,
+        qos
     )
 
     /**
@@ -674,6 +684,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param target The [QueryTarget] of the query.
      * @param consolidation The [ConsolidationMode] configuration.
      * @param onClose Callback to be executed when the query is terminated.
+     * @param qos The [QoS] configuration.
      * @return A [Result] with the [channel] on success. When [Result.success] is returned, that means
      *   the query was properly launched and not that it has received all the possible replies (this
      *   can't be known from the perspective of the query).
@@ -687,7 +698,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<Channel<Reply>> {
         val channelHandler = ChannelHandler(channel)
         return resolveGet(
@@ -703,7 +715,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             consolidation,
             payload,
             encoding,
-            attachment
+            attachment,
+            qos
         )
     }
 
@@ -716,7 +729,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration = Duration.ofMillis(10000),
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        onClose: (() -> Unit)? = null
+        onClose: (() -> Unit)? = null,
+        qos: QoS = QoS.defaultRequest
     ): Result<Channel<Reply>> = get(
         selector,
         channel,
@@ -726,7 +740,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout,
         target,
         consolidation,
-        onClose
+        onClose,
+        qos
     )
 
     /**
@@ -756,7 +771,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultPush,
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -768,7 +783,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         keyExpr: KeyExpr,
         payload: String,
         encoding: Encoding = Encoding.default(),
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultPush,
         attachment: String? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> =
@@ -798,7 +813,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultPush,
         attachment: IntoZBytes? = null,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -808,7 +823,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     fun delete(
         keyExpr: KeyExpr,
-        qos: QoS = QoS.default(),
+        qos: QoS = QoS.defaultPush,
         attachment: String,
         reliability: Reliability = Reliability.RELIABLE
     ): Result<Unit> {
@@ -893,6 +908,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         payload: IntoZBytes?,
         encoding: Encoding?,
         attachment: IntoZBytes?,
+        qos: QoS
     ): Result<R> {
         return jniSession?.run {
             performGet(
@@ -905,7 +921,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 consolidation,
                 payload,
                 encoding,
-                attachment
+                attachment,
+                qos
             )
         } ?: Result.failure(sessionClosedException)
     }
