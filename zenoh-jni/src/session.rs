@@ -700,7 +700,7 @@ fn on_query(mut env: JNIEnv, query: Query, callback_global_ref: &GlobalRef) -> Z
         .map_err(|err| zerror!("Error processing attachment of reply: {}.", err))?;
 
     let key_expr_str = env
-        .new_string(&query.key_expr().to_string())
+        .new_string(query.key_expr().to_string())
         .map(|key_expr| env.auto_local(key_expr))
         .map_err(|err| {
             zerror!(
