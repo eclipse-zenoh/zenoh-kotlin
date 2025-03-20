@@ -84,7 +84,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
-/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///   key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
 ///
@@ -119,7 +120,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
-/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///   key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
 ///
@@ -155,7 +157,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
-/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///   key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
 ///
@@ -190,7 +193,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToV
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
-/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///   key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
 ///
@@ -229,7 +233,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation, which happens only when providing
-/// key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///   key expressions that were declared from a session (in that case the key expression has a pointer associated).
+///
 /// In that case, this function assumes the pointers are valid pointers to key expressions and those pointers
 /// remain valid after the call to this function.
 ///
