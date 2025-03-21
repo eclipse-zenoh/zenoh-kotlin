@@ -41,10 +41,10 @@ if (androidEnabled) {
 }
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(8)
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = "1.8"
         }
     }
     if (androidEnabled) {
@@ -74,7 +74,7 @@ kotlin {
         if (androidEnabled) {
             val androidUnitTest by getting {
                 dependencies {
-                    implementation(kotlin("test-junit"))
+                    implementation(kotlin("test-junit5"))
                 }
             }
         }
@@ -226,17 +226,17 @@ enum class BuildMode {
 fun Project.configureAndroid() {
     extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
         namespace = "io.zenoh"
-        compileSdk = 30
+        compileSdk = 27
 
         ndkVersion = "26.0.10792818"
 
         defaultConfig {
-            minSdk = 30
+            minSdk = 27
         }
 
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
         }
 
         buildTypes {
