@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.withTimeout
 import org.apache.commons.net.ntp.TimeStamp
+import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -80,7 +81,7 @@ class QueryableTest {
         withTimeout(delay) {
             session.get(Selector(testKeyExpr), callback = { reply = it }, timeout = delay)
         }
-
+        sleep(1000)
         assertNotNull(reply)
         assertEquals(reply!!.result.getOrThrow(), sample)
 
@@ -150,7 +151,7 @@ class QueryableTest {
         session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
-
+        sleep(1000)
         assertNotNull(receivedReply)
         val sample = receivedReply!!.result.getOrThrow()
         assertEquals(message, sample.payload)
@@ -170,7 +171,6 @@ class QueryableTest {
         var receivedReply: Reply? = null
         session.get(Selector(testKeyExpr), callback =  { receivedReply = it }, timeout = Duration.ofMillis(10))
 
-        Thread.sleep(1000)
         queryable.close()
 
         assertNotNull(receivedReply)
@@ -193,7 +193,7 @@ class QueryableTest {
         session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
 
         queryable.close()
-
+        sleep(1000)
         assertNotNull(receivedReply)
         assertTrue(receivedReply!!.result.isSuccess)
         val sample = receivedReply!!.result.getOrThrow()

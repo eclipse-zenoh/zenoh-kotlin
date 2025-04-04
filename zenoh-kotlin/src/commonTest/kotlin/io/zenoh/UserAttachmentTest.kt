@@ -22,6 +22,7 @@ import io.zenoh.ext.zSerialize
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.query.Selector
+import java.lang.Thread.sleep
 import java.time.Duration
 import kotlin.test.*
 
@@ -169,7 +170,7 @@ class UserAttachmentTest {
         }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
-
+        sleep(1000)
         assertNotNull(reply)
         val receivedAttachment = reply!!.result.getOrThrow().attachment!!
         assertEquals(attachment, zDeserialize<String>(receivedAttachment).getOrThrow())
@@ -187,7 +188,7 @@ class UserAttachmentTest {
         }, timeout = Duration.ofMillis(1000)).getOrThrow()
 
         queryable.close()
-
+        sleep(1000)
         assertNotNull(reply)
         assertTrue(reply!!.result.isSuccess)
         assertNull(reply!!.result.getOrThrow().attachment)
