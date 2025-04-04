@@ -23,6 +23,7 @@ import io.zenoh.query.Parameters
 import io.zenoh.query.Selector
 import io.zenoh.query.intoSelector
 import org.apache.commons.net.ntp.TimeStamp
+import java.lang.Thread.sleep
 import java.time.Duration
 import java.util.*
 import kotlin.test.*
@@ -61,7 +62,7 @@ class GetTest {
         session.get(selector, callback = {
             reply = it
         }, timeout = Duration.ofMillis(1000))
-
+        sleep(1000)
         assertNotNull(reply)
         val sample = reply!!.result.getOrThrow()
         assertEquals(payload, sample.payload)
