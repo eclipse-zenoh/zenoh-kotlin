@@ -25,6 +25,7 @@ import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
 import kotlinx.coroutines.runBlocking
 import org.apache.commons.net.ntp.TimeStamp
+import java.lang.Thread.sleep
 import java.time.Instant
 import java.util.*
 import kotlin.test.*
@@ -79,6 +80,7 @@ class QuerierTest {
             payload = examplePayload,
             attachment = exampleAttachment
         )
+        sleep(1000)
 
         assertEquals(sample, receivedReply?.result?.getOrThrow())
 
