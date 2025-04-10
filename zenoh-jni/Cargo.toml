@@ -14,7 +14,7 @@
 
 [package]
 rust-version = "1.75.0"
-version = "1.3.2"
+version = "1.3.3"
 repository = "https://github.com/eclipse-zenoh/zenoh"
 homepage = "http://zenoh.io"
 edition = "2021"
@@ -36,8 +36,8 @@ flume = "0.10.14"
 uhlc = "0.8.0"
 json5 = "0.4.1"
 serde_yaml = "0.9.19"
-zenoh = { version = "1.3.2", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["unstable", "internal"], default-features = false }
-zenoh-ext = { version = "1.3.2", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["internal"], default-features = false, optional = true }
+zenoh = { version = "1.3.3", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["unstable", "internal"], default-features = false }
+zenoh-ext = { version = "1.3.3", git = "https://github.com/eclipse-zenoh/zenoh.git", branch = "main", features = ["internal"], default-features = false, optional = true }
 tracing = { version = "0.1" , features = ["log"] }
 [lib]
 name = "zenoh_jni"
