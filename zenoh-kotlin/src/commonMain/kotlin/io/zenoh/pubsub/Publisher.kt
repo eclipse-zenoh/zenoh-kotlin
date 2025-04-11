@@ -118,4 +118,8 @@ class Publisher internal constructor(
         jniPublisher?.close()
         jniPublisher = null
     }
+
+    protected fun finalize() {
+        undeclare()
+    }
 }
