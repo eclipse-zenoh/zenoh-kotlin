@@ -40,6 +40,7 @@ import io.zenoh.session.SessionDeclaration
 import io.zenoh.session.SessionInfo
 import io.zenoh.pubsub.Subscriber
 import kotlinx.coroutines.channels.Channel
+import java.lang.ref.WeakReference
 import java.time.Duration
 
 /**
@@ -62,7 +63,11 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     internal var jniSession: JNISession? = null
 
-    private var declarations = mutableListOf<SessionDeclaration>()
+    // Subscribers and Queryables that keep running despite losing references to them.
+    private var strongDeclarations = mutableListOf<SessionDeclaration>()
+
+    // Publishers and queriers that shouldn't be kept alive when losing all references to them.
+    private var weakDeclarations = mutableListOf<WeakReference<SessionDeclaration>>()
 
     companion object {
 
@@ -84,8 +89,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     /** Close the session. */
     override fun close() {
-        declarations.removeIf {
+        strongDeclarations.removeIf {
             it.undeclare()
+            true
+        }
+
+        weakDeclarations.removeIf {
+            it.get()?.undeclare()
             true
         }
 
@@ -447,7 +457,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareKeyExpr(keyExpr: String): Result<KeyExpr> {
         return jniSession?.run {
-            declareKeyExpr(keyExpr).onSuccess { declarations.add(it) }
+            declareKeyExpr(keyExpr).onSuccess { strongDeclarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -857,7 +867,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         reliability: Reliability
     ): Result<Publisher> {
         return jniSession?.run {
-            declarePublisher(keyExpr, qos, encoding, reliability).onSuccess { declarations.add(it) }
+            declarePublisher(keyExpr, qos, encoding, reliability).onSuccess { weakDeclarations.add(WeakReference(it)) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -868,7 +878,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         receiver: R
     ): Result<Subscriber<R>> {
         return jniSession?.run {
-            declareSubscriber(keyExpr, callback, onClose, receiver).onSuccess { declarations.add(it) }
+            declareSubscriber(keyExpr, callback, onClose, receiver).onSuccess { strongDeclarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -880,7 +890,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         complete: Boolean
     ): Result<Queryable<R>> {
         return jniSession?.run {
-            declareQueryable(keyExpr, callback, onClose, receiver, complete).onSuccess { declarations.add(it) }
+            declareQueryable(keyExpr, callback, onClose, receiver, complete).onSuccess { strongDeclarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -893,7 +903,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         timeout: Duration
     ): Result<Querier> {
         return jniSession?.run {
-            declareQuerier(keyExpr, target, consolidation, qos, timeout)
+            declareQuerier(keyExpr, target, consolidation, qos, timeout).onSuccess { weakDeclarations.add(WeakReference(it)) }
         } ?: Result.failure(sessionClosedException)
     }
 
