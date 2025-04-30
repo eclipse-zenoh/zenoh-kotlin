@@ -14,6 +14,8 @@
 
 mod config;
 mod errors;
+#[cfg(feature = "zenoh-ext")]
+mod ext;
 mod key_expr;
 mod liveliness;
 mod logger;
@@ -25,8 +27,6 @@ mod scouting;
 mod session;
 mod subscriber;
 mod utils;
-#[cfg(feature = "zenoh-ext")]
-mod ext;
 #[cfg(feature = "zenoh-ext")]
 mod zbytes;
 mod zenoh_id;
