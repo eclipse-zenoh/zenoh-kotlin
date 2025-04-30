@@ -1,0 +1,359 @@
+//
+// Copyright (c) 2023 ZettaScale Technology
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+// which is available at https://www.apache.org/licenses/LICENSE-2.0.
+//
+// SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+//
+// Contributors:
+//   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
+//
+
+use std::sync::Arc;
+
+use jni::objects::JValue;
+use jni::{
+    objects::{JByteArray, JClass, JString},
+    sys::jint,
+    JNIEnv,
+};
+use zenoh::Wait;
+use zenoh_ext::AdvancedPublisher;
+
+use crate::utils::{get_callback_global_ref, get_java_vm, load_on_close};
+
+use crate::throw_exception;
+use crate::{
+    errors::ZResult,
+    utils::{decode_byte_array, decode_encoding},
+    zerror,
+};
+use jni::sys::jboolean;
+use std::ptr::null;
+
+use jni::objects::JObject;
+use zenoh::matching::MatchingListener;
+
+/// Declare an advanced Zenoh subscriber via JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `session_ptr`: The raw pointer to the Zenoh session.
+/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+///
+/// Returns:
+/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided session pointer is valid and has not been modified or freed.
+/// - The session pointer remains valid and the ownership of the session is not transferred,
+///   allowing safe usage of the session after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+///   in Java/Kotlin, matching the specified signature.
+/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
+///
+#[cfg(feature = "zenoh-ext")]
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingListenerViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    advanced_publisher_ptr: *const AdvancedPublisher,
+
+    callback: JObject,
+    on_close: JObject,
+) -> *const MatchingListener<()> {
+    let advanced_publisher = Arc::from_raw(advanced_publisher_ptr);
+
+    || -> ZResult<*const MatchingListener<()>> {
+        let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        tracing::debug!(
+            "Declaring matching listener on '{}'...",
+            advanced_publisher.key_expr()
+        );
+
+        let result = advanced_publisher
+            .matching_listener()
+            .callback(move |matching_status| {
+                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+                let _ = || -> ZResult<()> {
+                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                        zerror!("Unable to attach thread for subscriber: {}", err)
+                    })?;
+
+                    env.call_method(
+                        &callback_global_ref,
+                        "run",
+                        "(Z)V",
+                        &[JValue::from(matching_status.matching())],
+                    )
+                    .map_err(|err| zerror!(err))?;
+                    Ok(())
+                }()
+                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+            })
+            .wait();
+
+        let matching_listener =
+            result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+
+        tracing::debug!(
+            "Matching listener declared on '{}'...",
+            advanced_publisher.key_expr()
+        );
+        std::mem::forget(advanced_publisher);
+        Ok(Arc::into_raw(Arc::new(matching_listener)))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        null()
+    })
+}
+
+/// Declare an advanced Zenoh subscriber via JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `session_ptr`: The raw pointer to the Zenoh session.
+/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+///
+/// Returns:
+/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided session pointer is valid and has not been modified or freed.
+/// - The session pointer remains valid and the ownership of the session is not transferred,
+///   allowing safe usage of the session after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+///   in Java/Kotlin, matching the specified signature.
+/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
+///
+#[cfg(feature = "zenoh-ext")]
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroundMatchingListenerViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    advanced_publisher_ptr: *const AdvancedPublisher,
+
+    callback: JObject,
+    on_close: JObject,
+) {
+    let advanced_publisher = Arc::from_raw(advanced_publisher_ptr);
+
+    || -> ZResult<()> {
+        let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        tracing::debug!(
+            "Declaring matching listener on '{}'...",
+            advanced_publisher.key_expr()
+        );
+
+        let result = advanced_publisher
+            .matching_listener()
+            .callback(move |matching_status| {
+                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+                let _ = || -> ZResult<()> {
+                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                        zerror!("Unable to attach thread for subscriber: {}", err)
+                    })?;
+
+                    env.call_method(
+                        &callback_global_ref,
+                        "run",
+                        "(Z)V",
+                        &[JValue::from(matching_status.matching())],
+                    )
+                    .map_err(|err| zerror!(err))?;
+                    Ok(())
+                }()
+                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+            })
+            .background()
+            .wait();
+
+        result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+
+        tracing::debug!(
+            "Matching listener declared on '{}'...",
+            advanced_publisher.key_expr()
+        );
+        std::mem::forget(advanced_publisher);
+        Ok(())
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+    })
+}
+
+/// Declare an advanced Zenoh subscriber via JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
+///     undeclared key expression.
+/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
+///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `session_ptr`: The raw pointer to the Zenoh session.
+/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+///
+/// Returns:
+/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided session pointer is valid and has not been modified or freed.
+/// - The session pointer remains valid and the ownership of the session is not transferred,
+///   allowing safe usage of the session after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+///   in Java/Kotlin, matching the specified signature.
+/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
+///
+#[cfg(feature = "zenoh-ext")]
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_getMatchingStatusViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    advanced_publisher_ptr: *const AdvancedPublisher,
+) -> jboolean {
+    use crate::errors::ZError;
+
+    let advanced_publisher = Arc::from_raw(advanced_publisher_ptr);
+    advanced_publisher
+        .matching_status()
+        .wait()
+        .map(|val| val.matching() as jboolean)
+        .map_err(|e| zerror!(e.to_string()))
+        .unwrap_or_else(|err: ZError| {
+            throw_exception!(env, err);
+            false as jboolean
+        })
+}
+
+/// Performs a PUT operation on a Zenoh publisher via JNI.
+///
+/// # Parameters
+/// - `env`: The JNI environment pointer.
+/// - `_class`: The Java class reference (unused).
+/// - `payload`: The byte array to be published.
+/// - `encoding_id`: The encoding ID of the payload.
+/// - `encoding_schema`: Nullable encoding schema string of the payload.
+/// - `attachment`: Nullble byte array for the attachment.
+/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+///
+/// # Safety
+/// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - Assumes that the provided publisher pointer is valid and has not been modified or freed.
+/// - The publisher pointer remains valid after this function call.
+/// - May throw an exception in case of failure, which must be handled by the caller.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_putViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    payload: JByteArray,
+    encoding_id: jint,
+    encoding_schema: /*nullable*/ JString,
+    attachment: /*nullable*/ JByteArray,
+    publisher_ptr: *const AdvancedPublisher<'static>,
+) {
+    let publisher = Arc::from_raw(publisher_ptr);
+    let _ = || -> ZResult<()> {
+        let payload = decode_byte_array(&env, payload)?;
+        let mut publication = publisher.put(payload);
+        let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
+        publication = publication.encoding(encoding);
+        if !attachment.is_null() {
+            let attachment = decode_byte_array(&env, attachment)?;
+            publication = publication.attachment::<Vec<u8>>(attachment)
+        };
+        publication.wait().map_err(|err| zerror!(err))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+    std::mem::forget(publisher);
+}
+
+/// Performs a DELETE operation on a Zenoh publisher via JNI.
+///
+/// # Parameters
+/// - `env`: The JNI environment pointer.
+/// - `_class`: The Java class reference (unused).
+/// - `attachment`: Nullble byte array for the attachment.
+/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+///
+/// # Safety
+/// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - Assumes that the provided publisher pointer is valid and has not been modified or freed.
+/// - The publisher pointer remains valid after this function call.
+/// - May throw an exception in case of failure, which must be handled by the caller.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_deleteViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    attachment: /*nullable*/ JByteArray,
+    publisher_ptr: *const AdvancedPublisher<'static>,
+) {
+    let publisher = Arc::from_raw(publisher_ptr);
+    let _ = || -> ZResult<()> {
+        let mut delete = publisher.delete();
+        if !attachment.is_null() {
+            let attachment = decode_byte_array(&env, attachment)?;
+            delete = delete.attachment::<Vec<u8>>(attachment)
+        };
+        delete.wait().map_err(|err| zerror!(err))
+    }()
+    .map_err(|err| throw_exception!(env, err));
+    std::mem::forget(publisher)
+}
+
+/// Frees the publisher.
+///
+/// # Parameters:
+/// - `_env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+///
+/// # Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation.
+/// - It assumes that the provided publisher pointer is valid and has not been modified or freed.
+/// - After calling this function, the publisher pointer becomes invalid and should not be used anymore.
+///
+#[no_mangle]
+#[allow(non_snake_case)]
+pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_freePtrViaJNI(
+    _env: JNIEnv,
+    _: JClass,
+    publisher_ptr: *const AdvancedPublisher,
+) {
+    Arc::from_raw(publisher_ptr);
+}

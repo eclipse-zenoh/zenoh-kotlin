@@ -12,28 +12,16 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-mod config;
-mod errors;
-mod key_expr;
-mod liveliness;
-mod logger;
-mod publisher;
-mod querier;
-mod query;
-mod queryable;
-mod scouting;
-mod session;
-mod subscriber;
-mod utils;
-#[cfg(feature = "zenoh-ext")]
-mod ext;
-#[cfg(feature = "zenoh-ext")]
-mod zbytes;
-mod zenoh_id;
+package io.zenoh.handlers
 
-// Test should be runned with `cargo test --no-default-features`
-#[test]
-#[cfg(not(feature = "default"))]
-fn test_no_default_features() {
-    assert_eq!(zenoh::FEATURES, concat!(" zenoh/unstable"));
+/**
+ * Runnable matching status callback.
+ *
+ * @constructor Create empty Callback
+ */
+fun interface MatchingCallback {
+
+    /** Callback to be run. */
+    fun run(matching: Boolean)
+
 }

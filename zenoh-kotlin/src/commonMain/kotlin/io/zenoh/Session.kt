@@ -26,7 +26,13 @@ import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.config.ZenohId
+import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HistoryConfig
+import io.zenoh.ext.MissDetectionConfig
+import io.zenoh.ext.RecoveryConfig
 import io.zenoh.liveliness.Liveliness
+import io.zenoh.pubsub.AdvancedPublisher
+import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
@@ -63,10 +69,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     internal var jniSession: JNISession? = null
 
-    // Subscribers and Queryables that keep running despite losing references to them.
+    // AdvancedSubscribers, Subscribers and Queryables that keep running despite losing references to them.
     private var strongDeclarations = mutableListOf<SessionDeclaration>()
 
-    // Publishers and queriers that shouldn't be kept alive when losing all references to them.
+    // AdvancedPublishers, Publishers and queriers that shouldn't be kept alive when losing all references to them.
     private var weakDeclarations = mutableListOf<WeakReference<SessionDeclaration>>()
 
     companion object {
@@ -149,6 +155,51 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
+     * Declare a [Publisher] on the session.
+     *
+     * Example:
+     * ```kotlin
+     * Zenoh.open(Config.default()).onSuccess {
+     *     it.use { session ->
+     *         "demo/kotlin/greeting".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.declarePublisher(keyExpr).onSuccess { pub ->
+     *                 pub.use {
+     *                     println("Publisher declared on $keyExpr.")
+     *                     var i = 0
+     *                     while (true) {
+     *                         val payload = "Hello for the ${i}th time!"
+     *                         println(payload)
+     *                         pub.put(payload)
+     *                         Thread.sleep(1000)
+     *                         i++
+     *                     }
+     *                 }
+     *             }
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the publisher will be associated to.
+     * @param qos The [QoS] configuration of the publisher.
+     * @param encoding The default [Encoding] for the publications.
+     * @param reliability The [Reliability] the publisher wishes to obtain from the network.
+     * @return The result of the declaration, returning the publisher in case of success.
+     */
+    fun declareAdvancedPublisher(
+        keyExpr: KeyExpr,
+        qos: QoS = QoS.defaultPush,
+        encoding: Encoding = Encoding.default(),
+        reliability: Reliability = Reliability.RELIABLE,
+        cacheConfig: CacheConfig = CacheConfig.default,
+        sampleMissDetection: MissDetectionConfig = MissDetectionConfig.default,
+        publisherDetection: Boolean = false
+    ): Result<AdvancedPublisher> {
+        return resolveAdvancedPublisher(keyExpr, qos, encoding, reliability,
+            cacheConfig, sampleMissDetection, publisherDetection)
+    }
+
+    /**
      * Declare a [Subscriber] on the session, specifying a callback to handle incoming samples.
      *
      * Example:
@@ -178,6 +229,42 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             onClose?.invoke()
         }
         return resolveSubscriber(keyExpr, callback, resolvedOnClose, Unit)
+    }
+
+    /**
+     * Declare a [Subscriber] on the session, specifying a callback to handle incoming samples.
+     *
+     * Example:
+     * ```kotlin
+     * Zenoh.open(Config.default()).onSuccess { session ->
+     *     session.use {
+     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.declareSubscriber(keyExpr, callback = { sample -> println(sample) }).onSuccess {
+     *                 println("Declared subscriber on $keyExpr.")
+     *             }
+     *         }
+     *     }
+     * }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be associated to.
+     * @param callback Callback to handle the received samples.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @return A result with the [Subscriber] in case of success.
+     */
+    fun declareAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        historyConfig: HistoryConfig = HistoryConfig.default,
+        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        subscriberDetection: Boolean = false,
+        callback: Callback<Sample>,
+        onClose: (() -> Unit)? = null,
+    ): Result<AdvancedSubscriber<Unit>> {
+        val resolvedOnClose = fun() {
+            onClose?.invoke()
+        }
+        return resolveAdvancedSubscriber(keyExpr, historyConfig, recoveryConfig, subscriberDetection,
+            callback, resolvedOnClose, Unit)
     }
 
     /**
@@ -226,6 +313,55 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     }
 
     /**
+     * Declare a [Subscriber] on the session, specifying a handler to handle incoming samples.
+     *
+     * Example:
+     * ```kotlin
+     *
+     * class ExampleHandler: Handler<Sample, Unit> {
+     *     override fun handle(t: Sample) = println(t)
+     *
+     *     override fun receiver() = Unit
+     *
+     *     override fun onClose() = println("Closing handler")
+     * }
+     *
+     * Zenoh.open(Config.default()).onSuccess { session ->
+     *     session.use {
+     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
+     *             session.declareSubscriber(keyExpr, handler = ExampleHandler())
+     *                 .onSuccess {
+     *                     println("Declared subscriber on $keyExpr.")
+     *                 }
+     *             }
+     *         }
+     *     }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be associated to.
+     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called
+     *  upon closing the session.
+     * @param onClose Callback function to be called when the subscriber is closed.
+     * @return A result with the [Subscriber] in case of success.
+     */
+    fun <R> declareAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        historyConfig: HistoryConfig = HistoryConfig.default,
+        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        subscriberDetection: Boolean = false,
+        handler: Handler<Sample, R>,
+        onClose: (() -> Unit)? = null,
+    ): Result<AdvancedSubscriber<R>> {
+        val resolvedOnClose = fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> handler.handle(t) }
+        return resolveAdvancedSubscriber(keyExpr, historyConfig, recoveryConfig, subscriberDetection,
+            callback, resolvedOnClose, handler.receiver())
+    }
+
+    /**
      * Declare a [Subscriber] on the session, specifying a [Channel] to pipe the received samples.
      *
      * Example:
@@ -263,6 +399,50 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         }
         val callback = Callback { t: Sample -> channelHandler.handle(t) }
         return resolveSubscriber(keyExpr, callback, resolvedOnClose, channelHandler.receiver())
+    }
+
+    /**
+     * Declare a [Subscriber] on the session, specifying a [Channel] to pipe the received samples.
+     *
+     * Example:
+     * ```kotlin
+     * Zenoh.open(Config.default()).onSuccess { session ->
+     *     session.use {
+     *         "demo/kotlin/sub".intoKeyExpr().onSuccess { keyExpr ->
+     *             val samplesChannel = Channel()
+     *             session.declareSubscriber(keyExpr, channel = samplesChannel)
+     *                 .onSuccess {
+     *                     println("Declared subscriber on $keyExpr.")
+     *                 }
+     *             }
+     *             // ...
+     *         }
+     *     }
+     * ```
+     *
+     * @param keyExpr The [KeyExpr] the subscriber will be associated to.
+     * @param channel [Channel] instance through which the received samples will be piped. Once the subscriber is
+     *  closed, the channel is closed as well.
+     * @param onClose Callback function to be called when the subscriber is closed. [Handler.onClose] will be called
+     *  upon closing the session.
+     * @return A result with the [Subscriber] in case of success.
+     */
+    fun declareAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        historyConfig: HistoryConfig = HistoryConfig.default,
+        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        subscriberDetection: Boolean = false,
+        channel: Channel<Sample>,
+        onClose: (() -> Unit)? = null,
+    ): Result<AdvancedSubscriber<Channel<Sample>>> {
+        val channelHandler = ChannelHandler(channel)
+        val resolvedOnClose = fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> channelHandler.handle(t) }
+        return resolveAdvancedSubscriber(keyExpr, historyConfig, recoveryConfig, subscriberDetection,
+            callback, resolvedOnClose, channelHandler.receiver())
     }
 
     /**
@@ -871,6 +1051,21 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
+    private fun resolveAdvancedPublisher(
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability,
+        cacheConfig: CacheConfig = CacheConfig.default,
+        sampleMissDetection: MissDetectionConfig = MissDetectionConfig.default,
+        publisherDetection: Boolean = false
+    ): Result<AdvancedPublisher> {
+        return jniSession?.run {
+            declareAdvancedPublisher(keyExpr, qos, encoding, reliability,
+                cacheConfig, sampleMissDetection, publisherDetection).onSuccess { weakDeclarations.add(WeakReference(it)) }
+        } ?: Result.failure(sessionClosedException)
+    }
+
     private fun <R> resolveSubscriber(
         keyExpr: KeyExpr,
         callback: Callback<Sample>,
@@ -879,6 +1074,20 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     ): Result<Subscriber<R>> {
         return jniSession?.run {
             declareSubscriber(keyExpr, callback, onClose, receiver).onSuccess { strongDeclarations.add(it) }
+        } ?: Result.failure(sessionClosedException)
+    }
+
+    private fun <R> resolveAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        history: HistoryConfig,
+        recovery: RecoveryConfig,
+        subscriberDetection: Boolean,
+        callback: Callback<Sample>,
+        onClose: () -> Unit,
+        receiver: R
+    ): Result<AdvancedSubscriber<R>> {
+        return jniSession?.run {
+            declareAdvancedSubscriber(keyExpr, history, recovery, subscriberDetection, callback, onClose, receiver).onSuccess { strongDeclarations.add(it) }
         } ?: Result.failure(sessionClosedException)
     }
 

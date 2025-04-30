@@ -12,28 +12,23 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-mod config;
-mod errors;
-mod key_expr;
-mod liveliness;
-mod logger;
-mod publisher;
-mod querier;
-mod query;
-mod queryable;
-mod scouting;
-mod session;
-mod subscriber;
-mod utils;
-#[cfg(feature = "zenoh-ext")]
-mod ext;
-#[cfg(feature = "zenoh-ext")]
-mod zbytes;
-mod zenoh_id;
+package io.zenoh.ext
 
-// Test should be runned with `cargo test --no-default-features`
-#[test]
-#[cfg(not(feature = "default"))]
-fn test_no_default_features() {
-    assert_eq!(zenoh::FEATURES, concat!(" zenoh/unstable"));
+import io.zenoh.qos.QoS
+import io.zenoh.pubsub.AdvancedPublisher
+
+/**
+ * Configure an [AdvancedPublisher] cache.
+ *
+ * @property maxSamples Specify how many samples to keep for each resource.
+ * @property repliesQoS The [QoS] to apply to replies.
+ */
+data class CacheConfig (
+    val maxSamples: Long = 0,
+    val repliesQoS: QoS = QoS.defaultPush
+) {
+
+    companion object {
+        internal val default = CacheConfig()
+    }
 }
