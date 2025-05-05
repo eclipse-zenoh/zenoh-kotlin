@@ -39,7 +39,7 @@ class AdvancedPubSubTest {
 
     lateinit var subscriber: AdvancedSubscriber<Unit>
     lateinit var matchingSubscriber: Subscriber<Unit>
-    lateinit var matchingSamples: ArrayList<Sample>
+    var matchingSamples: ArrayList<Sample> = arrayListOf<Sample>()
 
     lateinit var sampleMissListener: SampleMissListener
     var sampleMisses: Long = 0
@@ -76,7 +76,7 @@ class AdvancedPubSubTest {
         matchingListener.close()
         publisher.close()
 
-        //matchingSubscriber.close()
+        matchingSubscriber.close()
         sampleMissListener.close()
         subscriber.close()
 
