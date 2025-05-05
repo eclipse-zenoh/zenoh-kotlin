@@ -21,8 +21,9 @@ use jni::{
 };
 use zenoh::{
     config::Config,
+    handlers::Callback,
     key_expr::KeyExpr,
-    pubsub::{Publisher, Subscriber},
+    pubsub::{Publisher, PublisherBuilder, Subscriber, SubscriberBuilder},
     query::{Querier, Query, Queryable, ReplyError, Selector},
     sample::Sample,
     session::{Session, ZenohId},
@@ -253,14 +254,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
     on_close: JObject,
 ) -> *const AdvancedSubscriber<()> {
     let session = Arc::from_raw(session_ptr);
-    || -> ZResult<*const AdvancedSubscriber<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
-        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        tracing::debug!("Declaring advanced subscriber on '{}'...", key_expr);
+    let subscriber_ptr = || -> ZResult<*const AdvancedSubscriber<()>> {
+        let mut builder = prepare_subscriber_builder(
+            &mut env,
+            key_expr_ptr,
+            &key_expr_str,
+            &session,
+            callback,
+            on_close,
+            "advanced subscriber",
+        )?
+        .advanced();
 
         let history_config = {
             let mut res: Option<HistoryConfig> = None;
@@ -282,8 +286,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
             }
             res
         };
-
-        let mut builder = session.declare_subscriber(key_expr.to_owned()).advanced();
 
         if let Some(history) = history_config {
             builder = builder.history(history);
@@ -307,81 +309,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
             builder = builder.subscriber_detection();
         }
 
-        let result = builder
-            .callback(move |sample: Sample| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for advanced subscriber: {}", err)
-                    })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())
-                        .map(|array| env.auto_local(array))?;
-
-                    let encoding_id: jint = sample.encoding().id() as jint;
-                    let encoding_schema = match sample.encoding().schema() {
-                        Some(schema) => slice_to_java_string(&env, schema)?,
-                        None => JString::default(),
-                    };
-                    let kind = sample.kind() as jint;
-                    let (timestamp, is_valid) = sample
-                        .timestamp()
-                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                        .unwrap_or((0, false));
-
-                    let attachment_bytes = sample
-                        .attachment()
-                        .map_or_else(
-                            || Ok(JByteArray::default()),
-                            |attachment| bytes_to_java_array(&env, attachment),
-                        )
-                        .map(|array| env.auto_local(array))
-                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
-
-                    let key_expr_str = env.auto_local(
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
-                    );
-
-                    let express = sample.express();
-                    let priority = sample.priority() as jint;
-                    let cc = sample.congestion_control() as jint;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                        &[
-                            JValue::from(&key_expr_str),
-                            JValue::from(&byte_array),
-                            JValue::from(encoding_id),
-                            JValue::from(&encoding_schema),
-                            JValue::from(kind),
-                            JValue::from(timestamp as i64),
-                            JValue::from(is_valid),
-                            JValue::from(&attachment_bytes),
-                            JValue::from(express),
-                            JValue::from(priority),
-                            JValue::from(cc),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On advanced subscriber callback error: {err}"));
-            })
-            .wait();
-
-        let subscriber =
-            result.map_err(|err| zerror!("Unable to declare advanced subscriber: {}", err))?;
-
-        tracing::debug!("Advanced subscriber declared on '{}'.", key_expr);
-        std::mem::forget(session);
-        Ok(Arc::into_raw(Arc::new(subscriber)))
+        builder
+            .wait()
+            .map(|s| Arc::into_raw(Arc::new(s)))
+            .map_err(|err| zerror!("Unable to declare advanced subscriber: {}", err))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         null()
-    })
+    });
+    std::mem::forget(session);
+    subscriber_ptr
 }
 
 /// Declare an advanced Zenoh publisher via JNI.
@@ -445,11 +383,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
 ) -> *const AdvancedPublisher<'static> {
     let session = Arc::from_raw(session_ptr);
     let publisher_ptr = || -> ZResult<*const AdvancedPublisher<'static>> {
-        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        let congestion_control = decode_congestion_control(congestion_control)?;
-        let priority = decode_priority(priority)?;
-        let reliability = decode_reliability(reliability)?;
-
         let cache_config =
             {
                 match cache_max_samples {
@@ -493,13 +426,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
             }
         };
 
-        let mut builder = session
-            .declare_publisher(key_expr)
-            .congestion_control(congestion_control)
-            .priority(priority)
-            .express(is_express != 0)
-            .reliability(reliability)
-            .advanced();
+        let mut builder = prepare_publisher_builder(
+            &mut env,
+            key_expr_ptr,
+            &key_expr_str,
+            &session,
+            congestion_control,
+            priority,
+            is_express,
+            reliability,
+        )?
+        .advanced();
 
         if let Some(miss_detection) = miss_detection_config {
             builder = builder.sample_miss_detection(miss_detection);
@@ -567,21 +504,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
 ) -> *const Publisher<'static> {
     let session = Arc::from_raw(session_ptr);
     let publisher_ptr = || -> ZResult<*const Publisher<'static>> {
-        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        let congestion_control = decode_congestion_control(congestion_control)?;
-        let priority = decode_priority(priority)?;
-        let reliability = decode_reliability(reliability)?;
-        let result = session
-            .declare_publisher(key_expr)
-            .congestion_control(congestion_control)
-            .priority(priority)
-            .express(is_express != 0)
-            .reliability(reliability)
-            .wait();
-        match result {
-            Ok(publisher) => Ok(Arc::into_raw(Arc::new(publisher))),
-            Err(err) => Err(zerror!(err)),
-        }
+        prepare_publisher_builder(
+            &mut env,
+            key_expr_ptr,
+            &key_expr_str,
+            &session,
+            congestion_control,
+            priority,
+            is_express,
+            reliability,
+        )?
+        .wait()
+        .map(|publisher| Arc::into_raw(Arc::new(publisher)))
+        .map_err(|e| zerror!(e))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -589,6 +524,30 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declarePublisherViaJNI(
     });
     std::mem::forget(session);
     publisher_ptr
+}
+
+#[allow(clippy::too_many_arguments)]
+unsafe fn prepare_publisher_builder<'a, 'b>(
+    env: &mut JNIEnv,
+    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str: &JString,
+    session: &'a Arc<Session>,
+    congestion_control: jint,
+    priority: jint,
+    is_express: jboolean,
+    reliability: jint,
+) -> ZResult<PublisherBuilder<'a, 'b>> {
+    let key_expr = process_kotlin_key_expr(env, key_expr_str, key_expr_ptr)?;
+    let congestion_control = decode_congestion_control(congestion_control)?;
+    let priority = decode_priority(priority)?;
+    let reliability = decode_reliability(reliability)?;
+    let builder = session
+        .declare_publisher(key_expr)
+        .congestion_control(congestion_control)
+        .priority(priority)
+        .express(is_express != 0)
+        .reliability(reliability);
+    Ok(builder)
 }
 
 /// Performs a `put` operation in the Zenoh session via JNI.
@@ -768,16 +727,47 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
     on_close: JObject,
 ) -> *const Subscriber<()> {
     let session = Arc::from_raw(session_ptr);
-    || -> ZResult<*const Subscriber<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
+    let subscriber_ptr = || -> ZResult<*const Subscriber<()>> {
+        prepare_subscriber_builder(
+            &mut env,
+            key_expr_ptr,
+            &key_expr_str,
+            &session,
+            callback,
+            on_close,
+            "subscriber",
+        )?
+        .wait()
+        .map(|s| Arc::into_raw(Arc::new(s)))
+        .map_err(|err| zerror!("Unable to declare subscriber: {}", err))
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+        null()
+    });
+    std::mem::forget(session);
+    subscriber_ptr
+}
 
-        let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        tracing::debug!("Declaring subscriber on '{}'...", key_expr);
+unsafe fn prepare_subscriber_builder<'a, 'b>(
+    env: &mut JNIEnv,
+    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_str: &JString,
+    session: &'a Arc<Session>,
+    callback: JObject,
+    on_close: JObject,
+    entity_name: &str,
+) -> ZResult<SubscriberBuilder<'a, 'b, Callback<Sample>>> {
+    let java_vm = Arc::new(get_java_vm(env)?);
+    let callback_global_ref = get_callback_global_ref(env, callback)?;
+    let on_close_global_ref = get_callback_global_ref(env, on_close)?;
+    let on_close = load_on_close(&java_vm, on_close_global_ref);
 
-        let result = session
+    let key_expr = process_kotlin_key_expr(env, key_expr_str, key_expr_ptr)?;
+    tracing::debug!("Declaring {entity_name} on '{}'...", key_expr);
+
+    let builder =
+        session
             .declare_subscriber(key_expr.to_owned())
             .callback(move |sample: Sample| {
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
@@ -839,19 +829,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareSubscriberViaJNI(
                     Ok(())
                 }()
                 .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
-            })
-            .wait();
+            });
 
-        let subscriber = result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
-
-        tracing::debug!("Subscriber declared on '{}'.", key_expr);
-        std::mem::forget(session);
-        Ok(Arc::into_raw(Arc::new(subscriber)))
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        null()
-    })
+    tracing::debug!("{entity_name} declared on '{}'.", key_expr);
+    Ok(builder)
 }
 
 /// Declare a Zenoh querier via JNI.
