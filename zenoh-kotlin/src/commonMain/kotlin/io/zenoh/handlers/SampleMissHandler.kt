@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -14,12 +14,10 @@
 
 package io.zenoh.handlers
 
-import io.zenoh.ZenohType
 import io.zenoh.pubsub.SampleMiss
 
 /**
- * Handler interface for classes implementing behavior to handle the
- * incoming [SampleMiss] events.
+ * Handler interface for classes implementing behavior to handle the incoming [SampleMiss] events.
  *
  * **Example**:
  * ```kotlin
