@@ -205,18 +205,27 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 ///     undeclared key expression.
 /// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
 ///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+/// - `history_detect_late_publishers` : Enable detection of late joiner publishers and query for their historical data.
+/// Late joiner detection can only be achieved for [`AdvancedPublisher`] that enable publisher detection.
+/// History can only be retransmitted by [`AdvancedPublisher`] that enable cache.
+/// - `history_max_samples` : Specify how many samples to query for each resource.
+/// - `history_max_age_seconds` : Specify the maximum age of samples to query.
+/// - `recovery_config_enabled` : Enable missed samples recovery
+/// - `recovery_query_period_ms` :  If > 0, enable periodic queries for not yet received Samples and specify their period.
+/// If == 0 use heartbeat mode subscribe to heartbeats of [`AdvancedPublisher`].
+/// - `subscriber_detection` : Allow this subscriber to be detected through liveliness.
 /// - `session_ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
 ///
 /// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - A raw pointer to the declared [AdvancedSubscriber]. In case of failure, an exception is thrown and null is returned.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
+/// - It assumes that the provided [Session] pointer is valid and has not been modified or freed.
+/// - The [Session] pointer remains valid and the ownership of the [Session] is not transferred,
+///   allowing safe usage of the [Session] after this function call.
 /// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
@@ -251,30 +260,34 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
         let on_close = load_on_close(&java_vm, on_close_global_ref);
 
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
-        tracing::debug!("Declaring subscriber on '{}'...", key_expr);
+        tracing::debug!("Declaring advanced subscriber on '{}'...", key_expr);
 
         let history_config = {
-            let mut res = HistoryConfig::default();
+            let mut res: Option<HistoryConfig> = None;
             if history_detect_late_publishers != 0 {
-                res = res.detect_late_publishers();
+                res = Some(res.unwrap_or_default().detect_late_publishers());
             }
             if history_max_samples != 0 {
-                res = res.max_samples(
-                    history_max_samples
-                        .try_into()
-                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-                )
+                res = Some(
+                    res.unwrap_or_default().max_samples(
+                        history_max_samples
+                            .try_into()
+                            .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                    ),
+                );
             }
             if history_max_age_seconds != 0.0 {
                 // only 0.0 and -0.0 are expected as false
-                res = res.max_age(history_max_age_seconds);
+                res = Some(res.unwrap_or_default().max_age(history_max_age_seconds));
             }
             res
         };
 
-        let mut builder = session
-            .declare_subscriber(key_expr.to_owned())
-            .history(history_config);
+        let mut builder = session.declare_subscriber(key_expr.to_owned()).advanced();
+
+        if let Some(history) = history_config {
+            builder = builder.history(history);
+        }
 
         if recovery_config_enabled != 0 {
             let recovery = if recovery_query_period_ms != 0 {
@@ -299,7 +312,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!("Unable to attach thread for advanced subscriber: {}", err)
                     })?;
                     let byte_array = bytes_to_java_array(&env, sample.payload())
                         .map(|array| env.auto_local(array))?;
@@ -354,13 +367,14 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
                     .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+                .map_err(|err| tracing::error!("On advanced subscriber callback error: {err}"));
             })
             .wait();
 
-        let subscriber = result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+        let subscriber =
+            result.map_err(|err| zerror!("Unable to declare advanced subscriber: {}", err))?;
 
-        tracing::debug!("Subscriber declared on '{}'.", key_expr);
+        tracing::debug!("Advanced subscriber declared on '{}'.", key_expr);
         std::mem::forget(session);
         Ok(Arc::into_raw(Arc::new(subscriber)))
     }()
@@ -385,13 +399,23 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
 /// - `is_express`: The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]).
 /// - `reliability`: The reliability value as an ordinal.
 ///
+/// - `cache_max_samples` : If > 0 - Attach a cache to this [`AdvancedPublisher`] and specify how many samples to keep for each resource.
+/// - `cache_replies_priority` : The [zenoh::core::Priority] configuration as an ordinal used for cache replies.
+/// - `cache_replies_congestion_control` : The [zenoh::publisher::CongestionControl] configuration as an ordinal used for cache replies.
+/// - `cache_replies_is_express: jboolean` : The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]) used for cache replies.
+///
+/// - `sample_miss_detection_heartbeat_ms` : If > 0 - allow matching [`AdvancedSubscriber`] to detect lost samples and optionally ask for retransimission.
+/// Retransmission can only be achieved if cache is enabled.
+///
+/// - `sample_miss_detection_heartbeat_is_sporadic` : determine if heartbeat argument is treated as sporadic
+///
 /// # Returns:
-/// - A raw pointer to the declared Zenoh publisher or null in case of failure.
+/// - A raw pointer to the declared [AdvancedPublisher] or null in case of failure.
 ///
 /// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The ownership of the session is not transferred, and the session pointer remains valid
+/// - It assumes that the provided [Session] pointer is valid and has not been modified or freed.
+/// - The ownership of the [Session] is not transferred, and the [Session] pointer remains valid
 ///   after this function call so it is safe to use it after this call.
 /// - The function may throw an exception in case of failure, which should be handled by the caller.
 ///
@@ -426,35 +450,46 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
         let priority = decode_priority(priority)?;
         let reliability = decode_reliability(reliability)?;
 
-        let cache_config = {
-            let cache_congestion_control =
-                decode_congestion_control(cache_replies_congestion_control)?;
-            let cache_priority = decode_priority(cache_replies_priority)?;
+        let cache_config =
+            {
+                match cache_max_samples {
+                    0 => None,
+                    cache_max_samples => {
+                        let cache_congestion_control =
+                            decode_congestion_control(cache_replies_congestion_control)?;
+                        let cache_priority = decode_priority(cache_replies_priority)?;
 
-            let replies_config = RepliesConfig::default()
-                .priority(cache_priority)
-                .congestion_control(cache_congestion_control)
-                .express(cache_replies_is_express != 0);
+                        let replies_config = RepliesConfig::default()
+                            .priority(cache_priority)
+                            .congestion_control(cache_congestion_control)
+                            .express(cache_replies_is_express != 0);
 
-            CacheConfig::default()
-                .max_samples(
-                    cache_max_samples
-                        .try_into()
-                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-                )
-                .replies_config(replies_config)
-        };
+                        Some(
+                            CacheConfig::default()
+                                .max_samples(cache_max_samples.try_into().map_err(
+                                    |e: std::num::TryFromIntError| zerror!(e.to_string()),
+                                )?)
+                                .replies_config(replies_config),
+                        )
+                    }
+                }
+            };
 
         let miss_detection_config = {
-            let duration = Duration::from_millis(
-                sample_miss_detection_heartbeat_ms
-                    .try_into()
-                    .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-            );
+            match sample_miss_detection_heartbeat_ms {
+                0 => None,
+                sample_miss_detection_heartbeat_ms => {
+                    let duration = Duration::from_millis(
+                        sample_miss_detection_heartbeat_ms
+                            .try_into()
+                            .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                    );
 
-            match sample_miss_detection_heartbeat_is_sporadic != 0 {
-                true => MissDetectionConfig::default().sporadic_heartbeat(duration),
-                false => MissDetectionConfig::default().heartbeat(duration),
+                    Some(match sample_miss_detection_heartbeat_is_sporadic != 0 {
+                        true => MissDetectionConfig::default().sporadic_heartbeat(duration),
+                        false => MissDetectionConfig::default().heartbeat(duration),
+                    })
+                }
             }
         };
 
@@ -464,8 +499,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
             .priority(priority)
             .express(is_express != 0)
             .reliability(reliability)
-            .cache(cache_config)
-            .sample_miss_detection(miss_detection_config);
+            .advanced();
+
+        if let Some(miss_detection) = miss_detection_config {
+            builder = builder.sample_miss_detection(miss_detection);
+        }
+
+        if let Some(cache) = cache_config {
+            builder = builder.cache(cache);
+        }
 
         if publisher_detection != 0 {
             builder = builder.publisher_detection();

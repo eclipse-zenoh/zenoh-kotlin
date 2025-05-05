@@ -17,25 +17,25 @@ use std::sync::Arc;
 use jni::{objects::JClass, JNIEnv};
 use zenoh_ext::SampleMissListener;
 
-/// Frees the [Subscriber].
+/// Frees the [SampleMissListener].
 ///
 /// # Parameters:
 /// - `_env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `subscriber_ptr`: The raw pointer to the Zenoh subscriber ([Subscriber]).
+/// - `sample_miss_listener_ptr`: The raw pointer to the [SampleMissListener].
 ///
 /// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation.
-/// - It assumes that the provided subscriber pointer is valid and has not been modified or freed.
+/// - It assumes that the provided [SampleMissListener] pointer is valid and has not been modified or freed.
 /// - The function takes ownership of the raw pointer and releases the associated memory.
-/// - After calling this function, the subscriber pointer becomes invalid and should not be used anymore.
+/// - After calling this function, the [SampleMissListener] pointer becomes invalid and should not be used anymore.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNISampleMissListener_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    matching_listener_ptr: *const SampleMissListener<()>,
+    sample_miss_listener_ptr: *const SampleMissListener<()>,
 ) {
-    Arc::from_raw(matching_listener_ptr);
+    Arc::from_raw(sample_miss_listener_ptr);
 }

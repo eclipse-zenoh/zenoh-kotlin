@@ -17,18 +17,18 @@ use std::sync::Arc;
 use jni::{objects::JClass, JNIEnv};
 use zenoh::matching::MatchingListener;
 
-/// Frees the [Subscriber].
+/// Frees the [MatchingListener].
 ///
 /// # Parameters:
 /// - `_env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `subscriber_ptr`: The raw pointer to the Zenoh subscriber ([Subscriber]).
+/// - `matching_listener_ptr`: The raw pointer to the [MatchingListener].
 ///
 /// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation.
-/// - It assumes that the provided subscriber pointer is valid and has not been modified or freed.
+/// - It assumes that the provided [MatchingListener] pointer is valid and has not been modified or freed.
 /// - The function takes ownership of the raw pointer and releases the associated memory.
-/// - After calling this function, the subscriber pointer becomes invalid and should not be used anymore.
+/// - After calling this function, the [MatchingListener] pointer becomes invalid and should not be used anymore.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -14,8 +14,6 @@
 
 package io.zenoh.pubsub
 
-import io.zenoh.*
-import io.zenoh.Session.Companion.sessionClosedException
 import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIAdvancedPublisher
 import io.zenoh.keyexpr.KeyExpr
@@ -23,55 +21,18 @@ import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
-import io.zenoh.handlers.Callback
-import io.zenoh.handlers.ChannelHandler
-import io.zenoh.handlers.Handler
 import io.zenoh.handlers.MatchingCallback
 import io.zenoh.handlers.MatchingChannelHandler
 import io.zenoh.handlers.MatchingHandler
-import io.zenoh.qos.Reliability
-import io.zenoh.sample.Sample
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
 /**
- * # Publisher
+ * # Advanced Publisher
  *
- * A Zenoh Publisher.
+ * A [Publisher] with advanced features.
  *
- * A publisher is automatically dropped when using it with the 'try-with-resources' statement (i.e. 'use' in Kotlin).
- * The session from which it was declared will also keep a reference to it and undeclare it once the session is closed.
- *
- * Example of a publisher declaration:
- * ```kotlin
- * val keyExpr = "demo/kotlin/greeting".intoKeyExpr().getOrThrow()
- * Zenoh.open(Config.default()).onSuccess {
- *     it.use { session ->
- *         session
- *             .declarePublisher(keyExpr)
- *             .onSuccess { pub ->
- *                 var i = 0
- *                 while (true) {
- *                     pub.put(ZBytes.from("Hello for the ${i}th time!"))
- *                     Thread.sleep(1000)
- *                     i++
- *                 }
- *             }
- *     }
- * }
- * ```
- *
- * ## Lifespan
- *
- * Internally, the [Session] from which the [Publisher] was declared keeps a reference to it, therefore keeping it alive
- * until the session is closed. For the cases where we want to stop the publisher earlier, it's necessary
- * to keep a reference to it in order to undeclare it later.
- *
- * @property keyExpr The key expression the publisher will be associated to.
- * @property qos [QoS] configuration of the publisher.
- * @property encoding Default [Encoding] of the data to be published. A different encoding can be later provided when performing
- *  a `put` operation.
- * @see Session.declarePublisher
+ * @see Publisher
  */
 class AdvancedPublisher internal constructor(
     val keyExpr: KeyExpr,
@@ -90,7 +51,7 @@ class AdvancedPublisher internal constructor(
     /** Get the priority of the written data. */
     fun priority() = qos.priority
 
-    /** Declare matching status listener for this publisher with callback
+    /** Declare [MatchingListener] for this publisher with callback
      *
      * @param callback: callback to be executed when matching status changes
      * @param onClose: callback to be executed when associated matching listener will be closed
@@ -103,11 +64,12 @@ class AdvancedPublisher internal constructor(
         jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: InvalidPublisherResult
     }
 
-    /** Declare matching status listener for this publisher, specifying a handler to handle matching statuses.
+    /** Declare [MatchingListener] for this publisher, specifying a handler to handle matching statuses.
      *
-     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the session.
-     * @param onClose: callback to be executed when associated matching listener will be closed
-     * */
+     * @param handler [MatchingHandler] implementation to handle the matching statuses.
+     * [MatchingHandler.onClose] will be called upon closing the associated [AdvancedPublisher] or dropping [MatchingListener].
+     * @param onClose: callback to be executed when associated [AdvancedPublisher] is closed or [MatchingListener] is dropped.
+     */
     fun <R> declareMatchingListener(handler: MatchingHandler<R>,
                                     onClose: (() -> Unit)? = null,) = {
         val resolvedOnClose = fun() {
@@ -118,10 +80,11 @@ class AdvancedPublisher internal constructor(
         jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: InvalidPublisherResult
     }
 
-    /** Declare matching status listener for this publisher, specifying a [Channel] to pipe the received matching statuses.
+    /** Declare [MatchingListener] for this publisher, specifying a [Channel] to pipe the received matching statuses.
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * @param channel [Channel] instance through which the matching statuses will be piped.
+     * Once the [AdvancedPublisher] is closed or [MatchingListener] is dropped, the channel is closed as well.
+     * @param onClose: callback to be executed when associated [AdvancedPublisher] is closed or [MatchingListener] is dropped
      * */
     fun <R> declareMatchingListener(channel: Channel<Boolean>,
                                     onClose: (() -> Unit)? = null,) = {
@@ -134,10 +97,10 @@ class AdvancedPublisher internal constructor(
         jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: InvalidPublisherResult
     }
 
-    /** Declare background matching status listener for this publisher with callback
+    /** Declare background matching status listener for this [AdvancedPublisher] with callback
      *
      * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * @param onClose: callback to be executed when associated [AdvancedPublisher] will be closed
      * */
     fun declareBackgroundMatchingListener(callback: MatchingCallback,
                                 onClose: (() -> Unit)? = null,) = {
@@ -147,10 +110,10 @@ class AdvancedPublisher internal constructor(
         jniPublisher?.declareBackgroundMatchingListener(callback, resolvedOnClose)?: InvalidPublisherResult
     }
 
-    /** Declare matching background status listener for this publisher, specifying a handler to handle matching statuses.
+    /** Declare background matching status listener for this [AdvancedPublisher], specifying a handler to handle matching statuses.
      *
-     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the session.
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * @param handler [MatchingHandler] implementation to handle the received samples. [MatchingHandler.onClose] will be called upon closing associated [AdvancedPublisher].
+     * @param onClose: callback to be executed when associated [AdvancedPublisher] will be closed
      * */
     fun <R> declareBackgroundMatchingListener(handler: MatchingHandler<R>,
                                     onClose: (() -> Unit)? = null,) = {
@@ -162,10 +125,10 @@ class AdvancedPublisher internal constructor(
         jniPublisher?.declareBackgroundMatchingListener(callback, resolvedOnClose)?: InvalidPublisherResult
     }
 
-    /** Declare background matching status listener for this publisher, specifying a [Channel] to pipe the received matching statuses.
+    /** Declare background matching status listener for this [AdvancedPublisher], specifying a [Channel] to pipe the received matching statuses.
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * @param channel [Channel] instance through which the matching statuses will be piped.
+     * @param onClose: callback to be executed when associated [AdvancedPublisher] will be closed
      * */
     fun <R> declareBackgroundMatchingListener(channel: Channel<Boolean>,
                                     onClose: (() -> Unit)? = null,) = {
@@ -179,7 +142,7 @@ class AdvancedPublisher internal constructor(
     }
 
     /**
-     * Return the matching status of the publisher.
+     * Return the matching status of the [AdvancedPublisher].
      *
      * Will return true if there exist Subscribers matching the Publisher's key expression and false otherwise.
      */

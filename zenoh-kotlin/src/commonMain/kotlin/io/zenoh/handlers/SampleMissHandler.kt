@@ -19,19 +19,19 @@ import io.zenoh.pubsub.SampleMiss
 
 /**
  * Handler interface for classes implementing behavior to handle the
- * incoming [T] elements.
+ * incoming [SampleMiss] events.
  *
  * **Example**:
  * ```kotlin
- * class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
+ * class SampleMissQueueHandler : SampleMissHandler<ArrayDeque<SampleMiss>> {
  *     private val queue: ArrayDeque<T> = ArrayDeque()
  *
- *     override fun handle(t: T) {
- *         println("Received $t, enqueuing...")
- *         queue.add(t)
+ *     override fun handle(miss: SampleMiss) {
+ *         println("Received $miss, enqueuing...")
+ *         queue.add(miss)
  *     }
  *
- *     override fun receiver(): ArrayDeque<T> {
+ *     override fun receiver(): ArrayDeque<SampleMiss> {
  *         return queue
  *     }
  *
@@ -41,20 +41,15 @@ import io.zenoh.pubsub.SampleMiss
  * }
  * ```
  *
- * That `QueueHandler` could then be used as follows, for instance for a subscriber:
- * ```kotlin
- * val subscriber = session.declareSubscriber(keyExpr, handler = QueueHandler<Sample>()).getOrThrow()
- * ```
  *
- * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.query.Query].
  * @param R An arbitrary receiver.
  */
 interface SampleMissHandler<R> {
 
     /**
-     * Handle the received [t] element.
+     * Handle the received [SampleMiss] event.
      *
-     * @param t An element of type [T].
+     * @param miss A [SampleMiss] event.
      */
     fun handle(miss: SampleMiss)
 
@@ -65,10 +60,6 @@ interface SampleMissHandler<R> {
 
     /**
      * This callback is invoked by Zenoh at the conclusion of the handler's lifecycle.
-     *
-     * For instances of [io.zenoh.query.Queryable] and [io.zenoh.pubsub.Subscriber],
-     * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
-     * it is invoked when no more elements of type [T] are expected to be received.
      */
     fun onClose()
 }

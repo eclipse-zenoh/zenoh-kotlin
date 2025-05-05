@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -18,10 +18,9 @@ import io.zenoh.jni.JNISampleMissListener
 import io.zenoh.session.SessionDeclaration
 
 /**
- * SampleMissListener
  * A listener to detect missed samples.
  *
- * Missed samples can only be detected from [AdvancedPublisher] that enables [MissDetectionConfig].
+ * Missed samples can only be detected from [AdvancedPublisher] that enables miss detection config.
  */
 class SampleMissListener internal constructor(
     private var jniSampleMissListener: JNISampleMissListener?,
@@ -35,7 +34,7 @@ class SampleMissListener internal constructor(
     }
 
     /**
-     * Closes the publisher. This function is equivalent to [undeclare] and is called automatically when using
+     * Closes the listener. This function is equivalent to [undeclare] and is called automatically when using
      * try-with-resources.
      */
     override fun close() {
@@ -43,9 +42,9 @@ class SampleMissListener internal constructor(
     }
 
     /**
-     * Undeclares the publisher.
+     * Undeclares the listener.
      *
-     * Further operations performed with the publisher will not be valid anymore.
+     * Further operations performed with the listener will not be valid anymore.
      */
     override fun undeclare() {
         jniSampleMissListener?.close()

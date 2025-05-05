@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -37,28 +37,24 @@ use std::ptr::null;
 use jni::objects::JObject;
 use zenoh::matching::MatchingListener;
 
-/// Declare an advanced Zenoh subscriber via JNI.
+/// Declare a MatchingListener for [AdvancedPublisher] via JNI.
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
-/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+/// - `advanced_publisher_ptr`: The raw pointer to an [AdvancedPublisher].
+/// - `callback`: The callback function as an instance of the `JNIMatchingListenerCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon undeclaring the [MatchingListener].
 ///
 /// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - A raw pointer to the declared [MatchingListener]. In case of failure, an exception is thrown and null is returned.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+/// - It assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - The [AdvancedPublisher] pointer remains valid and the ownership of the [AdvancedPublisher] is not transferred,
+///   allowing safe usage of the [AdvancedPublisher] after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNIMatchingListenerCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
 ///
@@ -92,7 +88,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!("Unable to attach thread for matching listener: {}", err)
                     })?;
 
                     env.call_method(
@@ -104,12 +100,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
                     .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+                .map_err(|err| tracing::error!("On matching listener callback error: {err}"));
             })
             .wait();
 
         let matching_listener =
-            result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+            result.map_err(|err| zerror!("Unable to declare matching listener: {}", err))?;
 
         tracing::debug!(
             "Matching listener declared on '{}'...",
@@ -124,28 +120,22 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
     })
 }
 
-/// Declare an advanced Zenoh subscriber via JNI.
-///
+/// Declare a background matching listener for [AdvancedPublisher] via JNI.
+/// Register the listener callback to be run in background until the [AdvancedPublisher] is undeclared.
+/// 
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
-/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
-///
-/// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - `advanced_publisher_ptr`: The raw pointer to an [AdvancedPublisher].
+/// - `callback`: The callback function as an instance of the `JNIMatchingListenerCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon undeclaring the [AdvancedPublisher].
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+/// - It assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - The [AdvancedPublisher] pointer remains valid and the ownership of the [AdvancedPublisher] is not transferred,
+///   allowing safe usage of the [AdvancedPublisher] after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNIMatchingListenerCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
 ///
@@ -179,7 +169,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroun
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!("Unable to attach thread for matching listener: {}", err)
                     })?;
 
                     env.call_method(
@@ -191,12 +181,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroun
                     .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+                .map_err(|err| tracing::error!("On matching listener callback error: {err}"));
             })
             .background()
             .wait();
 
-        result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+        result.map_err(|err| zerror!("Unable to declare matching listener: {}", err))?;
 
         tracing::debug!(
             "Matching listener declared on '{}'...",
@@ -210,29 +200,21 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroun
     })
 }
 
-/// Declare an advanced Zenoh subscriber via JNI.
+/// Return the matching status of the [AdvancedPublisher].
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
-/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+/// - `advanced_publisher_ptr`: The raw pointer to an [AdvancedPublisher].
 ///
 /// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - will return true if there exist Subscribers matching the Publisher's key expression and false otherwise.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
-///   in Java/Kotlin, matching the specified signature.
+/// - It assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - The [AdvancedPublisher] pointer remains valid and the ownership of the [AdvancedPublisher] is not transferred,
+///   allowing safe usage of the [AdvancedPublisher] after this function call.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
 ///
 #[cfg(feature = "zenoh-ext")]
@@ -257,7 +239,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_getMatchingStatu
         })
 }
 
-/// Performs a PUT operation on a Zenoh publisher via JNI.
+/// Performs a PUT operation on an [AdvancedPublisher] via JNI.
 ///
 /// # Parameters
 /// - `env`: The JNI environment pointer.
@@ -266,12 +248,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_getMatchingStatu
 /// - `encoding_id`: The encoding ID of the payload.
 /// - `encoding_schema`: Nullable encoding schema string of the payload.
 /// - `attachment`: Nullble byte array for the attachment.
-/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+/// - `publisher_ptr`: The raw pointer to the [AdvancedPublisher].
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - Assumes that the provided publisher pointer is valid and has not been modified or freed.
-/// - The publisher pointer remains valid after this function call.
+/// - Assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - The [AdvancedPublisher] pointer remains valid after this function call.
 /// - May throw an exception in case of failure, which must be handled by the caller.
 ///
 #[no_mangle]
@@ -301,18 +283,18 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_putViaJNI(
     std::mem::forget(publisher);
 }
 
-/// Performs a DELETE operation on a Zenoh publisher via JNI.
+/// Performs a DELETE operation on an [AdvancedPublisher] via JNI.
 ///
 /// # Parameters
 /// - `env`: The JNI environment pointer.
 /// - `_class`: The Java class reference (unused).
 /// - `attachment`: Nullble byte array for the attachment.
-/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+/// - `publisher_ptr`: The raw pointer to the [AdvancedPublisher].
 ///
 /// # Safety
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - Assumes that the provided publisher pointer is valid and has not been modified or freed.
-/// - The publisher pointer remains valid after this function call.
+/// - Assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - The [AdvancedPublisher] pointer remains valid after this function call.
 /// - May throw an exception in case of failure, which must be handled by the caller.
 ///
 #[no_mangle]
@@ -336,17 +318,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_deleteViaJNI(
     std::mem::forget(publisher)
 }
 
-/// Frees the publisher.
+/// Frees the [AdvancedPublisher].
 ///
 /// # Parameters:
 /// - `_env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `publisher_ptr`: The raw pointer to the Zenoh publisher ([Publisher]).
+/// - `publisher_ptr`: The raw pointer to the [AdvancedPublisher].
 ///
 /// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation.
-/// - It assumes that the provided publisher pointer is valid and has not been modified or freed.
-/// - After calling this function, the publisher pointer becomes invalid and should not be used anymore.
+/// - It assumes that the provided [AdvancedPublisher] pointer is valid and has not been modified or freed.
+/// - After calling this function, the [AdvancedPublisher] pointer becomes invalid and should not be used anymore.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]

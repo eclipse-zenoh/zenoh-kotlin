@@ -18,11 +18,10 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.runBlocking
 
 /**
- * Channel handler
+ * Channel handler for matching status
  *
  * Implementation of a [Handler] with a [Channel] receiver.
  *
- * @param T
  * @property channel
  * @constructor Create empty Channel handler
  */

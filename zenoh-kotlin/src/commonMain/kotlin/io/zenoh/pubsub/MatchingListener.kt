@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -14,25 +14,15 @@
 
 package io.zenoh.pubsub
 
-import io.zenoh.*
-import io.zenoh.exceptions.ZError
-import io.zenoh.jni.JNIAdvancedPublisher
-import io.zenoh.keyexpr.KeyExpr
-import io.zenoh.bytes.Encoding
-import io.zenoh.qos.QoS
-import io.zenoh.bytes.IntoZBytes
-import io.zenoh.bytes.ZBytes
 import io.zenoh.jni.JNIMatchingListener
 import io.zenoh.session.SessionDeclaration
 
 /**
  * # MatchingListener
- * A listener that sends notifications when the [`MatchingStatus`] of a
- * corresponding Zenoh entity changes.
+ * A listener that sends notifications when the matching status of a corresponding Zenoh entity changes.
  *
- * Callback matching listeners will run in background until the corresponding Zenoh entity is undeclared,
+ * Matching listeners will run in background until the corresponding Zenoh entity is undeclared,
  * or until it is undeclared.
- * On the other hand, matching listener with a handler are automatically undeclared when dropped.
  */
 class MatchingListener internal constructor(
     private var jniMatchingListener: JNIMatchingListener?,
@@ -46,7 +36,7 @@ class MatchingListener internal constructor(
     }
 
     /**
-     * Closes the publisher. This function is equivalent to [undeclare] and is called automatically when using
+     * Closes the listener. This function is equivalent to [undeclare] and is called automatically when using
      * try-with-resources.
      */
     override fun close() {
@@ -54,9 +44,9 @@ class MatchingListener internal constructor(
     }
 
     /**
-     * Undeclares the publisher.
+     * Undeclares the listener.
      *
-     * Further operations performed with the publisher will not be valid anymore.
+     * Further operations performed with the listener will not be valid anymore.
      */
     override fun undeclare() {
         jniMatchingListener?.close()

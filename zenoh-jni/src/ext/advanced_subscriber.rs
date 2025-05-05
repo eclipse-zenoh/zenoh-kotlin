@@ -35,27 +35,23 @@ use std::ptr::null;
 
 use crate::throw_exception;
 
-/// Declare an advanced Zenoh subscriber via JNI.
+/// Declares a subscriber to detect matching publishers for an [AdvancedSubscriber] via JNI.
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
+/// - `advanced_subscriber_ptr`: The raw pointer to the [AdvancedSubscriber].
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
 ///
 /// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - A raw pointer to the declared [Subscriber]. In case of failure, an exception is thrown and null is returned.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
+/// - It assumes that the provided [AdvancedSubscriber] pointer is valid and has not been modified or freed.
+/// - The [AdvancedSubscriber] pointer remains valid and the ownership of the [AdvancedSubscriber] is not transferred,
+///   allowing safe usage of the [AdvancedSubscriber] after this function call.
 /// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
@@ -67,7 +63,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
     mut env: JNIEnv,
     _class: JClass,
     advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
-
+    history: jboolean,
     callback: JObject,
     on_close: JObject,
 ) -> *const Subscriber<()> {
@@ -80,17 +76,21 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
         let on_close = load_on_close(&java_vm, on_close_global_ref);
 
         tracing::debug!(
-            "Declaring sample miss listener on '{}'...",
+            "Declaring detect publishers subscriber on '{}'...",
             advanced_subscriber.key_expr()
         );
 
         let result = advanced_subscriber
             .detect_publishers()
+            .history(history != 0)
             .callback(move |sample: Sample| {
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!(
+                            "Unable to attach thread for detect publishers subscriber: {}",
+                            err
+                        )
                     })?;
                     let byte_array = bytes_to_java_array(&env, sample.payload())
                         .map(|array| env.auto_local(array))?;
@@ -145,15 +145,17 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
                     .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+                .map_err(|err| {
+                    tracing::error!("On detect publishers subscriber callback error: {err}")
+                });
             })
             .wait();
 
-        let detect_publishers_subscriber =
-            result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+        let detect_publishers_subscriber = result
+            .map_err(|err| zerror!("Unable to declare detect publishers subscriber: {}", err))?;
 
         tracing::debug!(
-            "Matching listener declared on '{}'...",
+            "Detect publishers subscriber declared on '{}'...",
             advanced_subscriber.key_expr()
         );
         std::mem::forget(advanced_subscriber);
@@ -165,28 +167,151 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
     })
 }
 
-/// Declare an advanced Zenoh subscriber via JNI.
+/// Declares a background subscriber to detect matching publishers for an [AdvancedSubscriber] via JNI.
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
+/// - `advanced_subscriber_ptr`: The raw pointer to the [AdvancedSubscriber].
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
 /// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
 ///
+/// Safety:
+/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
+/// - It assumes that the provided [AdvancedSubscriber] pointer is valid and has not been modified or freed.
+/// - The [AdvancedSubscriber] pointer remains valid and the ownership of the [AdvancedSubscriber] is not transferred,
+///   allowing safe usage of the [AdvancedSubscriber] after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+///   in Java/Kotlin, matching the specified signature.
+/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
+///
+#[cfg(feature = "zenoh-ext")]
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgroundDetectPublishersSubscriberViaJNI(
+    mut env: JNIEnv,
+    _class: JClass,
+    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
+    history: jboolean,
+    callback: JObject,
+    on_close: JObject,
+) {
+    let advanced_subscriber = Arc::from_raw(advanced_subscriber_ptr);
+
+    || -> ZResult<()> {
+        let java_vm = Arc::new(get_java_vm(&mut env)?);
+        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        tracing::debug!(
+            "Declaring background detect publishers subscriber on '{}'...",
+            advanced_subscriber.key_expr()
+        );
+
+        advanced_subscriber
+            .detect_publishers()
+            .history(history != 0)
+            .callback(move |sample: Sample| {
+                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+                let _ = || -> ZResult<()> {
+                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                        zerror!(
+                            "Unable to attach thread for background detect publishers subscriber: {}",
+                            err
+                        )
+                    })?;
+                    let byte_array = bytes_to_java_array(&env, sample.payload())
+                        .map(|array| env.auto_local(array))?;
+
+                    let encoding_id: jint = sample.encoding().id() as jint;
+                    let encoding_schema = match sample.encoding().schema() {
+                        Some(schema) => slice_to_java_string(&env, schema)?,
+                        None => JString::default(),
+                    };
+                    let kind = sample.kind() as jint;
+                    let (timestamp, is_valid) = sample
+                        .timestamp()
+                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
+                        .unwrap_or((0, false));
+
+                    let attachment_bytes = sample
+                        .attachment()
+                        .map_or_else(
+                            || Ok(JByteArray::default()),
+                            |attachment| bytes_to_java_array(&env, attachment),
+                        )
+                        .map(|array| env.auto_local(array))
+                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
+
+                    let key_expr_str = env.auto_local(
+                        env.new_string(sample.key_expr().to_string())
+                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
+                    );
+
+                    let express = sample.express();
+                    let priority = sample.priority() as jint;
+                    let cc = sample.congestion_control() as jint;
+
+                    env.call_method(
+                        &callback_global_ref,
+                        "run",
+                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+                        &[
+                            JValue::from(&key_expr_str),
+                            JValue::from(&byte_array),
+                            JValue::from(encoding_id),
+                            JValue::from(&encoding_schema),
+                            JValue::from(kind),
+                            JValue::from(timestamp as i64),
+                            JValue::from(is_valid),
+                            JValue::from(&attachment_bytes),
+                            JValue::from(express),
+                            JValue::from(priority),
+                            JValue::from(cc),
+                        ],
+                    )
+                    .map_err(|err| zerror!(err))?;
+                    Ok(())
+                }()
+                .map_err(|err| {
+                    tracing::error!("On background detect publishers subscriber callback error: {err}")
+                });
+            })
+            .background()
+            .wait()
+            .map_err(|err| zerror!("Unable to declare background detect publishers subscriber: {}", err))?;
+
+        tracing::debug!(
+            "Background detect publishers subscriber declared on '{}'...",
+            advanced_subscriber.key_expr()
+        );
+        std::mem::forget(advanced_subscriber);
+        Ok(())
+    }()
+    .unwrap_or_else(|err| {
+        throw_exception!(env, err);
+    })
+}
+
+/// Declares a [SampleMissListener] to detect missed samples for an [AdvancedSubscriber] via JNI.
+///
+/// Parameters:
+/// - `env`: The JNI environment.
+/// - `_class`: The JNI class.
+/// - `advanced_subscriber_ptr`: The raw pointer to the [AdvancedSubscriber].
+/// - `callback`: The callback function as an instance of the `JNISampleMissListenerCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
+///
 /// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - A raw pointer to the declared [SampleMissListener]. In case of failure, an exception is thrown and null is returned.
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+/// - It assumes that the provided [AdvancedSubscriber] pointer is valid and has not been modified or freed.
+/// - The [AdvancedSubscriber] pointer remains valid and the ownership of the [AdvancedSubscriber] is not transferred,
+///   allowing safe usage of the [AdvancedSubscriber] after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISampleMissListenerCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
 ///
@@ -220,7 +345,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!("Unable to attach thread for sample miss listener: {}", err)
                     })?;
 
                     let (zid_lower, zid_upper, eid) = {
@@ -248,19 +373,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
                     .map_err(|err| zerror!(err))?;
                     Ok(())
                 }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
+                .map_err(|err| tracing::error!("On sample miss listener callback error: {err}"));
             })
             .wait();
 
-        let matching_listener =
-            result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
+        let sample_miss_listener =
+            result.map_err(|err| zerror!("Unable to declare sample miss listener: {}", err))?;
 
         tracing::debug!(
             "Matching listener declared on '{}'...",
             advanced_subscriber.key_expr()
         );
         std::mem::forget(advanced_subscriber);
-        Ok(Arc::into_raw(Arc::new(matching_listener)))
+        Ok(Arc::into_raw(Arc::new(sample_miss_listener)))
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
@@ -268,28 +393,22 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
     })
 }
 
-/// Declare an advanced Zenoh subscriber via JNI.
+/// Declare a background sample miss listener for [AdvancedSubscriber] via JNI.
+/// Register the listener callback to be run in background until the [AdvancedSubscriber] is undeclared.
 ///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
-/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
-///
-/// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
+/// - `advanced_subscriber_ptr`: The raw pointer to an [AdvancedSubscriber].
+/// - `callback`: The callback function as an instance of the `JNISampleMissListenerCallback` interface in Java/Kotlin.
+/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon undeclaring the [AdvancedSubscriber].
 ///
 /// Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
+/// - It assumes that the provided [AdvancedSubscriber] pointer is valid and has not been modified or freed.
+/// - The [AdvancedSubscriber] pointer remains valid and the ownership of the [AdvancedSubscriber] is not transferred,
+///   allowing safe usage of the [AdvancedSubscriber] after this function call.
+/// - The callback function passed as `callback` must be a valid instance of the `JNISampleMissListenerCallback` interface
 ///   in Java/Kotlin, matching the specified signature.
 /// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
 ///
@@ -313,7 +432,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
         let on_close = load_on_close(&java_vm, on_close_global_ref);
 
         tracing::debug!(
-            "Declaring sample miss listener on '{}'...",
+            "Declaring background sample miss listener on '{}'...",
             advanced_subscriber.key_expr()
         );
 
@@ -323,7 +442,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
                 on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
                 let _ = || -> ZResult<()> {
                     let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
+                        zerror!(
+                            "Unable to attach thread for background sample miss listener: {}",
+                            err
+                        )
                     })?;
 
                     let (zid_lower, zid_upper, eid) = {
@@ -371,147 +493,18 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
     })
 }
 
-/// Declare a Zenoh subscriber via JNI.
-///
-/// Parameters:
-/// - `env`: The JNI environment.
-/// - `_class`: The JNI class.
-/// - `key_expr_ptr`: The key expression pointer for the subscriber. May be null in case of using an
-///     undeclared key expression.
-/// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
-/// - `session_ptr`: The raw pointer to the Zenoh session.
-/// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
-/// - `on_close`: A Java/Kotlin `JNIOnCloseCallback` function interface to be called upon closing the subscriber.
-///
-/// Returns:
-/// - A raw pointer to the declared Zenoh subscriber. In case of failure, an exception is thrown and null is returned.
-///
-/// Safety:
-/// - The function is marked as unsafe due to raw pointer manipulation and JNI interaction.
-/// - It assumes that the provided session pointer is valid and has not been modified or freed.
-/// - The session pointer remains valid and the ownership of the session is not transferred,
-///   allowing safe usage of the session after this function call.
-/// - The callback function passed as `callback` must be a valid instance of the `JNISubscriberCallback` interface
-///   in Java/Kotlin, matching the specified signature.
-/// - The function may throw a JNI exception in case of failure, which should be handled by the caller.
-///
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_detectPublishersViaJNI(
-    mut env: JNIEnv,
-    _class: JClass,
-    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
-    history: jboolean,
-    callback: JObject,
-    on_close: JObject,
-) -> *const Subscriber<()> {
-    let advanced_subscriber = Arc::from_raw(advanced_subscriber_ptr);
-
-    tracing::debug!(
-        "Declaring detect publishers on '{}'...",
-        advanced_subscriber.key_expr()
-    );
-
-    || -> ZResult<*const Subscriber<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
-        let result = advanced_subscriber
-            .detect_publishers()
-            .history(history != 0)
-            .callback(move |sample: Sample| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
-                    })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())
-                        .map(|array| env.auto_local(array))?;
-
-                    let encoding_id: jint = sample.encoding().id() as jint;
-                    let encoding_schema = match sample.encoding().schema() {
-                        Some(schema) => slice_to_java_string(&env, schema)?,
-                        None => JString::default(),
-                    };
-                    let kind = sample.kind() as jint;
-                    let (timestamp, is_valid) = sample
-                        .timestamp()
-                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                        .unwrap_or((0, false));
-
-                    let attachment_bytes = sample
-                        .attachment()
-                        .map_or_else(
-                            || Ok(JByteArray::default()),
-                            |attachment| bytes_to_java_array(&env, attachment),
-                        )
-                        .map(|array| env.auto_local(array))
-                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
-
-                    let key_expr_str = env.auto_local(
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
-                    );
-
-                    let express = sample.express();
-                    let priority = sample.priority() as jint;
-                    let cc = sample.congestion_control() as jint;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                        &[
-                            JValue::from(&key_expr_str),
-                            JValue::from(&byte_array),
-                            JValue::from(encoding_id),
-                            JValue::from(&encoding_schema),
-                            JValue::from(kind),
-                            JValue::from(timestamp as i64),
-                            JValue::from(is_valid),
-                            JValue::from(&attachment_bytes),
-                            JValue::from(express),
-                            JValue::from(priority),
-                            JValue::from(cc),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
-            })
-            .wait();
-
-        let subscriber = result.map_err(|err| zerror!("Unable to declare subscriber: {}", err))?;
-
-        tracing::debug!(
-            "Declared detect publishers on '{}'...",
-            advanced_subscriber.key_expr()
-        );
-        std::mem::forget(advanced_subscriber);
-        Ok(Arc::into_raw(Arc::new(subscriber)))
-    }()
-    .unwrap_or_else(|err| {
-        throw_exception!(env, err);
-        null()
-    })
-}
-
-/// Frees the [Subscriber].
+/// Frees the [AdvancedSubscriber].
 ///
 /// # Parameters:
 /// - `_env`: The JNI environment.
 /// - `_class`: The JNI class.
-/// - `subscriber_ptr`: The raw pointer to the Zenoh subscriber ([Subscriber]).
+/// - `subscriber_ptr`: The raw pointer to the [AdvancedSubscriber].
 ///
 /// # Safety:
 /// - The function is marked as unsafe due to raw pointer manipulation.
-/// - It assumes that the provided subscriber pointer is valid and has not been modified or freed.
+/// - It assumes that the provided [AdvancedSubscriber] pointer is valid and has not been modified or freed.
 /// - The function takes ownership of the raw pointer and releases the associated memory.
-/// - After calling this function, the subscriber pointer becomes invalid and should not be used anymore.
+/// - After calling this function, the [AdvancedSubscriber] pointer becomes invalid and should not be used anymore.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -18,19 +18,19 @@ import io.zenoh.ZenohType
 
 /**
  * Handler interface for classes implementing behavior to handle the
- * incoming [T] elements.
+ * incoming matching statuses
  *
  * **Example**:
  * ```kotlin
- * class QueueHandler<T: ZenohType> : Handler<T, ArrayDeque<T>> {
- *     private val queue: ArrayDeque<T> = ArrayDeque()
+ * class MatchingQueueHandler : MatchingHandler<ArrayDeque<Boolean>> {
+ *     private val queue: ArrayDeque<Boolean> = ArrayDeque()
  *
- *     override fun handle(t: T) {
- *         println("Received $t, enqueuing...")
- *         queue.add(t)
+ *     override fun handle(matching: Boolean) {
+ *         println("Received $matching, enqueuing...")
+ *         queue.add(matching)
  *     }
  *
- *     override fun receiver(): ArrayDeque<T> {
+ *     override fun receiver(): ArrayDeque<Boolean> {
  *         return queue
  *     }
  *
@@ -40,20 +40,14 @@ import io.zenoh.ZenohType
  * }
  * ```
  *
- * That `QueueHandler` could then be used as follows, for instance for a subscriber:
- * ```kotlin
- * val subscriber = session.declareSubscriber(keyExpr, handler = QueueHandler<Sample>()).getOrThrow()
- * ```
- *
- * @param T A receiving [ZenohType], either a [io.zenoh.sample.Sample], a [io.zenoh.query.Reply] or a [io.zenoh.query.Query].
  * @param R An arbitrary receiver.
  */
 interface MatchingHandler<R> {
 
     /**
-     * Handle the received [t] element.
+     * Handle the received matching status.
      *
-     * @param t An element of type [T].
+     * @param matching matching status value.
      */
     fun handle(matching: Boolean)
 
@@ -64,10 +58,6 @@ interface MatchingHandler<R> {
 
     /**
      * This callback is invoked by Zenoh at the conclusion of the handler's lifecycle.
-     *
-     * For instances of [io.zenoh.query.Queryable] and [io.zenoh.pubsub.Subscriber],
-     * Zenoh triggers this callback when they are closed or undeclared. In the case of a Get query
-     * it is invoked when no more elements of type [T] are expected to be received.
      */
     fun onClose()
 }

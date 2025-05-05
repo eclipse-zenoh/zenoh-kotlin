@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -14,136 +14,285 @@
 
 package io.zenoh.pubsub
 
-import io.zenoh.*
+import io.zenoh.exceptions.ZError
+import io.zenoh.handlers.Callback
+import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.handlers.SampleMissCallback
 import io.zenoh.handlers.SampleMissChannelHandler
 import io.zenoh.handlers.SampleMissHandler
 import io.zenoh.jni.JNIAdvancedSubscriber
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.sample.Sample
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
 /**
- * # Subscriber
+ * # Advanced Subscriber
  *
- * A subscriber that allows listening to updates on a key expression and reacting to changes.
+ * A [Subscriber] with advanced capabilities.
  *
- * Simple example using a callback to handle the received samples:
- * ```kotlin
- * val session = Session.open(Config.default()).getOrThrow()
- * val keyexpr = "a/b/c".intoKeyExpr().getOrThrow()
- * session.declareSubscriber(keyexpr, callback = { sample ->
- *     println(">> [Subscriber] Received $sample")
- * })
- * ```
- *
- * ## Lifespan
- *
- * Internally, the [Session] from which the [Subscriber] was declared keeps a reference to it, therefore keeping it alive
- * until the session is closed. For the cases where we want to stop the subscriber earlier, it's necessary
- * to keep a reference to it in order to undeclare it later.
- *
- * @param R Receiver type of the [Handler] implementation.
- * @property keyExpr The [KeyExpr] to which the subscriber is associated.
- * @property receiver Optional [R] that is provided when specifying a [Handler] for the subscriber.
- * @see Session.declareSubscriber
+ * @see Subscriber
  */
 class AdvancedSubscriber<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R, private var jniSubscriber: JNIAdvancedSubscriber?
 ) : AutoCloseable, SessionDeclaration {
 
-    /** Declare matching status listener for this publisher with callback
+    inline fun <reified T> invalidSubscriberResult(): Result<T> =
+        Result.failure(ZError("AdvancedSubscriber is not valid."))
+
+    /** Declares a subscriber to detect matching publishers.
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param callback: callback to be executed when matching publisher added or removed
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated detect publishers subscriber will be closed
+     * */
+    fun declareDetectPublishersSubscriber(
+        callback: Callback<Sample>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null
+    ): Result<Subscriber<Unit>> {
+        val resolvedOnClose = fun() {
+            onClose?.invoke()
+        }
+        return jniSubscriber?.declareDetectPublishersSubscriber(keyExpr, history, callback, resolvedOnClose, Unit)?:
+        invalidSubscriberResult<Subscriber<Unit>>()
+    }
+
+    /** Declares a subscriber to detect matching publishers.
+     *
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the [Subscriber].
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated detect publishers subscriber will be closed
+     * */
+    fun <R> declareDetectPublishersSubscriber(
+        handler: Handler<Sample, R>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null,
+        receiver: R
+    ): Result<Subscriber<R>> {
+        val resolvedOnClose = fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> handler.handle(t) }
+        return jniSubscriber?.declareDetectPublishersSubscriber(keyExpr, history,callback, resolvedOnClose, receiver)?:
+            invalidSubscriberResult<Subscriber<R>>()
+    }
+
+    /** Declares a subscriber to detect matching publishers.
+     *
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param channel [Channel] instance through which the received samples will be piped. Once the [Subscriber] is
+     *  closed, the channel is closed as well.
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated detect publishers subscriber will be closed
+     * */
+    fun <R> declareDetectPublishersSubscriber(
+        channel: Channel<Sample>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null,
+    ): Result<Subscriber<Channel<Sample>>> {
+        val channelHandler = ChannelHandler(channel)
+        val resolvedOnClose = fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> channelHandler.handle(t) }
+        return jniSubscriber?.declareDetectPublishersSubscriber(keyExpr, history,callback, resolvedOnClose, channelHandler.receiver())?:
+        invalidSubscriberResult<Subscriber<Channel<Sample>>>()
+    }
+
+    /** Declares a background subscriber to detect matching publishers.
+     *
+     * Register the listener callback to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param callback: callback to be executed when matching publisher added or removed
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
+     * */
+    fun declareBackgroundDetectPublishersSubscriber(
+        callback: Callback<Sample>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null
+    ): Result<Unit> {
+        val resolvedOnClose = fun() {
+            onClose?.invoke()
+        }
+        return jniSubscriber?.declareBackgroundDetectPublishersSubscriber(keyExpr, history, callback, resolvedOnClose)?:
+        invalidSubscriberResult<Unit>()
+    }
+
+    /** Declares a background subscriber to detect matching publishers.
+     *
+     * Register the handler to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the [AdvancedSubscriber].
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
+     * */
+    fun <R> declareBackgroundDetectPublishersSubscriber(
+        handler: Handler<Sample, R>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null
+    ): Result<Unit> {
+        val resolvedOnClose = fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> handler.handle(t) }
+        return jniSubscriber?.declareBackgroundDetectPublishersSubscriber(keyExpr, history,callback, resolvedOnClose)?:
+        invalidSubscriberResult<Unit>()
+    }
+
+    /** Declares a background subscriber to detect matching publishers.
+     *
+     * Register the channel to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Only [AdvancedPublisher] that enable publisher detection can be detected.
+     *
+     * @param channel [Channel] instance through which the received samples will be piped. Once the [AdvancedSubscriber] is
+     *  closed, the channel is closed as well.
+     * @param history: check already existing publishers
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
+     * */
+    fun declareBackgroundDetectPublishersSubscriber(
+        channel: Channel<Sample>,
+        history: Boolean,
+        onClose: (() -> Unit)? = null,
+    ): Result<Unit> {
+        val channelHandler = ChannelHandler(channel)
+        val resolvedOnClose = fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> channelHandler.handle(t) }
+        return jniSubscriber?.declareBackgroundDetectPublishersSubscriber(keyExpr, history,callback, resolvedOnClose)?:
+        invalidSubscriberResult<Unit>()
+    }
+
+    /** Declares a [SampleMissListener] to detect missed samples for ths [AdvancedSubscriber].
+     *
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param callback: callback to be executed when missed samples detected
+     * @param onClose: callback to be executed when associated [SampleMissListener] will be closed
      * */
     fun declareSampleMissListener(callback: SampleMissCallback,
-                                onClose: (() -> Unit)? = null,) = {
+                                onClose: (() -> Unit)? = null,): Result<SampleMissListener> {
         val resolvedOnClose = fun() {
             onClose?.invoke()
         }
-        jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<SampleMissListener>()
     }
 
-    /** Declare matching status listener for this publisher, specifying a handler to handle matching statuses.
+    /** Declares a [SampleMissListener] to detect missed samples for ths [AdvancedSubscriber].
      *
-     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the session.
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param handler [Handler] implementation to handle the sample miss events. [Handler.onClose] will be called upon closing the [SampleMissListener].
+     * @param onClose: callback to be executed when associated [SampleMissListener] will be closed
      * */
     fun <R> declareSampleMissListener(handler: SampleMissHandler<R>,
-                                    onClose: (() -> Unit)? = null,) = {
+                                    onClose: (() -> Unit)? = null,): Result<SampleMissListener> {
         val resolvedOnClose = fun() {
             handler.onClose()
             onClose?.invoke()
         }
         val callback = SampleMissCallback { miss: SampleMiss -> handler.handle(miss) }
-        jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<SampleMissListener>()
     }
 
-    /** Declare matching status listener for this publisher, specifying a [Channel] to pipe the received matching statuses.
+    /** Declares a [SampleMissListener] to detect missed samples for ths [AdvancedSubscriber].
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param channel [Channel] instance through which the sample miss events will be piped.
+     * Once the [SampleMissListener] is closed, the [Channel] is closed as well.
+     * @param onClose: callback to be executed when associated [SampleMissListener] will be closed
      * */
     fun <R> declareSampleMissListener(channel: Channel<SampleMiss>,
-                                      onClose: (() -> Unit)? = null,) = {
+                                      onClose: (() -> Unit)? = null,): Result<SampleMissListener> {
         val channelHandler = SampleMissChannelHandler(channel)
         val resolvedOnClose = fun() {
             channelHandler.onClose()
             onClose?.invoke()
         }
         val callback = SampleMissCallback { miss: SampleMiss -> channelHandler.handle(miss) }
-        jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<SampleMissListener>()
     }
 
-
-
-
-
-
-    /** Declare matching status listener for this publisher with callback
+    /** Declares a background sample miss listener to detect missed samples for ths [AdvancedSubscriber].
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Register the listener callback to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param callback: callback to be executed when missed samples detected
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
      * */
     fun declareBackgroundSampleMissListener(callback: SampleMissCallback,
-                                  onClose: (() -> Unit)? = null,) = {
+                                  onClose: (() -> Unit)? = null,): Result<Unit> {
         val resolvedOnClose = fun() {
             onClose?.invoke()
         }
-        jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<Unit>()
     }
 
-    /** Declare matching status listener for this publisher, specifying a handler to handle matching statuses.
+    /** Declares a background sample miss listener to detect missed samples for ths [AdvancedSubscriber].
      *
-     * @param handler [Handler] implementation to handle the received samples. [Handler.onClose] will be called upon closing the session.
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Register the handler to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param handler [Handler] implementation to handle the sample miss events.
+     * [Handler.onClose] will be called upon closing the [AdvancedSubscriber].
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
      * */
     fun <R> declareBackgroundSampleMissListener(handler: SampleMissHandler<R>,
-                                      onClose: (() -> Unit)? = null,) = {
+                                      onClose: (() -> Unit)? = null,): Result<Unit> {
         val resolvedOnClose = fun() {
             handler.onClose()
             onClose?.invoke()
         }
         val callback = SampleMissCallback { miss: SampleMiss -> handler.handle(miss) }
-        jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<Unit>()
     }
 
-    /** Declare matching status listener for this publisher, specifying a [Channel] to pipe the received matching statuses.
+    /** Declares a background sample miss listener to detect missed samples for ths [AdvancedSubscriber].
      *
-     * @param callback: callback to be executed when matching status changes
-     * @param onClose: callback to be executed when associated matching listener will be closed
+     * Register the channel to be run in background until the [AdvancedSubscriber] is undeclared.
+     *
+     * Missed samples can only be detected from [AdvancedPublisher] that enable sample miss detection.
+     *
+     * @param channel [Channel] instance through which the sample miss events will be piped.
+     * Once the [AdvancedSubscriber] is closed, the [Channel] is closed as well.
+     * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
      * */
     fun <R> declareBackgroundSampleMissListener(channel: Channel<SampleMiss>,
-                                      onClose: (() -> Unit)? = null,) = {
+                                      onClose: (() -> Unit)? = null,): Result<Unit> {
         val channelHandler = SampleMissChannelHandler(channel)
         val resolvedOnClose = fun() {
             channelHandler.onClose()
             onClose?.invoke()
         }
         val callback = SampleMissCallback { miss: SampleMiss -> channelHandler.handle(miss) }
-        jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)
+        return jniSubscriber?.declareBackgroundSampleMissListener(callback, resolvedOnClose)?:
+            invalidSubscriberResult<Unit>()
     }
 
 

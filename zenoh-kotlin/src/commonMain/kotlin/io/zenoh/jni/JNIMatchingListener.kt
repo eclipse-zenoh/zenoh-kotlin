@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -17,7 +17,7 @@ package io.zenoh.jni
 import io.zenoh.pubsub.MatchingListener
 
 /**
- * Adapter class to handle the interactions with Zenoh through JNI for an [MatchingListener].
+ * Adapter class to handle the interactions with Zenoh through JNI for a [MatchingListener].
  *
  * @property ptr: raw pointer to the underlying native Publisher.
  */

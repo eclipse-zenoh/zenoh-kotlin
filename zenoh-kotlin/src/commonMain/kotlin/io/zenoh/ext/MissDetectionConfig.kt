@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -16,10 +16,11 @@ package io.zenoh.ext
 
 import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.qos.CongestionControl
+import io.zenoh.pubsub.SampleMissListener
 
 /**
  * Configuration for sample miss detection
- * Enabling sample miss detection allows [AdvancedSubscriber] to detect missed samples through [AdvancedSubscriber]
+ * Enabling sample miss detection allows [AdvancedSubscriber] to detect missed samples through [SampleMissListener]
  * sample miss listener and to recover missed samples through [RecoveryConfig] in heartbeat mode.
  *
  * There are two heartbeat modes: sporadic and periodic.

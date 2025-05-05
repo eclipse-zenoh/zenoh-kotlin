@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -53,7 +53,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
         runBlocking {
             for (sample in subscriber.receiver) {
-                println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
+                println(">> [Advanced Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
                     sample.attachment?.let {
                         ", with attachment: $it"
                     } ?: ""
@@ -70,7 +70,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, callback = { sample ->
-                println(">> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
+                println(">> [Advanced Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload}'" + "${
                     sample.attachment?.let {
                         ", with attachment: $it"
                     } ?: ""
@@ -86,7 +86,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
     private fun runHandlerExample(session: Session, keyExpr: KeyExpr) {
         class ExampleHandler: Handler<Sample, Unit> {
             override fun handle(t: Sample) {
-                println(">> [Subscriber] Received ${t.kind} ('${t.keyExpr}': '${t.payload}'" + "${
+                println(">> [Advanced Subscriber] Received ${t.kind} ('${t.keyExpr}': '${t.payload}'" + "${
                     t.attachment?.let {
                         ", with attachment: $it"
                     } ?: ""

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2025 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -17,7 +17,7 @@ package io.zenoh.handlers
 import io.zenoh.pubsub.SampleMiss
 
 /**
- * Runnable matching status callback.
+ * Runnable sample miss callback.
  *
  * @constructor Create empty Callback
  */
