@@ -122,7 +122,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
 
 /// Declare a background matching listener for [AdvancedPublisher] via JNI.
 /// Register the listener callback to be run in background until the [AdvancedPublisher] is undeclared.
-/// 
+///
 /// Parameters:
 /// - `env`: The JNI environment.
 /// - `_class`: The JNI class.
