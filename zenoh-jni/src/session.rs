@@ -206,13 +206,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 /// - `key_expr_str`: String representation of the key expression to be used to declare the subscriber.
 ///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
 /// - `history_detect_late_publishers` : Enable detection of late joiner publishers and query for their historical data.
-/// Late joiner detection can only be achieved for [`AdvancedPublisher`] that enable publisher detection.
-/// History can only be retransmitted by [`AdvancedPublisher`] that enable cache.
+///   Late joiner detection can only be achieved for [`AdvancedPublisher`] that enable publisher detection.
+///   History can only be retransmitted by [`AdvancedPublisher`] that enable cache.
 /// - `history_max_samples` : Specify how many samples to query for each resource.
 /// - `history_max_age_seconds` : Specify the maximum age of samples to query.
 /// - `recovery_config_enabled` : Enable missed samples recovery
 /// - `recovery_query_period_ms` :  If > 0, enable periodic queries for not yet received Samples and specify their period.
-/// If == 0 use heartbeat mode subscribe to heartbeats of [`AdvancedPublisher`].
+///   If == 0 use heartbeat mode subscribe to heartbeats of [`AdvancedPublisher`].
 /// - `subscriber_detection` : Allow this subscriber to be detected through liveliness.
 /// - `session_ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
@@ -405,7 +405,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
 /// - `cache_replies_is_express: jboolean` : The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]) used for cache replies.
 ///
 /// - `sample_miss_detection_heartbeat_ms` : If > 0 - allow matching [`AdvancedSubscriber`] to detect lost samples and optionally ask for retransimission.
-/// Retransmission can only be achieved if cache is enabled.
+///   Retransmission can only be achieved if cache is enabled.
 ///
 /// - `sample_miss_detection_heartbeat_is_sporadic` : determine if heartbeat argument is treated as sporadic
 ///
