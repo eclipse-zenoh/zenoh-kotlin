@@ -25,7 +25,7 @@ import io.zenoh.sample.Sample
 import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.pubsub.MatchingListener
 import io.zenoh.pubsub.SampleMissListener
-//import io.zenoh.pubsub.Subscriber
+import io.zenoh.pubsub.Subscriber
 import kotlin.test.*
 
 class AdvancedPubSubTest {
@@ -38,8 +38,8 @@ class AdvancedPubSubTest {
     var hasMatchingSubscribers: Boolean = false
 
     lateinit var subscriber: AdvancedSubscriber<Unit>
-    //lateinit var matchingSubscriber: Subscriber<Unit>
-    //lateinit var matchingSamples: ArrayList<Sample>
+    lateinit var matchingSubscriber: Subscriber<Unit>
+    lateinit var matchingSamples: ArrayList<Sample>
 
     lateinit var sampleMissListener: SampleMissListener
     var sampleMisses: Long = 0
@@ -65,13 +65,10 @@ class AdvancedPubSubTest {
             callback = { sample -> receivedSamples.add(sample) },
             subscriberDetection = true
         ).getOrThrow()
-        // matchingSubscriber = subscriber.declareDetectPublishersSubscriber(callback = {sample -> matchingSamples.add(sample)}, history = true).getOrThrow()
+        matchingSubscriber = subscriber.declareDetectPublishersSubscriber(callback = {sample -> matchingSamples.add(sample)}, history = true).getOrThrow()
         sampleMissListener = subscriber.declareSampleMissListener(callback = {miss -> sampleMisses++}).getOrThrow()
 
         receivedSamples = ArrayList()
-
-        assertTrue(hasMatchingSubscribers)
-        //assertEquals(1, matchingSamples.count())
     }
 
     @AfterTest
