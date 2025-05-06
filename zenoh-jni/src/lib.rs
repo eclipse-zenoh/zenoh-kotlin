@@ -23,6 +23,7 @@ mod publisher;
 mod querier;
 mod query;
 mod queryable;
+pub(crate) mod sample_callback;
 mod scouting;
 mod session;
 mod subscriber;

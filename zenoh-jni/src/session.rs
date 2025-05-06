@@ -40,7 +40,8 @@ use zenoh_ext::{
 };
 
 use crate::{
-    errors::ZResult, key_expr::process_kotlin_key_expr, throw_exception, utils::*, zerror,
+    errors::ZResult, key_expr::process_kotlin_key_expr, sample_callback::SetJniSampleCallback,
+    throw_exception, utils::*, zerror,
 };
 
 /// Open a Zenoh session via JNI.
@@ -758,78 +759,12 @@ unsafe fn prepare_subscriber_builder<'a, 'b>(
     on_close: JObject,
     entity_name: &str,
 ) -> ZResult<SubscriberBuilder<'a, 'b, Callback<Sample>>> {
-    let java_vm = Arc::new(get_java_vm(env)?);
-    let callback_global_ref = get_callback_global_ref(env, callback)?;
-    let on_close_global_ref = get_callback_global_ref(env, on_close)?;
-    let on_close = load_on_close(&java_vm, on_close_global_ref);
-
     let key_expr = process_kotlin_key_expr(env, key_expr_str, key_expr_ptr)?;
     tracing::debug!("Declaring {entity_name} on '{}'...", key_expr);
 
-    let builder =
-        session
-            .declare_subscriber(key_expr.to_owned())
-            .callback(move |sample: Sample| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for subscriber: {}", err)
-                    })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())
-                        .map(|array| env.auto_local(array))?;
-
-                    let encoding_id: jint = sample.encoding().id() as jint;
-                    let encoding_schema = match sample.encoding().schema() {
-                        Some(schema) => slice_to_java_string(&env, schema)?,
-                        None => JString::default(),
-                    };
-                    let kind = sample.kind() as jint;
-                    let (timestamp, is_valid) = sample
-                        .timestamp()
-                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                        .unwrap_or((0, false));
-
-                    let attachment_bytes = sample
-                        .attachment()
-                        .map_or_else(
-                            || Ok(JByteArray::default()),
-                            |attachment| bytes_to_java_array(&env, attachment),
-                        )
-                        .map(|array| env.auto_local(array))
-                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
-
-                    let key_expr_str = env.auto_local(
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
-                    );
-
-                    let express = sample.express();
-                    let priority = sample.priority() as jint;
-                    let cc = sample.congestion_control() as jint;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                        &[
-                            JValue::from(&key_expr_str),
-                            JValue::from(&byte_array),
-                            JValue::from(encoding_id),
-                            JValue::from(&encoding_schema),
-                            JValue::from(kind),
-                            JValue::from(timestamp as i64),
-                            JValue::from(is_valid),
-                            JValue::from(&attachment_bytes),
-                            JValue::from(express),
-                            JValue::from(priority),
-                            JValue::from(cc),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On subscriber callback error: {err}"));
-            });
+    let builder = session
+        .declare_subscriber(key_expr.to_owned())
+        .set_jni_sample_callback(env, callback, on_close)?;
 
     tracing::debug!("{entity_name} declared on '{}'.", key_expr);
     Ok(builder)

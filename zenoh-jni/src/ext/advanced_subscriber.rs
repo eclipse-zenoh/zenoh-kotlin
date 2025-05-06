@@ -21,6 +21,7 @@ use zenoh::sample::Sample;
 use zenoh_ext::AdvancedSubscriber;
 use zenoh_ext::SampleMissListener;
 
+use crate::sample_callback::SetJniSampleCallback;
 use jni::objects::{JByteArray, JObject, JString};
 
 use crate::errors::ZResult;
@@ -70,88 +71,16 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
     let advanced_subscriber = Arc::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<*const Subscriber<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
         tracing::debug!(
             "Declaring detect publishers subscriber on '{}'...",
             advanced_subscriber.key_expr()
         );
 
-        let result = advanced_subscriber
+        let detect_publishers_subscriber = advanced_subscriber
             .detect_publishers()
             .history(history != 0)
-            .callback(move |sample: Sample| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!(
-                            "Unable to attach thread for detect publishers subscriber: {}",
-                            err
-                        )
-                    })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())
-                        .map(|array| env.auto_local(array))?;
-
-                    let encoding_id: jint = sample.encoding().id() as jint;
-                    let encoding_schema = match sample.encoding().schema() {
-                        Some(schema) => slice_to_java_string(&env, schema)?,
-                        None => JString::default(),
-                    };
-                    let kind = sample.kind() as jint;
-                    let (timestamp, is_valid) = sample
-                        .timestamp()
-                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                        .unwrap_or((0, false));
-
-                    let attachment_bytes = sample
-                        .attachment()
-                        .map_or_else(
-                            || Ok(JByteArray::default()),
-                            |attachment| bytes_to_java_array(&env, attachment),
-                        )
-                        .map(|array| env.auto_local(array))
-                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
-
-                    let key_expr_str = env.auto_local(
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
-                    );
-
-                    let express = sample.express();
-                    let priority = sample.priority() as jint;
-                    let cc = sample.congestion_control() as jint;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                        &[
-                            JValue::from(&key_expr_str),
-                            JValue::from(&byte_array),
-                            JValue::from(encoding_id),
-                            JValue::from(&encoding_schema),
-                            JValue::from(kind),
-                            JValue::from(timestamp as i64),
-                            JValue::from(is_valid),
-                            JValue::from(&attachment_bytes),
-                            JValue::from(express),
-                            JValue::from(priority),
-                            JValue::from(cc),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| {
-                    tracing::error!("On detect publishers subscriber callback error: {err}")
-                });
-            })
-            .wait();
-
-        let detect_publishers_subscriber = result
+            .set_jni_sample_callback(&mut env, callback, on_close)?
+            .wait()
             .map_err(|err| zerror!("Unable to declare detect publishers subscriber: {}", err))?;
 
         tracing::debug!(
