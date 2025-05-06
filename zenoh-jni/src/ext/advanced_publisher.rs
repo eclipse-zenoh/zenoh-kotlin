@@ -20,6 +20,7 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
+use zenoh::handlers::{Callback, DefaultHandler};
 use zenoh::Wait;
 use zenoh_ext::AdvancedPublisher;
 
@@ -36,7 +37,54 @@ use jni::sys::jboolean;
 use std::ptr::null;
 
 use jni::objects::JObject;
-use zenoh::matching::MatchingListener;
+use zenoh::matching::{MatchingListener, MatchingListenerBuilder, MatchingStatus};
+
+trait SetJniMatchingStatusCallback {
+    type WithCallback;
+
+    unsafe fn set_jni_matching_status_callback(
+        self,
+        env: &mut JNIEnv,
+        callback: JObject,
+        on_close: JObject,
+    ) -> ZResult<Self::WithCallback>;
+}
+
+impl<'a> SetJniMatchingStatusCallback for MatchingListenerBuilder<'a, DefaultHandler> {
+    type WithCallback = MatchingListenerBuilder<'a, Callback<MatchingStatus>>;
+
+    unsafe fn set_jni_matching_status_callback(
+        self,
+        env: &mut JNIEnv,
+        callback: JObject,
+        on_close: JObject,
+    ) -> ZResult<Self::WithCallback> {
+        let java_vm = Arc::new(get_java_vm(env)?);
+        let callback_global_ref = get_callback_global_ref(env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        let builder = self.callback(move |matching_status| {
+            on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+            let _ = || -> ZResult<()> {
+                let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                    zerror!("Unable to attach thread for matching listener: {}", err)
+                })?;
+
+                env.call_method(
+                    &callback_global_ref,
+                    "run",
+                    "(Z)V",
+                    &[JValue::from(matching_status.matching())],
+                )
+                .map_err(|err| zerror!(err))?;
+                Ok(())
+            }()
+            .map_err(|err| tracing::error!("On matching listener callback error: {err}"));
+        });
+        Ok(builder)
+    }
+}
 
 /// Declare a MatchingListener for [AdvancedPublisher] via JNI.
 ///
@@ -73,40 +121,16 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
     let advanced_publisher = OwnedObject::from_raw(advanced_publisher_ptr);
 
     || -> ZResult<*const MatchingListener<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
         tracing::debug!(
             "Declaring matching listener on '{}'...",
             advanced_publisher.key_expr()
         );
 
-        let result = advanced_publisher
+        let matching_listener = advanced_publisher
             .matching_listener()
-            .callback(move |matching_status| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for matching listener: {}", err)
-                    })?;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Z)V",
-                        &[JValue::from(matching_status.matching())],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On matching listener callback error: {err}"));
-            })
-            .wait();
-
-        let matching_listener =
-            result.map_err(|err| zerror!("Unable to declare matching listener: {}", err))?;
+            .set_jni_matching_status_callback(&mut env, callback, on_close)?
+            .wait()
+            .map_err(|err| zerror!("Unable to declare matching listener: {}", err))?;
 
         tracing::debug!(
             "Matching listener declared on '{}'...",
@@ -153,50 +177,27 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroun
     let advanced_publisher = OwnedObject::from_raw(advanced_publisher_ptr);
 
     || -> ZResult<()> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
         tracing::debug!(
-            "Declaring matching listener on '{}'...",
+            "Declaring background matching listener on '{}'...",
             advanced_publisher.key_expr()
         );
 
-        let result = advanced_publisher
+        advanced_publisher
             .matching_listener()
-            .callback(move |matching_status| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for matching listener: {}", err)
-                    })?;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Z)V",
-                        &[JValue::from(matching_status.matching())],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On matching listener callback error: {err}"));
-            })
+            .set_jni_matching_status_callback(&mut env, callback, on_close)?
             .background()
-            .wait();
-
-        result.map_err(|err| zerror!("Unable to declare matching listener: {}", err))?;
+            .wait()
+            .map_err(|err| zerror!("Unable to declare background matching listener: {}", err))?;
 
         tracing::debug!(
-            "Matching listener declared on '{}'...",
+            "Background matching listener declared on '{}'...",
             advanced_publisher.key_expr()
         );
         Ok(())
     }()
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
-    })
+    });
 }
 
 /// Return the matching status of the [AdvancedPublisher].

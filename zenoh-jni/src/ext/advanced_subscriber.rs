@@ -127,7 +127,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
 
     || -> ZResult<()> {
         tracing::debug!(
-            "Declaring detect publishers subscriber on '{}'...",
+            "Declaring background detect publishers subscriber on '{}'...",
             advanced_subscriber.key_expr()
         );
 
@@ -137,10 +137,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
             .set_jni_sample_callback(&mut env, callback, on_close)?
             .background()
             .wait()
-            .map_err(|err| zerror!("Unable to declare detect publishers subscriber: {}", err))?;
+            .map_err(|err| {
+                zerror!(
+                    "Unable to declare background detect publishers subscriber: {}",
+                    err
+                )
+            })?;
 
         tracing::debug!(
-            "Detect publishers subscriber declared on '{}'...",
+            "Background detect publishers subscriber declared on '{}'...",
             advanced_subscriber.key_expr()
         );
         Ok(())
