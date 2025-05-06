@@ -17,9 +17,9 @@ package io.zenoh.ext
 import io.zenoh.pubsub.AdvancedPublisher
 
 /**
- * Lost samples recovery config.
+ * Sample recovery mode.
  */
-sealed class RecoveryConfig {
+sealed class RecoveryMode {
     /**
      * Enable periodic queries for not yet received Samples and specify their period.
      *
@@ -29,14 +29,22 @@ sealed class RecoveryConfig {
      * Retransmission can only be achieved by [AdvancedPublisher] that enable cache and
      * sample miss detection.
      */
-    data class Periodic(val milliseconds: Long = 0) : RecoveryConfig()
+    data class PeriodicQuery(val milliseconds: Long = 0) : RecoveryMode()
 
     /**
      * Subscribe to heartbeats of [AdvancedPublisher].
      *
      * This allows to receive the last published Sample's sequence number and check for misses.
      * Heartbeat subscriber must be paired with [AdvancedPublisher] that enable cache and
-     * [MissDetectionConfig.PeriodicHeartbeat] or [MissDetectionConfig.SporadicHeartbeat].
+     * [HeartbeatMode.PeriodicHeartbeat] or [HeartbeatMode.SporadicHeartbeat].
      */
-    object Heartbeat : RecoveryConfig()
+    object Heartbeat : RecoveryMode()
+}
+
+/**
+ * Configure retransmission.
+ */
+data class RecoveryConfig (
+    val mode: RecoveryMode,
+) {
 }

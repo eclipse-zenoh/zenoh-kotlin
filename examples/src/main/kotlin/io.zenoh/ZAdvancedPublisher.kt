@@ -18,6 +18,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.bytes.ZBytes
 import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HeartbeatMode
 import io.zenoh.ext.MissDetectionConfig
 import io.zenoh.keyexpr.intoKeyExpr
 
@@ -36,7 +37,7 @@ class ZAdvancedPublisher(private val emptyArgs: Boolean) : CliktCommand(
         val maxSamples = history.toLong()
         val cacheConfig = CacheConfig(maxSamples)
 
-        val sampleMissDetection = MissDetectionConfig.PeriodicHeartbeat(500)
+        val sampleMissDetection = MissDetectionConfig(HeartbeatMode.PeriodicHeartbeat(500))
 
         println("Declaring AdvancedPublisher on '$keyExpr'...")
         val publisher = session.declareAdvancedPublisher(

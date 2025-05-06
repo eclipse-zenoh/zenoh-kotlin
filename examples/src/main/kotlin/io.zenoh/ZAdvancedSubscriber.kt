@@ -18,6 +18,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import io.zenoh.ext.HistoryConfig
 import io.zenoh.ext.RecoveryConfig
+import io.zenoh.ext.RecoveryMode
 import io.zenoh.handlers.Handler
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
@@ -46,7 +47,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
     private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig.Heartbeat
+        val recoveryConfig = RecoveryConfig(RecoveryMode.Heartbeat)
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, Channel()).getOrThrow()
@@ -66,7 +67,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
     private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig.Heartbeat
+        val recoveryConfig = RecoveryConfig(RecoveryMode.Heartbeat)
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, callback = { sample ->
@@ -98,7 +99,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
         }
 
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig.Heartbeat
+        val recoveryConfig = RecoveryConfig(RecoveryMode.Heartbeat)
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, handler = ExampleHandler()).getOrThrow()

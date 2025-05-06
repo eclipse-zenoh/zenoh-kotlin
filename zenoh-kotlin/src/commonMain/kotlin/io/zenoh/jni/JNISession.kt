@@ -46,9 +46,11 @@ import io.zenoh.query.Selector
 import io.zenoh.qos.Reliability
 import io.zenoh.sample.SampleKind
 import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HeartbeatMode
 import io.zenoh.ext.MissDetectionConfig
 import io.zenoh.ext.HistoryConfig
 import io.zenoh.ext.RecoveryConfig
+import io.zenoh.ext.RecoveryMode
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
@@ -116,22 +118,15 @@ internal class JNISession {
             cache?.repliesQoS?.congestionControl?.value ?: 0,
             cache?.repliesQoS?.express ?: false,
             sampleMissDetection != null,
-            when(sampleMissDetection) {
-                is MissDetectionConfig.PeriodicHeartbeat -> false
-                is MissDetectionConfig.SporadicHeartbeat -> false
-                is MissDetectionConfig.Default -> true
-                null -> false
-            },
-            when(sampleMissDetection) {
-                is MissDetectionConfig.PeriodicHeartbeat -> sampleMissDetection.milliseconds
-                is MissDetectionConfig.SporadicHeartbeat -> sampleMissDetection.milliseconds
-                is MissDetectionConfig.Default -> 0
+            sampleMissDetection?.heartbeat != null,
+            when(val heartbeat = sampleMissDetection?.heartbeat) {
+                is HeartbeatMode.PeriodicHeartbeat -> heartbeat.milliseconds
+                is HeartbeatMode.SporadicHeartbeat -> heartbeat.milliseconds
                 null -> 0
             },
-            when(sampleMissDetection) {
-                is MissDetectionConfig.PeriodicHeartbeat -> false
-                is MissDetectionConfig.SporadicHeartbeat -> true
-                is MissDetectionConfig.Default -> false
+            when(sampleMissDetection?.heartbeat) {
+                is HeartbeatMode.PeriodicHeartbeat -> false
+                is HeartbeatMode.SporadicHeartbeat -> true
                 null -> false
             },
             publisherDetection
@@ -199,14 +194,14 @@ internal class JNISession {
             history?.maxSamples ?: 0,
             history?.maxAgeSeconds ?: 0.0,
             recovery != null,
-            when(recovery){
-                RecoveryConfig.Heartbeat -> true
-                is RecoveryConfig.Periodic -> false
+            when(recovery?.mode){
+                is RecoveryMode.Heartbeat -> true
+                is RecoveryMode.PeriodicQuery -> false
                 null -> false
             },
-            when(recovery){
-                RecoveryConfig.Heartbeat -> 0
-                is RecoveryConfig.Periodic -> recovery.milliseconds
+            when(val mode = recovery?.mode){
+                is RecoveryMode.Heartbeat -> 0
+                is RecoveryMode.PeriodicQuery -> mode.milliseconds
                 null -> 0
             },
             subscriberDetection,
@@ -438,7 +433,7 @@ internal class JNISession {
         cacheRepliesIsExpress: Boolean,
         // MissDetectionConfig
         sampleMissDetectionEnabled: Boolean,
-        sampleMissDetectionIsNotHeartbeat: Boolean,
+        sampleMissDetectionEnableHeartbeat: Boolean,
         sampleMissDetectionHeartbeatMs: Long,
         sampleMissDetectionHeartbeatIsSporadic: Boolean,
 

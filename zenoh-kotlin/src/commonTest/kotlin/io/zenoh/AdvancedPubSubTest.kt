@@ -16,6 +16,7 @@ package io.zenoh
 
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
+import io.zenoh.ext.HeartbeatMode
 import io.zenoh.ext.MissDetectionConfig
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.sample.SampleKind
@@ -51,7 +52,7 @@ class AdvancedPubSubTest {
         session = Session.open(Config.default()).getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
 
-        val missDetectionConfig = MissDetectionConfig.PeriodicHeartbeat(100)
+        val missDetectionConfig = MissDetectionConfig(HeartbeatMode.PeriodicHeartbeat(100))
 
         publisher = session.declareAdvancedPublisher(
             keyExpr,
@@ -73,6 +74,9 @@ class AdvancedPubSubTest {
 
     @AfterTest
     fun tearDown() {
+        assertTrue(matchingSamples.count() != 0)
+        assertTrue(hasMatchingSubscribers)
+
         matchingListener.close()
         publisher.close()
 
