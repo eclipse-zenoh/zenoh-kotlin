@@ -117,13 +117,21 @@ internal class JNISession {
             cache?.repliesQoS?.express ?: false,
             sampleMissDetection != null,
             when(sampleMissDetection) {
+                is MissDetectionConfig.PeriodicHeartbeat -> false
+                is MissDetectionConfig.SporadicHeartbeat -> false
+                is MissDetectionConfig.Default -> true
+                null -> false
+            },
+            when(sampleMissDetection) {
                 is MissDetectionConfig.PeriodicHeartbeat -> sampleMissDetection.milliseconds
                 is MissDetectionConfig.SporadicHeartbeat -> sampleMissDetection.milliseconds
+                is MissDetectionConfig.Default -> 0
                 null -> 0
             },
             when(sampleMissDetection) {
                 is MissDetectionConfig.PeriodicHeartbeat -> false
                 is MissDetectionConfig.SporadicHeartbeat -> true
+                is MissDetectionConfig.Default -> false
                 null -> false
             },
             publisherDetection
@@ -430,6 +438,7 @@ internal class JNISession {
         cacheRepliesIsExpress: Boolean,
         // MissDetectionConfig
         sampleMissDetectionEnabled: Boolean,
+        sampleMissDetectionIsNotHeartbeat: Boolean,
         sampleMissDetectionHeartbeatMs: Long,
         sampleMissDetectionHeartbeatIsSporadic: Boolean,
 

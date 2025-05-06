@@ -343,9 +343,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
 /// - `cache_replies_congestion_control` : The [zenoh::publisher::CongestionControl] configuration as an ordinal used for cache replies.
 /// - `cache_replies_is_express: jboolean` : The express config of the publisher (see [zenoh::prelude::QoSBuilderTrait]) used for cache replies.
 ///
-/// - `sample_miss_detection_heartbeat_ms` : If > 0 - allow matching [`AdvancedSubscriber`] to detect lost samples and optionally ask for retransimission.
-///   Retransmission can only be achieved if cache is enabled.
-///
+/// - `sample_miss_detection_enabled` : Enables sample miss detection functionality: allow matching
+///   [`AdvancedSubscriber`] to detect lost samples and optionally ask for retransimission. Retransmission can only be achieved if cache is enabled.
+/// - `sample_miss_detection_is_not_heartbeat` : Use sample miss detection without heartbeat
+/// - `sample_miss_detection_heartbeat_ms` : Specify heartbeat period for heartbeat mode.
 /// - `sample_miss_detection_heartbeat_is_sporadic` : determine if heartbeat argument is treated as sporadic
 ///
 /// # Returns:
@@ -379,6 +380,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
     cache_replies_is_express: jboolean,
     // MissDetectionConfig
     sample_miss_detection_enabled: jboolean,
+    sample_miss_detection_is_not_heartbeat: jboolean,
     sample_miss_detection_heartbeat_ms: jlong,
     sample_miss_detection_heartbeat_is_sporadic: jboolean,
 
@@ -424,15 +426,19 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
         // fill MissDetectionConfig
         if sample_miss_detection_enabled != 0 {
             let miss_detection_config = {
-                let duration = Duration::from_millis(
-                    sample_miss_detection_heartbeat_ms
-                        .try_into()
-                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-                );
+                if sample_miss_detection_is_not_heartbeat != 0 {
+                    MissDetectionConfig::default()
+                } else {
+                    let duration = Duration::from_millis(
+                        sample_miss_detection_heartbeat_ms
+                            .try_into()
+                            .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                    );
 
-                match sample_miss_detection_heartbeat_is_sporadic != 0 {
-                    true => MissDetectionConfig::default().sporadic_heartbeat(duration),
-                    false => MissDetectionConfig::default().heartbeat(duration),
+                    match sample_miss_detection_heartbeat_is_sporadic != 0 {
+                        true => MissDetectionConfig::default().sporadic_heartbeat(duration),
+                        false => MissDetectionConfig::default().heartbeat(duration),
+                    }
                 }
             };
             builder = builder.sample_miss_detection(miss_detection_config);
