@@ -143,7 +143,13 @@ internal class JNISession {
     }
 
     fun <R> declareAdvancedSubscriber(
-        keyExpr: KeyExpr, history: HistoryConfig, recovery: RecoveryConfig, subscriberDetection: Boolean, callback: Callback<Sample>, onClose: () -> Unit, receiver: R
+        keyExpr: KeyExpr,
+        history: HistoryConfig?,
+        recovery: RecoveryConfig?,
+        subscriberDetection: Boolean,
+        callback: Callback<Sample>,
+        onClose: () -> Unit,
+        receiver: R
     ): Result<AdvancedSubscriber<R>> = runCatching {
         val subCallback =
             JNISubscriberCallback { keyExpr, payload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
@@ -163,11 +169,12 @@ internal class JNISession {
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
             sessionPtr.get(),
-            history.detectLatePublishers,
-            history.maxSamples,
-            history.maxAgeSeconds,
-            recovery.enabled,
-            recovery.queryPeriodMs,
+            history != null,
+            history?.detectLatePublishers ?: false,
+            history?.maxSamples ?: 0,
+            history?.maxAgeSeconds ?: 0.0,
+            recovery != null,
+            recovery?.queryPeriodMs ?: 0,
             subscriberDetection,
             subCallback,
             onClose
@@ -416,6 +423,7 @@ internal class JNISession {
         keyExprString: String,
         sessionPtr: Long,
         // HistoryConfig
+        historyConfigEnabled: Boolean,
         historyDetectLatePublishers: Boolean,
         historyMaxSamples: Long,
         historyMaxAgeSeconds: Double,

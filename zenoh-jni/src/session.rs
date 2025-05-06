@@ -242,6 +242,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
     key_expr_str: JString,
     session_ptr: *const Session,
     // HistoryConfig
+    history_config_enabled: jboolean,
     history_detect_late_publishers: jboolean,
     history_max_samples: jlong,
     history_max_age_seconds: jdouble,
@@ -267,28 +268,18 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
         )?
         .advanced();
 
-        let history_config = {
-            let mut res: Option<HistoryConfig> = None;
-            if history_detect_late_publishers != 0 {
-                res = Some(res.unwrap_or_default().detect_late_publishers());
+        if history_config_enabled != 0 {
+            let history = match history_detect_late_publishers != 0 {
+                true => HistoryConfig::default().detect_late_publishers(),
+                false => HistoryConfig::default(),
             }
-            if history_max_samples != 0 {
-                res = Some(
-                    res.unwrap_or_default().max_samples(
-                        history_max_samples
-                            .try_into()
-                            .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-                    ),
-                );
-            }
-            if history_max_age_seconds != 0.0 {
-                // only 0.0 and -0.0 are expected as false
-                res = Some(res.unwrap_or_default().max_age(history_max_age_seconds));
-            }
-            res
-        };
+            .max_samples(
+                history_max_samples
+                    .try_into()
+                    .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+            )
+            .max_age(history_max_age_seconds);
 
-        if let Some(history) = history_config {
             builder = builder.history(history);
         }
 

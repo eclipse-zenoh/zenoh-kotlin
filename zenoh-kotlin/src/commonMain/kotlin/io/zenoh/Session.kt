@@ -261,8 +261,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
-        historyConfig: HistoryConfig = HistoryConfig.default,
-        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        historyConfig: HistoryConfig? = null,
+        recoveryConfig: RecoveryConfig? = null,
         subscriberDetection: Boolean = false,
         callback: Callback<Sample>,
         onClose: (() -> Unit)? = null,
@@ -356,8 +356,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun <R> declareAdvancedSubscriber(
         keyExpr: KeyExpr,
-        historyConfig: HistoryConfig = HistoryConfig.default,
-        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        historyConfig: HistoryConfig? = null,
+        recoveryConfig: RecoveryConfig? = null,
         subscriberDetection: Boolean = false,
         handler: Handler<Sample, R>,
         onClose: (() -> Unit)? = null,
@@ -442,8 +442,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
-        historyConfig: HistoryConfig = HistoryConfig.default,
-        recoveryConfig: RecoveryConfig = RecoveryConfig.default,
+        historyConfig: HistoryConfig? = null,
+        recoveryConfig: RecoveryConfig? = null,
         subscriberDetection: Boolean = false,
         channel: Channel<Sample>,
         onClose: (() -> Unit)? = null,
@@ -1092,8 +1092,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     private fun <R> resolveAdvancedSubscriber(
         keyExpr: KeyExpr,
-        history: HistoryConfig,
-        recovery: RecoveryConfig,
+        history: HistoryConfig?,
+        recovery: RecoveryConfig?,
         subscriberDetection: Boolean,
         callback: Callback<Sample>,
         onClose: () -> Unit,

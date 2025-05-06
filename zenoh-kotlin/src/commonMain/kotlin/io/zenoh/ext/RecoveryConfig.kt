@@ -26,11 +26,9 @@ import io.zenoh.pubsub.AdvancedPublisher
  * smaller or equal to period that is .
  * Retransmission can only be achieved by [AdvancedPublisher] that enables [CacheConfig] and [MissDetectionConfig].
  *
- * @property enabled enables sample recovery.
  * @property queryPeriodMs If 0, the recovery works in heartbeat mode, otherwise in periodic query mode.
  */
 data class RecoveryConfig (
-    val enabled: Boolean = false,
     val queryPeriodMs: Long = 0
 ) {
 
