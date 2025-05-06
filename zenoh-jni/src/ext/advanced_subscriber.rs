@@ -16,9 +16,10 @@ use std::sync::Arc;
 
 use jni::sys::jboolean;
 use jni::{objects::JClass, JNIEnv};
+use zenoh::handlers::{Callback, DefaultHandler};
 use zenoh::pubsub::Subscriber;
-use zenoh_ext::AdvancedSubscriber;
 use zenoh_ext::SampleMissListener;
+use zenoh_ext::{AdvancedSubscriber, Miss, SampleMissListenerBuilder};
 
 use crate::sample_callback::SetJniSampleCallback;
 use jni::objects::JObject;
@@ -34,6 +35,69 @@ use crate::zerror;
 use std::ptr::null;
 
 use crate::throw_exception;
+
+trait SetJniSampleMissListenerCallback {
+    type WithCallback;
+
+    unsafe fn set_jni_sample_miss_callback(
+        self,
+        env: &mut JNIEnv,
+        callback: JObject,
+        on_close: JObject,
+    ) -> ZResult<Self::WithCallback>;
+}
+
+impl<'a> SetJniSampleMissListenerCallback for SampleMissListenerBuilder<'a, DefaultHandler> {
+    type WithCallback = SampleMissListenerBuilder<'a, Callback<Miss>>;
+
+    unsafe fn set_jni_sample_miss_callback(
+        self,
+        env: &mut JNIEnv,
+        callback: JObject,
+        on_close: JObject,
+    ) -> ZResult<Self::WithCallback> {
+        let java_vm = Arc::new(get_java_vm(env)?);
+        let callback_global_ref = get_callback_global_ref(env, callback)?;
+        let on_close_global_ref = get_callback_global_ref(env, on_close)?;
+        let on_close = load_on_close(&java_vm, on_close_global_ref);
+
+        let builder = self.callback(move |miss| {
+            on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
+            let _ = || -> ZResult<()> {
+                let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
+                    zerror!("Unable to attach thread for sample miss listener: {}", err)
+                })?;
+
+                let (zid_lower, zid_upper, eid) = {
+                    let id = miss.source();
+
+                    let zid = id.zid().to_le_bytes();
+                    let zid_lower = i64::from_le_bytes(zid[0..8].try_into().unwrap());
+                    let zid_upper = i64::from_le_bytes(zid[8..16].try_into().unwrap());
+
+                    (zid_lower, zid_upper, id.eid())
+                };
+                let missed_count = miss.nb();
+
+                env.call_method(
+                    &callback_global_ref,
+                    "run",
+                    "(JJJJ)V",
+                    &[
+                        JValue::from(zid_lower),
+                        JValue::from(zid_upper),
+                        JValue::from(eid as i64),
+                        JValue::from(missed_count as i64),
+                    ],
+                )
+                .map_err(|err| zerror!(err))?;
+                Ok(())
+            }()
+            .map_err(|err| tracing::error!("On sample miss listener callback error: {err}"));
+        });
+        Ok(builder)
+    }
+}
 
 /// Declares a subscriber to detect matching publishers for an [AdvancedSubscriber] via JNI.
 ///
@@ -190,11 +254,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<*const SampleMissListener<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
         tracing::debug!(
             "Declaring sample miss listener on '{}'...",
             advanced_subscriber.key_expr()
@@ -202,40 +261,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
 
         let result = advanced_subscriber
             .sample_miss_listener()
-            .callback(move |miss| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for sample miss listener: {}", err)
-                    })?;
-
-                    let (zid_lower, zid_upper, eid) = {
-                        let id = miss.source();
-
-                        let zid = id.zid().to_le_bytes();
-                        let zid_lower = i64::from_le_bytes(zid[0..8].try_into().unwrap());
-                        let zid_upper = i64::from_le_bytes(zid[8..16].try_into().unwrap());
-
-                        (zid_lower, zid_upper, id.eid())
-                    };
-                    let missed_count = miss.nb();
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(JJJJ)V",
-                        &[
-                            JValue::from(zid_lower),
-                            JValue::from(zid_upper),
-                            JValue::from(eid as i64),
-                            JValue::from(missed_count as i64),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On sample miss listener callback error: {err}"));
-            })
+            .set_jni_sample_miss_callback(&mut env, callback, on_close)?
             .wait();
 
         let sample_miss_listener =
@@ -286,11 +312,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<()> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
         tracing::debug!(
             "Declaring background sample miss listener on '{}'...",
             advanced_subscriber.key_expr()
@@ -298,45 +319,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
 
         advanced_subscriber
             .sample_miss_listener()
-            .callback(move |miss| {
-                on_close.noop(); // Moves `on_close` inside the closure so it gets destroyed with the closure
-                let _ = || -> ZResult<()> {
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!(
-                            "Unable to attach thread for background sample miss listener: {}",
-                            err
-                        )
-                    })?;
-
-                    let (zid_lower, zid_upper, eid) = {
-                        let id = miss.source();
-
-                        let zid = id.zid().to_le_bytes();
-                        let zid_lower = i64::from_le_bytes(zid[0..8].try_into().unwrap());
-                        let zid_upper = i64::from_le_bytes(zid[8..16].try_into().unwrap());
-
-                        (zid_lower, zid_upper, id.eid())
-                    };
-                    let missed_count = miss.nb();
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(JJJJ)V",
-                        &[
-                            JValue::from(zid_lower),
-                            JValue::from(zid_upper),
-                            JValue::from(eid as i64),
-                            JValue::from(missed_count as i64),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| {
-                    tracing::error!("On subscriber background sample miss listener error: {err}")
-                });
-            })
+            .set_jni_sample_miss_callback(&mut env, callback, on_close)?
             .background()
             .wait()
             .map_err(|err| zerror!("Unable to declare background sample miss listener: {}", err))?;
