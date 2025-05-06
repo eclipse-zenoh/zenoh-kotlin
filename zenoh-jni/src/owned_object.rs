@@ -14,11 +14,13 @@
 
 use std::{ops::Deref, sync::Arc};
 
-pub(crate) struct OwnedObject<T: Sized> {
+/// Safe accessor to refocounted ([Arc]) owned objects.
+/// Helps to avoid early drop by offloading [std::mem::forget] from user
+pub(crate) struct OwnedObject<T: ?Sized> {
     inner: Option<Arc<T>>,
 }
 
-impl<T: Sized> Deref for OwnedObject<T> {
+impl<T: ?Sized> Deref for OwnedObject<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -27,7 +29,7 @@ impl<T: Sized> Deref for OwnedObject<T> {
     }
 }
 
-impl<T: Sized> Drop for OwnedObject<T> {
+impl<T: ?Sized> Drop for OwnedObject<T> {
     fn drop(&mut self) {
         // SAFETY: inner is always initialized
         let inner = unsafe { self.inner.take().unwrap_unchecked() };
@@ -35,7 +37,7 @@ impl<T: Sized> Drop for OwnedObject<T> {
     }
 }
 
-impl<T: Sized> OwnedObject<T> {
+impl<T: ?Sized> OwnedObject<T> {
     pub(crate) unsafe fn from_raw(ptr: *const T) -> Self {
         Self {
             inner: Some(Arc::from_raw(ptr)),
