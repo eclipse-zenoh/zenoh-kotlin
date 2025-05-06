@@ -22,13 +22,13 @@ import io.zenoh.pubsub.AdvancedPublisher
  * @property detectLatePublishers Enable detection of late joiner publishers and query for their historical data.
  * Late joiner detection can only be achieved for [AdvancedPublisher] that enable publisher_detection.
  * History can only be retransmitted by [AdvancedPublisher] that enable cache.
- * @property maxSamples Specify how many samples to query for each resource. 0 means that nothing is queried.
+ * @property maxSamples Specify how many samples to query for each resource.
  * @property maxAgeSeconds Specify the maximum age of samples to query. 0.0 means that age filtering is not applied.
  */
 data class HistoryConfig (
     val detectLatePublishers: Boolean = false,
-    val maxSamples: Long = 0,
-    val maxAgeSeconds: Double = 0.0
+    val maxSamples: Long? = null,
+    val maxAgeSeconds: Double? = null
 ) {
 
     companion object {

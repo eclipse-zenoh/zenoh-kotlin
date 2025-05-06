@@ -20,11 +20,11 @@ import io.zenoh.pubsub.AdvancedPublisher
 /**
  * Configure an [AdvancedPublisher] cache.
  *
- * @property maxSamples Specify how many samples to keep for each resource. 0 means that cache is disabled.
+ * @property maxSamples Specify how many samples to keep for each resource.
  * @property repliesQoS The [QoS] to apply to replies.
  */
 data class CacheConfig (
-    val maxSamples: Long = 0,
+    val maxSamples: Long = 1,
     val repliesQoS: QoS = QoS.defaultPush
 ) {
 

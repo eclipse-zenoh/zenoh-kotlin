@@ -93,8 +93,14 @@ internal class JNISession {
     }
 
     fun declareAdvancedPublisher(
-        keyExpr: KeyExpr, qos: QoS, encoding: Encoding, reliability: Reliability, cache: CacheConfig,
-        sampleMissDetection: MissDetectionConfig, publisherDetection: Boolean): Result<AdvancedPublisher> = runCatching {
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability,
+        cache: CacheConfig?,
+        sampleMissDetection: MissDetectionConfig?,
+        publisherDetection: Boolean
+    ): Result<AdvancedPublisher> = runCatching {
         val publisherRawPtr = declareAdvancedPublisherViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
@@ -103,12 +109,14 @@ internal class JNISession {
             qos.priority.value,
             qos.express,
             reliability.ordinal,
-            cache.maxSamples,
-            cache.repliesQoS.priority.value,
-            cache.repliesQoS.congestionControl.value,
-            cache.repliesQoS.express,
-            sampleMissDetection.heartbeatMs,
-            sampleMissDetection.heartbeatIsSporadic,
+            cache != null,
+            cache?.maxSamples ?: 0,
+            cache?.repliesQoS?.priority?.value ?: 0,
+            cache?.repliesQoS?.congestionControl?.value ?: 0,
+            cache?.repliesQoS?.express ?: false,
+            sampleMissDetection != null,
+            sampleMissDetection?.heartbeatMs ?: 0,
+            sampleMissDetection?.heartbeatIsSporadic ?: false,
             publisherDetection
         )
         AdvancedPublisher(
@@ -397,11 +405,13 @@ internal class JNISession {
         express: Boolean,
         reliability: Int,
         // CacheConfig
+        cacheEnabled: Boolean,
         cacheMaxSamples: Long,
         cacheRepliesPriority: Int,
         cacheRepliesCongestionControl: Int,
         cacheRepliesIsExpress: Boolean,
         // MissDetectionConfig
+        sampleMissDetectionEnabled: Boolean,
         sampleMissDetectionHeartbeatMs: Long,
         sampleMissDetectionHeartbeatIsSporadic: Boolean,
 

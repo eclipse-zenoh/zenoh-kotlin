@@ -30,7 +30,7 @@ import io.zenoh.pubsub.SampleMissListener
  * Sporadic heartbeat: each period, the last published Sample's sequence number is sent with [CongestionControl.BLOCK]
  * but only if it changed since last period.
  *
- * @property heartbeatMs Period argument for heartbeat. If 0, the sample miss detection is turned off.
+ * @property heartbeatMs Period argument for heartbeat.
  * @property heartbeatIsSporadic Determines if period is sporadic or periodic.
  *
  */

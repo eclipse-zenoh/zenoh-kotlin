@@ -30,6 +30,7 @@ use zenoh::{
     Wait,
 };
 
+use crate::owned_object::OwnedObject;
 #[cfg(feature = "zenoh-ext")]
 use jni::sys::jdouble;
 #[cfg(feature = "zenoh-ext")]
@@ -210,8 +211,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 /// - `history_detect_late_publishers` : Enable detection of late joiner publishers and query for their historical data.
 ///   Late joiner detection can only be achieved for [`AdvancedPublisher`] that enable publisher detection.
 ///   History can only be retransmitted by [`AdvancedPublisher`] that enable cache.
-/// - `history_max_samples` : Specify how many samples to query for each resource.
-/// - `history_max_age_seconds` : Specify the maximum age of samples to query.
+/// - `history_max_samples` : Specify how many samples to query for each resource. 0 means no limit.
+/// - `history_max_age_seconds` : Specify the maximum age of samples to query. <= 0.0 means no limit.
 /// - `recovery_config_enabled` : Enable missed samples recovery
 /// - `recovery_query_period_ms` :  If > 0, enable periodic queries for not yet received Samples and specify their period.
 ///   If == 0 use heartbeat mode subscribe to heartbeats of [`AdvancedPublisher`].
@@ -269,16 +270,22 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
         .advanced();
 
         if history_config_enabled != 0 {
-            let history = match history_detect_late_publishers != 0 {
+            let mut history = match history_detect_late_publishers != 0 {
                 true => HistoryConfig::default().detect_late_publishers(),
                 false => HistoryConfig::default(),
+            };
+
+            if history_max_samples > 0 {
+                history = history.max_samples(
+                    history_max_samples
+                        .try_into()
+                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                );
             }
-            .max_samples(
-                history_max_samples
-                    .try_into()
-                    .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-            )
-            .max_age(history_max_age_seconds);
+
+            if history_max_age_seconds > 0.0 {
+                history = history.max_age(history_max_age_seconds);
+            }
 
             builder = builder.history(history);
         }
@@ -363,61 +370,20 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
     is_express: jboolean,
     reliability: jint,
     // CacheConfig
+    cache_enabled: jboolean,
     cache_max_samples: jlong,
     cache_replies_priority: jint,
     cache_replies_congestion_control: jint,
     cache_replies_is_express: jboolean,
     // MissDetectionConfig
+    sample_miss_detection_enabled: jboolean,
     sample_miss_detection_heartbeat_ms: jlong,
     sample_miss_detection_heartbeat_is_sporadic: jboolean,
 
     publisher_detection: jboolean,
 ) -> *const AdvancedPublisher<'static> {
-    let session = Arc::from_raw(session_ptr);
+    let session = OwnedObject::from_raw(session_ptr);
     let publisher_ptr = || -> ZResult<*const AdvancedPublisher<'static>> {
-        let cache_config =
-            {
-                match cache_max_samples {
-                    0 => None,
-                    cache_max_samples => {
-                        let cache_congestion_control =
-                            decode_congestion_control(cache_replies_congestion_control)?;
-                        let cache_priority = decode_priority(cache_replies_priority)?;
-
-                        let replies_config = RepliesConfig::default()
-                            .priority(cache_priority)
-                            .congestion_control(cache_congestion_control)
-                            .express(cache_replies_is_express != 0);
-
-                        Some(
-                            CacheConfig::default()
-                                .max_samples(cache_max_samples.try_into().map_err(
-                                    |e: std::num::TryFromIntError| zerror!(e.to_string()),
-                                )?)
-                                .replies_config(replies_config),
-                        )
-                    }
-                }
-            };
-
-        let miss_detection_config = {
-            match sample_miss_detection_heartbeat_ms {
-                0 => None,
-                sample_miss_detection_heartbeat_ms => {
-                    let duration = Duration::from_millis(
-                        sample_miss_detection_heartbeat_ms
-                            .try_into()
-                            .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
-                    );
-
-                    Some(match sample_miss_detection_heartbeat_is_sporadic != 0 {
-                        true => MissDetectionConfig::default().sporadic_heartbeat(duration),
-                        false => MissDetectionConfig::default().heartbeat(duration),
-                    })
-                }
-            }
-        };
-
         let mut builder = prepare_publisher_builder(
             &mut env,
             key_expr_ptr,
@@ -430,12 +396,44 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
         )?
         .advanced();
 
-        if let Some(miss_detection) = miss_detection_config {
-            builder = builder.sample_miss_detection(miss_detection);
+        // fill CacheConfig
+        if cache_enabled != 0 {
+            let cache_congestion_control =
+                decode_congestion_control(cache_replies_congestion_control)?;
+
+            let cache_priority = decode_priority(cache_replies_priority)?;
+
+            let replies_config = RepliesConfig::default()
+                .priority(cache_priority)
+                .congestion_control(cache_congestion_control)
+                .express(cache_replies_is_express != 0);
+
+            let cache_config = CacheConfig::default()
+                .max_samples(
+                    cache_max_samples
+                        .try_into()
+                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                )
+                .replies_config(replies_config);
+
+            builder = builder.cache(cache_config);
         }
 
-        if let Some(cache) = cache_config {
-            builder = builder.cache(cache);
+        // fill MissDetectionConfig
+        if sample_miss_detection_enabled != 0 {
+            let miss_detection_config = {
+                let duration = Duration::from_millis(
+                    sample_miss_detection_heartbeat_ms
+                        .try_into()
+                        .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
+                );
+
+                match sample_miss_detection_heartbeat_is_sporadic != 0 {
+                    true => MissDetectionConfig::default().sporadic_heartbeat(duration),
+                    false => MissDetectionConfig::default().heartbeat(duration),
+                }
+            };
+            builder = builder.sample_miss_detection(miss_detection_config);
         }
 
         if publisher_detection != 0 {
@@ -452,7 +450,6 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedPublisherVi
         throw_exception!(env, err);
         null()
     });
-    std::mem::forget(session);
     publisher_ptr
 }
 
@@ -523,7 +520,7 @@ unsafe fn prepare_publisher_builder<'a, 'b>(
     env: &mut JNIEnv,
     key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: &JString,
-    session: &'a Arc<Session>,
+    session: &'a Session,
     congestion_control: jint,
     priority: jint,
     is_express: jboolean,
@@ -745,7 +742,7 @@ unsafe fn prepare_subscriber_builder<'a, 'b>(
     env: &mut JNIEnv,
     key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: &JString,
-    session: &'a Arc<Session>,
+    session: &'a Session,
     callback: JObject,
     on_close: JObject,
     entity_name: &str,

@@ -195,8 +195,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         qos: QoS = QoS.defaultPush,
         encoding: Encoding = Encoding.default(),
         reliability: Reliability = Reliability.RELIABLE,
-        cacheConfig: CacheConfig = CacheConfig.default,
-        sampleMissDetection: MissDetectionConfig = MissDetectionConfig.default,
+        cacheConfig: CacheConfig? = null,
+        sampleMissDetection: MissDetectionConfig? = null,
         publisherDetection: Boolean = false
     ): Result<AdvancedPublisher> {
         return resolveAdvancedPublisher(keyExpr, qos, encoding, reliability,
@@ -1069,8 +1069,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         qos: QoS,
         encoding: Encoding,
         reliability: Reliability,
-        cacheConfig: CacheConfig = CacheConfig.default,
-        sampleMissDetection: MissDetectionConfig = MissDetectionConfig.default,
+        cacheConfig: CacheConfig? = null,
+        sampleMissDetection: MissDetectionConfig? = null,
         publisherDetection: Boolean = false
     ): Result<AdvancedPublisher> {
         return jniSession?.run {
