@@ -36,7 +36,7 @@ class ZAdvancedPublisher(private val emptyArgs: Boolean) : CliktCommand(
         val maxSamples = history.toLong()
         val cacheConfig = CacheConfig(maxSamples)
 
-        val sampleMissDetection = MissDetectionConfig(500)
+        val sampleMissDetection = MissDetectionConfig.PeriodicHeartbeat(500)
 
         println("Declaring AdvancedPublisher on '$keyExpr'...")
         val publisher = session.declareAdvancedPublisher(

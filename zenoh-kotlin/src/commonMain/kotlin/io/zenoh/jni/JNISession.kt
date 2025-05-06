@@ -101,6 +101,7 @@ internal class JNISession {
         sampleMissDetection: MissDetectionConfig?,
         publisherDetection: Boolean
     ): Result<AdvancedPublisher> = runCatching {
+
         val publisherRawPtr = declareAdvancedPublisherViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0,
             keyExpr.keyExpr,
@@ -115,8 +116,16 @@ internal class JNISession {
             cache?.repliesQoS?.congestionControl?.value ?: 0,
             cache?.repliesQoS?.express ?: false,
             sampleMissDetection != null,
-            sampleMissDetection?.heartbeatMs ?: 0,
-            sampleMissDetection?.heartbeatIsSporadic ?: false,
+            when(sampleMissDetection) {
+                is MissDetectionConfig.PeriodicHeartbeat -> sampleMissDetection.milliseconds
+                is MissDetectionConfig.SporadicHeartbeat -> sampleMissDetection.milliseconds
+                null -> 0
+            },
+            when(sampleMissDetection) {
+                is MissDetectionConfig.PeriodicHeartbeat -> false
+                is MissDetectionConfig.SporadicHeartbeat -> true
+                null -> false
+            },
             publisherDetection
         )
         AdvancedPublisher(
@@ -182,7 +191,16 @@ internal class JNISession {
             history?.maxSamples ?: 0,
             history?.maxAgeSeconds ?: 0.0,
             recovery != null,
-            recovery?.queryPeriodMs ?: 0,
+            when(recovery){
+                RecoveryConfig.Heartbeat -> true
+                is RecoveryConfig.Periodic -> false
+                null -> false
+            },
+            when(recovery){
+                RecoveryConfig.Heartbeat -> 0
+                is RecoveryConfig.Periodic -> recovery.milliseconds
+                null -> 0
+            },
             subscriberDetection,
             subCallback,
             onClose
@@ -439,6 +457,7 @@ internal class JNISession {
         historyMaxAgeSeconds: Double,
         // RecoveryConfig
         recoveryConfigEnabled: Boolean,
+        recoveryConfigIsHeartbeat: Boolean,
         recoveryQueryPeriodMs: Long,
 
         subscriberDetection: Boolean,

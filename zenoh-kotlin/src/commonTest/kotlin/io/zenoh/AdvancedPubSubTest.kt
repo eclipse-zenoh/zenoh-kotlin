@@ -51,7 +51,7 @@ class AdvancedPubSubTest {
         session = Session.open(Config.default()).getOrThrow()
         keyExpr = "example/testing/keyexpr".intoKeyExpr().getOrThrow()
 
-        val missDetectionConfig = MissDetectionConfig(100)
+        val missDetectionConfig = MissDetectionConfig.PeriodicHeartbeat(100)
 
         publisher = session.declareAdvancedPublisher(
             keyExpr,

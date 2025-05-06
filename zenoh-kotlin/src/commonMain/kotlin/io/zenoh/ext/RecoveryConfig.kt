@@ -17,22 +17,26 @@ package io.zenoh.ext
 import io.zenoh.pubsub.AdvancedPublisher
 
 /**
- * Enable periodic queries for not yet received Samples and specify their period.
- *
- * There are two recovery modes: periodic query and heartbeat.
- *
- * Periodic query: This allows to retrieve the last Sample(s) if the last Sample(s) is/are lost.
- * It is useful for sporadic publications but useless for periodic publications with a period
- * smaller or equal to period that is .
- * Retransmission can only be achieved by [AdvancedPublisher] that enables [CacheConfig] and [MissDetectionConfig].
- *
- * @property queryPeriodMs If 0, the recovery works in heartbeat mode, otherwise in periodic query mode.
+ * Lost samples recovery config.
  */
-data class RecoveryConfig (
-    val queryPeriodMs: Long = 0
-) {
+sealed class RecoveryConfig {
+    /**
+     * Enable periodic queries for not yet received Samples and specify their period.
+     *
+     * This allows to retrieve the last Sample(s) if the last Sample(s) is/are lost.
+     * So it is useful for sporadic publications but useless for periodic publications
+     * with a period smaller or equal to this period.
+     * Retransmission can only be achieved by [AdvancedPublisher] that enable cache and
+     * sample miss detection.
+     */
+    data class Periodic(val milliseconds: Long = 0) : RecoveryConfig()
 
-    companion object {
-        internal val default = RecoveryConfig()
-    }
+    /**
+     * Subscribe to heartbeats of [AdvancedPublisher].
+     *
+     * This allows to receive the last published Sample's sequence number and check for misses.
+     * Heartbeat subscriber must be paired with [AdvancedPublisher] that enable cache and
+     * [MissDetectionConfig.PeriodicHeartbeat] or [MissDetectionConfig.SporadicHeartbeat].
+     */
+    object Heartbeat : RecoveryConfig()
 }

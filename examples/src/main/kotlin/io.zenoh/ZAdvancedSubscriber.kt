@@ -46,7 +46,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
     private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig(0)
+        val recoveryConfig = RecoveryConfig.Heartbeat
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, Channel()).getOrThrow()
@@ -66,7 +66,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
 
     private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig(0)
+        val recoveryConfig = RecoveryConfig.Heartbeat
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, callback = { sample ->
@@ -98,7 +98,7 @@ class ZAdvancedSubscriber(private val emptyArgs: Boolean) : CliktCommand(
         }
 
         val historyConfig = HistoryConfig(true)
-        val recoveryConfig = RecoveryConfig(0)
+        val recoveryConfig = RecoveryConfig.Heartbeat
 
         val subscriber = session.declareAdvancedSubscriber(
             keyExpr, historyConfig, recoveryConfig, true, handler = ExampleHandler()).getOrThrow()

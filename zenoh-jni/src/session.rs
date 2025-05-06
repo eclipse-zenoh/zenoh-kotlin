@@ -213,9 +213,10 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_closeSessionViaJNI(
 ///   History can only be retransmitted by [`AdvancedPublisher`] that enable cache.
 /// - `history_max_samples` : Specify how many samples to query for each resource. 0 means no limit.
 /// - `history_max_age_seconds` : Specify the maximum age of samples to query. <= 0.0 means no limit.
-/// - `recovery_config_enabled` : Enable missed samples recovery
-/// - `recovery_query_period_ms` :  If > 0, enable periodic queries for not yet received Samples and specify their period.
-///   If == 0 use heartbeat mode subscribe to heartbeats of [`AdvancedPublisher`].
+/// - `recovery_config_enabled` : Enable missed samples recovery.
+/// - recovery_config_is_heartbeat: If true, use heartbeat mode and subscribe to heartbeats of [`AdvancedPublisher`],
+///   if false - enable periodic queries for not yet received Samples.
+/// - `recovery_query_period_ms` : Specify period for Periodic queries mode.
 /// - `subscriber_detection` : Allow this subscriber to be detected through liveliness.
 /// - `session_ptr`: The raw pointer to the Zenoh session.
 /// - `callback`: The callback function as an instance of the `JNISubscriberCallback` interface in Java/Kotlin.
@@ -249,6 +250,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
     history_max_age_seconds: jdouble,
     // RecoveryConfig
     recovery_config_enabled: jboolean,
+    recovery_config_is_heartbeat: jboolean,
     recovery_query_period_ms: jlong,
 
     subscriber_detection: jboolean,
@@ -291,15 +293,15 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_declareAdvancedSubscriberV
         }
 
         if recovery_config_enabled != 0 {
-            let recovery = if recovery_query_period_ms != 0 {
+            let recovery = if recovery_config_is_heartbeat != 0 {
+                RecoveryConfig::default().heartbeat()
+            } else {
                 let dur = Duration::from_millis(
                     recovery_query_period_ms
                         .try_into()
                         .map_err(|e: std::num::TryFromIntError| zerror!(e.to_string()))?,
                 );
                 RecoveryConfig::default().periodic_queries(dur)
-            } else {
-                RecoveryConfig::default().heartbeat()
             };
             builder = builder.recovery(recovery);
         }

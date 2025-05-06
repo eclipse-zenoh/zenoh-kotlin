@@ -22,24 +22,16 @@ import io.zenoh.pubsub.SampleMissListener
  * Configuration for sample miss detection
  * Enabling sample miss detection allows [AdvancedSubscriber] to detect missed samples through [SampleMissListener]
  * sample miss listener and to recover missed samples through [RecoveryConfig] in heartbeat mode.
- *
- * There are two heartbeat modes: sporadic and periodic.
- *
- * Periodic heartbeat: periodically send the last published Sample's sequence number to allow last sample recovery.
- *
- * Sporadic heartbeat: each period, the last published Sample's sequence number is sent with [CongestionControl.BLOCK]
- * but only if it changed since last period.
- *
- * @property heartbeatMs Period argument for heartbeat.
- * @property heartbeatIsSporadic Determines if period is sporadic or periodic.
- *
  */
-data class MissDetectionConfig (
-    val heartbeatMs: Long = 0,
-    val heartbeatIsSporadic: Boolean = false
-) {
+sealed class MissDetectionConfig {
+    /**
+     * Periodic heartbeat: periodically send the last published Sample's sequence number to allow last sample recovery.
+     */
+    data class PeriodicHeartbeat(val milliseconds: Long = 0) : MissDetectionConfig()
 
-    companion object {
-        internal val default = MissDetectionConfig()
-    }
+    /**
+     * Sporadic heartbeat: each period, the last published Sample's sequence number is sent with [CongestionControl.BLOCK]
+     * but only if it changed since last period.
+     */
+    data class SporadicHeartbeat(val milliseconds: Long = 0) : MissDetectionConfig()
 }
