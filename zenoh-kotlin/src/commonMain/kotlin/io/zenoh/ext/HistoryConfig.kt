@@ -14,6 +14,7 @@
 
 package io.zenoh.ext
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.AdvancedPublisher
 
 /**
@@ -25,6 +26,7 @@ import io.zenoh.pubsub.AdvancedPublisher
  * @property maxSamples Specify how many samples to query for each resource.
  * @property maxAgeSeconds Specify the maximum age of samples to query. 0.0 means that age filtering is not applied.
  */
+@Unstable
 data class HistoryConfig (
     val detectLatePublishers: Boolean = false,
     val maxSamples: Long? = null,

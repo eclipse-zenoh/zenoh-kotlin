@@ -14,6 +14,7 @@
 
 package io.zenoh.handlers
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.SampleMiss
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.runBlocking
@@ -26,6 +27,7 @@ import kotlinx.coroutines.runBlocking
  * @property channel
  * @constructor Create empty Channel handler
  */
+@Unstable
 internal class SampleMissChannelHandler(private val channel: Channel<SampleMiss>) : SampleMissHandler<Channel<SampleMiss>> {
 
     /**

@@ -14,6 +14,7 @@
 
 package io.zenoh.handlers
 
+import io.zenoh.annotations.Unstable
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.runBlocking
 
@@ -25,6 +26,7 @@ import kotlinx.coroutines.runBlocking
  * @property channel
  * @constructor Create empty Channel handler
  */
+@Unstable
 internal class MatchingChannelHandler(private val channel: Channel<Boolean>) : MatchingHandler<Channel<Boolean>> {
 
     override fun handle(matching: Boolean) {

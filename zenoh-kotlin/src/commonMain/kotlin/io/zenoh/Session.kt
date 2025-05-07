@@ -190,6 +190,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param reliability The [Reliability] the publisher wishes to obtain from the network.
      * @return The result of the declaration, returning the advanced publisher in case of success.
      */
+    @Unstable
     fun declareAdvancedPublisher(
         keyExpr: KeyExpr,
         qos: QoS = QoS.defaultPush,
@@ -259,6 +260,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param onClose Callback function to be called when the subscriber is closed.
      * @return A result with the [Subscriber] in case of success.
      */
+    @Unstable
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -354,6 +356,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @param onClose Callback function to be called when the subscriber is closed.
      * @return A result with the [Subscriber] in case of success.
      */
+    @Unstable
     fun <R> declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -440,6 +443,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      *  upon closing the session.
      * @return A result with the [Subscriber] in case of success.
      */
+    @Unstable
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -1064,6 +1068,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
+    @Unstable
     private fun resolveAdvancedPublisher(
         keyExpr: KeyExpr,
         qos: QoS,
@@ -1090,6 +1095,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
+    @Unstable
     private fun <R> resolveAdvancedSubscriber(
         keyExpr: KeyExpr,
         history: HistoryConfig?,

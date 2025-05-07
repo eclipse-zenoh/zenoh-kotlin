@@ -14,11 +14,13 @@
 
 package io.zenoh.ext
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.AdvancedPublisher
 
 /**
  * Sample recovery mode.
  */
+@Unstable
 sealed class RecoveryMode {
     /**
      * Enable periodic queries for not yet received Samples and specify their period.
@@ -44,6 +46,7 @@ sealed class RecoveryMode {
 /**
  * Configure retransmission.
  */
+@Unstable
 data class RecoveryConfig (
     val mode: RecoveryMode,
 ) {

@@ -14,6 +14,7 @@
 
 package io.zenoh.ext
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.qos.QoS
 import io.zenoh.pubsub.AdvancedPublisher
 
@@ -23,6 +24,7 @@ import io.zenoh.pubsub.AdvancedPublisher
  * @property maxSamples Specify how many samples to keep for each resource.
  * @property repliesQoS The [QoS] to apply to replies.
  */
+@Unstable
 data class CacheConfig (
     val maxSamples: Long = 1,
     val repliesQoS: QoS = QoS.defaultPush

@@ -14,6 +14,7 @@
 
 package io.zenoh.handlers
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.SampleMiss
 
 /**
@@ -21,6 +22,7 @@ import io.zenoh.pubsub.SampleMiss
  *
  * @constructor Create empty Callback
  */
+@Unstable
 fun interface SampleMissCallback {
 
     /** Callback to be run. */

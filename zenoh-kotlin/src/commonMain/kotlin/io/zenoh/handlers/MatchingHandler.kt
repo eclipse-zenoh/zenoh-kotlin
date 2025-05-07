@@ -14,7 +14,7 @@
 
 package io.zenoh.handlers
 
-import io.zenoh.ZenohType
+import io.zenoh.annotations.Unstable
 
 /**
  * Handler interface for classes implementing behavior to handle the
@@ -42,6 +42,7 @@ import io.zenoh.ZenohType
  *
  * @param R An arbitrary receiver.
  */
+@Unstable
 interface MatchingHandler<R> {
 
     /**

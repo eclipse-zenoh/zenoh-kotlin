@@ -14,6 +14,7 @@
 
 package io.zenoh.pubsub
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.jni.JNISampleMissListener
 import io.zenoh.session.SessionDeclaration
 
@@ -22,6 +23,7 @@ import io.zenoh.session.SessionDeclaration
  *
  * Missed samples can only be detected from [AdvancedPublisher] that enables miss detection config.
  */
+@Unstable
 class SampleMissListener internal constructor(
     private var jniSampleMissListener: JNISampleMissListener?,
 ) : SessionDeclaration, AutoCloseable {

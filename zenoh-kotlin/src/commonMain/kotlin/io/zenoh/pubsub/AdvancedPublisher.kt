@@ -14,6 +14,7 @@
 
 package io.zenoh.pubsub
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
 import io.zenoh.jni.JNIAdvancedPublisher
 import io.zenoh.keyexpr.KeyExpr
@@ -34,6 +35,7 @@ import kotlinx.coroutines.channels.Channel
  *
  * @see Publisher
  */
+@Unstable
 class AdvancedPublisher internal constructor(
     val keyExpr: KeyExpr,
     val qos: QoS,

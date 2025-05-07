@@ -14,6 +14,7 @@
 
 package io.zenoh.handlers
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.SampleMiss
 
 /**
@@ -42,6 +43,7 @@ import io.zenoh.pubsub.SampleMiss
  *
  * @param R An arbitrary receiver.
  */
+@Unstable
 interface SampleMissHandler<R> {
 
     /**

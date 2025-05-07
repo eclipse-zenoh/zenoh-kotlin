@@ -14,6 +14,7 @@
 
 package io.zenoh.ext
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.qos.CongestionControl
 import io.zenoh.pubsub.SampleMissListener
@@ -21,6 +22,7 @@ import io.zenoh.pubsub.SampleMissListener
 /**
  * Heartbeat sample miss detection mode
  */
+@Unstable
 sealed class HeartbeatMode {
     /**
      * Allow last sample miss detection through periodic heartbeat.
@@ -43,6 +45,7 @@ sealed class HeartbeatMode {
  *
  * @property heartbeat Enable heartbeat functionality for sample miss detection
  */
+@Unstable
 data class MissDetectionConfig (
     val heartbeat: HeartbeatMode? = null,
 ) {

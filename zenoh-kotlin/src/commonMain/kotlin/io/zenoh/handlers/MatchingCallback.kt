@@ -14,11 +14,14 @@
 
 package io.zenoh.handlers
 
+import io.zenoh.annotations.Unstable
+
 /**
  * Runnable matching status callback.
  *
  * @constructor Create empty Callback
  */
+@Unstable
 fun interface MatchingCallback {
 
     /** Callback to be run. */

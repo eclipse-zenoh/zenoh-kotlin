@@ -14,6 +14,7 @@
 
 package io.zenoh.pubsub
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.jni.JNIMatchingListener
 import io.zenoh.session.SessionDeclaration
 
@@ -24,6 +25,7 @@ import io.zenoh.session.SessionDeclaration
  * Matching listeners will run in background until the corresponding Zenoh entity is undeclared,
  * or until it is undeclared.
  */
+@Unstable
 class MatchingListener internal constructor(
     private var jniMatchingListener: JNIMatchingListener?,
 ) : SessionDeclaration, AutoCloseable {

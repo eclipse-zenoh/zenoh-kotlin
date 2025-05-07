@@ -14,6 +14,7 @@
 
 package io.zenoh.pubsub
 
+import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
@@ -34,6 +35,7 @@ import kotlinx.coroutines.channels.Channel
  *
  * @see Subscriber
  */
+@Unstable
 class AdvancedSubscriber<R> internal constructor(
     val keyExpr: KeyExpr, val receiver: R, private var jniSubscriber: JNIAdvancedSubscriber?
 ) : AutoCloseable, SessionDeclaration {
