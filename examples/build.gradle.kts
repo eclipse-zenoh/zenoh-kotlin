@@ -50,7 +50,9 @@ tasks {
         "ZScout",
         "ZSub",
         "ZSubLiveliness",
-        "ZSubThr"
+        "ZSubThr",
+        "ZAdvancedPublisher",
+        "ZAdvancedSubscriber"
     )
 
     examples.forEach { example ->

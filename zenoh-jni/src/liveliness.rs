@@ -15,25 +15,24 @@
 use std::{ptr::null, sync::Arc, time::Duration};
 
 use jni::{
-    objects::{JByteArray, JClass, JObject, JString, JValue},
-    sys::{jboolean, jint, jlong},
+    objects::{JClass, JObject, JString},
+    sys::{jboolean, jlong},
     JNIEnv,
 };
 
 use zenoh::{
     internal::runtime::ZRuntime, key_expr::KeyExpr, liveliness::LivelinessToken,
-    pubsub::Subscriber, sample::Sample, Session, Wait,
+    pubsub::Subscriber, Session, Wait,
 };
 
 use crate::{
     errors::ZResult,
     key_expr::process_kotlin_key_expr,
+    owned_object::OwnedObject,
+    sample_callback::SetJniSampleCallback,
     session::{on_reply_error, on_reply_success},
     throw_exception,
-    utils::{
-        bytes_to_java_array, get_callback_global_ref, get_java_vm, load_on_close,
-        slice_to_java_string,
-    },
+    utils::{get_callback_global_ref, get_java_vm, load_on_close},
     zerror,
 };
 
@@ -49,7 +48,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
     timeout_ms: jlong,
     on_close: JObject,
 ) {
-    let session = unsafe { Arc::from_raw(session_ptr) };
+    let session = unsafe { OwnedObject::from_raw(session_ptr) };
     let _ = || -> ZResult<()> {
         let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) }?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
@@ -98,7 +97,6 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
     .map_err(|err| {
         throw_exception!(env, err);
     });
-    std::mem::forget(session);
 }
 
 #[no_mangle]
@@ -110,8 +108,8 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareTokenViaJNI(
     key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
     key_expr_str: JString,
 ) -> *const LivelinessToken {
-    let session = unsafe { Arc::from_raw(session_ptr) };
-    let ptr = || -> ZResult<*const LivelinessToken> {
+    let session = unsafe { OwnedObject::from_raw(session_ptr) };
+    || -> ZResult<*const LivelinessToken> {
         let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) }?;
         tracing::trace!("Declaring liveliness token on '{key_expr}'.");
         let token = session
@@ -124,9 +122,7 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareTokenViaJNI(
     .unwrap_or_else(|err| {
         throw_exception!(env, err);
         null()
-    });
-    std::mem::forget(session);
-    ptr
+    })
 }
 
 #[no_mangle]
@@ -151,88 +147,24 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareSubscriberViaJNI(
     history: jboolean,
     on_close: JObject,
 ) -> *const Subscriber<()> {
-    let session = unsafe { Arc::from_raw(session_ptr) };
+    let session = unsafe { OwnedObject::from_raw(session_ptr) };
     || -> ZResult<*const Subscriber<()>> {
-        let java_vm = Arc::new(get_java_vm(&mut env)?);
-        let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
-        let on_close_global_ref = get_callback_global_ref(&mut env, on_close)?;
-        let on_close = load_on_close(&java_vm, on_close_global_ref);
-
-        let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) }?;
+        let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)? };
         tracing::debug!("Declaring liveliness subscriber on '{}'...", key_expr);
 
-        let result = session
-            .liveliness()
-            .declare_subscriber(key_expr.to_owned())
-            .history(history != 0)
-            .callback(move |sample: Sample| {
-                let _ = || -> ZResult<()> {
-                    on_close.noop(); // Does nothing, but moves `on_close` inside the closure so it gets destroyed with the closure
-                    let mut env = java_vm.attach_current_thread_as_daemon().map_err(|err| {
-                        zerror!("Unable to attach thread for liveliness subscriber: {}", err)
-                    })?;
-                    let byte_array = bytes_to_java_array(&env, sample.payload())
-                        .map(|array| env.auto_local(array))?;
-
-                    let encoding_id: jint = sample.encoding().id() as jint;
-                    let encoding_schema = match sample.encoding().schema() {
-                        Some(schema) => slice_to_java_string(&env, schema)?,
-                        None => JString::default(),
-                    };
-                    let kind = sample.kind() as jint;
-                    let (timestamp, is_valid) = sample
-                        .timestamp()
-                        .map(|timestamp| (timestamp.get_time().as_u64(), true))
-                        .unwrap_or((0, false));
-
-                    let attachment_bytes = sample
-                        .attachment()
-                        .map_or_else(
-                            || Ok(JByteArray::default()),
-                            |attachment| bytes_to_java_array(&env, attachment),
-                        )
-                        .map(|array| env.auto_local(array))
-                        .map_err(|err| zerror!("Error processing attachment: {}", err))?;
-
-                    let key_expr_str = env.auto_local(
-                        env.new_string(sample.key_expr().to_string())
-                            .map_err(|err| zerror!("Error processing sample key expr: {}", err))?,
-                    );
-
-                    let express = sample.express();
-                    let priority = sample.priority() as jint;
-                    let cc = sample.congestion_control() as jint;
-
-                    env.call_method(
-                        &callback_global_ref,
-                        "run",
-                        "(Ljava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
-                        &[
-                            JValue::from(&key_expr_str),
-                            JValue::from(&byte_array),
-                            JValue::from(encoding_id),
-                            JValue::from(&encoding_schema),
-                            JValue::from(kind),
-                            JValue::from(timestamp as i64),
-                            JValue::from(is_valid),
-                            JValue::from(&attachment_bytes),
-                            JValue::from(express),
-                            JValue::from(priority),
-                            JValue::from(cc),
-                        ],
-                    )
-                    .map_err(|err| zerror!(err))?;
-                    Ok(())
-                }()
-                .map_err(|err| tracing::error!("On liveliness subscriber callback error: {err}"));
-            })
-            .wait();
+        let result = unsafe {
+            session
+                .liveliness()
+                .declare_subscriber(key_expr.to_owned())
+                .history(history != 0)
+                .set_jni_sample_callback(&mut env, callback, on_close)?
+                .wait()
+        };
 
         let subscriber =
             result.map_err(|err| zerror!("Unable to declare liveliness subscriber: {}", err))?;
 
-        tracing::debug!("Subscriber declared on '{}'.", key_expr);
-        std::mem::forget(session);
+        tracing::debug!("Liveliness subscriber declared on '{}'.", key_expr);
         Ok(Arc::into_raw(Arc::new(subscriber)))
     }()
     .unwrap_or_else(|err| {
