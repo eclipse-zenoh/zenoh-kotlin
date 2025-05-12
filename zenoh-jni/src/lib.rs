@@ -14,13 +14,17 @@
 
 mod config;
 mod errors;
+#[cfg(feature = "zenoh-ext")]
+mod ext;
 mod key_expr;
 mod liveliness;
 mod logger;
+pub(crate) mod owned_object;
 mod publisher;
 mod querier;
 mod query;
 mod queryable;
+pub(crate) mod sample_callback;
 mod scouting;
 mod session;
 mod subscriber;

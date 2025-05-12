@@ -28,9 +28,12 @@ import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
 import io.zenoh.Config
 import io.zenoh.annotations.Unstable
+import io.zenoh.pubsub.AdvancedSubscriber
+import io.zenoh.pubsub.AdvancedPublisher
 import io.zenoh.pubsub.Delete
 import io.zenoh.pubsub.Publisher
 import io.zenoh.pubsub.Put
+import io.zenoh.pubsub.Subscriber
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
@@ -42,7 +45,12 @@ import io.zenoh.query.Parameters
 import io.zenoh.query.Selector
 import io.zenoh.qos.Reliability
 import io.zenoh.sample.SampleKind
-import io.zenoh.pubsub.Subscriber
+import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HeartbeatMode
+import io.zenoh.ext.MissDetectionConfig
+import io.zenoh.ext.HistoryConfig
+import io.zenoh.ext.RecoveryConfig
+import io.zenoh.ext.RecoveryMode
 import org.apache.commons.net.ntp.TimeStamp
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
@@ -86,6 +94,51 @@ internal class JNISession {
         )
     }
 
+    fun declareAdvancedPublisher(
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability,
+        cache: CacheConfig?,
+        sampleMissDetection: MissDetectionConfig?,
+        publisherDetection: Boolean
+    ): Result<AdvancedPublisher> = runCatching {
+
+        val publisherRawPtr = declareAdvancedPublisherViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
+            sessionPtr.get(),
+            qos.congestionControl.value,
+            qos.priority.value,
+            qos.express,
+            reliability.ordinal,
+            cache != null,
+            cache?.maxSamples ?: 0,
+            cache?.repliesQoS?.priority?.value ?: 0,
+            cache?.repliesQoS?.congestionControl?.value ?: 0,
+            cache?.repliesQoS?.express ?: false,
+            sampleMissDetection != null,
+            sampleMissDetection?.heartbeat != null,
+            when(val heartbeat = sampleMissDetection?.heartbeat) {
+                is HeartbeatMode.PeriodicHeartbeat -> heartbeat.milliseconds
+                is HeartbeatMode.SporadicHeartbeat -> heartbeat.milliseconds
+                null -> 0
+            },
+            when(sampleMissDetection?.heartbeat) {
+                is HeartbeatMode.PeriodicHeartbeat -> false
+                is HeartbeatMode.SporadicHeartbeat -> true
+                null -> false
+            },
+            publisherDetection
+        )
+        AdvancedPublisher(
+            keyExpr,
+            qos,
+            encoding,
+            JNIAdvancedPublisher(publisherRawPtr),
+        )
+    }
+
     fun <R> declareSubscriber(
         keyExpr: KeyExpr, callback: Callback<Sample>, onClose: () -> Unit, receiver: R
     ): Result<Subscriber<R>> = runCatching {
@@ -107,6 +160,55 @@ internal class JNISession {
             keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), subCallback, onClose
         )
         Subscriber(keyExpr, receiver, JNISubscriber(subscriberRawPtr))
+    }
+
+    fun <R> declareAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        history: HistoryConfig?,
+        recovery: RecoveryConfig?,
+        subscriberDetection: Boolean,
+        callback: Callback<Sample>,
+        onClose: () -> Unit,
+        receiver: R
+    ): Result<AdvancedSubscriber<R>> = runCatching {
+        val subCallback =
+            JNISubscriberCallback { keyExpr, payload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, attachmentBytes, express: Boolean, priority: Int, congestionControl: Int ->
+                val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                val sample = Sample(
+                    KeyExpr(keyExpr, null),
+                    payload.into(),
+                    Encoding(encodingId, schema = encodingSchema),
+                    SampleKind.fromInt(kind),
+                    timestamp,
+                    QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
+                    attachmentBytes?.into()
+                )
+                callback.run(sample)
+            }
+        val subscriberRawPtr = declareAdvancedSubscriberViaJNI(
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
+            sessionPtr.get(),
+            history != null,
+            history?.detectLatePublishers ?: false,
+            history?.maxSamples ?: 0,
+            history?.maxAgeSeconds ?: 0.0,
+            recovery != null,
+            when(recovery?.mode){
+                is RecoveryMode.Heartbeat -> true
+                is RecoveryMode.PeriodicQuery -> false
+                null -> false
+            },
+            when(val mode = recovery?.mode){
+                is RecoveryMode.Heartbeat -> 0
+                is RecoveryMode.PeriodicQuery -> mode.milliseconds
+                null -> 0
+            },
+            subscriberDetection,
+            subCallback,
+            onClose
+        )
+        AdvancedSubscriber(keyExpr, receiver, JNIAdvancedSubscriber(subscriberRawPtr))
     }
 
     fun <R> declareQueryable(
@@ -315,10 +417,54 @@ internal class JNISession {
     ): Long
 
     @Throws(ZError::class)
+    private external fun declareAdvancedPublisherViaJNI(
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        congestionControl: Int,
+        priority: Int,
+        express: Boolean,
+        reliability: Int,
+        // CacheConfig
+        cacheEnabled: Boolean,
+        cacheMaxSamples: Long,
+        cacheRepliesPriority: Int,
+        cacheRepliesCongestionControl: Int,
+        cacheRepliesIsExpress: Boolean,
+        // MissDetectionConfig
+        sampleMissDetectionEnabled: Boolean,
+        sampleMissDetectionEnableHeartbeat: Boolean,
+        sampleMissDetectionHeartbeatMs: Long,
+        sampleMissDetectionHeartbeatIsSporadic: Boolean,
+
+        publisherDetection: Boolean,
+    ): Long
+
+    @Throws(ZError::class)
     private external fun declareSubscriberViaJNI(
         keyExprPtr: Long,
         keyExprString: String,
         sessionPtr: Long,
+        callback: JNISubscriberCallback,
+        onClose: JNIOnCloseCallback,
+    ): Long
+
+    @Throws(ZError::class)
+    private external fun declareAdvancedSubscriberViaJNI(
+        keyExprPtr: Long,
+        keyExprString: String,
+        sessionPtr: Long,
+        // HistoryConfig
+        historyConfigEnabled: Boolean,
+        historyDetectLatePublishers: Boolean,
+        historyMaxSamples: Long,
+        historyMaxAgeSeconds: Double,
+        // RecoveryConfig
+        recoveryConfigEnabled: Boolean,
+        recoveryConfigIsHeartbeat: Boolean,
+        recoveryQueryPeriodMs: Long,
+
+        subscriberDetection: Boolean,
         callback: JNISubscriberCallback,
         onClose: JNIOnCloseCallback,
     ): Long
