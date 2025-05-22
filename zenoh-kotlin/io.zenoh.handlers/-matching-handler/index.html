@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>SessionDeclaration</title>
+    <title>MatchingHandler</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -104,28 +104,58 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.session/SessionDeclaration///PointingToDeclaration//886165161">
-  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.session</a><span class="delimiter">/</span><span class="current">SessionDeclaration</span></div>
+<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.handlers/MatchingHandler///PointingToDeclaration//886165161">
+  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.handlers</a><span class="delimiter">/</span><span class="current">MatchingHandler</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>Session</span><wbr></wbr><span><span>Declaration</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">SessionDeclaration</a></div><p class="paragraph">Session declaration.</p><p class="paragraph">A session declaration is either a <a href="../../io.zenoh.pubsub/-publisher/index.html">Publisher</a>, a <a href="../../io.zenoh.pubsub/-subscriber/index.html">Subscriber</a>, a <a href="../../io.zenoh.query/-queryable/index.html">Queryable</a> or a <a href="../../io.zenoh.keyexpr/-key-expr/index.html">KeyExpr</a> declared from a <a href="../../io.zenoh/-session/index.html">Session</a>.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.keyexpr/-key-expr/index.html">KeyExpr</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.liveliness/-liveliness-token/index.html">LivelinessToken</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-advanced-publisher/index.html">AdvancedPublisher</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-advanced-subscriber/index.html">AdvancedSubscriber</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-matching-listener/index.html">MatchingListener</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-publisher/index.html">Publisher</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-sample-miss-listener/index.html">SampleMissListener</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-subscriber/index.html">Subscriber</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.query/-querier/index.html">Querier</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.query/-queryable/index.html">Queryable</a></div></span></div><div></div></div></div></div></div></div>
+    <h1 class="cover"><span>Matching</span><wbr></wbr><span><span>Handler</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">MatchingHandler</a><span class="token operator">&lt;</span><a href="index.html">R</a><span class="token operator">&gt;</span></div><p class="paragraph">Handler interface for classes implementing behavior to handle the incoming matching statuses</p><p class="paragraph"><strong>Example</strong>:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">class MatchingQueueHandler : MatchingHandler&lt;ArrayDeque&lt;Boolean&gt;&gt; {<br>    private val queue: ArrayDeque&lt;Boolean&gt; = ArrayDeque()<br><br>    override fun handle(matching: Boolean) {<br>        println(&quot;Received $matching, enqueuing...&quot;)<br>        queue.add(matching)<br>    }<br><br>    override fun receiver(): ArrayDeque&lt;Boolean&gt; {<br>        return queue<br>    }<br><br>    override fun onClose() {<br>        println(&quot;Received in total ${queue.size} elements.&quot;}<br>    }<br>}</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>R</span></span></u></div></span></div><div><div class="title"><p class="paragraph">An arbitrary receiver.</p></div></div></div></div></div></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="FUNCTION">
         <h2 class="">Functions</h2>
-        <div class="table"><a data-name="965736132%2FFunctions%2F886165161" anchor-label="undeclare" id="965736132%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+        <div class="table"><a data-name="2019593228%2FFunctions%2F886165161" anchor-label="handle" id="2019593228%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="undeclare.html"><span><span>undeclare</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="965736132%2FFunctions%2F886165161"></span>
+                  <div><a href="handle.html"><span><span>handle</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2019593228%2FFunctions%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Undeclare a declaration. No further operations should be performed after calling this function.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="handle.html"><span class="token function">handle</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">matching<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Handle the received matching status.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-6751662%2FFunctions%2F886165161" anchor-label="onClose" id="-6751662%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="on-close.html"><span>on</span><wbr></wbr><span><span>Close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-6751662%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="on-close.html"><span class="token function">onClose</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">This callback is invoked by Zenoh at the conclusion of the handler's lifecycle.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1909533344%2FFunctions%2F886165161" anchor-label="receiver" id="1909533344%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="receiver.html"><span><span>receiver</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1909533344%2FFunctions%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="receiver.html"><span class="token function">receiver</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="index.html">R</a></div><div class="brief "><p class="paragraph">Return the receiver of the handler.</p></div></div></div>
                 </div>
               </div>
             </div>

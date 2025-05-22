@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>SessionDeclaration</title>
+    <title>RecoveryMode</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -104,28 +104,43 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.session/SessionDeclaration///PointingToDeclaration//886165161">
-  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.session</a><span class="delimiter">/</span><span class="current">SessionDeclaration</span></div>
+<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.ext/RecoveryMode///PointingToDeclaration//886165161">
+  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.ext</a><span class="delimiter">/</span><span class="current">RecoveryMode</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>Session</span><wbr></wbr><span><span>Declaration</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">SessionDeclaration</a></div><p class="paragraph">Session declaration.</p><p class="paragraph">A session declaration is either a <a href="../../io.zenoh.pubsub/-publisher/index.html">Publisher</a>, a <a href="../../io.zenoh.pubsub/-subscriber/index.html">Subscriber</a>, a <a href="../../io.zenoh.query/-queryable/index.html">Queryable</a> or a <a href="../../io.zenoh.keyexpr/-key-expr/index.html">KeyExpr</a> declared from a <a href="../../io.zenoh/-session/index.html">Session</a>.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.keyexpr/-key-expr/index.html">KeyExpr</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.liveliness/-liveliness-token/index.html">LivelinessToken</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-advanced-publisher/index.html">AdvancedPublisher</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-advanced-subscriber/index.html">AdvancedSubscriber</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-matching-listener/index.html">MatchingListener</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-publisher/index.html">Publisher</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-sample-miss-listener/index.html">SampleMissListener</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.pubsub/-subscriber/index.html">Subscriber</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.query/-querier/index.html">Querier</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../io.zenoh.query/-queryable/index.html">Queryable</a></div></span></div><div></div></div></div></div></div></div>
+    <h1 class="cover"><span>Recovery</span><wbr></wbr><span><span>Mode</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="index.html">RecoveryMode</a></div><p class="paragraph">Sample recovery mode.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-periodic-query/index.html">PeriodicQuery</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="-heartbeat/index.html">Heartbeat</a></div></span></div><div></div></div></div></div></div></div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
-      <div data-togglable="FUNCTION">
-        <h2 class="">Functions</h2>
-        <div class="table"><a data-name="965736132%2FFunctions%2F886165161" anchor-label="undeclare" id="965736132%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="1112910755%2FClasslikes%2F886165161" anchor-label="Heartbeat" id="1112910755%2FClasslikes%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="undeclare.html"><span><span>undeclare</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="965736132%2FFunctions%2F886165161"></span>
+                  <div><a href="-heartbeat/index.html"><span><span>Heartbeat</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1112910755%2FClasslikes%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Undeclare a declaration. No further operations should be performed after calling this function.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-heartbeat/index.html">Heartbeat</a> : <a href="index.html">RecoveryMode</a></div><div class="brief "><p class="paragraph">Subscribe to heartbeats of <a href="../../io.zenoh.pubsub/-advanced-publisher/index.html">AdvancedPublisher</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="887577554%2FClasslikes%2F886165161" anchor-label="PeriodicQuery" id="887577554%2FClasslikes%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-periodic-query/index.html"><span>Periodic</span><wbr></wbr><span><span>Query</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="887577554%2FClasslikes%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-periodic-query/index.html">PeriodicQuery</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>milliseconds<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">0</span></span></span><span class="token punctuation">)</span> : <a href="index.html">RecoveryMode</a></div><div class="brief "><p class="paragraph">Enable periodic queries for not yet received Samples and specify their period.</p></div></div></div>
                 </div>
               </div>
             </div>
