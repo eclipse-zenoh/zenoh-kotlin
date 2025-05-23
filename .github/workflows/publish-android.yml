@@ -57,16 +57,13 @@ jobs:
           rustup target add x86_64-linux-android
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.12.1
 
       - name: Gradle Wrapper
         run: |
           gradle wrapper
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
 
       - name: Set pub mode env var
         # Note: This step is intended to allow publishing snapshot packages.
