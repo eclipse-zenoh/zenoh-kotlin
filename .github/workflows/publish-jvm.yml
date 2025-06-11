@@ -187,8 +187,8 @@ jobs:
         run: |
           ./gradlew publishJvmPublicationToSonatypeRepository ${{ env.RELEASE }} --info -PremotePublication=true ${{ env.PUB_MODE }}
         env:
-          ORG_OSSRH_USERNAME: ${{ secrets.ORG_OSSRH_USERNAME }}
-          ORG_OSSRH_PASSWORD: ${{ secrets.ORG_OSSRH_PASSWORD }}
+          CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME}}
+          CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
           ORG_GPG_KEY_ID: ${{ secrets.ORG_GPG_KEY_ID }}
           ORG_GPG_SUBKEY_ID: ${{ secrets.ORG_GPG_SUBKEY_ID }}
           ORG_GPG_PRIVATE_KEY: ${{ secrets.ORG_GPG_PRIVATE_KEY }}
