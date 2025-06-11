@@ -47,8 +47,8 @@ version = if (project.hasProperty("SNAPSHOT")) {
 nexusPublishing {
     repositories {
         sonatype {
-            nexusUrl = uri("https://central.sonatype.org/service/local/")
-            snapshotRepositoryUrl = uri("https://central.sonatype.org/content/repositories/snapshots/")
+            nexusUrl = uri("https://ossrh-staging-api.central.sonatype.com/service/local/")
+            snapshotRepositoryUrl = uri("https://central.sonatype.com/repository/maven-snapshots/")
 
             username = System.getenv("CENTRAL_SONATYPE_TOKEN_USERNAME")
             password = System.getenv("CENTRAL_SONATYPE_TOKEN_PASSWORD")
