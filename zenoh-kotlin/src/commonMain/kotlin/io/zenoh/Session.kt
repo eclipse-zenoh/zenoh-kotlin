@@ -609,7 +609,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * )
      * ```
      */
-    @Unstable
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget = QueryTarget.BEST_MATCHING,

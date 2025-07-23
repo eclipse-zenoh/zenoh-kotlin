@@ -27,7 +27,6 @@ class ZQuerier(private val emptyArgs: Boolean) : CliktCommand(
     help = "Zenoh Querier example"
 ) {
 
-    @OptIn(Unstable::class)
     override fun run() {
         val config = loadConfig(emptyArgs, configFile, connect, listen, noMulticastScouting, mode)
 
