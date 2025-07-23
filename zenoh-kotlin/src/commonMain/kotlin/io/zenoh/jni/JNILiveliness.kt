@@ -16,6 +16,7 @@ package io.zenoh.jni
 
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.into
+import io.zenoh.config.EntityGlobalId
 import io.zenoh.config.ZenohId
 import io.zenoh.handlers.Callback
 import io.zenoh.jni.callbacks.JNIGetCallback
@@ -45,7 +46,8 @@ internal object JNILiveliness {
         onClose: () -> Unit
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
-                replierId: ByteArray?,
+                replierZid: ByteArray?,
+                replierEid: Int,
                 success: Boolean,
                 keyExpr2: String?,
                 payload: ByteArray,
@@ -71,10 +73,10 @@ internal object JNILiveliness {
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
                     attachmentBytes?.into()
                 )
-                reply = Reply(replierId?.let { ZenohId(it) }, Result.success(sample))
+                reply = Reply(replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.success(sample))
             } else {
                 reply = Reply(
-                    replierId?.let { ZenohId(it) }, Result.failure(
+                    replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.failure(
                         ReplyError(
                             payload.into(),
                             Encoding(encodingId, schema = encodingSchema)

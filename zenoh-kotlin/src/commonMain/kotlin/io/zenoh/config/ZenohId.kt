@@ -38,3 +38,11 @@ data class ZenohId internal constructor(internal val bytes: ByteArray) {
         return bytes.contentHashCode()
     }
 }
+
+/**
+ * The global unique id of a Zenoh entity.
+ * Contains two fields:
+ * - zid: the global unique id of a Zenoh peer.
+ * - eid: *unsigned* unique identifier of the entity within the Zenoh peer.
+ */
+data class EntityGlobalId internal constructor(val zid: ZenohId, val eid: UInt)

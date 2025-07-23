@@ -28,6 +28,7 @@ import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
 import io.zenoh.Config
 import io.zenoh.annotations.Unstable
+import io.zenoh.config.EntityGlobalId
 import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.pubsub.AdvancedPublisher
 import io.zenoh.pubsub.Delete
@@ -268,7 +269,8 @@ internal class JNISession {
         qos: QoS
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
-                replierId: ByteArray?,
+                replierZid: ByteArray?,
+                replierEid: Int,
                 success: Boolean,
                 keyExpr: String?,
                 payload: ByteArray,
@@ -294,10 +296,10 @@ internal class JNISession {
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
                     attachmentBytes?.into()
                 )
-                reply = Reply(replierId?.let { ZenohId(it) }, Result.success(sample))
+                reply = Reply(replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.success(sample))
             } else {
                 reply = Reply(
-                    replierId?.let { ZenohId(it) }, Result.failure(
+                    replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.failure(
                         ReplyError(
                             payload.into(),
                             Encoding(encodingId, schema = encodingSchema)
