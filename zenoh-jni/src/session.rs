@@ -26,7 +26,7 @@ use zenoh::{
     pubsub::{Publisher, PublisherBuilder, Subscriber, SubscriberBuilder},
     query::{Querier, Query, Queryable, ReplyError, Selector},
     sample::Sample,
-    session::{Session, ZenohId},
+    session::{EntityGlobalId, Session, ZenohId},
     Wait,
 };
 
@@ -1216,7 +1216,7 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNISession_getViaJNI(
 
 pub(crate) fn on_reply_success(
     env: &mut JNIEnv,
-    replier_id: Option<ZenohId>,
+    replier_id: Option<EntityGlobalId>,
     sample: &Sample,
     callback_global_ref: &GlobalRef,
 ) -> ZResult<()> {
@@ -1224,11 +1224,12 @@ pub(crate) fn on_reply_success(
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
-                env.byte_array_from_slice(&replier_id.to_le_bytes())
+                env.byte_array_from_slice(&replier_id.zid().to_le_bytes())
                     .map_err(|err| zerror!(err))
             },
         )
         .map(|value| env.auto_local(value))?;
+    let eid = replier_id.map_or_else(|| 0, |replier_id| replier_id.eid() as jint);
 
     let byte_array =
         bytes_to_java_array(env, sample.payload()).map(|value| env.auto_local(value))?;
@@ -1274,9 +1275,10 @@ pub(crate) fn on_reply_success(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "([BZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        "([BIZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
+            JValue::from(eid),
             JValue::from(true),
             JValue::from(&key_expr_str),
             JValue::from(&byte_array),
@@ -1302,7 +1304,7 @@ pub(crate) fn on_reply_success(
 
 pub(crate) fn on_reply_error(
     env: &mut JNIEnv,
-    replier_id: Option<ZenohId>,
+    replier_id: Option<EntityGlobalId>,
     reply_error: &ReplyError,
     callback_global_ref: &GlobalRef,
 ) -> ZResult<()> {
@@ -1310,11 +1312,12 @@ pub(crate) fn on_reply_error(
         .map_or_else(
             || Ok(JByteArray::default()),
             |replier_id| {
-                env.byte_array_from_slice(&replier_id.to_le_bytes())
+                env.byte_array_from_slice(&replier_id.zid().to_le_bytes())
                     .map_err(|err| zerror!(err))
             },
         )
         .map(|value| env.auto_local(value))?;
+    let eid = replier_id.map_or_else(|| 0, |replier_id| replier_id.eid() as jint);
 
     let payload =
         bytes_to_java_array(env, reply_error.payload()).map(|value| env.auto_local(value))?;
@@ -1330,9 +1333,10 @@ pub(crate) fn on_reply_error(
     let result = match env.call_method(
         callback_global_ref,
         "run",
-        "([BZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
+        "([BIZLjava/lang/String;[BILjava/lang/String;IJZ[BZII)V",
         &[
             JValue::from(&zenoh_id),
+            JValue::from(eid),
             JValue::from(false),
             JValue::from(&JString::default()),
             JValue::from(&payload),

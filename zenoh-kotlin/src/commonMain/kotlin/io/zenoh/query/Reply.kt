@@ -15,8 +15,8 @@
 package io.zenoh.query
 
 import io.zenoh.ZenohType
+import io.zenoh.config.EntityGlobalId
 import io.zenoh.sample.Sample
-import io.zenoh.config.ZenohId
 
 /**
  * Class to represent a Zenoh Reply to a get query and to a remote [Query].
@@ -43,4 +43,4 @@ import io.zenoh.config.ZenohId
  * @property replierId: unique ID identifying the replier, may be null in case the network cannot provide it
  *   (@see https://github.com/eclipse-zenoh/zenoh/issues/709#issuecomment-2202763630).
  */
-data class Reply(val replierId: ZenohId?, val result: Result<Sample>) : ZenohType
+data class Reply(val replierId: EntityGlobalId?, val result: Result<Sample>) : ZenohType
