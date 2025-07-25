@@ -76,6 +76,9 @@ $dokka.location:io.zenoh.bytes/ZBytes/toBytes/#/PointingToDeclaration/zenoh-kot
 $dokka.location:io.zenoh.bytes/ZBytes/toString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/to-string.html
 $dokka.location:io.zenoh.bytes/ZBytes/tryToString/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.bytes/-z-bytes/try-to-string.html
 $dokka.location:io.zenoh.config////PointingToDeclaration/zenoh-kotlin/io.zenoh.config/index.html
+$dokka.location:io.zenoh.config/EntityGlobalId///PointingToDeclaration/zenoh-kotlin/io.zenoh.config/-entity-global-id/index.html
+$dokka.location:io.zenoh.config/EntityGlobalId/eid/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.config/-entity-global-id/eid.html
+$dokka.location:io.zenoh.config/EntityGlobalId/zid/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.config/-entity-global-id/zid.html
 $dokka.location:io.zenoh.config/WhatAmI.Client///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.config/-what-am-i/-client/index.html
 $dokka.location:io.zenoh.config/WhatAmI.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.config/-what-am-i/-companion/index.html
 $dokka.location:io.zenoh.config/WhatAmI.Peer///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.config/-what-am-i/-peer/index.html
@@ -350,7 +353,7 @@ $dokka.location:io.zenoh.query/Queryable/keyExpr/#/PointingToDeclaration/zenoh-
 $dokka.location:io.zenoh.query/Queryable/receiver/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-queryable/receiver.html
 $dokka.location:io.zenoh.query/Queryable/undeclare/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-queryable/undeclare.html
 $dokka.location:io.zenoh.query/Reply///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/index.html
-$dokka.location:io.zenoh.query/Reply/Reply/#io.zenoh.config.ZenohId?#[Error type: Unresolved type for Result<Sample>][io.zenoh.sample.Sample]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-reply.html
+$dokka.location:io.zenoh.query/Reply/Reply/#io.zenoh.config.EntityGlobalId?#[Error type: Unresolved type for Result<Sample>][io.zenoh.sample.Sample]/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/-reply.html
 $dokka.location:io.zenoh.query/Reply/replierId/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/replier-id.html
 $dokka.location:io.zenoh.query/Reply/result/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply/result.html
 $dokka.location:io.zenoh.query/ReplyError///PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-reply-error/index.html
