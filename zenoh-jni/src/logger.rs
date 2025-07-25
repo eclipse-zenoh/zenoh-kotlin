@@ -23,6 +23,7 @@ use crate::{errors::ZResult, throw_exception, zerror};
 ///
 /// This function is meant to be called from Java/Kotlin code through JNI. It takes a `filter`
 /// indicating the desired log level.
+/// If the logger was already initialized in a previous call, then it does nothing.
 ///
 /// See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
 ///
@@ -50,7 +51,8 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
                 .tag_target_strip()
                 .prepend_module(true)
                 .pstore(false)
-                .init();
+                .try_init()
+                .ok();
         }
 
         #[cfg(not(target_os = "android"))]
@@ -59,7 +61,8 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
                 .parse_filters(log_level.as_str())
                 .tag_target_strip()
                 .prepend_module(true)
-                .init();
+                .try_init()
+                .ok();
         }
 
         Ok(())
