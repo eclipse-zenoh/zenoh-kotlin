@@ -50,7 +50,8 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
                 .tag_target_strip()
                 .prepend_module(true)
                 .pstore(false)
-                .init();
+                .try_init()
+                .ok();
         }
 
         #[cfg(not(target_os = "android"))]
@@ -59,7 +60,8 @@ pub extern "C" fn Java_io_zenoh_Logger_00024Companion_startLogsViaJNI(
                 .parse_filters(log_level.as_str())
                 .tag_target_strip()
                 .prepend_module(true)
-                .init();
+                .try_init()
+                .ok();
         }
 
         Ok(())
