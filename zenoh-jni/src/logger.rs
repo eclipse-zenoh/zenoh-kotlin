@@ -23,6 +23,7 @@ use crate::{errors::ZResult, throw_exception, zerror};
 ///
 /// This function is meant to be called from Java/Kotlin code through JNI. It takes a `filter`
 /// indicating the desired log level.
+/// If the logger was already initialized in a previous call, then it does nothing.
 ///
 /// See https://docs.rs/env_logger/latest/env_logger/index.html for accepted filter format.
 ///
