@@ -50,7 +50,6 @@ import kotlinx.coroutines.channels.Channel
  * ```
  *
  */
-@Unstable
 class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private var jniQuerier: JNIQuerier?) :
     SessionDeclaration, AutoCloseable {
 
