@@ -38,8 +38,8 @@ use zenoh::{
 /// - `_class`: The JNI class.
 /// - `query_ptr`: The raw pointer to the Zenoh query.
 /// - `key_expr_ptr`: Nullable key expression pointer associated with the query result. This parameter
-///    is meant to be used with declared key expressions, which have a pointer associated to them.
-///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
+///   is meant to be used with declared key expressions, which have a pointer associated to them.
+///   In case of it being null, then the `key_expr_string` will be used to perform the reply.
 /// - `key_expr_str`: The string representation of the key expression associated with the query result.
 /// - `payload`: The payload for the reply.
 /// - `encoding_id`: The encoding id of the payload.
@@ -53,7 +53,7 @@ use zenoh::{
 /// - This function is marked as unsafe due to raw pointer manipulation and JNI interaction.
 /// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
 /// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
-///     therefore the query isn't valid anymore after that.
+///   therefore the query isn't valid anymore after that.
 /// - May throw a JNI exception in case of failure, which should be handled by the caller.
 ///
 #[no_mangle]
@@ -115,7 +115,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 /// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
 /// - May throw a JNI exception in case of failure, which should be handled by the caller.
 /// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
-///     therefore the query isn't valid anymore after that.
+///   therefore the query isn't valid anymore after that.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -146,8 +146,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
 /// - `_class`: The JNI class.
 /// - `query_ptr`: The raw pointer to the Zenoh query.
 /// - `key_expr_ptr`: Nullable key expression pointer associated with the query result. This parameter
-///    is meant to be used with declared key expressions, which have a pointer associated to them.
-///    In case of it being null, then the `key_expr_string` will be used to perform the reply.
+///   is meant to be used with declared key expressions, which have a pointer associated to them.
+///   In case of it being null, then the `key_expr_string` will be used to perform the reply.
 /// - `key_expr_str`: The string representation of the key expression associated with the query result.
 /// - `timestamp_enabled`: A boolean indicating whether the timestamp is enabled.
 /// - `timestamp_ntp_64`: The NTP64 timestamp value.
@@ -159,7 +159,7 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
 /// - It assumes that the provided raw pointer to the Zenoh query is valid and has not been modified or freed.
 /// - May throw a JNI exception in case of failure, which should be handled by the caller.
 /// - The query pointer is freed after calling this function (queries shouldn't be replied more than once),
-///     therefore the query isn't valid anymore after that.
+///   therefore the query isn't valid anymore after that.
 ///
 #[no_mangle]
 #[allow(non_snake_case)]
