@@ -42,9 +42,9 @@ use crate::{
 /// - `_class`: The JNI class.
 /// - `querier_ptr`: The raw pointer to the querier.
 /// - `key_expr_ptr`: A raw pointer to the [KeyExpr] provided to the kotlin querier. May be null in case of using an
-///     undeclared key expression.
+///   undeclared key expression.
 /// - `key_expr_str`: String representation of the key expression used during the querier declaration.
-///     It won't be considered in case a key_expr_ptr to a declared key expression is provided.
+///   It won't be considered in case a key_expr_ptr to a declared key expression is provided.
 /// - `selector_params`: Optional selector parameters for the query.
 /// - `callback`: Reference to the Kotlin callback to be run upon receiving a reply.
 /// - `on_close`: Reference to a kotlin callback to be run upon finishing the get operation, mostly used for closing a provided channel.
