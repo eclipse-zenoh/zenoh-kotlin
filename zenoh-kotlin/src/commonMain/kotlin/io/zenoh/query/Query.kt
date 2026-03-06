@@ -21,10 +21,8 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
 import io.zenoh.qos.ReplyQoS
-import io.zenoh.sample.SampleKind
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
-import io.zenoh.sample.Sample
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -72,9 +70,8 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos.toQoS(), attachment?.into())
         return jniQuery?.let {
-            val result = it.replySuccess(sample)
+            val result = it.replySuccess(keyExpr, payload.into(), encoding, timestamp, attachment?.into(), qos.express)
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -91,7 +88,7 @@ class Query internal constructor(
         reply(keyExpr, ZBytes.from(payload), encoding, qos, timestamp, attachment?.let { ZBytes.from(it) })
 
     @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. Only 'express' is meaningful for replies.",
+        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
         replaceWith = ReplaceWith(
             "reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)",
             "io.zenoh.qos.ReplyQoS"
@@ -107,7 +104,7 @@ class Query internal constructor(
     ): Result<Unit> = reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)
 
     @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. Only 'express' is meaningful for replies.",
+        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
         replaceWith = ReplaceWith(
             "reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)",
             "io.zenoh.qos.ReplyQoS"
@@ -162,7 +159,7 @@ class Query internal constructor(
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.toQoS())
+            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.express)
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -176,7 +173,7 @@ class Query internal constructor(
     ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))
 
     @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. Only 'express' is meaningful for replies.",
+        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
         replaceWith = ReplaceWith(
             "replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)",
             "io.zenoh.qos.ReplyQoS"
@@ -190,7 +187,7 @@ class Query internal constructor(
     ): Result<Unit> = replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)
 
     @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. Only 'express' is meaningful for replies.",
+        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
         replaceWith = ReplaceWith(
             "replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)",
             "io.zenoh.qos.ReplyQoS"

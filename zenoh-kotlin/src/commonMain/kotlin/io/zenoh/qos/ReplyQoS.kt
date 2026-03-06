@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 ZettaScale Technology
+// Copyright (c) 2026 ZettaScale Technology
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
@@ -18,20 +18,10 @@ package io.zenoh.qos
  * Quality of service settings for reply messages.
  *
  * Unlike [QoS], only [express] is meaningful for replies.
- * Priority and congestion control are fixed by the protocol for reply messages.
+ * The protocol uses request's priority and congestion control for reply messages.
  *
  * @property express If true, the message is not batched in order to reduce the latency.
  */
 data class ReplyQoS(
     val express: Boolean = false
-) {
-    /**
-     * Converts this [ReplyQoS] to a full [QoS] using the protocol-fixed defaults
-     * for congestion control (BLOCK) and priority (DATA).
-     */
-    internal fun toQoS(): QoS = QoS(
-        congestionControl = CongestionControl.BLOCK,
-        priority = Priority.DATA,
-        express = express
-    )
-}
+)

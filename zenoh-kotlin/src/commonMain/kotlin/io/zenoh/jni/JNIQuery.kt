@@ -17,9 +17,10 @@ package io.zenoh.jni
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
-import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
-import io.zenoh.sample.Sample
+import io.zenoh.bytes.ZBytes
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.Priority
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -31,21 +32,30 @@ import org.apache.commons.net.ntp.TimeStamp
  */
 internal class JNIQuery(private val ptr: Long) {
 
-    fun replySuccess(sample: Sample): Result<Unit> = runCatching {
-        val timestampEnabled = sample.timestamp != null
+    fun replySuccess(
+        keyExpr: KeyExpr,
+        payload: ZBytes,
+        encoding: Encoding,
+        timestamp: TimeStamp?,
+        attachment: ZBytes?,
+        express: Boolean,
+    ): Result<Unit> = runCatching {
+        val timestampEnabled = timestamp != null
+        // The protocol uses request's priority and congestion control for reply messages,
+        // so only express is meaningful here. Pass default values for priority and congestionControl.
         replySuccessViaJNI(
             ptr,
-            sample.keyExpr.jniKeyExpr?.ptr ?: 0,
-            sample.keyExpr.keyExpr,
-            sample.payload.bytes,
-            sample.encoding.id,
-            sample.encoding.schema,
+            keyExpr.jniKeyExpr?.ptr ?: 0,
+            keyExpr.keyExpr,
+            payload.bytes,
+            encoding.id,
+            encoding.schema,
             timestampEnabled,
-            if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
-            sample.attachment?.bytes,
-            sample.qos.express,
-            sample.qos.priority.value,
-            sample.qos.congestionControl.value
+            if (timestampEnabled) timestamp!!.ntpValue() else 0,
+            attachment?.bytes,
+            express,
+            Priority.DATA.value,
+            CongestionControl.BLOCK.value
         )
     }
 
@@ -53,9 +63,11 @@ internal class JNIQuery(private val ptr: Long) {
         replyErrorViaJNI(ptr, error.into().bytes, encoding.id, encoding.schema)
     }
 
-    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: IntoZBytes?, qos: QoS): Result<Unit> =
+    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: IntoZBytes?, express: Boolean): Result<Unit> =
         runCatching {
             val timestampEnabled = timestamp != null
+            // The protocol uses request's priority and congestion control for reply messages,
+            // so only express is meaningful here. Pass default values for priority and congestionControl.
             replyDeleteViaJNI(
                 ptr,
                 keyExpr.jniKeyExpr?.ptr ?: 0,
@@ -63,9 +75,9 @@ internal class JNIQuery(private val ptr: Long) {
                 timestampEnabled,
                 if (timestampEnabled) timestamp!!.ntpValue() else 0,
                 attachment?.into()?.bytes,
-                qos.express,
-                qos.priority.value,
-                qos.congestionControl.value
+                express,
+                Priority.DATA.value,
+                CongestionControl.BLOCK.value
             )
         }
 
