@@ -20,6 +20,7 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.ext.zSerialize
 import io.zenoh.qos.QoS
+import io.zenoh.qos.ReplyQoS
 import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
 import io.zenoh.query.Query
@@ -138,7 +139,7 @@ class QueryableTest {
         val message = zSerialize("Test message").getOrThrow()
         val timestamp = TimeStamp.getCurrentTime()
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = QoS(express = true))
+            query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = ReplyQoS(express = true))
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -178,7 +179,7 @@ class QueryableTest {
         val timestamp = TimeStamp.getCurrentTime()
 
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replyDel(testKeyExpr, timestamp = timestamp, qos = QoS(express = true))
+            query.replyDel(testKeyExpr, timestamp = timestamp, qos = ReplyQoS(express = true))
         }).getOrThrow()
         var receivedReply: Reply? = null
         session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
