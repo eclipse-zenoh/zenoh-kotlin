@@ -19,8 +19,6 @@ import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
-import io.zenoh.qos.CongestionControl
-import io.zenoh.qos.Priority
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -41,8 +39,6 @@ internal class JNIQuery(private val ptr: Long) {
         express: Boolean,
     ): Result<Unit> = runCatching {
         val timestampEnabled = timestamp != null
-        // The protocol uses request's priority and congestion control for reply messages,
-        // so only express is meaningful here. Pass default values for priority and congestionControl.
         replySuccessViaJNI(
             ptr,
             keyExpr.jniKeyExpr?.ptr ?: 0,
@@ -54,8 +50,6 @@ internal class JNIQuery(private val ptr: Long) {
             if (timestampEnabled) timestamp!!.ntpValue() else 0,
             attachment?.bytes,
             express,
-            Priority.DATA.value,
-            CongestionControl.BLOCK.value
         )
     }
 
@@ -66,8 +60,6 @@ internal class JNIQuery(private val ptr: Long) {
     fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: IntoZBytes?, express: Boolean): Result<Unit> =
         runCatching {
             val timestampEnabled = timestamp != null
-            // The protocol uses request's priority and congestion control for reply messages,
-            // so only express is meaningful here. Pass default values for priority and congestionControl.
             replyDeleteViaJNI(
                 ptr,
                 keyExpr.jniKeyExpr?.ptr ?: 0,
@@ -76,8 +68,6 @@ internal class JNIQuery(private val ptr: Long) {
                 if (timestampEnabled) timestamp!!.ntpValue() else 0,
                 attachment?.into()?.bytes,
                 express,
-                Priority.DATA.value,
-                CongestionControl.BLOCK.value
             )
         }
 
@@ -97,8 +87,6 @@ internal class JNIQuery(private val ptr: Long) {
         timestampNtp64: Long,
         attachment: ByteArray?,
         qosExpress: Boolean,
-        qosPriority: Int,
-        qosCongestionControl: Int,
     )
 
     @Throws(ZError::class)
@@ -118,8 +106,6 @@ internal class JNIQuery(private val ptr: Long) {
         timestampNtp64: Long,
         attachment: ByteArray?,
         qosExpress: Boolean,
-        qosPriority: Int,
-        qosCongestionControl: Int,
     )
 
     /** Frees the underlying native Query. */
