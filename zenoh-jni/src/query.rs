@@ -25,7 +25,6 @@ use jni::{
 use uhlc::ID;
 use zenoh::{
     key_expr::KeyExpr,
-    qos::{CongestionControl, Priority},
     query::Query,
     time::{Timestamp, NTP64},
     Wait,
@@ -71,8 +70,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     timestamp_ntp_64: jlong,
     attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
-    qos_priority: jint,
-    qos_congestion_control: jint,
+    _qos_priority: jint,
+    _qos_congestion_control: jint,
 ) {
     let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
@@ -89,12 +88,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
             reply_builder = reply_builder.attachment(decode_byte_array(&env, attachment)?);
         }
         reply_builder = reply_builder.express(qos_express != 0);
-        reply_builder = reply_builder.priority(Priority::try_from(qos_priority as u8).unwrap()); // The numeric value is always within range.
-        reply_builder = if qos_congestion_control != 0 {
-            reply_builder.congestion_control(CongestionControl::Block)
-        } else {
-            reply_builder.congestion_control(CongestionControl::Drop)
-        };
         reply_builder.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
@@ -173,8 +166,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     timestamp_ntp_64: jlong,
     attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
-    qos_priority: jint,
-    qos_congestion_control: jint,
+    _qos_priority: jint,
+    _qos_congestion_control: jint,
 ) {
     let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
@@ -188,12 +181,6 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
             reply_builder = reply_builder.attachment(decode_byte_array(&env, attachment)?);
         }
         reply_builder = reply_builder.express(qos_express != 0);
-        reply_builder = reply_builder.priority(Priority::try_from(qos_priority as u8).unwrap()); // The numeric value is always within range.
-        reply_builder = if qos_congestion_control != 0 {
-            reply_builder.congestion_control(CongestionControl::Block)
-        } else {
-            reply_builder.congestion_control(CongestionControl::Drop)
-        };
         reply_builder.wait().map_err(|err| zerror!(err))
     }()
     .map_err(|err| throw_exception!(env, err));
