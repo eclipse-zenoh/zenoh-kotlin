@@ -20,9 +20,10 @@ import io.zenoh.jni.JNIQuery
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
-import io.zenoh.qos.ReplyQoS
+import io.zenoh.sample.SampleKind
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
+import io.zenoh.sample.Sample
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -58,7 +59,7 @@ class Query internal constructor(
      * as the key expression from the Query, however it must intersect with the query key.
      * @param payload The payload with the reply information.
      * @param encoding Encoding of the payload.
-     * @param qos The [ReplyQoS] for the reply. Only [ReplyQoS.express] is meaningful for replies.
+     * @param qos The [QoS] for the reply.
      * @param timestamp Optional timestamp for the reply.
      * @param attachment Optional attachment for the reply.
      */
@@ -66,12 +67,13 @@ class Query internal constructor(
         keyExpr: KeyExpr,
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
-        qos: ReplyQoS = ReplyQoS(),
+        qos: QoS = QoS.defaultResponse,
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
+        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos, attachment?.into())
         return jniQuery?.let {
-            val result = it.replySuccess(keyExpr, payload.into(), encoding, timestamp, attachment?.into(), qos.express)
+            val result = it.replySuccess(sample)
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -81,43 +83,11 @@ class Query internal constructor(
         keyExpr: KeyExpr,
         payload: String,
         encoding: Encoding = Encoding.default(),
-        qos: ReplyQoS = ReplyQoS(),
+        qos: QoS = QoS.defaultResponse,
         timestamp: TimeStamp? = null,
         attachment: String? = null
     ): Result<Unit> =
         reply(keyExpr, ZBytes.from(payload), encoding, qos, timestamp, attachment?.let { ZBytes.from(it) })
-
-    @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
-        replaceWith = ReplaceWith(
-            "reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)",
-            "io.zenoh.qos.ReplyQoS"
-        )
-    )
-    fun reply(
-        keyExpr: KeyExpr,
-        payload: IntoZBytes,
-        encoding: Encoding = Encoding.default(),
-        qos: QoS,
-        timestamp: TimeStamp? = null,
-        attachment: IntoZBytes? = null
-    ): Result<Unit> = reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)
-
-    @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
-        replaceWith = ReplaceWith(
-            "reply(keyExpr, payload, encoding, ReplyQoS(qos.express), timestamp, attachment)",
-            "io.zenoh.qos.ReplyQoS"
-        )
-    )
-    fun reply(
-        keyExpr: KeyExpr,
-        payload: String,
-        encoding: Encoding = Encoding.default(),
-        qos: QoS,
-        timestamp: TimeStamp? = null,
-        attachment: String? = null
-    ): Result<Unit> = reply(keyExpr, ZBytes.from(payload), encoding, ReplyQoS(qos.express), timestamp, attachment?.let { ZBytes.from(it) })
 
     /**
      * Reply error to the remote [Query].
@@ -148,18 +118,18 @@ class Query internal constructor(
      *
      * @param keyExpr Key expression to reply to. This parameter must not be necessarily the same
      * as the key expression from the Query, however it must intersect with the query key.
-     * @param qos The [ReplyQoS] for the reply. Only [ReplyQoS.express] is meaningful for replies.
+     * @param qos The [QoS] for the reply.
      * @param timestamp Optional timestamp for the reply.
      * @param attachment Optional attachment for the reply.
      */
     fun replyDel(
         keyExpr: KeyExpr,
-        qos: ReplyQoS = ReplyQoS(),
+        qos: QoS = QoS.defaultResponse,
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.express)
+            val result = it.replyDelete(keyExpr, timestamp, attachment, qos)
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -167,38 +137,10 @@ class Query internal constructor(
 
     fun replyDel(
         keyExpr: KeyExpr,
-        qos: ReplyQoS = ReplyQoS(),
+        qos: QoS = QoS.defaultResponse,
         timestamp: TimeStamp? = null,
         attachment: String,
     ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))
-
-    @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
-        replaceWith = ReplaceWith(
-            "replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)",
-            "io.zenoh.qos.ReplyQoS"
-        )
-    )
-    fun replyDel(
-        keyExpr: KeyExpr,
-        qos: QoS,
-        timestamp: TimeStamp? = null,
-        attachment: IntoZBytes? = null
-    ): Result<Unit> = replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)
-
-    @Deprecated(
-        message = "Use the overload accepting ReplyQoS instead. The protocol uses request's priority and congestion control for replies, so only 'express' is meaningful.",
-        replaceWith = ReplaceWith(
-            "replyDel(keyExpr, ReplyQoS(qos.express), timestamp, attachment)",
-            "io.zenoh.qos.ReplyQoS"
-        )
-    )
-    fun replyDel(
-        keyExpr: KeyExpr,
-        qos: QoS,
-        timestamp: TimeStamp? = null,
-        attachment: String,
-    ): Result<Unit> = replyDel(keyExpr, ReplyQoS(qos.express), timestamp, ZBytes.from(attachment))
 
     override fun close() {
         jniQuery?.apply {

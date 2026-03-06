@@ -17,8 +17,9 @@ package io.zenoh.jni
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
+import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
-import io.zenoh.bytes.ZBytes
+import io.zenoh.sample.Sample
 import org.apache.commons.net.ntp.TimeStamp
 
 /**
@@ -30,26 +31,19 @@ import org.apache.commons.net.ntp.TimeStamp
  */
 internal class JNIQuery(private val ptr: Long) {
 
-    fun replySuccess(
-        keyExpr: KeyExpr,
-        payload: ZBytes,
-        encoding: Encoding,
-        timestamp: TimeStamp?,
-        attachment: ZBytes?,
-        express: Boolean,
-    ): Result<Unit> = runCatching {
-        val timestampEnabled = timestamp != null
+    fun replySuccess(sample: Sample): Result<Unit> = runCatching {
+        val timestampEnabled = sample.timestamp != null
         replySuccessViaJNI(
             ptr,
-            keyExpr.jniKeyExpr?.ptr ?: 0,
-            keyExpr.keyExpr,
-            payload.bytes,
-            encoding.id,
-            encoding.schema,
+            sample.keyExpr.jniKeyExpr?.ptr ?: 0,
+            sample.keyExpr.keyExpr,
+            sample.payload.bytes,
+            sample.encoding.id,
+            sample.encoding.schema,
             timestampEnabled,
-            if (timestampEnabled) timestamp!!.ntpValue() else 0,
-            attachment?.bytes,
-            express,
+            if (timestampEnabled) sample.timestamp!!.ntpValue() else 0,
+            sample.attachment?.bytes,
+            sample.qos.express,
         )
     }
 
@@ -57,7 +51,7 @@ internal class JNIQuery(private val ptr: Long) {
         replyErrorViaJNI(ptr, error.into().bytes, encoding.id, encoding.schema)
     }
 
-    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: IntoZBytes?, express: Boolean): Result<Unit> =
+    fun replyDelete(keyExpr: KeyExpr, timestamp: TimeStamp?, attachment: IntoZBytes?, qos: QoS): Result<Unit> =
         runCatching {
             val timestampEnabled = timestamp != null
             replyDeleteViaJNI(
@@ -67,7 +61,7 @@ internal class JNIQuery(private val ptr: Long) {
                 timestampEnabled,
                 if (timestampEnabled) timestamp!!.ntpValue() else 0,
                 attachment?.into()?.bytes,
-                express,
+                qos.express,
             )
         }
 
