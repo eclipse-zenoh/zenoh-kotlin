@@ -22,6 +22,7 @@ import io.zenoh.ext.zSerialize
 import io.zenoh.qos.CongestionControl
 import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
+import io.zenoh.qos.ReplyQoS
 import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
 import io.zenoh.query.Query
@@ -139,12 +140,9 @@ class QueryableTest {
     fun queryReplySuccessTest() {
         val message = zSerialize("Test message").getOrThrow()
         val timestamp = TimeStamp.getCurrentTime()
-        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
-        val priority = Priority.DATA_HIGH
-        val express = true
-        val congestionControl = CongestionControl.DROP
+        val replyQos = ReplyQoS(express = true)
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = qos)
+            query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = replyQos)
         }).getOrThrow()
 
         var receivedReply: Reply? = null
@@ -156,9 +154,9 @@ class QueryableTest {
         val sample = receivedReply!!.result.getOrThrow()
         assertEquals(message, sample.payload)
         assertEquals(timestamp, sample.timestamp)
-        assertEquals(priority, sample.qos.priority)
-        assertEquals(express, sample.qos.express)
-        assertEquals(congestionControl, sample.qos.congestionControl)
+        assertEquals(Priority.DATA, sample.qos.priority)
+        assertTrue(sample.qos.express)
+        assertEquals(CongestionControl.BLOCK, sample.qos.congestionControl)
     }
 
     @Test
@@ -184,10 +182,10 @@ class QueryableTest {
     @Test
     fun queryReplyDeleteTest() {
         val timestamp = TimeStamp.getCurrentTime()
-        val qos = QoS(priority = Priority.DATA_HIGH, express = true, congestionControl = CongestionControl.DROP)
+        val replyQos = ReplyQoS(express = true)
 
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
-            query.replyDel(testKeyExpr, timestamp = timestamp, qos = qos)
+            query.replyDel(testKeyExpr, timestamp = timestamp, qos = replyQos)
         }).getOrThrow()
         var receivedReply: Reply? = null
         session.get(Selector(testKeyExpr), callback = { receivedReply = it }, timeout = Duration.ofMillis(10))
@@ -198,7 +196,9 @@ class QueryableTest {
         assertTrue(receivedReply!!.result.isSuccess)
         val sample = receivedReply!!.result.getOrThrow()
         assertEquals(timestamp, sample.timestamp)
-        assertEquals(qos, sample.qos)
+        assertTrue(sample.qos.express)
+        assertEquals(Priority.DATA, sample.qos.priority)
+        assertEquals(CongestionControl.BLOCK, sample.qos.congestionControl)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
