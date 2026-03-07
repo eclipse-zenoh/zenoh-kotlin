@@ -27,7 +27,6 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.bytes.into
 import io.zenoh.Config
-import io.zenoh.annotations.Unstable
 import io.zenoh.config.EntityGlobalId
 import io.zenoh.pubsub.AdvancedSubscriber
 import io.zenoh.pubsub.AdvancedPublisher
@@ -240,17 +239,17 @@ internal class JNISession {
         Queryable(keyExpr, receiver, JNIQueryable(queryableRawPtr))
     }
 
-    @OptIn(Unstable::class)
     fun declareQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget,
         consolidation: ConsolidationMode,
         qos: QoS,
-        timeout: Duration
+        timeout: Duration,
+        acceptReplies: ReplyKeyExpr
     ): Result<Querier> = runCatching {
         val querierRawPtr = declareQuerierViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), target.ordinal, consolidation.ordinal,
-            qos.congestionControl.ordinal, qos.priority.ordinal, qos.express, timeout.toMillis()
+            qos.congestionControl.ordinal, qos.priority.ordinal, qos.express, timeout.toMillis(), acceptReplies.ordinal
         )
         Querier(keyExpr, qos, JNIQuerier(querierRawPtr))
     }
@@ -266,7 +265,8 @@ internal class JNISession {
         payload: IntoZBytes?,
         encoding: Encoding?,
         attachment: IntoZBytes?,
-        qos: QoS
+        qos: QoS,
+        acceptReplies: ReplyKeyExpr
     ): Result<R> = runCatching {
         val getCallback = JNIGetCallback {
                 replierZid: ByteArray?,
@@ -327,6 +327,7 @@ internal class JNISession {
             qos.congestionControl.value,
             qos.priority.value,
             qos.express,
+            acceptReplies.ordinal,
         )
         receiver
     }
@@ -491,7 +492,8 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
-        timeoutMs: Long
+        timeoutMs: Long,
+        acceptReplies: Int
     ): Long
 
     @Throws(ZError::class)
@@ -518,6 +520,7 @@ internal class JNISession {
         congestionControl: Int,
         priority: Int,
         express: Boolean,
+        acceptReplies: Int,
     )
 
     @Throws(ZError::class)

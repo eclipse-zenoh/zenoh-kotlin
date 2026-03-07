@@ -614,9 +614,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         qos: QoS = QoS.defaultRequest,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
-        timeout: Duration = Duration.ofMillis(10000)
+        timeout: Duration = Duration.ofMillis(10000),
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<Querier> {
-        return resolveQuerier(keyExpr, target, consolidation, qos, timeout)
+        return resolveQuerier(keyExpr, target, consolidation, qos, timeout, acceptReplies)
     }
 
     /**
@@ -711,7 +712,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<Unit> {
         return resolveGet(
             selector = selector,
@@ -724,7 +726,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             payload = payload,
             encoding = encoding,
             attachment = attachment,
-            qos = qos
+            qos = qos,
+            acceptReplies = acceptReplies
         )
     }
 
@@ -738,7 +741,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<Unit> = get(
         selector,
         callback,
@@ -749,7 +753,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target,
         consolidation,
         onClose,
-        qos
+        qos,
+        acceptReplies
     )
 
     /**
@@ -815,7 +820,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<R> {
         return resolveGet(
             selector = selector,
@@ -831,7 +837,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             payload = payload,
             encoding = encoding,
             attachment = attachment,
-            qos = qos
+            qos = qos,
+            acceptReplies = acceptReplies
         )
     }
 
@@ -845,7 +852,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<R> = get(
         selector,
         handler,
@@ -856,7 +864,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target,
         consolidation,
         onClose,
-        qos
+        qos,
+        acceptReplies
     )
 
     /**
@@ -905,7 +914,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<Channel<Reply>> {
         val channelHandler = ChannelHandler(channel)
         return resolveGet(
@@ -922,7 +932,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             payload,
             encoding,
             attachment,
-            qos
+            qos,
+            acceptReplies
         )
     }
 
@@ -936,7 +947,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target: QueryTarget = QueryTarget.BEST_MATCHING,
         consolidation: ConsolidationMode = ConsolidationMode.AUTO,
         onClose: (() -> Unit)? = null,
-        qos: QoS = QoS.defaultRequest
+        qos: QoS = QoS.defaultRequest,
+        acceptReplies: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
     ): Result<Channel<Reply>> = get(
         selector,
         channel,
@@ -947,7 +959,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         target,
         consolidation,
         onClose,
-        qos
+        qos,
+        acceptReplies
     )
 
     /**
@@ -1121,16 +1134,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         } ?: Result.failure(sessionClosedException)
     }
 
-    @OptIn(Unstable::class)
     private fun resolveQuerier(
         keyExpr: KeyExpr,
         target: QueryTarget,
         consolidation: ConsolidationMode,
         qos: QoS,
-        timeout: Duration
+        timeout: Duration,
+        acceptReplies: ReplyKeyExpr
     ): Result<Querier> {
         return jniSession?.run {
-            declareQuerier(keyExpr, target, consolidation, qos, timeout).onSuccess { weakDeclarations.add(WeakReference(it)) }
+            declareQuerier(keyExpr, target, consolidation, qos, timeout, acceptReplies).onSuccess { weakDeclarations.add(WeakReference(it)) }
         } ?: Result.failure(sessionClosedException)
     }
 
@@ -1145,7 +1158,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         payload: IntoZBytes?,
         encoding: Encoding?,
         attachment: IntoZBytes?,
-        qos: QoS
+        qos: QoS,
+        acceptReplies: ReplyKeyExpr
     ): Result<R> {
         return jniSession?.run {
             performGet(
@@ -1159,7 +1173,8 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 payload,
                 encoding,
                 attachment,
-                qos
+                qos,
+                acceptReplies
             )
         } ?: Result.failure(sessionClosedException)
     }

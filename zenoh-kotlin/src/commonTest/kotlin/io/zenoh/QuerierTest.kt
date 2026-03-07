@@ -14,12 +14,12 @@
 
 package io.zenoh
 
-import io.zenoh.annotations.Unstable
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.ZBytes
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.qos.QoS
+import io.zenoh.query.ReplyKeyExpr
 import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
@@ -52,7 +52,6 @@ class QuerierTest {
     }
 
     /** Test validating both Queryable and get operations. */
-    @OptIn(Unstable::class)
     @Test
     fun querier_runsWithCallback() = runBlocking {
         val sample = Sample(
@@ -84,6 +83,53 @@ class QuerierTest {
 
         assertEquals(sample, receivedReply?.result?.getOrThrow())
 
+        queryable.close()
+        querier.close()
+    }
+
+    /** Test that default querier uses MATCHING_QUERY accept replies. */
+    @Test
+    fun querier_defaultAcceptsMatchingQuery() = runBlocking {
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            assertEquals(ReplyKeyExpr.MATCHING_QUERY, query.acceptsReplies())
+            query.reply(testKeyExpr, payload = testPayload)
+        }).getOrThrow()
+
+        val querier = session.declareQuerier(testKeyExpr).getOrThrow()
+
+        var receivedReply: Reply? = null
+        querier.get(callback = { reply -> receivedReply = reply })
+        sleep(1000)
+
+        assertNotNull(receivedReply)
+        assertTrue(receivedReply!!.result.isSuccess)
+
+        queryable.close()
+        querier.close()
+    }
+
+    /** Test that querier with acceptReplies=ANY allows replies with different key expressions. */
+    @Test
+    fun querier_acceptRepliesAny() = runBlocking {
+        val differentKeyExpr = "example/testing/different".intoKeyExpr().getOrThrow()
+
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            assertEquals(ReplyKeyExpr.ANY, query.acceptsReplies())
+            query.reply(differentKeyExpr, payload = testPayload)
+        }).getOrThrow()
+
+        val querier = session.declareQuerier(testKeyExpr, acceptReplies = ReplyKeyExpr.ANY).getOrThrow()
+
+        var receivedReply: Reply? = null
+        querier.get(callback = { reply -> receivedReply = reply })
+        sleep(1000)
+
+        assertNotNull(receivedReply)
+        val sample = receivedReply!!.result.getOrThrow()
+        assertEquals(differentKeyExpr.keyExpr, sample.keyExpr.keyExpr)
+        assertEquals(testPayload, sample.payload)
+
+        differentKeyExpr.close()
         queryable.close()
         querier.close()
     }

@@ -142,10 +142,25 @@ class Query internal constructor(
         attachment: String,
     ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))
 
+    /**
+     * Returns the [ReplyKeyExpr] accepted by this query.
+     */
+    fun acceptsReplies(): ReplyKeyExpr {
+        return if (selector.parameters?.containsKey(REPLY_KEY_EXPR_ANY_SEL_PARAM) == true) {
+            ReplyKeyExpr.ANY
+        } else {
+            ReplyKeyExpr.MATCHING_QUERY
+        }
+    }
+
     override fun close() {
         jniQuery?.apply {
             this.close()
             jniQuery = null
         }
+    }
+
+    companion object {
+        private const val REPLY_KEY_EXPR_ANY_SEL_PARAM = "_anyke"
     }
 }
