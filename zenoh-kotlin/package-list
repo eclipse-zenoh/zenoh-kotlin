@@ -285,6 +285,10 @@ $dokka.location:io.zenoh.qos/Reliability.RELIABLE///PointingToDeclaration/{"org.
 $dokka.location:io.zenoh.qos/Reliability///PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reliability/index.html
 $dokka.location:io.zenoh.qos/Reliability/valueOf/#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reliability/value-of.html
 $dokka.location:io.zenoh.qos/Reliability/values/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reliability/values.html
+$dokka.location:io.zenoh.qos/ReplyQoS.Companion///PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reply-qo-s/-companion/index.html
+$dokka.location:io.zenoh.qos/ReplyQoS///PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reply-qo-s/index.html
+$dokka.location:io.zenoh.qos/ReplyQoS/ReplyQoS/#kotlin.Boolean/PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reply-qo-s/-reply-qo-s.html
+$dokka.location:io.zenoh.qos/ReplyQoS/express/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.qos/-reply-qo-s/express.html
 $dokka.location:io.zenoh.query////PointingToDeclaration/zenoh-kotlin/io.zenoh.query/index.html
 $dokka.location:io.zenoh.query//intoSelector/kotlin.String#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/into-selector.html
 $dokka.location:io.zenoh.query/ConsolidationMode.AUTO///PointingToDeclaration/{"org.jetbrains.dokka.links.EnumEntryDRIExtra":{"key":"org.jetbrains.dokka.links.EnumEntryDRIExtra"}}zenoh-kotlin/io.zenoh.query/-consolidation-mode/-a-u-t-o/index.html
@@ -334,9 +338,13 @@ $dokka.location:io.zenoh.query/Query/keyExpr/#/PointingToDeclaration/zenoh-kotl
 $dokka.location:io.zenoh.query/Query/parameters/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/parameters.html
 $dokka.location:io.zenoh.query/Query/payload/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/payload.html
 $dokka.location:io.zenoh.query/Query/reply/#io.zenoh.keyexpr.KeyExpr#io.zenoh.bytes.IntoZBytes#io.zenoh.bytes.Encoding#io.zenoh.qos.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply.html
+$dokka.location:io.zenoh.query/Query/reply/#io.zenoh.keyexpr.KeyExpr#io.zenoh.bytes.IntoZBytes#io.zenoh.bytes.Encoding#io.zenoh.qos.ReplyQoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply.html
 $dokka.location:io.zenoh.query/Query/reply/#io.zenoh.keyexpr.KeyExpr#kotlin.String#io.zenoh.bytes.Encoding#io.zenoh.qos.QoS#[Error type: Unresolved type for TimeStamp]?#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply.html
+$dokka.location:io.zenoh.query/Query/reply/#io.zenoh.keyexpr.KeyExpr#kotlin.String#io.zenoh.bytes.Encoding#io.zenoh.qos.ReplyQoS#[Error type: Unresolved type for TimeStamp]?#kotlin.String?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply.html
 $dokka.location:io.zenoh.query/Query/replyDel/#io.zenoh.keyexpr.KeyExpr#io.zenoh.qos.QoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-del.html
 $dokka.location:io.zenoh.query/Query/replyDel/#io.zenoh.keyexpr.KeyExpr#io.zenoh.qos.QoS#[Error type: Unresolved type for TimeStamp]?#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-del.html
+$dokka.location:io.zenoh.query/Query/replyDel/#io.zenoh.keyexpr.KeyExpr#io.zenoh.qos.ReplyQoS#[Error type: Unresolved type for TimeStamp]?#io.zenoh.bytes.IntoZBytes?/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-del.html
+$dokka.location:io.zenoh.query/Query/replyDel/#io.zenoh.keyexpr.KeyExpr#io.zenoh.qos.ReplyQoS#[Error type: Unresolved type for TimeStamp]?#kotlin.String/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-del.html
 $dokka.location:io.zenoh.query/Query/replyErr/#io.zenoh.bytes.IntoZBytes#io.zenoh.bytes.Encoding/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-err.html
 $dokka.location:io.zenoh.query/Query/replyErr/#kotlin.String#io.zenoh.bytes.Encoding/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/reply-err.html
 $dokka.location:io.zenoh.query/Query/selector/#/PointingToDeclaration/zenoh-kotlin/io.zenoh.query/-query/selector.html
