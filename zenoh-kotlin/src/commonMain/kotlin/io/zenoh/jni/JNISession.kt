@@ -250,7 +250,7 @@ internal class JNISession {
     ): Result<Querier> = runCatching {
         val querierRawPtr = declareQuerierViaJNI(
             keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr, sessionPtr.get(), target.ordinal, consolidation.ordinal,
-            qos.congestionControl.ordinal, qos.priority.ordinal, qos.express, timeout.toMillis()
+            qos.congestionControl.value, qos.priority.value, qos.express, timeout.toMillis()
         )
         Querier(keyExpr, qos, JNIQuerier(querierRawPtr))
     }
