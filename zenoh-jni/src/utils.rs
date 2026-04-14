@@ -24,7 +24,7 @@ use zenoh::{
     bytes::{Encoding, ZBytes},
     internal::buffers::ZSlice,
     qos::{CongestionControl, Priority, Reliability},
-    query::{ConsolidationMode, QueryTarget},
+    query::{ConsolidationMode, QueryTarget, ReplyKeyExpr},
 };
 
 /// Converts a JString into a rust String.
@@ -97,6 +97,14 @@ pub(crate) fn decode_query_target(target: jint) -> ZResult<QueryTarget> {
         1 => Ok(QueryTarget::All),
         2 => Ok(QueryTarget::AllComplete),
         value => Err(zerror!("Unable to decode QueryTarget '{}'.", value)),
+    }
+}
+
+pub(crate) fn decode_reply_key_expr(reply_key_expr: jint) -> ZResult<ReplyKeyExpr> {
+    match reply_key_expr {
+        0 => Ok(ReplyKeyExpr::Any),
+        1 => Ok(ReplyKeyExpr::MatchingQuery),
+        value => Err(zerror!("Unable to decode ReplyKeyExpr '{}'.", value)),
     }
 }
 
