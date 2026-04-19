@@ -72,9 +72,15 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos.toQoS(), attachment?.into())
         return jniQuery?.let {
-            val result = it.replySuccess(sample)
+            val result = runCatching {
+                it.replySuccess(
+                    keyExpr.jniKeyExpr, keyExpr.keyExpr,
+                    payload.into().bytes, encoding.id, encoding.schema,
+                    timestamp != null, timestamp?.ntpValue ?: 0L,
+                    attachment?.into()?.bytes, qos.express
+                )
+            }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -128,7 +134,7 @@ class Query internal constructor(
      */
     fun replyErr(error: IntoZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyError(error, encoding)
+            val result = runCatching { it.replyError(error.into().bytes, encoding.id, encoding.schema) }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -157,7 +163,13 @@ class Query internal constructor(
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.toQoS())
+            val result = runCatching {
+                it.replyDelete(
+                    keyExpr.jniKeyExpr, keyExpr.keyExpr,
+                    timestamp != null, timestamp?.ntpValue ?: 0L,
+                    attachment?.into()?.bytes, qos.express
+                )
+            }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
