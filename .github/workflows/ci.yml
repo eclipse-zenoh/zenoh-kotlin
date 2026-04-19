@@ -28,16 +28,13 @@ jobs:
           distribution: temurin
           java-version: 11
 
-      - name: Install Rust toolchain
-        run: rustup show
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.12.1
 
       - name: Gradle Test
-        run: gradle jvmTest --info
+        run: gradle jvmTest --info -Pzenoh.useLocalJniRuntime=true
 
   markdown_lint:
     runs-on: ubuntu-latest

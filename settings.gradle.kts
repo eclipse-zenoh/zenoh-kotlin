@@ -24,7 +24,11 @@ rootProject.name = "zenoh-kotlin"
 include(":zenoh-kotlin")
 include(":examples")
 
-if (file("zenoh-java/settings.gradle.kts").exists()) {
+// Include the local zenoh-java submodule only when explicitly requested via the
+// zenoh.useLocalJniRuntime property (local dev/test only — not for publication).
+val useLocalJniRuntime = settings.providers.gradleProperty("zenoh.useLocalJniRuntime")
+    .orNull?.toBoolean() == true
+if (useLocalJniRuntime && file("zenoh-java/settings.gradle.kts").exists()) {
     includeBuild("zenoh-java") {
         dependencySubstitution {
             substitute(module("org.eclipse.zenoh:zenoh-jni-runtime"))

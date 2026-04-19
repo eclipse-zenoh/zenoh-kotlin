@@ -52,7 +52,7 @@ kotlin {
                 implementation("commons-net:commons-net:3.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                implementation("org.eclipse.zenoh:zenoh-jni-runtime:${file("../version.txt").readText().trim()}")
+                implementation("org.eclipse.zenoh:zenoh-jni-runtime:${property("zenohJniRuntimeVersion")}")
             }
         }
         val commonTest by getting {
