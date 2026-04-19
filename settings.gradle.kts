@@ -28,7 +28,11 @@ include(":examples")
 // zenoh.useLocalJniRuntime property (local dev/test only — not for publication).
 val useLocalJniRuntime = settings.providers.gradleProperty("zenoh.useLocalJniRuntime")
     .orNull?.toBoolean() == true
-if (useLocalJniRuntime && file("zenoh-java/settings.gradle.kts").exists()) {
+if (useLocalJniRuntime) {
+    require(file("zenoh-java/settings.gradle.kts").exists()) {
+        "zenoh.useLocalJniRuntime=true was requested but the zenoh-java submodule is not initialized. " +
+            "Run: git submodule update --init --recursive"
+    }
     includeBuild("zenoh-java") {
         dependencySubstitution {
             substitute(module("org.eclipse.zenoh:zenoh-jni-runtime"))
