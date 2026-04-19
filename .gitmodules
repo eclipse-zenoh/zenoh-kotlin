@@ -1,0 +1,4 @@
+[submodule "zenoh-java"]
+	path = zenoh-java
+	url = https://github.com/eclipse-zenoh/zenoh-java.git
+	branch = common-jni

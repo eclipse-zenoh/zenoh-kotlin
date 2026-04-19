@@ -1,11 +1,11 @@
 package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
-import io.zenoh.jni.JNIZBytes.deserializeViaJNI
+import io.zenoh.jni.JNIZBytesKotlin
 import kotlin.reflect.typeOf
 
 /**
- * Deserialize the [ZBytes] instance into an element of type [T].
+ * Serializes an element of type [T] into a [ZBytes].
  *
  * This function supports the following types:
  * - [Boolean]
@@ -28,7 +28,7 @@ import kotlin.reflect.typeOf
  *
  * **NOTE**
  *
- * This deserialization utility can be used across the Zenoh ecosystem with Zenoh
+ * This serialization utility can be used across the Zenoh ecosystem with Zenoh
  * versions based on other supported languages such as Rust, Python, C and C++.
  * This works when the types are equivalent (a `Byte` corresponds to an `i8` in Rust, a `Short` to an `i16`, etc).
  *
@@ -69,8 +69,8 @@ import kotlin.reflect.typeOf
  * For additional examples, checkout the [ZBytes examples](https://github.com/eclipse-zenoh/zenoh-kotlin/blob/main/examples/src/main/kotlin/io.zenoh/ZBytes.kt).
  *
  * @see ZBytes
- * @return a [Result] with the deserialization.
+ * @return a [Result] with the serialized [ZBytes].
  */
-inline fun <reified T: Any> zDeserialize(zbytes: ZBytes): Result<T> = runCatching {
-    deserializeViaJNI(zbytes, typeOf<T>()) as T
+inline fun <reified T: Any> zSerialize(t: T): Result<ZBytes> = runCatching {
+    ZBytes.from(JNIZBytesKotlin.serialize(t, typeOf<T>()))
 }

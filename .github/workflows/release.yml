@@ -106,15 +106,3 @@ jobs:
     with:
       live-run: ${{ inputs.live-run || false }}
       branch: ${{ needs.tag.outputs.branch }}
-
-  publish-github:
-    needs: [tag, publish-android, publish-jvm]
-    runs-on: macos-latest
-    steps:
-      - uses: eclipse-zenoh/ci/publish-crates-github@main
-        with:
-          repo: ${{ github.repository }}
-          live-run: ${{ inputs.live-run || false }}
-          version: ${{ needs.tag.outputs.version }}
-          branch: ${{ needs.tag.outputs.branch }}
-          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}

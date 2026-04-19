@@ -70,7 +70,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
          * @return a [Result] with the [KeyExpr] in case of success.
          */
         fun tryFrom(keyExpr: String) : Result<KeyExpr> {
-            return JNIKeyExpr.tryFrom(keyExpr)
+            return runCatching { KeyExpr(JNIKeyExpr.tryFrom(keyExpr)) }
         }
 
         /**
@@ -83,7 +83,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
          * @return a [Result] with the canonized [KeyExpr] in case of success.
          */
         fun autocanonize(keyExpr: String): Result<KeyExpr> {
-            return JNIKeyExpr.autocanonize(keyExpr)
+            return runCatching { KeyExpr(JNIKeyExpr.autocanonize(keyExpr)) }
         }
     }
 
@@ -93,7 +93,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * This method returns `True` if there exists at least one key that belongs to both sets defined by `this` and the `other` key expressions.
      */
     fun intersects(other: KeyExpr): Boolean {
-         return JNIKeyExpr.intersects(this, other)
+         return JNIKeyExpr.intersects(this.jniKeyExpr, this.keyExpr, other.jniKeyExpr, other.keyExpr)
     }
 
     /**
@@ -102,7 +102,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * This method returns `true` when all the keys defined by `other` also belong to the set defined by `this`.
      */
     fun includes(other: KeyExpr): Boolean {
-        return JNIKeyExpr.includes(this, other)
+        return JNIKeyExpr.includes(this.jniKeyExpr, this.keyExpr, other.jniKeyExpr, other.keyExpr)
     }
 
     /**
@@ -111,7 +111,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * so you should favor these methods for most applications.
      */
     fun relationTo(other: KeyExpr): SetIntersectionLevel {
-        return JNIKeyExpr.relationTo(this, other)
+        return SetIntersectionLevel.fromInt(JNIKeyExpr.relationTo(this.jniKeyExpr, this.keyExpr, other.jniKeyExpr, other.keyExpr))
     }
 
     /**
@@ -119,7 +119,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * This should be your preferred method when concatenating path segments.
      */
     fun join(other: String): Result<KeyExpr> {
-        return JNIKeyExpr.joinViaJNI(this, other)
+        return runCatching { KeyExpr(JNIKeyExpr.join(this.jniKeyExpr, this.keyExpr, other)) }
     }
 
     /**
@@ -127,7 +127,7 @@ class KeyExpr internal constructor(internal val keyExpr: String, internal var jn
      * You should probably prefer [join] as Zenoh may then take advantage of the hierarchical separation it inserts.
      */
     fun concat(other: String): Result<KeyExpr> {
-        return JNIKeyExpr.concatViaJNI(this, other)
+        return runCatching { KeyExpr(JNIKeyExpr.concat(this.jniKeyExpr, this.keyExpr, other)) }
     }
 
     override fun toString(): String {

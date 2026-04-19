@@ -15,14 +15,17 @@
 package io.zenoh
 
 import io.zenoh.Logger.Companion.LOG_ENV
+import io.zenoh.config.WhatAmI
+import io.zenoh.config.WhatAmI.*
+import io.zenoh.config.ZenohId
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIScout
+import io.zenoh.jni.callbacks.JNIOnCloseCallback
+import io.zenoh.jni.callbacks.JNIScoutCallback
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
-import io.zenoh.config.WhatAmI
-import io.zenoh.config.WhatAmI.*
 import kotlinx.coroutines.channels.Channel
 
 object Zenoh {
@@ -54,7 +57,13 @@ object Zenoh {
         config: Config? = null
     ): Result<Scout<Unit>> {
         ZenohLoad
-        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, onClose = {}, config = config)
+        return runCatching {
+            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
+            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
+                callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
+            }
+            Scout(Unit, JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback {}, config?.jniConfig))
+        }
     }
 
     /**
@@ -74,13 +83,13 @@ object Zenoh {
         config: Config? = null
     ): Result<Scout<R>> {
         ZenohLoad
-        return JNIScout.scout(
-            whatAmI = whatAmI,
-            callback = { hello -> handler.handle(hello) },
-            receiver = handler.receiver(),
-            onClose = handler::onClose,
-            config = config
-        )
+        return runCatching {
+            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
+            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
+                handler.handle(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
+            }
+            Scout(handler.receiver(), JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback { handler.onClose() }, config?.jniConfig))
+        }
     }
 
     /**
@@ -101,13 +110,13 @@ object Zenoh {
     ): Result<Scout<Channel<Hello>>> {
         ZenohLoad
         val handler = ChannelHandler(channel)
-        return JNIScout.scout(
-            whatAmI = whatAmI,
-            callback = { hello -> handler.handle(hello) },
-            receiver = handler.receiver(),
-            onClose = handler::onClose,
-            config = config
-        )
+        return runCatching {
+            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
+            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
+                handler.handle(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
+            }
+            Scout(handler.receiver(), JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback { handler.onClose() }, config?.jniConfig))
+        }
     }
 
     /**
@@ -143,9 +152,3 @@ object Zenoh {
         logLevelProp?.let { Logger.start(it) } ?: Logger.start(fallbackFilter)
     }
 }
-
-/**
- * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
- * log level configuration.
- */
-internal expect object ZenohLoad
