@@ -1210,17 +1210,18 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     ): Result<Queryable<R>> {
         return jniSession?.run {
             runCatching {
-                val jniCallback = JNIQueryableCallback { keyExpr1, selectorParams, payload, encodingId, encodingSchema, attachmentBytes, queryPtr, _ ->
+                val jniCallback = JNIQueryableCallback { keyExpr1, selectorParams, payload, encodingId, encodingSchema, attachmentBytes, queryPtr, acceptReplies ->
                     val jniQuery = JNIQuery(queryPtr)
                     val keyExpr2 = KeyExpr(keyExpr1)
                     val selector = if (selectorParams.isEmpty()) Selector(keyExpr2)
-                        else Selector(keyExpr2, Parameters.from(selectorParams).getOrNull())
+                        else Selector(keyExpr2, Parameters.from(selectorParams).getOrThrow())
                     callback.run(Query(
                         keyExpr2, selector,
                         payload?.let { ZBytes.from(it) },
                         payload?.let { Encoding(encodingId, schema = encodingSchema) },
                         attachmentBytes?.let { ZBytes.from(it) },
-                        jniQuery
+                        jniQuery,
+                        ReplyKeyExpr.entries[acceptReplies]
                     ))
                 }
                 Queryable(keyExpr, receiver, declareQueryable(

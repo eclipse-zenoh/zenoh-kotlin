@@ -44,7 +44,8 @@ class Query internal constructor(
     val payload: ZBytes?,
     val encoding: Encoding?,
     val attachment: ZBytes?,
-    private var jniQuery: JNIQuery?
+    private var jniQuery: JNIQuery?,
+    private val acceptRepliesValue: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
 ) : AutoCloseable, ZenohType {
 
     /** Shortcut to the [selector]'s parameters. */
@@ -185,13 +186,7 @@ class Query internal constructor(
     /**
      * Returns the [ReplyKeyExpr] accepted by this query.
      */
-    fun acceptsReplies(): ReplyKeyExpr {
-        return if (selector.parameters?.containsKey(REPLY_KEY_EXPR_ANY_SEL_PARAM) == true) {
-            ReplyKeyExpr.ANY
-        } else {
-            ReplyKeyExpr.MATCHING_QUERY
-        }
-    }
+    fun acceptsReplies(): ReplyKeyExpr = acceptRepliesValue
     @Deprecated(
         message = "Use replyDel with ReplyQoS instead of QoS. Priority and congestion control are not applicable to replies.",
         replaceWith = ReplaceWith("replyDel(keyExpr, ReplyQoS(express = qos.express), timestamp, attachment)", "io.zenoh.qos.ReplyQoS")
@@ -221,7 +216,5 @@ class Query internal constructor(
         }
     }
 
-    companion object {
-        private const val REPLY_KEY_EXPR_ANY_SEL_PARAM = "_anyke"
-    }
+    companion object
 }
