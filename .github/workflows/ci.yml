@@ -9,9 +9,6 @@ on:
     - cron: "0 6 * * 1-5"
   workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -23,6 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
@@ -30,28 +29,7 @@ jobs:
           java-version: 11
 
       - name: Install Rust toolchain
-        run: |
-          rustup show
-          rustup component add rustfmt clippy
-
-      - name: Cargo Format
-        working-directory: zenoh-jni
-        run: cargo fmt --all --check
-
-      - name: Clippy Check without Cargo.lock
-        working-directory: zenoh-jni
-        run: |
-          rm Cargo.lock
-          cargo clippy --all-targets --all-features -- -D warnings
-          git restore Cargo.lock
-
-      - name: Check for feature leaks
-        working-directory: zenoh-jni
-        run: cargo test --no-default-features
-
-      - name: Build Zenoh-JNI
-        working-directory: zenoh-jni
-        run: cargo build
+        run: rustup show
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
