@@ -44,7 +44,8 @@ class Query internal constructor(
     val payload: ZBytes?,
     val encoding: Encoding?,
     val attachment: ZBytes?,
-    private var jniQuery: JNIQuery?
+    private var jniQuery: JNIQuery?,
+    private val acceptRepliesValue: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
 ) : AutoCloseable, ZenohType {
 
     /** Shortcut to the [selector]'s parameters. */
@@ -72,9 +73,15 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos.toQoS(), attachment?.into())
         return jniQuery?.let {
-            val result = it.replySuccess(sample)
+            val result = runCatching {
+                it.replySuccess(
+                    keyExpr.jniKeyExpr, keyExpr.keyExpr,
+                    payload.into().bytes, encoding.id, encoding.schema,
+                    timestamp != null, timestamp?.ntpValue() ?: 0L,
+                    attachment?.into()?.bytes, qos.express
+                )
+            }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -128,7 +135,7 @@ class Query internal constructor(
      */
     fun replyErr(error: IntoZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyError(error, encoding)
+            val result = runCatching { it.replyError(error.into().bytes, encoding.id, encoding.schema) }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -157,7 +164,13 @@ class Query internal constructor(
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         return jniQuery?.let {
-            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.toQoS())
+            val result = runCatching {
+                it.replyDelete(
+                    keyExpr.jniKeyExpr, keyExpr.keyExpr,
+                    timestamp != null, timestamp?.ntpValue() ?: 0L,
+                    attachment?.into()?.bytes, qos.express
+                )
+            }
             jniQuery = null
             result
         } ?: Result.failure(ZError("Query is invalid"))
@@ -173,13 +186,7 @@ class Query internal constructor(
     /**
      * Returns the [ReplyKeyExpr] accepted by this query.
      */
-    fun acceptsReplies(): ReplyKeyExpr {
-        return if (selector.parameters?.containsKey(REPLY_KEY_EXPR_ANY_SEL_PARAM) == true) {
-            ReplyKeyExpr.ANY
-        } else {
-            ReplyKeyExpr.MATCHING_QUERY
-        }
-    }
+    fun acceptsReplies(): ReplyKeyExpr = acceptRepliesValue
     @Deprecated(
         message = "Use replyDel with ReplyQoS instead of QoS. Priority and congestion control are not applicable to replies.",
         replaceWith = ReplaceWith("replyDel(keyExpr, ReplyQoS(express = qos.express), timestamp, attachment)", "io.zenoh.qos.ReplyQoS")
@@ -209,7 +216,5 @@ class Query internal constructor(
         }
     }
 
-    companion object {
-        private const val REPLY_KEY_EXPR_ANY_SEL_PARAM = "_anyke"
-    }
+    companion object
 }

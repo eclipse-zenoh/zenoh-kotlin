@@ -22,7 +22,7 @@ import io.zenoh.jni.JNIZenohId
 data class ZenohId internal constructor(internal val bytes: ByteArray) {
 
     override fun toString(): String {
-        return JNIZenohId.toStringViaJNI(bytes)
+        return JNIZenohId.toString(bytes)
     }
 
     override fun equals(other: Any?): Boolean {
