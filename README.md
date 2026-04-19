@@ -125,7 +125,7 @@ and in case of targetting Android you'll also need:
 
 - Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
 
-> **Note:** zenoh-kotlin no longer builds its own native JNI library. The native runtime is provided by [zenoh-jni-runtime](https://github.com/eclipse-zenoh/zenoh-java), which is a published Maven artifact that zenoh-kotlin depends on automatically. No Rust toolchain is required to build or publish zenoh-kotlin.
+> **Note:** zenoh-kotlin no longer builds its own native JNI library. The native runtime is provided by [zenoh-jni-runtime](https://github.com/eclipse-zenoh/zenoh-java), which is a published Maven artifact that zenoh-kotlin depends on automatically. No Rust toolchain is required to build or publish zenoh-kotlin using the default (Maven) path. A Rust toolchain is only needed when using the [local submodule path](#running-the-tests) with `-Pzenoh.useLocalJniRuntime=true`.
 
 ## <img src="jvm.png" alt="JVM" height="50"> JVM
 
@@ -196,13 +196,25 @@ gradle dokkaGenerate
 
 ## Running the tests
 
-To run the tests, run:
+zenoh-kotlin supports two modes for providing the native JNI runtime during tests:
+
+### Default mode (published Maven artifact)
+
+By default, tests resolve `zenoh-jni-runtime` from Maven Central. No local submodule or Rust toolchain is needed:
 
 ```bash
 gradle jvmTest
 ```
 
-This runs the tests against the JVM target. The native JNI library is provided at test time via the `zenoh-java` submodule (included in this repository under `zenoh-java/`), which builds the debug version of `zenoh-jni-runtime` locally. No separate Rust build step is required — the submodule's Gradle build handles it.
+### Local submodule mode (opt-in)
+
+For local integration testing against the `zenoh-java` submodule (included under `zenoh-java/`), pass the `zenoh.useLocalJniRuntime` property. This substitutes the Maven dependency with a local composite build of the submodule:
+
+```bash
+gradle jvmTest -Pzenoh.useLocalJniRuntime=true
+```
+
+> **Note:** The local submodule path builds `zenoh-jni-runtime` from source and requires a Rust toolchain (see [rustup.rs](https://rustup.rs)) as well as the Cargo toolchain configured for the target platform. The submodule's Gradle build handles the Rust compilation step automatically once the toolchain is installed.
 
 ## Logging
 
