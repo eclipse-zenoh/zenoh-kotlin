@@ -683,7 +683,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun undeclare(keyExpr: KeyExpr): Result<Unit> {
         return jniSession?.run {
-            runCatching { undeclareKeyExpr(keyExpr.jniKeyExpr!!) }
+            val jniKeyExpr = keyExpr.jniKeyExpr
+                ?: return Result.failure(ZError("Key expression is not declared through a session."))
+            runCatching {
+                undeclareKeyExpr(jniKeyExpr)
+                keyExpr.jniKeyExpr = null
+            }
         } ?: Result.failure(sessionClosedException)
     }
 

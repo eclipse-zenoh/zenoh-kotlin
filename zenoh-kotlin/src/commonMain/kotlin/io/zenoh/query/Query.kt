@@ -77,7 +77,7 @@ class Query internal constructor(
                 it.replySuccess(
                     keyExpr.jniKeyExpr, keyExpr.keyExpr,
                     payload.into().bytes, encoding.id, encoding.schema,
-                    timestamp != null, timestamp?.ntpValue ?: 0L,
+                    timestamp != null, timestamp?.ntpValue() ?: 0L,
                     attachment?.into()?.bytes, qos.express
                 )
             }
@@ -166,7 +166,7 @@ class Query internal constructor(
             val result = runCatching {
                 it.replyDelete(
                     keyExpr.jniKeyExpr, keyExpr.keyExpr,
-                    timestamp != null, timestamp?.ntpValue ?: 0L,
+                    timestamp != null, timestamp?.ntpValue() ?: 0L,
                     attachment?.into()?.bytes, qos.express
                 )
             }
