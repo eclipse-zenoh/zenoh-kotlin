@@ -23,7 +23,15 @@ rootProject.name = "zenoh-kotlin"
 
 include(":zenoh-kotlin")
 include(":examples")
-include(":zenoh-jni")
+
+if (file("zenoh-java/settings.gradle.kts").exists()) {
+    includeBuild("zenoh-java") {
+        dependencySubstitution {
+            substitute(module("org.eclipse.zenoh:zenoh-jni-runtime"))
+                .using(project(":zenoh-jni-runtime"))
+        }
+    }
+}
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
