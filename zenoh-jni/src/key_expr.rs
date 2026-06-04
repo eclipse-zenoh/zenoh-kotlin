@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -94,11 +95,13 @@ pub extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_autocanonizeViaJNI
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsViaJNI(
     mut env: JNIEnv,
     _: JClass,
-    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_1: jlong,
     key_expr_str_1: JString,
-    key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_2: jlong,
     key_expr_str_2: JString,
 ) -> jboolean {
+    let key_expr_ptr_1 = key_expr_ptr_1 as *const KeyExpr<'static>;
+    let key_expr_ptr_2 = key_expr_ptr_2 as *const KeyExpr<'static>;
     || -> ZResult<jboolean> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
@@ -130,11 +133,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_intersectsV
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesViaJNI(
     mut env: JNIEnv,
     _: JClass,
-    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_1: jlong,
     key_expr_str_1: JString,
-    key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_2: jlong,
     key_expr_str_2: JString,
 ) -> jboolean {
+    let key_expr_ptr_1 = key_expr_ptr_1 as *const KeyExpr<'static>;
+    let key_expr_ptr_2 = key_expr_ptr_2 as *const KeyExpr<'static>;
     || -> ZResult<jboolean> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
@@ -167,11 +172,13 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_includesVia
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToViaJNI(
     mut env: JNIEnv,
     _: JClass,
-    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_1: jlong,
     key_expr_str_1: JString,
-    key_expr_ptr_2: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_2: jlong,
     key_expr_str_2: JString,
 ) -> jint {
+    let key_expr_ptr_1 = key_expr_ptr_1 as *const KeyExpr<'static>;
+    let key_expr_ptr_2 = key_expr_ptr_2 as *const KeyExpr<'static>;
     || -> ZResult<jint> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2 = process_kotlin_key_expr(&mut env, &key_expr_str_2, key_expr_ptr_2)?;
@@ -203,10 +210,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_relationToV
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_1: jlong,
     key_expr_str_1: JString,
     key_expr_2: JString,
 ) -> jstring {
+    let key_expr_ptr_1 = key_expr_ptr_1 as *const KeyExpr<'static>;
     || -> ZResult<jstring> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
@@ -243,10 +251,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_joinViaJNI(
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_concatViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    key_expr_ptr_1: /*nullable*/ *const KeyExpr<'static>,
+    key_expr_ptr_1: jlong,
     key_expr_str_1: JString,
     key_expr_2: JString,
 ) -> jstring {
+    let key_expr_ptr_1 = key_expr_ptr_1 as *const KeyExpr<'static>;
     || -> ZResult<jstring> {
         let key_expr_1 = process_kotlin_key_expr(&mut env, &key_expr_str_1, key_expr_ptr_1)?;
         let key_expr_2_str = decode_string(&mut env, &key_expr_2)?;
@@ -280,8 +289,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_00024Companion_concatViaJN
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIKeyExpr_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    key_expr_ptr: *const KeyExpr<'static>,
+    key_expr_ptr: jlong,
 ) {
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     Arc::from_raw(key_expr_ptr);
 }
 

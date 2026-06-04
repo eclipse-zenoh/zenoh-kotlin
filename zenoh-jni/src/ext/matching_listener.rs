@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::{objects::JClass, JNIEnv};
@@ -35,7 +36,8 @@ use zenoh::matching::MatchingListener;
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIMatchingListener_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    matching_listener_ptr: *const MatchingListener<()>,
+    matching_listener_ptr: jlong,
 ) {
+    let matching_listener_ptr = matching_listener_ptr as *const MatchingListener<()>;
     Arc::from_raw(matching_listener_ptr);
 }

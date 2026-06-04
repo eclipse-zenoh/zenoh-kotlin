@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::{
@@ -54,8 +55,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_putViaJNI(
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
     attachment: /*nullable*/ JByteArray,
-    publisher_ptr: *const Publisher<'static>,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const Publisher<'static>;
     let publisher = Arc::from_raw(publisher_ptr);
     let _ = || -> ZResult<()> {
         let payload = decode_byte_array(&env, payload)?;
@@ -92,8 +94,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     attachment: /*nullable*/ JByteArray,
-    publisher_ptr: *const Publisher<'static>,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const Publisher<'static>;
     let publisher = Arc::from_raw(publisher_ptr);
     let _ = || -> ZResult<()> {
         let mut delete = publisher.delete();
@@ -124,7 +127,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_deleteViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIPublisher_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    publisher_ptr: *const Publisher,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const Publisher;
     Arc::from_raw(publisher_ptr);
 }

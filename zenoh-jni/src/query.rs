@@ -60,8 +60,8 @@ use zenoh::{
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    query_ptr: *const Query,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    query_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     payload: JByteArray,
     encoding_id: jint,
@@ -71,6 +71,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
     attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
 ) {
+    let query_ptr = query_ptr as *const Query;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -113,11 +115,12 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replySuccessViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    query_ptr: *const Query,
+    query_ptr: jlong,
     payload: JByteArray,
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
 ) {
+    let query_ptr = query_ptr as *const Query;
     let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let encoding = decode_encoding(&mut env, encoding_id, &encoding_schema)?;
@@ -157,14 +160,16 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyErrorViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    query_ptr: *const Query,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    query_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     timestamp_enabled: jboolean,
     timestamp_ntp_64: jlong,
     attachment: /*nullable*/ JByteArray,
     qos_express: jboolean,
 ) {
+    let query_ptr = query_ptr as *const Query;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let _ = || -> ZResult<()> {
         let query = Arc::from_raw(query_ptr);
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -200,7 +205,8 @@ pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_replyDeleteViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuery_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    query_ptr: *const Query,
+    query_ptr: jlong,
 ) {
+    let query_ptr = query_ptr as *const Query;
     Arc::from_raw(query_ptr);
 }

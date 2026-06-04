@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::objects::JValue;
@@ -113,11 +114,12 @@ impl<'a> SetJniMatchingStatusCallback for MatchingListenerBuilder<'a, DefaultHan
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingListenerViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_publisher_ptr: *const AdvancedPublisher,
+    advanced_publisher_ptr: jlong,
 
     callback: JObject,
     on_close: JObject,
 ) -> *const MatchingListener<()> {
+    let advanced_publisher_ptr = advanced_publisher_ptr as *const AdvancedPublisher;
     let advanced_publisher = OwnedObject::from_raw(advanced_publisher_ptr);
 
     || -> ZResult<*const MatchingListener<()>> {
@@ -169,11 +171,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareMatchingL
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroundMatchingListenerViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_publisher_ptr: *const AdvancedPublisher,
+    advanced_publisher_ptr: jlong,
 
     callback: JObject,
     on_close: JObject,
 ) {
+    let advanced_publisher_ptr = advanced_publisher_ptr as *const AdvancedPublisher;
     let advanced_publisher = OwnedObject::from_raw(advanced_publisher_ptr);
 
     || -> ZResult<()> {
@@ -223,8 +226,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_declareBackgroun
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_getMatchingStatusViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_publisher_ptr: *const AdvancedPublisher,
+    advanced_publisher_ptr: jlong,
 ) -> jboolean {
+    let advanced_publisher_ptr = advanced_publisher_ptr as *const AdvancedPublisher;
     use crate::errors::ZError;
 
     let advanced_publisher = OwnedObject::from_raw(advanced_publisher_ptr);
@@ -265,8 +269,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_putViaJNI(
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
     attachment: /*nullable*/ JByteArray,
-    publisher_ptr: *const AdvancedPublisher<'static>,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const AdvancedPublisher<'static>;
     let publisher = OwnedObject::from_raw(publisher_ptr);
     let _ = || -> ZResult<()> {
         let payload = decode_byte_array(&env, payload)?;
@@ -302,8 +307,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_deleteViaJNI(
     mut env: JNIEnv,
     _class: JClass,
     attachment: /*nullable*/ JByteArray,
-    publisher_ptr: *const AdvancedPublisher<'static>,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const AdvancedPublisher<'static>;
     let publisher = OwnedObject::from_raw(publisher_ptr);
     let _ = || -> ZResult<()> {
         let mut delete = publisher.delete();
@@ -333,7 +339,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_deleteViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedPublisher_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    publisher_ptr: *const AdvancedPublisher,
+    publisher_ptr: jlong,
 ) {
+    let publisher_ptr = publisher_ptr as *const AdvancedPublisher;
     Arc::from_raw(publisher_ptr);
 }
