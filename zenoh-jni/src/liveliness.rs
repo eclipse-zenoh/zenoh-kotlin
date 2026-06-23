@@ -41,13 +41,15 @@ use crate::{
 pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    session_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     callback: JObject,
     timeout_ms: jlong,
     on_close: JObject,
 ) {
+    let session_ptr = session_ptr as *const Session;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let session = unsafe { OwnedObject::from_raw(session_ptr) };
     let _ = || -> ZResult<()> {
         let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) }?;
@@ -104,10 +106,12 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_getViaJNI(
 pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareTokenViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    session_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
 ) -> *const LivelinessToken {
+    let session_ptr = session_ptr as *const Session;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let session = unsafe { OwnedObject::from_raw(session_ptr) };
     || -> ZResult<*const LivelinessToken> {
         let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr) }?;
@@ -130,8 +134,9 @@ pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareTokenViaJNI(
 pub extern "C" fn Java_io_zenoh_jni_JNILivelinessToken_00024Companion_undeclareViaJNI(
     _env: JNIEnv,
     _: JClass,
-    token_ptr: *const LivelinessToken,
+    token_ptr: jlong,
 ) {
+    let token_ptr = token_ptr as *const LivelinessToken;
     unsafe { Arc::from_raw(token_ptr) };
 }
 
@@ -140,13 +145,15 @@ pub extern "C" fn Java_io_zenoh_jni_JNILivelinessToken_00024Companion_undeclareV
 pub extern "C" fn Java_io_zenoh_jni_JNILiveliness_declareSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    session_ptr: *const Session,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    session_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     callback: JObject,
     history: jboolean,
     on_close: JObject,
 ) -> *const Subscriber<()> {
+    let session_ptr = session_ptr as *const Session;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let session = unsafe { OwnedObject::from_raw(session_ptr) };
     || -> ZResult<*const Subscriber<()>> {
         let key_expr = unsafe { process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)? };

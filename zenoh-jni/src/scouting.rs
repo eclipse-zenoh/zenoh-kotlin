@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::{ptr::null, sync::Arc};
 
 use jni::{
@@ -43,8 +44,9 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
     whatAmI: jint,
     callback: JObject,
     on_close: JObject,
-    config_ptr: /*nullable=*/ *const Config,
+    config_ptr: jlong,
 ) -> *const Scout<()> {
+    let config_ptr = config_ptr as *const Config;
     || -> ZResult<*const Scout<()>> {
         let callback_global_ref = get_callback_global_ref(&mut env, callback)?;
         let java_vm = Arc::new(get_java_vm(&mut env)?);
@@ -107,7 +109,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_scoutViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIScout_00024Companion_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    scout_ptr: *const Scout<()>,
+    scout_ptr: jlong,
 ) {
+    let scout_ptr = scout_ptr as *const Scout<()>;
     Arc::from_raw(scout_ptr);
 }
