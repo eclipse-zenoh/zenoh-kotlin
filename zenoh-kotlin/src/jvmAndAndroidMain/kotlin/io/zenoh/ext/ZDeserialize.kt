@@ -1,7 +1,9 @@
 package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
-import io.zenoh.jni.JNIZBytesKotlin
+import io.zenoh.exceptions.zCall0
+import io.zenoh.jni.bytes.deserializeViaJNI
+import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 /**
@@ -15,16 +17,10 @@ import kotlin.reflect.typeOf
  * - [Long]
  * - [Float]
  * - [Double]
- * - [UByte]
- * - [UShort]
- * - [UInt]
- * - [ULong]
  * - [List]
  * - [String]
  * - [ByteArray]
  * - [Map]
- * - [Pair]
- * - [Triple]
  *
  * **NOTE**
  *
@@ -71,6 +67,18 @@ import kotlin.reflect.typeOf
  * @see ZBytes
  * @return a [Result] with the deserialization.
  */
-inline fun <reified T: Any> zDeserialize(zbytes: ZBytes): Result<T> = runCatching {
-    JNIZBytesKotlin.deserialize(zbytes.toBytes(), typeOf<T>()) as T
-}
+inline fun <reified T : Any> zDeserialize(zbytes: ZBytes): Result<T> =
+    zDeserializeImpl(zbytes, typeOf<T>()).mapCatching { it as T }
+
+/**
+ * Implementation of [zDeserialize]: bridges the [KType] to a
+ * `java.lang.reflect.Type` and calls the shared (de)serializer of the flat
+ * bindings tier.
+ *
+ * TODO(zenoh-flat-transition): the flat deserializer does not yet support the
+ * Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types — those
+ * deserialize requests fail until a KType-aware serializer lands upstream.
+ */
+@PublishedApi
+internal fun zDeserializeImpl(zbytes: ZBytes, type: KType): Result<Any> =
+    zCall0<Any>({ Unit }) { deserializeViaJNI(zbytes.toBytes(), type.javaBoxedType(), it) }

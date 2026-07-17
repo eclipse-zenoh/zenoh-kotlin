@@ -15,15 +15,21 @@
 package io.zenoh.query
 
 /** The key expressions accepted by a query for replies. */
-enum class ReplyKeyExpr {
+// NOTE: the wire values follow the flat bindings enum (ANY=0,
+// MATCHING_QUERY=1) and deliberately differ from the declaration order.
+enum class ReplyKeyExpr(internal val value: Int) {
 
     /**
      * Replies must have a key expression matching the query's.
      */
-    MATCHING_QUERY,
+    MATCHING_QUERY(1),
 
     /**
      * Replies may have any key expression.
      */
-    ANY;
+    ANY(0);
+
+    internal companion object {
+        fun fromInt(value: Int) = entries.first { it.value == value }
+    }
 }

@@ -26,7 +26,12 @@ enum class CongestionControl (internal val value: Int) {
      * Prevents the message from being dropped at all cost.
      * In the face of heavy congestion on a part of the network, this could result in your publisher node blocking.
      */
-    BLOCK(1);
+    BLOCK(1),
+
+    /**
+     * Blocks low-priority traffic first, then drops when needed.
+     */
+    BLOCK_FIRST(2);
 
     internal companion object {
         fun fromInt(value: Int) = entries.first { it.value == value }

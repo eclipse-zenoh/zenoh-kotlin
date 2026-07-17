@@ -14,7 +14,7 @@
 
 package io.zenoh.scouting
 
-import io.zenoh.jni.JNIScout
+import io.zenoh.jni.scouting.Scout as JniScout
 
 /**
  * Scout for routers and/or peers.
@@ -34,7 +34,7 @@ import io.zenoh.jni.JNIScout
  */
 class Scout<R> internal constructor(
     val receiver: R,
-    private var jniScout: JNIScout?
+    private var jniScout: JniScout?
 ) : AutoCloseable {
 
     /**

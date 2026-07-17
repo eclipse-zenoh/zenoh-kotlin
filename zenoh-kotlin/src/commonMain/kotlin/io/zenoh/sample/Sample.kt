@@ -15,6 +15,8 @@
 package io.zenoh.sample
 
 import io.zenoh.ZenohType
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
@@ -41,8 +43,43 @@ data class Sample(
     val qos: QoS,
     val attachment: ZBytes? = null,
 ): ZenohType {
-    
+
     val express = qos.express
     val congestionControl = qos.congestionControl
     val priority = qos.priority
+
+    companion object {
+        /**
+         * Builds a [Sample] from the decomposed leaves delivered by a generated
+         * callback in one JNI crossing. The payload/attachment arrive as owned
+         * native handles whose bytes are read lazily (see [ZBytes]). The
+         * trailing `reliability` / `source*` leaves are part of the generated
+         * decomposition but are not surfaced on the public [Sample] type.
+         */
+        @Suppress("UNUSED_PARAMETER")
+        internal fun fromParts(
+            keStr: String,
+            payloadH: io.zenoh.jni.bytes.ZBytes,
+            encId: Int,
+            encSchema: String?,
+            kindInt: Int,
+            ntp64: Long?,
+            express: Boolean,
+            prioInt: Int,
+            ccInt: Int,
+            attachH: io.zenoh.jni.bytes.ZBytes?,
+            reliabilityInt: Int,
+            sourceZid: io.zenoh.jni.config.ZenohId?,
+            sourceEid: Int,
+            sourceSn: Long,
+        ): Sample = Sample(
+            KeyExpr(keStr),
+            ZBytes.fromHandle(payloadH),
+            Encoding(encId, schema = encSchema),
+            SampleKind.fromInt(kindInt),
+            ntp64?.let { TimeStamp(it) },
+            QoS(CongestionControl.fromInt(ccInt), Priority.fromInt(prioInt), express),
+            attachH?.let { ZBytes.fromHandle(it) }
+        )
+    }
 }

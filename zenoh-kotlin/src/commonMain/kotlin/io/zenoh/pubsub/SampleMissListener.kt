@@ -15,24 +15,25 @@
 package io.zenoh.pubsub
 
 import io.zenoh.annotations.Unstable
-import io.zenoh.jni.JNISampleMissListener
 import io.zenoh.session.SessionDeclaration
 
 /**
  * A listener to detect missed samples.
  *
  * Missed samples can only be detected from [AdvancedPublisher] that enables miss detection config.
+ *
+ * NOTE (zenoh-flat-transition): advanced pub/sub is not yet exposed by
+ * zenoh-flat / zenoh-flat-jni, so instances of this class are never
+ * constructed — [io.zenoh.Session.declareAdvancedSubscriber] fails first.
  */
 @Unstable
-class SampleMissListener internal constructor(
-    private var jniSampleMissListener: JNISampleMissListener?,
-) : SessionDeclaration, AutoCloseable {
+class SampleMissListener internal constructor() : SessionDeclaration, AutoCloseable {
 
     /**
      * Returns `true` if the listener is still running.
      */
     fun isValid(): Boolean {
-        return jniSampleMissListener != null
+        return false
     }
 
     /**
@@ -49,11 +50,5 @@ class SampleMissListener internal constructor(
      * Further operations performed with the listener will not be valid anymore.
      */
     override fun undeclare() {
-        jniSampleMissListener?.close()
-        jniSampleMissListener = null
-    }
-
-    protected fun finalize() {
-        undeclare()
     }
 }

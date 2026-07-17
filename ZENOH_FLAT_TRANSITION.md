@@ -33,8 +33,15 @@ public API facade.
 zenoh-flat-jni **never throws**: every fallible generated wrapper takes a
 trailing error-sink argument and *returns* `onError.run(...)` on failure.
 Because zenoh-kotlin's public API is `Result`-based, the SDK builds
-`Result.failure` directly inside the sink — there is no `try`/`catch` or
-`runCatching` anywhere on the JNI path.
+`Result.failure` directly inside the sink — a native error never crosses the
+boundary as an exception, so nothing is caught-and-rewrapped.
+
+The `zCall*` helpers additionally run the whole call block inside
+`runCatching`: JVM-side exceptions (argument preparation, user-supplied
+`IntoZBytes.into()` conversions, native-library loading during class init)
+surface as `Result.failure`, preserving the public `Result` contract of the
+pre-flat API on `main`. That `runCatching` never observes a native error —
+the sink reports those without throwing.
 
 ## Constituent PRs
 

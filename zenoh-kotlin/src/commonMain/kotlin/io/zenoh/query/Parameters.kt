@@ -69,6 +69,33 @@ data class Parameters internal constructor(private val params: MutableMap<String
                 parametersMap
             }.let { Parameters(it) }
         }
+
+        /**
+         * Parses [params] LENIENTLY, accepting any input — used on the
+         * RECEIVE path, where the string arrives from the network. In the
+         * Rust layer a selector's parameters are an unvalidated string view
+         * (any string is valid), so a remote client is free to send input
+         * the strict [from] rejects; the binding must never fault on it:
+         *  - on a duplicated parameter name, the FIRST occurrence wins
+         *    (mirroring the Rust `Parameters::get` semantics),
+         *  - the name and value are separated by the first `=` (the value
+         *    may contain further `=`),
+         *  - a value that fails percent-decoding is kept verbatim.
+         */
+        internal fun fromLenient(params: String): Parameters {
+            if (params.isBlank()) {
+                return Parameters(mutableMapOf())
+            }
+            return params.split(LIST_SEPARATOR).fold(mutableMapOf<String, String>()) { parametersMap, parameter ->
+                val (key, value) = parameter.split(FIELD_SEPARATOR, limit = 2).let { it[0] to it.getOrNull(1) }
+                if (!parametersMap.containsKey(key)) {
+                    parametersMap[key] = value?.let { v ->
+                        runCatching { URLDecoder.decode(v, Charsets.UTF_8.name()) }.getOrDefault(v)
+                    } ?: ""
+                }
+                parametersMap
+            }.let { Parameters(it) }
+        }
     }
 
     override fun toString(): String =

@@ -14,7 +14,7 @@
 
 package io.zenoh.liveliness
 
-import io.zenoh.jni.JNILivelinessToken
+import io.zenoh.jni.liveliness.LivelinessToken as JniLivelinessToken
 import io.zenoh.session.SessionDeclaration
 
 /**
@@ -37,13 +37,13 @@ import io.zenoh.session.SessionDeclaration
  * //....
  * ```
  */
-class LivelinessToken internal constructor(private var jniLivelinessToken: JNILivelinessToken?): SessionDeclaration, AutoCloseable {
+class LivelinessToken internal constructor(private var jniLivelinessToken: JniLivelinessToken?): SessionDeclaration, AutoCloseable {
 
     /**
      * Undeclares the token.
      */
     override fun undeclare() {
-        jniLivelinessToken?.undeclare()
+        jniLivelinessToken?.close()
         jniLivelinessToken = null
     }
 

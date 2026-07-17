@@ -125,7 +125,7 @@ and in case of targetting Android you'll also need:
 
 - Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
 
-> **Note:** zenoh-kotlin no longer builds its own native JNI library. The native runtime is provided by [zenoh-jni-runtime](https://github.com/eclipse-zenoh/zenoh-java), which is a published Maven artifact that zenoh-kotlin depends on automatically. No Rust toolchain is required to build or publish zenoh-kotlin using the default (Maven) path. A Rust toolchain is only needed when using the [local submodule path](#running-the-tests) with `-Pzenoh.useLocalJniRuntime=true`.
+> **Note:** zenoh-kotlin no longer builds its own native JNI library. The generated JNI bindings and the native library are provided by [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni), consumed as the Maven artifact `org.eclipse.zenoh:zenoh-flat-jni`. For local development, `settings.gradle.kts` includes `../zenoh-flat-jni` as a Gradle composite build: with a sibling checkout of that repository (and a Rust toolchain), the Maven dependency is automatically substituted by the locally built one.
 
 ## <img src="jvm.png" alt="JVM" height="50"> JVM
 
@@ -135,7 +135,7 @@ To publish a library for a JVM project into Maven local, run
 gradle publishJvmPublicationToMavenLocal
 ```
 
-This publishes the zenoh-kotlin library to Maven local. The published artifact declares a dependency on `zenoh-jni-runtime`, which provides the native JNI binaries and is published separately by the [zenoh-java](https://github.com/eclipse-zenoh/zenoh-java) project.
+This publishes the zenoh-kotlin library to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and native binaries and is published separately from the [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni) repository.
 
 Once we have published the package, we should be able to find it under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin-jvm/1.1.1`.
 
@@ -160,7 +160,7 @@ In order to use these bindings in a native Android project, publish them into Ma
 gradle -Pandroid=true publishAndroidReleasePublicationToMavenLocal
 ```
 
-This publishes the zenoh-kotlin-android artifact to Maven local. The published artifact declares a dependency on `zenoh-jni-runtime`, which provides the prebuilt native JNI binaries for Android ABIs (x86, x86_64, arm, arm64). The native binaries are published separately by the [zenoh-java](https://github.com/eclipse-zenoh/zenoh-java) project — no Rust toolchain or NDK cross-compilation is required.
+This publishes the zenoh-kotlin-android artifact to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and prebuilt native binaries. The native binaries are published separately from the [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni) repository — no Rust toolchain or NDK cross-compilation is required when resolving from Maven.
 
 You should now be able to see the package under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin-android/1.1.1`.
 
@@ -196,25 +196,16 @@ gradle dokkaGenerate
 
 ## Running the tests
 
-zenoh-kotlin supports two modes for providing the native JNI runtime during tests:
-
-### Default mode (published Maven artifact)
-
-By default, tests resolve `zenoh-jni-runtime` from Maven Central. No local submodule or Rust toolchain is needed:
-
 ```bash
 gradle jvmTest
 ```
 
-### Local submodule mode (opt-in)
-
-For local integration testing against the `zenoh-java` submodule (included under `zenoh-java/`), pass the `zenoh.useLocalJniRuntime` property. This substitutes the Maven dependency with a local composite build of the submodule:
-
-```bash
-gradle jvmTest -Pzenoh.useLocalJniRuntime=true
-```
-
-> **Note:** The local submodule path builds `zenoh-jni-runtime` from source and requires a Rust toolchain (see [rustup.rs](https://rustup.rs)) as well as the Cargo toolchain configured for the target platform. The submodule's Gradle build handles the Rust compilation step automatically once the toolchain is installed.
+The build resolves `zenoh-flat-jni` through the Gradle composite build against a
+sibling `../zenoh-flat-jni` checkout (see `settings.gradle.kts`), which builds the
+native library from source and therefore requires a Rust toolchain
+(see [rustup.rs](https://rustup.rs)). Once `zenoh-flat-jni` is published to Maven
+Central, removing the `includeBuild` line makes the build resolve the prebuilt
+artifact instead, with no Rust toolchain needed.
 
 ## Logging
 
