@@ -80,4 +80,12 @@ class ScoutTest {
     fun `scouting loads config successfully test`() {
         Zenoh.scout({}, config = Config.default()).getOrThrow()
     }
+
+    @Test
+    fun `scouting with empty whatAmI returns failure test`() {
+        // Result contract: a JVM-side exception during argument preparation
+        // (reduce on an empty set) surfaces as Result.failure, never a throw.
+        val result = Zenoh.scout({}, whatAmI = emptySet())
+        assertTrue(result.isFailure)
+    }
 }

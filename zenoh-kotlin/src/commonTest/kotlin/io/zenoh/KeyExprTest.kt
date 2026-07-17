@@ -127,6 +127,29 @@ class KeyExprTest {
     }
 
     @Test
+    fun sessionFailedUnDeclarationDetachesHandleTest() {
+        // Undeclaring through the WRONG session makes the native undeclare
+        // fail — and the flat wrapper consumes the handle even then. The
+        // KeyExpr must degrade to its string form (handle detached), not keep
+        // selecting a dead handle.
+        val session1 = Session.open(Config.default()).getOrThrow()
+        val session2 = Session.open(Config.default()).getOrThrow()
+        val keyExpr = session1.declareKeyExpr("a/b/c").getOrThrow()
+
+        val undeclare = session2.undeclare(keyExpr)
+        assertTrue(undeclare.isFailure)
+        assertNull(keyExpr.jniKeyExpr)
+
+        // String-backed operation keeps working after the failed undeclare.
+        assertTrue(keyExpr.intersects(KeyExpr.tryFrom("a/b/c").getOrThrow()))
+        assertTrue(session1.put(keyExpr, payload = "test").isSuccess)
+
+        session1.close()
+        session2.close()
+        keyExpr.close()
+    }
+
+    @Test
     fun `relationTo returns includes test`() {
         val keyExprA = KeyExpr.tryFrom("A/**").getOrThrow()
         val keyExprB = KeyExpr.tryFrom("A/B/C").getOrThrow()

@@ -14,16 +14,20 @@
 
 package io.zenoh.config
 
-import io.zenoh.jni.JNIZenohId
+import io.zenoh.jni.config.ZenohId as JniZenohId
+import io.zenoh.jni.config.zidString
 
 /**
  * The global unique id of a Zenoh peer.
  */
 data class ZenohId internal constructor(internal val bytes: ByteArray) {
 
-    override fun toString(): String {
-        return JNIZenohId.toStringViaJNI(bytes)
-    }
+    /**
+     * The standard string form, computed in pure Kotlin by the shared
+     * bindings tier ([zidString]); correspondence with the native formatter
+     * is verified upstream (`ZenohIdCorrespondenceTest` in zenoh-java).
+     */
+    override fun toString(): String = JniZenohId(bytes).zidString()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

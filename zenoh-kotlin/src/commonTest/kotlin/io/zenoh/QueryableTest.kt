@@ -27,6 +27,7 @@ import io.zenoh.query.Query
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
 import io.zenoh.query.Selector
+import io.zenoh.exceptions.throwZError
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -83,6 +84,52 @@ class QueryableTest {
         sleep(1000)
         assertNotNull(reply)
         assertEquals(reply!!.result.getOrThrow(), sample)
+
+        queryable.close()
+    }
+
+    @Test
+    fun queryable_receivesMalformedParametersQuery() {
+        // A remote (non-Kotlin) client is free to send selector parameters
+        // that the strict Kotlin parser rejects (duplicated names, invalid
+        // percent-encoding) — the Rust layer forwards any string untouched.
+        // The queryable must still receive the query (lenient parse, first
+        // duplicate wins, undecodable value kept verbatim) and reply to it.
+        var received: Query? = null
+        val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
+            received = query
+            query.reply(testKeyExpr, payload = "ok")
+        }).getOrThrow()
+
+        var reply: Reply? = null
+        // Bypass the Kotlin-side Selector validation, as a remote client would.
+        session.jniSession!!.get(
+            testKeyExpr.toString(),         // s
+            "a=1;a=2;bad=%zz",              // parameters
+            1000L,                          // timeoutMs
+            null,                           // target
+            null,                           // consolidation
+            null,                           // acceptReplies
+            null,                           // congestionControl
+            null,                           // priority
+            null,                           // express
+            null,                           // payload
+            -1,                             // encodingSel (absent)
+            null,                           // encoding00
+            null,                           // encoding01
+            null,                           // encoding1
+            null,                           // attachment
+            replyCallbackOf { reply = it },
+            {},                             // onClose
+            throwZError,
+        )
+        sleep(1000)
+
+        assertNotNull(received)
+        assertEquals("1", received!!.parameters?.get("a"))
+        assertEquals("%zz", received!!.parameters?.get("bad"))
+        assertNotNull(reply)
+        assertTrue(reply!!.result.isSuccess)
 
         queryable.close()
     }

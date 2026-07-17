@@ -18,13 +18,19 @@ import io.zenoh.annotations.Unstable
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
+import io.zenoh.bytes.jniHandle
+import io.zenoh.bytes.jniId
+import io.zenoh.bytes.jniSchema
+import io.zenoh.bytes.jniSel
 import io.zenoh.exceptions.ZError
+import io.zenoh.exceptions.zCallUnit
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNIQuerier
+import io.zenoh.jni.query.Querier as JniQuerier
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.qos.QoS
+import io.zenoh.replyCallbackOf
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
@@ -50,7 +56,7 @@ import kotlinx.coroutines.channels.Channel
  * ```
  *
  */
-class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private var jniQuerier: JNIQuerier?) :
+class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private var jniQuerier: JniQuerier?) :
     SessionDeclaration, AutoCloseable {
 
     /**
@@ -72,16 +78,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         attachment: IntoZBytes? = null
     ): Result<Channel<Reply>> {
         val handler = ChannelHandler(channel)
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            handler::handle,
-            handler::onClose,
-            handler.receiver(),
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, handler::handle, handler::onClose, handler.receiver(), attachment, payload, encoding)
     }
 
     fun get(
@@ -110,16 +107,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         encoding: Encoding? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            callback,
-            {},
-            Unit,
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, callback, {}, Unit, attachment, payload, encoding)
     }
 
     fun get(
@@ -148,16 +136,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         encoding: Encoding? = null,
         attachment: IntoZBytes? = null
     ): Result<R> {
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            handler::handle,
-            handler::onClose,
-            handler.receiver(),
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, handler::handle, handler::onClose, handler.receiver(), attachment, payload, encoding)
     }
 
     fun <R> get(
@@ -199,4 +178,26 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         undeclare()
     }
 
+    private fun <R> performGet(
+        parameters: Parameters?,
+        callback: Callback<Reply>,
+        onClose: () -> Unit,
+        receiver: R,
+        attachment: IntoZBytes?,
+        payload: IntoZBytes?,
+        encoding: Encoding?
+    ): Result<R> {
+        val q = jniQuerier ?: return Result.failure(ZError("Querier is not valid."))
+        return zCallUnit { onError ->
+            q.get(
+                parameters?.toString(),
+                payload?.into()?.bytes,
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                attachment?.into()?.bytes,
+                replyCallbackOf { callback.run(it) },
+                { onClose() },
+                onError
+            )
+        }.map { receiver }
+    }
 }

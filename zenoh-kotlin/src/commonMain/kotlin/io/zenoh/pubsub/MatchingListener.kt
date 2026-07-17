@@ -15,7 +15,6 @@
 package io.zenoh.pubsub
 
 import io.zenoh.annotations.Unstable
-import io.zenoh.jni.JNIMatchingListener
 import io.zenoh.session.SessionDeclaration
 
 /**
@@ -24,17 +23,19 @@ import io.zenoh.session.SessionDeclaration
  *
  * Matching listeners will run in background until the corresponding Zenoh entity is undeclared,
  * or until it is undeclared.
+ *
+ * NOTE (zenoh-flat-transition): advanced pub/sub is not yet exposed by
+ * zenoh-flat / zenoh-flat-jni, so instances of this class are never
+ * constructed — [io.zenoh.Session.declareAdvancedPublisher] fails first.
  */
 @Unstable
-class MatchingListener internal constructor(
-    private var jniMatchingListener: JNIMatchingListener?,
-) : SessionDeclaration, AutoCloseable {
+class MatchingListener internal constructor() : SessionDeclaration, AutoCloseable {
 
     /**
      * Returns `true` if the listener is still running.
      */
     fun isValid(): Boolean {
-        return jniMatchingListener != null
+        return false
     }
 
     /**
@@ -51,11 +52,5 @@ class MatchingListener internal constructor(
      * Further operations performed with the listener will not be valid anymore.
      */
     override fun undeclare() {
-        jniMatchingListener?.close()
-        jniMatchingListener = null
-    }
-
-    protected fun finalize() {
-        undeclare()
     }
 }

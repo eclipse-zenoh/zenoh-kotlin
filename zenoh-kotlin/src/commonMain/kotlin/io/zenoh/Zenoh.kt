@@ -15,14 +15,15 @@
 package io.zenoh
 
 import io.zenoh.Logger.Companion.LOG_ENV
+import io.zenoh.config.WhatAmI
+import io.zenoh.config.WhatAmI.*
+import io.zenoh.exceptions.zCall
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNIScout
+import io.zenoh.jni.scouting.Scout as JniScout
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
-import io.zenoh.config.WhatAmI
-import io.zenoh.config.WhatAmI.*
 import kotlinx.coroutines.channels.Channel
 
 object Zenoh {
@@ -52,10 +53,7 @@ object Zenoh {
         callback: Callback<Hello>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Result<Scout<Unit>> {
-        ZenohLoad
-        return JNIScout.scout(whatAmI = whatAmI, callback = callback, receiver = Unit, onClose = {}, config = config)
-    }
+    ): Result<Scout<Unit>> = performScout(callback, {}, Unit, whatAmI, config)
 
     /**
      * Scout for routers and/or peers.
@@ -72,16 +70,8 @@ object Zenoh {
         handler: Handler<Hello, R>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Result<Scout<R>> {
-        ZenohLoad
-        return JNIScout.scout(
-            whatAmI = whatAmI,
-            callback = { hello -> handler.handle(hello) },
-            receiver = handler.receiver(),
-            onClose = handler::onClose,
-            config = config
-        )
-    }
+    ): Result<Scout<R>> =
+        performScout(handler::handle, handler::onClose, handler.receiver(), whatAmI, config)
 
     /**
      * Scout for routers and/or peers.
@@ -99,15 +89,30 @@ object Zenoh {
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
     ): Result<Scout<Channel<Hello>>> {
-        ZenohLoad
         val handler = ChannelHandler(channel)
-        return JNIScout.scout(
-            whatAmI = whatAmI,
-            callback = { hello -> handler.handle(hello) },
-            receiver = handler.receiver(),
-            onClose = handler::onClose,
-            config = config
-        )
+        return performScout(handler::handle, handler::onClose, handler.receiver(), whatAmI, config)
+    }
+
+    private fun <R> performScout(
+        callback: Callback<Hello>,
+        onClose: () -> Unit,
+        receiver: R,
+        whatAmI: Set<WhatAmI>,
+        config: Config?
+    ): Result<Scout<R>> {
+        return zCall({ JniScout(0L) }) { onError ->
+            // Argument preparation stays inside the captured block: an empty
+            // [whatAmI] makes `reduce` throw, which must surface as
+            // Result.failure (the pre-flat API contract).
+            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
+            io.zenoh.jni.scouting.scout(
+                binaryWhatAmI,
+                config?.jniConfig,
+                helloCallbackOf { callback.run(it) },
+                { onClose() },
+                onError
+            )
+        }.map { Scout(receiver, it) }
     }
 
     /**
@@ -122,7 +127,6 @@ object Zenoh {
     fun tryInitLogFromEnv() {
         val logEnv = System.getenv(LOG_ENV)
         if (logEnv != null) {
-            ZenohLoad
             Logger.start(logEnv)
         }
     }
@@ -137,15 +141,8 @@ object Zenoh {
      * @param fallbackFilter: The fallback filter if the `RUST_LOG` environment variable is not set.
      * @see Logger
      */
-    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> = runCatching {
-        ZenohLoad
+    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> {
         val logLevelProp = System.getenv(LOG_ENV)
-        logLevelProp?.let { Logger.start(it) } ?: Logger.start(fallbackFilter)
+        return Logger.start(logLevelProp ?: fallbackFilter)
     }
 }
-
-/**
- * Static singleton class to load the Zenoh native library once and only once, as well as the logger in function of the
- * log level configuration.
- */
-internal expect object ZenohLoad

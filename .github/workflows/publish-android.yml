@@ -17,9 +17,6 @@ on:
         required: false
         default: true
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   publish_android_package:
     name: Publish Android package
@@ -36,25 +33,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
-
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r26
-          add-to-path: false
-          link-to-sdk: true
-
-      - name: Install Rust toolchain
-        run: |
-          rustup show
-          rustup component add rustfmt clippy
-
-      - name: Setup Rust toolchains
-        run: |
-          rustup target add armv7-linux-androideabi
-          rustup target add i686-linux-android
-          rustup target add aarch64-linux-android
-          rustup target add x86_64-linux-android
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4

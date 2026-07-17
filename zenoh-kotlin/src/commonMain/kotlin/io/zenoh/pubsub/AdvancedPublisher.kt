@@ -16,7 +16,6 @@ package io.zenoh.pubsub
 
 import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
-import io.zenoh.jni.JNIAdvancedPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.qos.QoS
@@ -33,14 +32,19 @@ import kotlinx.coroutines.channels.Channel
  *
  * A [Publisher] with advanced features.
  *
+ * NOTE (zenoh-flat-transition): advanced pub/sub is not yet exposed by
+ * zenoh-flat / zenoh-flat-jni, so instances of this class are never
+ * constructed — [io.zenoh.Session.declareAdvancedPublisher] fails first, and
+ * every operation on this class returns a failure.
+ *
  * @see Publisher
  */
 @Unstable
+@Suppress("UNUSED_PARAMETER")
 class AdvancedPublisher internal constructor(
     val keyExpr: KeyExpr,
     val qos: QoS,
     val encoding: Encoding,
-    private var jniPublisher: JNIAdvancedPublisher?,
 ) : SessionDeclaration, AutoCloseable {
 
     inline fun <reified T> invalidPublisherResult(): Result<T> =
@@ -59,10 +63,7 @@ class AdvancedPublisher internal constructor(
      * */
     fun declareMatchingListener(callback: MatchingCallback,
                                 onClose: (() -> Unit)? = null,): Result<MatchingListener> {
-        val resolvedOnClose = fun() {
-            onClose?.invoke()
-        }
-        return jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        return invalidPublisherResult()
     }
 
     /** Declare [MatchingListener] for this publisher, specifying a handler to handle matching statuses.
@@ -73,12 +74,7 @@ class AdvancedPublisher internal constructor(
      */
     fun <R> declareMatchingListener(handler: MatchingHandler<R>,
                                     onClose: (() -> Unit)? = null,): Result<MatchingListener> {
-        val resolvedOnClose = fun() {
-            handler.onClose()
-            onClose?.invoke()
-        }
-        val callback = MatchingCallback { matching: Boolean -> handler.handle(matching) }
-        return jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        return invalidPublisherResult()
     }
 
     /** Declare [MatchingListener] for this publisher, specifying a [Channel] to pipe the received matching statuses.
@@ -90,12 +86,8 @@ class AdvancedPublisher internal constructor(
     fun <R> declareMatchingListener(channel: Channel<Boolean>,
                                     onClose: (() -> Unit)? = null,): Result<MatchingListener> {
         val channelHandler = MatchingChannelHandler(channel)
-        val resolvedOnClose = fun() {
-            channelHandler.onClose()
-            onClose?.invoke()
-        }
-        val callback = MatchingCallback { matching: Boolean -> channelHandler.handle(matching) }
-        return jniPublisher?.declareMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        channelHandler.onClose()
+        return invalidPublisherResult()
     }
 
     /** Declare background matching status listener for this [AdvancedPublisher] with callback
@@ -105,10 +97,7 @@ class AdvancedPublisher internal constructor(
      * */
     fun declareBackgroundMatchingListener(callback: MatchingCallback,
                                 onClose: (() -> Unit)? = null,): Result<Unit> {
-        val resolvedOnClose = fun() {
-            onClose?.invoke()
-        }
-        return jniPublisher?.declareBackgroundMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        return invalidPublisherResult()
     }
 
     /** Declare background matching status listener for this [AdvancedPublisher], specifying a handler to handle matching statuses.
@@ -118,12 +107,7 @@ class AdvancedPublisher internal constructor(
      * */
     fun <R> declareBackgroundMatchingListener(handler: MatchingHandler<R>,
                                     onClose: (() -> Unit)? = null,): Result<Unit> {
-        val resolvedOnClose = fun() {
-            handler.onClose()
-            onClose?.invoke()
-        }
-        val callback = MatchingCallback { matching: Boolean -> handler.handle(matching) }
-        return jniPublisher?.declareBackgroundMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        return invalidPublisherResult()
     }
 
     /** Declare background matching status listener for this [AdvancedPublisher], specifying a [Channel] to pipe the received matching statuses.
@@ -134,12 +118,8 @@ class AdvancedPublisher internal constructor(
     fun <R> declareBackgroundMatchingListener(channel: Channel<Boolean>,
                                     onClose: (() -> Unit)? = null,): Result<Unit> {
         val channelHandler = MatchingChannelHandler(channel)
-        val resolvedOnClose = fun() {
-            channelHandler.onClose()
-            onClose?.invoke()
-        }
-        val callback = MatchingCallback { matching: Boolean -> channelHandler.handle(matching) }
-        return jniPublisher?.declareBackgroundMatchingListener(callback, resolvedOnClose)?: invalidPublisherResult()
+        channelHandler.onClose()
+        return invalidPublisherResult()
     }
 
     /**
@@ -147,11 +127,14 @@ class AdvancedPublisher internal constructor(
      *
      * Will return true if there exist Subscribers matching the Publisher's key expression and false otherwise.
      */
-    fun getMatchingStatus() = jniPublisher?.getMatchingStatus() ?: invalidPublisherResult()
+    fun getMatchingStatus(): Result<Boolean> {
+        return invalidPublisherResult()
+    }
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
-    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) =
-        jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: invalidPublisherResult()
+    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null): Result<Unit> {
+        return invalidPublisherResult()
+    }
 
     fun put(payload: String, encoding: Encoding? = null, attachment: String? = null) =
         put(ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(attachment) })
@@ -159,7 +142,9 @@ class AdvancedPublisher internal constructor(
     /**
      * Performs a DELETE operation on the specified [keyExpr].
      */
-    fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: invalidPublisherResult()
+    fun delete(attachment: IntoZBytes? = null): Result<Unit> {
+        return invalidPublisherResult()
+    }
 
     fun delete(attachment: String) = delete(ZBytes.from(attachment))
 
@@ -167,7 +152,7 @@ class AdvancedPublisher internal constructor(
      * Returns `true` if the publisher is still running.
      */
     fun isValid(): Boolean {
-        return jniPublisher != null
+        return false
     }
 
     /**
@@ -184,11 +169,5 @@ class AdvancedPublisher internal constructor(
      * Further operations performed with the publisher will not be valid anymore.
      */
     override fun undeclare() {
-        jniPublisher?.close()
-        jniPublisher = null
-    }
-
-    protected fun finalize() {
-        undeclare()
     }
 }

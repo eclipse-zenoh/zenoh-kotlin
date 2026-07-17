@@ -15,14 +15,22 @@
 package io.zenoh.liveliness
 
 import io.zenoh.Session
+import io.zenoh.exceptions.zCall
+import io.zenoh.exceptions.zCallUnit
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNILiveliness
+import io.zenoh.jni.liveliness.LivelinessToken as JniLivelinessToken
+import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.keyexpr.jniHandle
+import io.zenoh.keyexpr.jniSel
+import io.zenoh.keyexpr.jniStr
 import io.zenoh.pubsub.Subscriber
 import io.zenoh.query.Reply
+import io.zenoh.replyCallbackOf
 import io.zenoh.sample.Sample
+import io.zenoh.sampleCallbackOf
 import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 
@@ -41,9 +49,14 @@ class Liveliness internal constructor(private val session: Session) {
     /**
      * Create a LivelinessToken for the given key expression.
      */
-    fun declareToken(keyExpr: KeyExpr): Result<LivelinessToken> = runCatching {
-        val jniSession = session.jniSession ?: throw Session.sessionClosedException
-        JNILiveliness.declareToken(jniSession, keyExpr)
+    fun declareToken(keyExpr: KeyExpr): Result<LivelinessToken> {
+        val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
+        return zCall({ JniLivelinessToken(0L) }) { onError ->
+            jniSession.livelinessDeclareToken(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
+                onError
+            )
+        }.map { LivelinessToken(it) }
     }
 
     /**
@@ -56,11 +69,7 @@ class Liveliness internal constructor(private val session: Session) {
      */
     fun get(
         keyExpr: KeyExpr, callback: Callback<Reply>, timeout: Duration = Duration.ofMillis(10000)
-    ): Result<Unit> =
-        runCatching {
-            val jniSession = session.jniSession ?: throw Session.sessionClosedException
-            return JNILiveliness.get(jniSession, keyExpr, callback, Unit, timeout, {})
-        }
+    ): Result<Unit> = performGet(keyExpr, callback, {}, Unit, timeout)
 
     /**
      * Query the liveliness tokens with matching key expressions.
@@ -73,20 +82,7 @@ class Liveliness internal constructor(private val session: Session) {
      */
     fun <R> get(
         keyExpr: KeyExpr, handler: Handler<Reply, R>, timeout: Duration = Duration.ofMillis(10000)
-    ): Result<R> =
-        runCatching {
-            val jniSession = session.jniSession ?: throw Session.sessionClosedException
-            val callback = handler::handle
-            return JNILiveliness.get(
-                jniSession,
-                keyExpr,
-                callback,
-                handler.receiver(),
-                timeout,
-                onClose = handler::onClose
-            )
-
-        }
+    ): Result<R> = performGet(keyExpr, handler::handle, handler::onClose, handler.receiver(), timeout)
 
     /**
      * Query the liveliness tokens with matching key expressions.
@@ -102,16 +98,8 @@ class Liveliness internal constructor(private val session: Session) {
         channel: Channel<Reply>,
         timeout: Duration = Duration.ofMillis(10000),
     ): Result<Channel<Reply>> {
-        return session.jniSession?.let {
-            val channelHandler = ChannelHandler(channel)
-            JNILiveliness.get(it,
-                keyExpr,
-                channelHandler::handle,
-                receiver = channelHandler.receiver(),
-                timeout,
-                onClose = channelHandler::onClose
-            )
-        } ?: Result.failure(Session.sessionClosedException)
+        val channelHandler = ChannelHandler(channel)
+        return performGet(keyExpr, channelHandler::handle, channelHandler::onClose, channelHandler.receiver(), timeout)
     }
 
     /**
@@ -128,16 +116,8 @@ class Liveliness internal constructor(private val session: Session) {
         callback: Callback<Sample>,
         history: Boolean = false,
         onClose: (() -> Unit)? = null
-    ): Result<Subscriber<Unit>> = runCatching {
-        val jniSession = session.jniSession ?: throw Session.sessionClosedException
-        return JNILiveliness.declareSubscriber(
-            jniSession,
-            keyExpr,
-            callback,
-            Unit,
-            history,
-            fun() { onClose?.invoke() })
-    }
+    ): Result<Subscriber<Unit>> =
+        performDeclareSubscriber(keyExpr, callback, fun() { onClose?.invoke() }, Unit, history)
 
     /**
      * Create a [Subscriber] for liveliness changes matching the given key expression.
@@ -154,19 +134,11 @@ class Liveliness internal constructor(private val session: Session) {
         handler: Handler<Sample, R>,
         history: Boolean = false,
         onClose: (() -> Unit)? = null
-    ): Result<Subscriber<R>> = runCatching {
-        val jniSession = session.jniSession ?: throw Session.sessionClosedException
-        return JNILiveliness.declareSubscriber(
-            jniSession,
-            keyExpr,
-            handler::handle,
-            handler.receiver(),
-            history,
-            fun() {
-                handler.onClose()
-                onClose?.invoke()
-            })
-    }
+    ): Result<Subscriber<R>> =
+        performDeclareSubscriber(keyExpr, handler::handle, fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }, handler.receiver(), history)
 
     /**
      * Create a [Subscriber] for liveliness changes matching the given key expression.
@@ -182,18 +154,49 @@ class Liveliness internal constructor(private val session: Session) {
         channel: Channel<Sample>,
         history: Boolean = false,
         onClose: (() -> Unit)? = null
-    ): Result<Subscriber<Channel<Sample>>> = runCatching {
-        val jniSession = session.jniSession ?: throw Session.sessionClosedException
+    ): Result<Subscriber<Channel<Sample>>> {
         val channelHandler = ChannelHandler(channel)
-        return JNILiveliness.declareSubscriber(
-            jniSession,
-            keyExpr,
-            channelHandler::handle,
-            channelHandler.receiver(),
-            history,
-            fun() {
-                channelHandler.onClose()
-                onClose?.invoke()
-            })
+        return performDeclareSubscriber(keyExpr, channelHandler::handle, fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }, channelHandler.receiver(), history)
+    }
+
+    private fun <R> performGet(
+        keyExpr: KeyExpr,
+        callback: Callback<Reply>,
+        onClose: () -> Unit,
+        receiver: R,
+        timeout: Duration
+    ): Result<R> {
+        val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
+        return zCallUnit { onError ->
+            jniSession.livelinessGet(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
+                timeout.toMillis(),
+                replyCallbackOf { callback.run(it) },
+                { onClose() },
+                onError
+            )
+        }.map { receiver }
+    }
+
+    private fun <R> performDeclareSubscriber(
+        keyExpr: KeyExpr,
+        callback: Callback<Sample>,
+        onClose: () -> Unit,
+        receiver: R,
+        history: Boolean
+    ): Result<Subscriber<R>> {
+        val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
+        return zCall({ JniSubscriber(0L) }) { onError ->
+            jniSession.livelinessDeclareSubscriber(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
+                history,
+                sampleCallbackOf { callback.run(it) },
+                { onClose() },
+                onError
+            )
+        }.map { Subscriber(keyExpr, receiver, it) }
     }
 }

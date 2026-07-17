@@ -15,21 +15,21 @@
 package io.zenoh.query
 
 /** The Queryables that should be targeted by a GET operation. */
-enum class QueryTarget {
+enum class QueryTarget(internal val value: Int) {
 
     /**
      * Best Matching: the nearest complete queryable if any else all matching queryables.
      */
-    BEST_MATCHING,
+    BEST_MATCHING(0),
 
     /**
      * All matching queryables.
      */
-    ALL,
+    ALL(1),
 
     /**
      * All Complete queryables.
      */
-    ALL_COMPLETE;
+    ALL_COMPLETE(2);
 }
 

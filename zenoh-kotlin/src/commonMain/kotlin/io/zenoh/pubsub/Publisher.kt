@@ -16,9 +16,14 @@ package io.zenoh.pubsub
 
 import io.zenoh.*
 import io.zenoh.exceptions.ZError
-import io.zenoh.jni.JNIPublisher
+import io.zenoh.exceptions.zCallUnit
+import io.zenoh.jni.pubsub.Publisher as JniPublisher
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.jniHandle
+import io.zenoh.bytes.jniId
+import io.zenoh.bytes.jniSchema
+import io.zenoh.bytes.jniSel
 import io.zenoh.qos.QoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
@@ -67,7 +72,7 @@ class Publisher internal constructor(
     val keyExpr: KeyExpr,
     val qos: QoS,
     val encoding: Encoding,
-    private var jniPublisher: JNIPublisher?,
+    private var jniPublisher: JniPublisher?,
 ) : SessionDeclaration, AutoCloseable {
 
     companion object {
@@ -81,8 +86,20 @@ class Publisher internal constructor(
     fun priority() = qos.priority
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
-    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) =
-        jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
+    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null): Result<Unit> {
+        val p = jniPublisher ?: return InvalidPublisherResult
+        // When no per-put encoding override is given, the publisher's default
+        // encoding — set NATIVELY at declare time — applies, so no encoding
+        // data crosses (the selector arm is "absent", -1).
+        return zCallUnit { onError ->
+            p.put(
+                payload.into().bytes,
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                attachment?.into()?.bytes,
+                onError
+            )
+        }
+    }
 
     fun put(payload: String, encoding: Encoding? = null, attachment: String? = null) =
         put(ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(attachment) })
@@ -90,7 +107,12 @@ class Publisher internal constructor(
     /**
      * Performs a DELETE operation on the specified [keyExpr].
      */
-    fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+    fun delete(attachment: IntoZBytes? = null): Result<Unit> {
+        val p = jniPublisher ?: return InvalidPublisherResult
+        return zCallUnit { onError ->
+            p.delete(attachment?.into()?.bytes, onError)
+        }
+    }
 
     fun delete(attachment: String) = delete(ZBytes.from(attachment))
 

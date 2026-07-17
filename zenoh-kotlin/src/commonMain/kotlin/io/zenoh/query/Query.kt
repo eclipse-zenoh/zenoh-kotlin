@@ -16,12 +16,19 @@ package io.zenoh.query
 
 import io.zenoh.ZenohType
 import io.zenoh.exceptions.ZError
-import io.zenoh.jni.JNIQuery
+import io.zenoh.exceptions.zCallUnit
+import io.zenoh.jni.query.Query as JniQuery
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.keyexpr.jniHandle
+import io.zenoh.keyexpr.jniSel
+import io.zenoh.keyexpr.jniStr
 import io.zenoh.bytes.Encoding
+import io.zenoh.bytes.jniHandle
+import io.zenoh.bytes.jniId
+import io.zenoh.bytes.jniSchema
+import io.zenoh.bytes.jniSel
 import io.zenoh.qos.QoS
 import io.zenoh.qos.ReplyQoS
-import io.zenoh.sample.SampleKind
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.sample.Sample
@@ -44,7 +51,8 @@ class Query internal constructor(
     val payload: ZBytes?,
     val encoding: Encoding?,
     val attachment: ZBytes?,
-    private var jniQuery: JNIQuery?
+    private var jniQuery: JniQuery?,
+    private val acceptRepliesValue: ReplyKeyExpr = ReplyKeyExpr.MATCHING_QUERY
 ) : AutoCloseable, ZenohType {
 
     /** Shortcut to the [selector]'s parameters. */
@@ -72,12 +80,24 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        val sample = Sample(keyExpr, payload.into(), encoding, SampleKind.PUT, timestamp, qos.toQoS(), attachment?.into())
-        return jniQuery?.let {
-            val result = it.replySuccess(sample)
-            jniQuery = null
-            result
-        } ?: Result.failure(ZError("Query is invalid"))
+        val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
+        val result = zCallUnit { onError ->
+            q.replySuccess(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
+                payload.into().bytes,
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                timestamp?.ntpValue(),
+                attachment?.into()?.bytes,
+                qos.express,
+                onError
+            )
+        }
+        // Single-reply model: dropping the native query finalizes the reply
+        // stream so the querier's get completes. Safe whether the query came
+        // straight from the callback or was carried across a channel.
+        q.close()
+        jniQuery = null
+        return result
     }
 
     fun reply(
@@ -127,11 +147,17 @@ class Query internal constructor(
      * @param encoding The encoding of the [error].
      */
     fun replyErr(error: IntoZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
-        return jniQuery?.let {
-            val result = it.replyError(error, encoding)
-            jniQuery = null
-            result
-        } ?: Result.failure(ZError("Query is invalid"))
+        val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
+        val result = zCallUnit { onError ->
+            q.replyError(
+                error.into().bytes,
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                onError
+            )
+        }
+        q.close()
+        jniQuery = null
+        return result
     }
 
 
@@ -156,11 +182,19 @@ class Query internal constructor(
         timestamp: TimeStamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        return jniQuery?.let {
-            val result = it.replyDelete(keyExpr, timestamp, attachment, qos.toQoS())
-            jniQuery = null
-            result
-        } ?: Result.failure(ZError("Query is invalid"))
+        val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
+        val result = zCallUnit { onError ->
+            q.replyDelete(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
+                timestamp?.ntpValue(),
+                attachment?.into()?.bytes,
+                qos.express,
+                onError
+            )
+        }
+        q.close()
+        jniQuery = null
+        return result
     }
 
     fun replyDel(
@@ -173,13 +207,7 @@ class Query internal constructor(
     /**
      * Returns the [ReplyKeyExpr] accepted by this query.
      */
-    fun acceptsReplies(): ReplyKeyExpr {
-        return if (selector.parameters?.containsKey(REPLY_KEY_EXPR_ANY_SEL_PARAM) == true) {
-            ReplyKeyExpr.ANY
-        } else {
-            ReplyKeyExpr.MATCHING_QUERY
-        }
-    }
+    fun acceptsReplies(): ReplyKeyExpr = acceptRepliesValue
     @Deprecated(
         message = "Use replyDel with ReplyQoS instead of QoS. Priority and congestion control are not applicable to replies.",
         replaceWith = ReplaceWith("replyDel(keyExpr, ReplyQoS(express = qos.express), timestamp, attachment)", "io.zenoh.qos.ReplyQoS")
@@ -210,6 +238,37 @@ class Query internal constructor(
     }
 
     companion object {
-        private const val REPLY_KEY_EXPR_ANY_SEL_PARAM = "_anyke"
+        /**
+         * Builds a [Query] from the decomposed leaves delivered by the
+         * generated queryable callback in one JNI crossing, plus the owned
+         * native query handle `zq`, **retained** because the reply methods
+         * consume it (replying keeps working after the callback returns).
+         */
+        internal fun fromParts(
+            keStr: String,
+            parameters: String,
+            payloadH: io.zenoh.jni.bytes.ZBytes?,
+            encId: Int?,
+            encSchema: String?,
+            attachH: io.zenoh.jni.bytes.ZBytes?,
+            acceptsRepliesInt: Int,
+            zq: JniQuery,
+        ): Query {
+            val ke = KeyExpr(keStr)
+            // The parameters string is ATTACKER-CONTROLLED (the Rust layer
+            // forwards any selector parameters untouched) — parse leniently,
+            // never throw.
+            val selector = if (parameters.isEmpty()) Selector(ke)
+                else Selector(ke, Parameters.fromLenient(parameters))
+            return Query(
+                ke,
+                selector,
+                payloadH?.let { ZBytes.fromHandle(it) },
+                encId?.let { Encoding(it, schema = encSchema) },
+                attachH?.let { ZBytes.fromHandle(it) },
+                zq,
+                ReplyKeyExpr.fromInt(acceptsRepliesInt)
+            )
+        }
     }
 }

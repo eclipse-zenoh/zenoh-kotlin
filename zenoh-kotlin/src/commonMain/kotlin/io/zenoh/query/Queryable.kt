@@ -16,7 +16,7 @@ package io.zenoh.query
 
 import io.zenoh.*
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNIQueryable
+import io.zenoh.jni.query.Queryable as JniQueryable
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
@@ -51,7 +51,7 @@ import kotlinx.coroutines.channels.Channel
  * @see Session.declareQueryable
  */
 class Queryable<R> internal constructor(
-    val keyExpr: KeyExpr, val receiver: R, private var jniQueryable: JNIQueryable?
+    val keyExpr: KeyExpr, val receiver: R, private var jniQueryable: JniQueryable?
 ) : AutoCloseable, SessionDeclaration {
 
     /**

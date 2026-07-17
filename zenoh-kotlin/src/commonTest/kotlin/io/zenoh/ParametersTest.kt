@@ -26,6 +26,29 @@ class ParametersTest {
     }
 
     @Test
+    fun `lenient parsing accepts any remote input`() {
+        // The receive path must be total on attacker-controlled input, as the
+        // Rust layer is (a selector's parameters are an unvalidated string
+        // view there). The strict parser rejects all of these.
+
+        // Duplicated parameter name: the FIRST occurrence wins.
+        assertTrue(Parameters.from("a=1;a=2").isFailure)
+        assertEquals("1", Parameters.fromLenient("a=1;a=2").get("a"))
+
+        // Invalid percent-encoding: the value is kept verbatim.
+        assertTrue(Parameters.from("k=%zz").isFailure)
+        assertEquals("%zz", Parameters.fromLenient("k=%zz").get("k"))
+
+        // Value containing '=': split on the FIRST '=' only.
+        assertEquals("b=c", Parameters.fromLenient("a=b=c").get("a"))
+
+        // Flag without a value, empty chunks, blank input: all accepted.
+        assertEquals("", Parameters.fromLenient("flag").get("flag"))
+        assertEquals("1", Parameters.fromLenient(";;a=1;;").get("a"))
+        assertTrue(Parameters.fromLenient("").isEmpty())
+    }
+
+    @Test
     fun `should return list of values split by separator`() {
         val parameters =  Parameters.from("a=1;b=2;c=3|4|5;d=6").getOrThrow()
 

@@ -22,7 +22,34 @@ jobs:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out zenoh-kotlin
+        uses: actions/checkout@v4
+        with:
+          path: zenoh-kotlin
+
+      - name: Check out zenoh-flat-jni
+        uses: actions/checkout@v4
+        with:
+          repository: ZettaScaleLabs/zenoh-flat-jni
+          ref: dbb1f8c6509e333f49d1c03ecb84dcf07b7af7b8
+          path: zenoh-flat-jni
+
+      - name: Check out zenoh-flat
+        uses: actions/checkout@v4
+        with:
+          repository: ZettaScaleLabs/zenoh-flat
+          ref: 6d22091d75912be1c14330b0f78fa1d4bf258ea3
+          path: zenoh-flat
+
+      - name: Use prebindgen from GitHub main
+        shell: bash
+        working-directory: zenoh-flat-jni
+        run: |
+          sed -i.bak \
+            -e 's|prebindgen = { path = "../prebindgen/prebindgen" }|prebindgen = { git = "https://github.com/milyin/prebindgen.git", branch = "main" }|g' \
+            -e 's|prebindgen-proc-macro = { path = "../prebindgen/prebindgen-proc-macro",|prebindgen-proc-macro = { git = "https://github.com/milyin/prebindgen.git", branch = "main",|g' \
+            Cargo.toml ../zenoh-flat/Cargo.toml
+          rm Cargo.toml.bak ../zenoh-flat/Cargo.toml.bak
 
       - uses: actions/setup-java@v4
         with:
@@ -32,25 +59,10 @@ jobs:
       - name: Install Rust toolchain
         run: |
           rustup show
-          rustup component add rustfmt clippy
+          rustup component add rustfmt clippy --toolchain 1.93.0
 
-      - name: Cargo Format
-        working-directory: zenoh-jni
-        run: cargo fmt --all --check
-
-      - name: Clippy Check without Cargo.lock
-        working-directory: zenoh-jni
-        run: |
-          rm Cargo.lock
-          cargo clippy --all-targets --all-features -- -D warnings
-          git restore Cargo.lock
-
-      - name: Check for feature leaks
-        working-directory: zenoh-jni
-        run: cargo test --no-default-features
-
-      - name: Build Zenoh-JNI
-        working-directory: zenoh-jni
+      - name: Build zenoh-flat-jni
+        working-directory: zenoh-flat-jni
         run: cargo build
 
       - name: Setup Gradle
@@ -59,6 +71,7 @@ jobs:
           gradle-version: 8.12.1
 
       - name: Gradle Test
+        working-directory: zenoh-kotlin
         run: gradle jvmTest --info
 
   markdown_lint:
