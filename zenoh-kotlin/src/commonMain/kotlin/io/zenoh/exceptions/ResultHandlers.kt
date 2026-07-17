@@ -19,16 +19,24 @@ import io.zenoh.jni.JniErrorHandler
 
 /**
  * Helpers converting the generated flat-jni error-callback protocol into
- * [Result] without any exception in flight.
+ * [Result].
  *
- * A generated wrapper never throws from native code — on failure it *returns*
- * the value produced by its trailing `onError` handler (a generated typed
- * `fun interface`). The `zCall*` helpers below supply a handler that records
- * the error into a local and, where the wrapper's return type demands a value,
- * produces a throw-away *sentinel* (a born-closed handle such as
- * `Session(0L)`, an empty list, …). After the call returns, the recorded
- * error — if any — becomes `Result.failure`; otherwise the wrapper's return
- * value becomes `Result.success`. No `try`/`catch`, no `runCatching`.
+ * Two distinct failure channels are folded into one [Result]:
+ *
+ * 1. **Native errors** — a generated wrapper never throws from native code;
+ *    on failure it *returns* the value produced by its trailing `onError`
+ *    handler (a generated typed `fun interface`). The helpers supply a
+ *    handler that records the error into a local and, where the wrapper's
+ *    return type demands a value, produces a throw-away *sentinel* (a
+ *    born-closed handle such as `Session(0L)`, an empty list, …). No
+ *    exception is ever in flight for a native error.
+ * 2. **JVM-side exceptions** — argument preparation (collection ops, …),
+ *    user-supplied conversions (`IntoZBytes.into()`), and class
+ *    initialization (native-library loading) can throw before or around the
+ *    native call. The block runs inside `runCatching` so these surface as
+ *    [Result.failure], preserving the public `Result` contract of the
+ *    pre-flat API. The `runCatching` never observes a native error — channel
+ *    1 reports those without throwing.
  *
  * `je` is the binding-layer error (UTF-8 decode, closed handle, …); `message`
  * is the library (zenoh) error message. Exactly one is set.
@@ -40,17 +48,23 @@ import io.zenoh.jni.JniErrorHandler
  */
 
 /** Fallible flat call returning `Unit` — no sentinel needed. */
-internal inline fun zCallUnit(block: (ErrorHandler<Unit>) -> Unit): Result<Unit> {
+internal inline fun zCallUnit(crossinline block: (ErrorHandler<Unit>) -> Unit): Result<Unit> {
     var err: ZError? = null
-    block(ErrorHandler { je, message -> err = ZError(je ?: message) })
-    return err?.let { Result.failure(it) } ?: Result.success(Unit)
+    val outcome = runCatching {
+        block(ErrorHandler { je, message -> err = ZError(je ?: message) })
+    }
+    err?.let { return Result.failure(it) }
+    return outcome
 }
 
 /** Binding-only-fallible flat call returning `Unit`. */
-internal inline fun zCallUnit0(block: (JniErrorHandler<Unit>) -> Unit): Result<Unit> {
+internal inline fun zCallUnit0(crossinline block: (JniErrorHandler<Unit>) -> Unit): Result<Unit> {
     var err: ZError? = null
-    block(JniErrorHandler { je -> err = ZError(je ?: "native binding error") })
-    return err?.let { Result.failure(it) } ?: Result.success(Unit)
+    val outcome = runCatching {
+        block(JniErrorHandler { je -> err = ZError(je ?: "native binding error") })
+    }
+    err?.let { return Result.failure(it) }
+    return outcome
 }
 
 /**
@@ -59,31 +73,37 @@ internal inline fun zCallUnit0(block: (JniErrorHandler<Unit>) -> Unit): Result<U
  */
 internal inline fun <T> zCall(
     crossinline sentinel: () -> T,
-    block: (ErrorHandler<T>) -> T
+    crossinline block: (ErrorHandler<T>) -> T
 ): Result<T> {
     var err: ZError? = null
-    val value = block(
-        ErrorHandler { je, message ->
-            err = ZError(je ?: message)
-            sentinel()
-        }
-    )
-    return err?.let { Result.failure(it) } ?: Result.success(value)
+    val outcome = runCatching {
+        block(
+            ErrorHandler { je, message ->
+                err = ZError(je ?: message)
+                sentinel()
+            }
+        )
+    }
+    err?.let { return Result.failure(it) }
+    return outcome
 }
 
 /** Binding-only-fallible flat call returning `T`; [sentinel] as in [zCall]. */
 internal inline fun <T> zCall0(
     crossinline sentinel: () -> T,
-    block: (JniErrorHandler<T>) -> T
+    crossinline block: (JniErrorHandler<T>) -> T
 ): Result<T> {
     var err: ZError? = null
-    val value = block(
-        JniErrorHandler { je ->
-            err = ZError(je ?: "native binding error")
-            sentinel()
-        }
-    )
-    return err?.let { Result.failure(it) } ?: Result.success(value)
+    val outcome = runCatching {
+        block(
+            JniErrorHandler { je ->
+                err = ZError(je ?: "native binding error")
+                sentinel()
+            }
+        )
+    }
+    err?.let { return Result.failure(it) }
+    return outcome
 }
 
 /** Handler for non-[Result] contexts: throws [ZError] (safe — runs after the

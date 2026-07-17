@@ -100,8 +100,11 @@ object Zenoh {
         whatAmI: Set<WhatAmI>,
         config: Config?
     ): Result<Scout<R>> {
-        val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
         return zCall({ JniScout(0L) }) { onError ->
+            // Argument preparation stays inside the captured block: an empty
+            // [whatAmI] makes `reduce` throw, which must surface as
+            // Result.failure (the pre-flat API contract).
+            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
             io.zenoh.jni.scouting.scout(
                 binaryWhatAmI,
                 config?.jniConfig,

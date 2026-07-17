@@ -68,7 +68,7 @@ import kotlin.reflect.typeOf
  * @return a [Result] with the deserialization.
  */
 inline fun <reified T : Any> zDeserialize(zbytes: ZBytes): Result<T> =
-    zDeserializeImpl(zbytes, typeOf<T>()).map { it as T }
+    zDeserializeImpl(zbytes, typeOf<T>()).mapCatching { it as T }
 
 /**
  * Implementation of [zDeserialize]: bridges the [KType] to a

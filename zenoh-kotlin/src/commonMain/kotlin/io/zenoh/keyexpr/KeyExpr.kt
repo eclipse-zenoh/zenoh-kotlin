@@ -15,12 +15,10 @@
 package io.zenoh.keyexpr
 
 import io.zenoh.Session
-import io.zenoh.exceptions.ZError
 import io.zenoh.exceptions.throwZError
 import io.zenoh.exceptions.throwZError0
 import io.zenoh.exceptions.zCall
 import io.zenoh.jni.ErrorHandler
-import io.zenoh.jni.JniErrorHandler
 import io.zenoh.jni.keyexpr.KeyExpr as JniKeyExpr
 import io.zenoh.session.SessionDeclaration
 
@@ -93,30 +91,20 @@ class KeyExpr internal constructor(
     companion object {
 
         /**
-         * Builds a [KeyExpr] from the canonical string of a probe handle,
-         * without any exception in flight: the probe construction failure and
-         * the (binding-only) string read failure both surface as
+         * Builds a [KeyExpr] from the canonical string of a probe handle:
+         * the probe construction failure (native, via the sink) and the
+         * (binding-only) string read failure both surface as
          * [Result.failure].
          */
-        private inline fun fromProbe(makeProbe: (ErrorHandler<JniKeyExpr>) -> JniKeyExpr): Result<KeyExpr> {
-            var err: ZError? = null
-            val probe = makeProbe(
-                ErrorHandler { je, message ->
-                    err = ZError(je ?: message)
-                    JniKeyExpr(0L)
+        private inline fun fromProbe(crossinline makeProbe: (ErrorHandler<JniKeyExpr>) -> JniKeyExpr): Result<KeyExpr> =
+            zCall({ JniKeyExpr(0L) }) { makeProbe(it) }
+                .mapCatching { probe ->
+                    try {
+                        KeyExpr(probe.getStr(throwZError0))
+                    } finally {
+                        probe.close()
+                    }
                 }
-            )
-            err?.let { return Result.failure(it) }
-            val str = probe.getStr(
-                JniErrorHandler { je ->
-                    err = ZError(je ?: "native binding error")
-                    ""
-                }
-            )
-            probe.close()
-            err?.let { return Result.failure(it) }
-            return Result.success(KeyExpr(str))
-        }
 
         /**
          * Try from.
