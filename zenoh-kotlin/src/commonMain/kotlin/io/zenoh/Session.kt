@@ -687,7 +687,16 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         val handle = keyExpr.jniKeyExpr
             ?: return Result.failure(ZError("Key expression is not declared through a session."))
         return zCallUnit { session.undeclareKeyexpr(handle, it) }
-            .onSuccess { keyExpr.jniKeyExpr = null }
+            .also {
+                // The generated wrapper consumes the handle even when the
+                // native undeclare fails (the Rust side takes it by value);
+                // on a pre-call guard failure it instead stays live. Either
+                // way the declared handle must never be selected again: close
+                // it (a no-op if consumed) and detach it, degrading the
+                // KeyExpr to its string form.
+                handle.close()
+                keyExpr.jniKeyExpr = null
+            }
     }
 
     /**
