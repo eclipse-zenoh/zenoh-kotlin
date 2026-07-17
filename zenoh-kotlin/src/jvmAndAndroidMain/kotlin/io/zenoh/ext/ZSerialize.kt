@@ -1,7 +1,11 @@
 package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
-import io.zenoh.jni.JNIZBytesKotlin
+import io.zenoh.exceptions.zCall0
+import io.zenoh.jni.bytes.serializeViaJNI
+import java.lang.reflect.Type
+import kotlin.reflect.KType
+import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
 /**
@@ -15,16 +19,10 @@ import kotlin.reflect.typeOf
  * - [Long]
  * - [Float]
  * - [Double]
- * - [UByte]
- * - [UShort]
- * - [UInt]
- * - [ULong]
  * - [List]
  * - [String]
  * - [ByteArray]
  * - [Map]
- * - [Pair]
- * - [Triple]
  *
  * **NOTE**
  *
@@ -71,6 +69,32 @@ import kotlin.reflect.typeOf
  * @see ZBytes
  * @return a [Result] with the serialized [ZBytes].
  */
-inline fun <reified T: Any> zSerialize(t: T): Result<ZBytes> = runCatching {
-    ZBytes.from(JNIZBytesKotlin.serialize(t, typeOf<T>()))
+inline fun <reified T : Any> zSerialize(t: T): Result<ZBytes> = zSerializeImpl(t, typeOf<T>())
+
+/**
+ * Implementation of [zSerialize]: bridges the [KType] to a `java.lang.reflect.Type`
+ * and calls the shared (de)serializer of the flat bindings tier.
+ *
+ * TODO(zenoh-flat-transition): the flat serializer does not yet support the
+ * Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types — those
+ * serialize requests fail until a KType-aware serializer lands upstream.
+ */
+@PublishedApi
+@OptIn(ExperimentalStdlibApi::class)
+internal fun zSerializeImpl(t: Any, type: KType): Result<ZBytes> =
+    zCall0({ ByteArray(0) }) { serializeViaJNI(t, type.javaBoxedType(), it) }
+        .map { ZBytes.from(it) }
+
+/**
+ * The [java.lang.reflect.Type] of this [KType], with a top-level primitive
+ * boxed to its wrapper class: `typeOf<Int>().javaType` is the primitive
+ * `int`, but the shared serializer works on reference types
+ * (`java.lang.Integer`, …) — as the generic positions (where boxing is
+ * inherent) already do.
+ */
+@PublishedApi
+@OptIn(ExperimentalStdlibApi::class)
+internal fun KType.javaBoxedType(): Type {
+    val jt = javaType
+    return if (jt is Class<*> && jt.isPrimitive) jt.kotlin.javaObjectType else jt
 }

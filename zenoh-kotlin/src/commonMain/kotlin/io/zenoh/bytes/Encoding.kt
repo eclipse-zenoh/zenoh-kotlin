@@ -445,3 +445,22 @@ class Encoding private constructor(
         return id.hashCode()
     }
 }
+
+// The four slots of the generated encoding selector block (`encodingSel,
+// encoding00, encoding01, encoding1`), computed from one optional [Encoding]
+// in a single expression per slot so every send call site stays one flat call
+// with zero extra JNI crossings. zenoh-kotlin's [Encoding] is a pure JVM
+// value, so the handle arm (1) is never taken: absent -> -1, present -> (id,
+// schema) built Rust-side inside the same call (arm 0).
+
+internal val Encoding?.jniSel: Int
+    get() = if (this == null) -1 else 0
+
+internal val Encoding?.jniId: Int?
+    get() = this?.id
+
+internal val Encoding?.jniSchema: String?
+    get() = this?.schema
+
+internal val Encoding?.jniHandle: io.zenoh.jni.bytes.Encoding?
+    get() = null

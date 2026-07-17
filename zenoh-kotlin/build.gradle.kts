@@ -52,7 +52,10 @@ kotlin {
                 implementation("commons-net:commons-net:3.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                implementation("org.eclipse.zenoh:zenoh-jni-runtime:${property("zenohJniRuntimeVersion")}")
+                // Zenoh Flat JNI - includes Kotlin sources and native libraries
+                implementation("org.eclipse.zenoh:zenoh-flat-jni:1.9.0")
+                // Required by zenoh-flat-jni's deserializer (guava TypeToken)
+                implementation("com.google.guava:guava:33.3.1-jre")
             }
         }
         val commonTest by getting {

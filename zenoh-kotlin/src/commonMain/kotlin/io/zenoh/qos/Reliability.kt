@@ -19,13 +19,13 @@ package io.zenoh.qos
  *
  * Used by subscribers to inform the network of the reliability it wishes to obtain.
  */
-enum class Reliability {
+enum class Reliability(internal val value: Int) {
     /**
      * Best Effort
      *
      * Informs the network that dropping some messages is acceptable.
      */
-    BEST_EFFORT,
+    BEST_EFFORT(0),
 
     /**
      * Reliable
@@ -35,5 +35,9 @@ enum class Reliability {
      * Note that if a publisher puts a sample with the [CongestionControl.DROP] option,
      * this reliability requirement may be infringed to prevent slow readers from blocking the network.
      */
-    RELIABLE,
+    RELIABLE(1);
+
+    internal companion object {
+        fun fromInt(value: Int) = entries.first { it.value == value }
+    }
 }

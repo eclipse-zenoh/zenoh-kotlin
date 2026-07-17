@@ -12,24 +12,9 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-package io.zenoh.query
+package io.zenoh.exceptions
 
-/** The Queryables that should be targeted by a GET operation. */
-enum class QueryTarget(internal val value: Int) {
-
-    /**
-     * Best Matching: the nearest complete queryable if any else all matching queryables.
-     */
-    BEST_MATCHING(0),
-
-    /**
-     * All matching queryables.
-     */
-    ALL(1),
-
-    /**
-     * All Complete queryables.
-     */
-    ALL_COMPLETE(2);
-}
-
+/**
+ * A Zenoh Error.
+ */
+class ZError(override val message: String? = null) : Exception()

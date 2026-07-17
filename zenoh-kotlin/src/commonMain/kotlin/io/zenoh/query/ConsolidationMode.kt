@@ -15,12 +15,12 @@
 package io.zenoh.query
 
 /** The kind of consolidation. */
-enum class ConsolidationMode {
+enum class ConsolidationMode(internal val value: Int) {
     /** Apply automatic consolidation based on queryable's preferences. */
-    AUTO,
+    AUTO(0),
 
     /** No consolidation applied: multiple samples may be received for the same key-timestamp.*/
-    NONE,
+    NONE(1),
 
     /**
      * Monotonic consolidation immediately forwards samples, except if one with an equal or more recent timestamp
@@ -31,8 +31,8 @@ enum class ConsolidationMode {
      * Note that this doesn't cause re-ordering, but drops the samples for which a more recent timestamp has already
      * been observed with the same key.
      */
-    MONOTONIC,
+    MONOTONIC(2),
 
     /** Holds back samples to only send the set of samples that had the highest timestamp for their key. */
-    LATEST
+    LATEST(3)
 }

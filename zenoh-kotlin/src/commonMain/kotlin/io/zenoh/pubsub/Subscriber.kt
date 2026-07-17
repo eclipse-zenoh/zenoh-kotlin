@@ -16,7 +16,7 @@ package io.zenoh.pubsub
 
 import io.zenoh.*
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNISubscriber
+import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.session.SessionDeclaration
 
@@ -46,7 +46,7 @@ import io.zenoh.session.SessionDeclaration
  * @see Session.declareSubscriber
  */
 class Subscriber<R> internal constructor(
-    val keyExpr: KeyExpr, val receiver: R, private var jniSubscriber: JNISubscriber?
+    val keyExpr: KeyExpr, val receiver: R, private var jniSubscriber: JniSubscriber?
 ) : AutoCloseable, SessionDeclaration {
 
     /**

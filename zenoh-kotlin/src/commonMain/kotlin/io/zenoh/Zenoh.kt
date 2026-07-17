@@ -17,13 +17,11 @@ package io.zenoh
 import io.zenoh.Logger.Companion.LOG_ENV
 import io.zenoh.config.WhatAmI
 import io.zenoh.config.WhatAmI.*
-import io.zenoh.config.ZenohId
+import io.zenoh.exceptions.zCall
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.JNIScout
-import io.zenoh.jni.callbacks.JNIOnCloseCallback
-import io.zenoh.jni.callbacks.JNIScoutCallback
+import io.zenoh.jni.scouting.Scout as JniScout
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
 import kotlinx.coroutines.channels.Channel
@@ -55,16 +53,7 @@ object Zenoh {
         callback: Callback<Hello>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Result<Scout<Unit>> {
-        ZenohLoad
-        return runCatching {
-            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
-            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
-                callback.run(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
-            }
-            Scout(Unit, JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback {}, config?.jniConfig))
-        }
-    }
+    ): Result<Scout<Unit>> = performScout(callback, {}, Unit, whatAmI, config)
 
     /**
      * Scout for routers and/or peers.
@@ -81,16 +70,8 @@ object Zenoh {
         handler: Handler<Hello, R>,
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
-    ): Result<Scout<R>> {
-        ZenohLoad
-        return runCatching {
-            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
-            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
-                handler.handle(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
-            }
-            Scout(handler.receiver(), JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback { handler.onClose() }, config?.jniConfig))
-        }
-    }
+    ): Result<Scout<R>> =
+        performScout(handler::handle, handler::onClose, handler.receiver(), whatAmI, config)
 
     /**
      * Scout for routers and/or peers.
@@ -108,15 +89,27 @@ object Zenoh {
         whatAmI: Set<WhatAmI> = setOf(Peer, Router),
         config: Config? = null
     ): Result<Scout<Channel<Hello>>> {
-        ZenohLoad
         val handler = ChannelHandler(channel)
-        return runCatching {
-            val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
-            val jniCallback = JNIScoutCallback { whatAmI2, zid, locators ->
-                handler.handle(Hello(WhatAmI.fromInt(whatAmI2), ZenohId(zid), locators))
-            }
-            Scout(handler.receiver(), JNIScout.scout(binaryWhatAmI, jniCallback, JNIOnCloseCallback { handler.onClose() }, config?.jniConfig))
-        }
+        return performScout(handler::handle, handler::onClose, handler.receiver(), whatAmI, config)
+    }
+
+    private fun <R> performScout(
+        callback: Callback<Hello>,
+        onClose: () -> Unit,
+        receiver: R,
+        whatAmI: Set<WhatAmI>,
+        config: Config?
+    ): Result<Scout<R>> {
+        val binaryWhatAmI = whatAmI.map { it.value }.reduce { acc, it -> acc or it }
+        return zCall({ JniScout(0L) }) { onError ->
+            io.zenoh.jni.scouting.scout(
+                binaryWhatAmI,
+                config?.jniConfig,
+                helloCallbackOf { callback.run(it) },
+                { onClose() },
+                onError
+            )
+        }.map { Scout(receiver, it) }
     }
 
     /**
@@ -131,7 +124,6 @@ object Zenoh {
     fun tryInitLogFromEnv() {
         val logEnv = System.getenv(LOG_ENV)
         if (logEnv != null) {
-            ZenohLoad
             Logger.start(logEnv)
         }
     }
@@ -146,9 +138,8 @@ object Zenoh {
      * @param fallbackFilter: The fallback filter if the `RUST_LOG` environment variable is not set.
      * @see Logger
      */
-    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> = runCatching {
-        ZenohLoad
+    fun initLogFromEnvOr(fallbackFilter: String): Result<Unit> {
         val logLevelProp = System.getenv(LOG_ENV)
-        logLevelProp?.let { Logger.start(it) } ?: Logger.start(fallbackFilter)
+        return Logger.start(logLevelProp ?: fallbackFilter)
     }
 }
