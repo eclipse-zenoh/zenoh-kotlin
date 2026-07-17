@@ -255,8 +255,11 @@ class Query internal constructor(
             zq: JniQuery,
         ): Query {
             val ke = KeyExpr(keStr)
+            // The parameters string is ATTACKER-CONTROLLED (the Rust layer
+            // forwards any selector parameters untouched) — parse leniently,
+            // never throw.
             val selector = if (parameters.isEmpty()) Selector(ke)
-                else Selector(ke, Parameters.from(parameters).getOrThrow())
+                else Selector(ke, Parameters.fromLenient(parameters))
             return Query(
                 ke,
                 selector,

@@ -55,7 +55,21 @@ internal fun queryCallbackOf(
         // on a channel by a queue handler) and replied to later. The native query
         // is dropped when it is replied to (see [Query.reply]) or when [Query] is
         // closed — that drop is what finalizes the querier's get.
-        f(Query.fromParts(keStr, parameters, payloadH, encId, encSchema, attachH, acceptsReplies, zq))
+        val query = try {
+            Query.fromParts(keStr, parameters, payloadH, encId, encSchema, attachH, acceptsReplies, zq)
+        } catch (t: Throwable) {
+            // Defense in depth: the leaves carry remote (attacker-controlled)
+            // data, and fromParts must be total on it — but if decomposition
+            // ever throws, free the owned native leaves (payload/attachment
+            // have no GC backstop) and finalize the query so the remote get
+            // completes, instead of leaking them. The rethrown exception is
+            // swallowed by the native callback bridge, by design.
+            payloadH?.close()
+            attachH?.close()
+            zq.close()
+            throw t
+        }
+        f(query)
     }
 
 internal fun replyCallbackOf(
