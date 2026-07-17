@@ -187,7 +187,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         payload: IntoZBytes?,
         encoding: Encoding?
     ): Result<R> {
-        val q = jniQuerier ?: throw ZError("Querier is not valid.")
+        val q = jniQuerier ?: return Result.failure(ZError("Querier is not valid."))
         return zCallUnit { onError ->
             q.get(
                 parameters?.toString(),
