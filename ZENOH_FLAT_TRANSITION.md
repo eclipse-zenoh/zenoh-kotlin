@@ -47,7 +47,8 @@ the sink reports those without throwing.
 
 | PR | Scope | Status |
 | --- | --- | --- |
-| [#668](https://github.com/eclipse-zenoh/zenoh-kotlin/pull/668) | Port zenoh-kotlin to zenoh-flat-jni generated bindings | open |
+| [#668](https://github.com/eclipse-zenoh/zenoh-kotlin/pull/668) | Port zenoh-kotlin to zenoh-flat-jni generated bindings | merged |
+| shared-parameters | `Parameters` becomes a thin facade over the shared string-backed implementation in zenoh-flat-jni (Rust `parameters.rs` semantics: no percent-decoding, infallible parse, first-match-wins get). Pairs with [zenoh-flat#4](https://github.com/ZettaScaleLabs/zenoh-flat/pull/4), [zenoh-flat-jni#9](https://github.com/ZettaScaleLabs/zenoh-flat-jni/pull/9) | open |
 
 Planned follow-ups on this branch:
 
