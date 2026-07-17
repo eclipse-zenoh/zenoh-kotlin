@@ -23,7 +23,23 @@ rootProject.name = "zenoh-kotlin"
 
 include(":zenoh-kotlin")
 include(":examples")
-include(":zenoh-jni")
+
+// Include the local zenoh-java submodule only when explicitly requested via the
+// zenoh.useLocalJniRuntime property (local dev/test only — not for publication).
+val useLocalJniRuntime = settings.providers.gradleProperty("zenoh.useLocalJniRuntime")
+    .orNull?.toBoolean() == true
+if (useLocalJniRuntime) {
+    require(file("zenoh-java/settings.gradle.kts").exists()) {
+        "zenoh.useLocalJniRuntime=true was requested but the zenoh-java submodule is not initialized. " +
+            "Run: git submodule update --init --recursive"
+    }
+    includeBuild("zenoh-java") {
+        dependencySubstitution {
+            substitute(module("org.eclipse.zenoh:zenoh-jni-runtime"))
+                .using(project(":zenoh-jni-runtime"))
+        }
+    }
+}
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")

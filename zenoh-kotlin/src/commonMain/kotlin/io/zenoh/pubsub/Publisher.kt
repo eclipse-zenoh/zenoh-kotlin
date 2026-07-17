@@ -81,8 +81,12 @@ class Publisher internal constructor(
     fun priority() = qos.priority
 
     /** Performs a PUT operation on the specified [keyExpr] with the specified [payload]. */
-    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null) =
-        jniPublisher?.put(payload, encoding ?: this.encoding, attachment) ?: InvalidPublisherResult
+    fun put(payload: IntoZBytes, encoding: Encoding? = null, attachment: IntoZBytes? = null): Result<Unit> {
+        val enc = encoding ?: this.encoding
+        return jniPublisher?.run {
+            runCatching { put(payload.into().bytes, enc.id, enc.schema, attachment?.into()?.bytes) }
+        } ?: InvalidPublisherResult
+    }
 
     fun put(payload: String, encoding: Encoding? = null, attachment: String? = null) =
         put(ZBytes.from(payload), encoding, attachment?.let { ZBytes.from(attachment) })
@@ -90,7 +94,11 @@ class Publisher internal constructor(
     /**
      * Performs a DELETE operation on the specified [keyExpr].
      */
-    fun delete(attachment: IntoZBytes? = null) = jniPublisher?.delete(attachment) ?: InvalidPublisherResult
+    fun delete(attachment: IntoZBytes? = null): Result<Unit> {
+        return jniPublisher?.run {
+            runCatching { delete(attachment?.into()?.bytes) }
+        } ?: InvalidPublisherResult
+    }
 
     fun delete(attachment: String) = delete(ZBytes.from(attachment))
 

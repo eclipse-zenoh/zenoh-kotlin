@@ -18,12 +18,12 @@ package io.zenoh.query
 enum class ReplyKeyExpr {
 
     /**
-     * Replies may have any key expression.
-     */
-    ANY,
-
-    /**
      * Replies must have a key expression matching the query's.
      */
-    MATCHING_QUERY;
+    MATCHING_QUERY,
+
+    /**
+     * Replies may have any key expression.
+     */
+    ANY;
 }

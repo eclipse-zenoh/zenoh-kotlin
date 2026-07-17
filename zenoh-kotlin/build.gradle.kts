@@ -12,8 +12,6 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
-import com.nishtahir.CargoExtension
-
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -24,19 +22,13 @@ plugins {
 }
 
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
-val release = project.findProperty("release")?.toString()?.toBoolean() == true
 
 // If the publication is meant to be done on a remote repository (Maven central).
 // Modifying this property will affect the release workflows!
 val isRemotePublication = project.findProperty("remotePublication")?.toString()?.toBoolean() == true
 
-var buildMode = if (release) BuildMode.RELEASE else BuildMode.DEBUG
-
 if (androidEnabled) {
     apply(plugin = "com.android.library")
-    apply(plugin = "org.mozilla.rust-android-gradle.rust-android")
-
-    configureCargo()
     configureAndroid()
 }
 
@@ -60,7 +52,7 @@ kotlin {
                 implementation("commons-net:commons-net:3.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                implementation("org.jetbrains.kotlin:kotlin-reflect")
+                implementation("org.eclipse.zenoh:zenoh-jni-runtime:${property("zenohJniRuntimeVersion")}")
             }
         }
         val commonTest by getting {
@@ -71,24 +63,20 @@ kotlin {
                 implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
             }
         }
+        // jvmAndAndroidMain is an intermediate source set between commonMain and both jvmMain/androidMain.
+        // It holds code that uses kotlin-reflect — available on JVM and Android (ART),
+        // but absent on Kotlin/Native and Kotlin/JS targets.
+        val jvmAndAndroidMain by creating { dependsOn(commonMain) }
+        val jvmMain by getting {
+            dependsOn(jvmAndAndroidMain)
+        }
         if (androidEnabled) {
+            val androidMain by getting { dependsOn(jvmAndAndroidMain) }
             val androidUnitTest by getting {
                 dependencies {
                     implementation(kotlin("test-junit"))
                 }
             }
-        }
-        val jvmMain by getting {
-            if (isRemotePublication) {
-                // The line below is intended to load the native libraries that are crosscompiled on GitHub actions when publishing a JVM package.
-                resources.srcDir("../jni-libs").include("*/**")
-            } else {
-                resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
-            }
-        }
-
-        val jvmTest by getting {
-            resources.srcDir("../zenoh-jni/target/$buildMode").include(arrayListOf("*.dylib", "*.so", "*.dll"))
         }
     }
 
@@ -164,65 +152,6 @@ tasks.withType<PublishToMavenRepository>().configureEach {
     dependsOn(tasks.withType<Sign>())
 }
 
-tasks.withType<Test> {
-    doFirst {
-        // The line below is added for the Android Unit tests which are equivalent to the JVM tests.
-        // For them to work we need to specify the path to the native library as a system property and not as a jvmArg.
-        systemProperty("java.library.path", "../zenoh-jni/target/$buildMode")
-    }
-}
-
-tasks.whenObjectAdded {
-    if ((this.name == "mergeDebugJniLibFolders" || this.name == "mergeReleaseJniLibFolders")) {
-        this.dependsOn("cargoBuild")
-    }
-}
-
-tasks.named("compileKotlinJvm") {
-    dependsOn("buildZenohJni")
-}
-
-tasks.register("buildZenohJni") {
-    doLast {
-        if (!isRemotePublication) {
-            // This is intended for local publications. For publications done through GitHub workflows,
-            // the zenoh-jni build is achieved and loaded differently from the CI
-            buildZenohJNI(buildMode)
-        }
-    }
-}
-
-fun buildZenohJNI(mode: BuildMode = BuildMode.DEBUG) {
-    val cargoCommand = mutableListOf("cargo", "build")
-
-    if (mode == BuildMode.RELEASE) {
-        cargoCommand.add("--release")
-    }
-
-    val result = project.exec {
-        commandLine(*(cargoCommand.toTypedArray()), "--manifest-path", "../zenoh-jni/Cargo.toml")
-    }
-
-    if (result.exitValue != 0) {
-        throw GradleException("Failed to build Zenoh-JNI.")
-    }
-
-    Thread.sleep(1000)
-}
-
-enum class BuildMode {
-    DEBUG {
-        override fun toString(): String {
-            return "debug"
-        }
-    },
-    RELEASE {
-        override fun toString(): String {
-            return "release"
-        }
-    }
-}
-
 fun Project.configureAndroid() {
     extensions.configure<com.android.build.gradle.LibraryExtension>("android") {
         namespace = "io.zenoh"
@@ -258,22 +187,5 @@ fun Project.configureAndroid() {
                 withJavadocJar()
             }
         }
-    }
-}
-
-fun Project.configureCargo() {
-    extensions.configure<CargoExtension>("cargo") {
-        pythonCommand = "python3"
-        module = "../zenoh-jni"
-        libname = "zenoh-jni"
-        targetIncludes = arrayOf("libzenoh_jni.so")
-        targetDirectory = "../zenoh-jni/target/"
-        profile = "release"
-        targets = arrayListOf(
-            "arm",
-            "arm64",
-            "x86",
-            "x86_64",
-        )
     }
 }

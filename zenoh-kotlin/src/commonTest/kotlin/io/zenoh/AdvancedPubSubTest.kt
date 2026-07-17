@@ -74,9 +74,6 @@ class AdvancedPubSubTest {
 
     @AfterTest
     fun tearDown() {
-        assertTrue(matchingSamples.count() != 0)
-        assertTrue(hasMatchingSubscribers)
-
         matchingListener.close()
         publisher.close()
 
@@ -86,6 +83,11 @@ class AdvancedPubSubTest {
 
         session.close()
         keyExpr.close()
+
+        // session.close() should wait for pending callbacks to complete
+        // so checking the state of the test after closing the session
+        assertTrue(matchingSamples.count() != 0)
+        assertTrue(hasMatchingSubscribers)
     }
 
     @Test

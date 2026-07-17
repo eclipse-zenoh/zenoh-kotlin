@@ -15,7 +15,7 @@
 package io.zenoh.jni
 
 import io.zenoh.bytes.Encoding
-import io.zenoh.bytes.into
+import io.zenoh.bytes.ZBytes
 import io.zenoh.config.EntityGlobalId
 import io.zenoh.config.ZenohId
 import io.zenoh.handlers.Callback
@@ -49,14 +49,14 @@ internal object JNILiveliness {
                 replierZid: ByteArray?,
                 replierEid: Int,
                 success: Boolean,
-                keyExpr2: String?,
-                payload: ByteArray,
+                replyKeyExpr: String?,
+                replyPayload: ByteArray,
                 encodingId: Int,
                 encodingSchema: String?,
                 kind: Int,
                 timestampNTP64: Long,
                 timestampIsValid: Boolean,
-                attachmentBytes: ByteArray?,
+                replyAttachment: ByteArray?,
                 express: Boolean,
                 priority: Int,
                 congestionControl: Int,
@@ -65,20 +65,20 @@ internal object JNILiveliness {
             if (success) {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val sample = Sample(
-                    KeyExpr(keyExpr2!!, null),
-                    payload.into(),
+                    KeyExpr(replyKeyExpr!!, null),
+                    ZBytes.from(replyPayload),
                     Encoding(encodingId, schema = encodingSchema),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
-                    attachmentBytes?.into()
+                    replyAttachment?.let { ZBytes.from(it) }
                 )
                 reply = Reply(replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.success(sample))
             } else {
                 reply = Reply(
                     replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) }, Result.failure(
                         ReplyError(
-                            payload.into(),
+                            ZBytes.from(replyPayload),
                             Encoding(encodingId, schema = encodingSchema)
                         )
                     )
@@ -86,20 +86,18 @@ internal object JNILiveliness {
             }
             callback.run(reply)
         }
-        getViaJNI(
-            jniSession.sessionPtr.get(),
-            keyExpr.jniKeyExpr?.ptr ?: 0,
+        jniSession.livelinessGet(
+            keyExpr.jniKeyExpr,
             keyExpr.keyExpr,
             getCallback,
             timeout.toMillis(),
-            onClose
+            JNIOnCloseCallback { onClose() }
         )
         receiver
     }
 
     fun declareToken(jniSession: JNISession, keyExpr: KeyExpr): LivelinessToken {
-        val ptr = declareTokenViaJNI(jniSession.sessionPtr.get(), keyExpr.jniKeyExpr?.ptr ?: 0, keyExpr.keyExpr)
-        return LivelinessToken(JNILivelinessToken(ptr))
+        return LivelinessToken(jniSession.declareLivelinessToken(keyExpr.jniKeyExpr, keyExpr.keyExpr))
     }
 
     fun <R> declareSubscriber(
@@ -115,43 +113,22 @@ internal object JNILiveliness {
                 val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
                 val sample = Sample(
                     KeyExpr(keyExpr2, null),
-                    payload.into(),
+                    ZBytes.from(payload),
                     Encoding(encodingId, schema = encodingSchema),
                     SampleKind.fromInt(kind),
                     timestamp,
                     QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
-                    attachmentBytes?.into()
+                    attachmentBytes?.let { ZBytes.from(it) }
                 )
                 callback.run(sample)
             }
-        val ptr = declareSubscriberViaJNI(
-            jniSession.sessionPtr.get(),
-            keyExpr.jniKeyExpr?.ptr ?: 0,
+        val jniSubscriber = jniSession.declareLivelinessSubscriber(
+            keyExpr.jniKeyExpr,
             keyExpr.keyExpr,
             subCallback,
             history,
-            onClose
+            JNIOnCloseCallback { onClose() }
         )
-        Subscriber(keyExpr, receiver, JNISubscriber(ptr))
+        Subscriber(keyExpr, receiver, jniSubscriber)
     }
-
-    private external fun getViaJNI(
-        sessionPtr: Long,
-        keyExprPtr: Long,
-        keyExprString: String,
-        callback: JNIGetCallback,
-        timeoutMs: Long,
-        onClose: JNIOnCloseCallback
-    )
-
-    private external fun declareTokenViaJNI(sessionPtr: Long, keyExprPtr: Long, keyExprString: String): Long
-
-    private external fun declareSubscriberViaJNI(
-        sessionPtr: Long,
-        keyExprPtr: Long,
-        keyExprString: String,
-        callback: JNISubscriberCallback,
-        history: Boolean,
-        onClose: JNIOnCloseCallback
-    ): Long
 }

@@ -18,15 +18,24 @@ import io.zenoh.annotations.Unstable
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
+import io.zenoh.config.EntityGlobalId
+import io.zenoh.config.ZenohId
 import io.zenoh.exceptions.ZError
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
 import io.zenoh.jni.JNIQuerier
+import io.zenoh.jni.callbacks.JNIGetCallback
+import io.zenoh.jni.callbacks.JNIOnCloseCallback
 import io.zenoh.keyexpr.KeyExpr
+import io.zenoh.qos.CongestionControl
+import io.zenoh.qos.Priority
 import io.zenoh.qos.QoS
+import io.zenoh.sample.Sample
+import io.zenoh.sample.SampleKind
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
+import org.apache.commons.net.ntp.TimeStamp
 
 /**
  * A querier that allows to send queries to a [Queryable].
@@ -72,16 +81,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         attachment: IntoZBytes? = null
     ): Result<Channel<Reply>> {
         val handler = ChannelHandler(channel)
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            handler::handle,
-            handler::onClose,
-            handler.receiver(),
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, handler::handle, handler::onClose, handler.receiver(), attachment, payload, encoding)
     }
 
     fun get(
@@ -110,16 +110,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         encoding: Encoding? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            callback,
-            {},
-            Unit,
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, callback, {}, Unit, attachment, payload, encoding)
     }
 
     fun get(
@@ -148,16 +139,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         encoding: Encoding? = null,
         attachment: IntoZBytes? = null
     ): Result<R> {
-        return jniQuerier?.performGet(
-            keyExpr,
-            parameters,
-            handler::handle,
-            handler::onClose,
-            handler.receiver(),
-            attachment,
-            payload,
-            encoding
-        ) ?: throw ZError("Querier is not valid.")
+        return performGet(parameters, handler::handle, handler::onClose, handler.receiver(), attachment, payload, encoding)
     }
 
     fun <R> get(
@@ -199,4 +181,47 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         undeclare()
     }
 
+    private fun <R> performGet(
+        parameters: Parameters?,
+        callback: Callback<Reply>,
+        onClose: () -> Unit,
+        receiver: R,
+        attachment: IntoZBytes?,
+        payload: IntoZBytes?,
+        encoding: Encoding?
+    ): Result<R> {
+        return jniQuerier?.run {
+            runCatching {
+                val jniCallback = JNIGetCallback { replierZid, replierEid, success, replyKeyExpr, replyPayload, encodingId, encodingSchema, kind, timestampNTP64, timestampIsValid, replyAttachment, express, priority, congestionControl ->
+                    val reply = if (success) {
+                        val timestamp = if (timestampIsValid) TimeStamp(timestampNTP64) else null
+                        Reply(
+                            replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) },
+                            Result.success(Sample(
+                                KeyExpr(replyKeyExpr!!), ZBytes.from(replyPayload),
+                                Encoding(encodingId, schema = encodingSchema),
+                                SampleKind.fromInt(kind), timestamp,
+                                QoS(CongestionControl.fromInt(congestionControl), Priority.fromInt(priority), express),
+                                replyAttachment?.let { ZBytes.from(it) }
+                            ))
+                        )
+                    } else {
+                        Reply(
+                            replierZid?.let { EntityGlobalId(ZenohId(it), replierEid.toUInt()) },
+                            Result.failure(ReplyError(ZBytes.from(replyPayload), Encoding(encodingId, schema = encodingSchema)))
+                        )
+                    }
+                    callback.run(reply)
+                }
+                val resolvedEncoding = encoding ?: Encoding.default()
+                get(
+                    keyExpr.jniKeyExpr, keyExpr.keyExpr, parameters?.toString(),
+                    jniCallback, JNIOnCloseCallback { onClose() },
+                    attachment?.into()?.bytes, payload?.into()?.bytes,
+                    resolvedEncoding.id, resolvedEncoding.schema
+                )
+                receiver
+            }
+        } ?: throw ZError("Querier is not valid.")
+    }
 }

@@ -132,7 +132,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * Returns the default config.
          */
         fun default(): Config {
-            return JNIConfig.loadDefaultConfig()
+            return Config(JNIConfig.loadDefault())
         }
 
         /**
@@ -143,7 +143,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @return A result with the [Config].
          */
         fun fromFile(file: File): Result<Config> {
-            return JNIConfig.loadConfigFile(file)
+            return runCatching { Config(JNIConfig.loadFromFile(file.toPath().toString())) }
         }
 
         /**
@@ -154,7 +154,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @return A result with the [Config].
          */
         fun fromFile(path: Path): Result<Config> {
-            return JNIConfig.loadConfigFile(path)
+            return runCatching { Config(JNIConfig.loadFromFile(path.toString())) }
         }
 
         /**
@@ -190,7 +190,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @return A result with the [Config].
          */
         fun fromJson(config: String): Result<Config> {
-            return JNIConfig.loadJsonConfig(config)
+            return runCatching { Config(JNIConfig.loadFromJson(config)) }
         }
 
         /**
@@ -226,7 +226,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @return A result with the [Config].
          */
         fun fromJson5(config: String): Result<Config> {
-            return JNIConfig.loadJson5Config(config)
+            return runCatching { Config(JNIConfig.loadFromJson(config)) }
         }
 
         /**
@@ -258,7 +258,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @return A result with the [Config].
          */
         fun fromYaml(config: String): Result<Config> {
-            return JNIConfig.loadYamlConfig(config)
+            return runCatching { Config(JNIConfig.loadFromYaml(config)) }
         }
 
         /**
@@ -267,7 +267,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
          * @param jsonElement The zenoh config as a [JsonElement].
          */
         fun fromJsonElement(jsonElement: JsonElement): Result<Config> {
-            return JNIConfig.loadJsonConfig(jsonElement.toString())
+            return runCatching { Config(JNIConfig.loadFromJson(jsonElement.toString())) }
         }
 
         /**
@@ -289,7 +289,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
      * Returns the json value associated to the [key].
      */
     fun getJson(key: String): Result<String> {
-        return jniConfig.getJson(key)
+        return runCatching { jniConfig.getJson(key) }
     }
 
     /**
@@ -313,7 +313,7 @@ class Config internal constructor(internal val jniConfig: JNIConfig) {
      * @return A result with the status of the operation.
      */
     fun insertJson5(key: String, value: String): Result<Unit> {
-        return jniConfig.insertJson5(key, value)
+        return runCatching { jniConfig.insertJson5(key, value) }
     }
 
     protected fun finalize() {
