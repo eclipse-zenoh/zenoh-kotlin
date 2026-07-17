@@ -40,7 +40,7 @@ Because zenoh-kotlin's public API is `Result`-based, the SDK builds
 
 | PR | Scope | Status |
 | --- | --- | --- |
-| — | Port zenoh-kotlin to zenoh-flat-jni generated bindings | open |
+| [#668](https://github.com/eclipse-zenoh/zenoh-kotlin/pull/668) | Port zenoh-kotlin to zenoh-flat-jni generated bindings | open |
 
 Planned follow-ups on this branch:
 
