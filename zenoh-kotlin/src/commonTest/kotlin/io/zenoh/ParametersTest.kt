@@ -26,26 +26,31 @@ class ParametersTest {
     }
 
     @Test
-    fun `lenient parsing accepts any remote input`() {
-        // The receive path must be total on attacker-controlled input, as the
-        // Rust layer is (a selector's parameters are an unvalidated string
-        // view there). The strict parser rejects all of these.
+    fun `parsing accepts any remote input with Rust semantics`() {
+        // Parsing is total on attacker-controlled input, exactly as the Rust
+        // layer (a selector's parameters are an unvalidated string view).
 
-        // Duplicated parameter name: the FIRST occurrence wins.
-        assertTrue(Parameters.from("a=1;a=2").isFailure)
-        assertEquals("1", Parameters.fromLenient("a=1;a=2").get("a"))
+        // Duplicated parameter name: accepted, the FIRST occurrence wins on get.
+        assertEquals("1", Parameters.from("a=1;a=2").getOrThrow().get("a"))
 
-        // Invalid percent-encoding: the value is kept verbatim.
-        assertTrue(Parameters.from("k=%zz").isFailure)
-        assertEquals("%zz", Parameters.fromLenient("k=%zz").get("k"))
+        // No percent-decoding: the value is kept verbatim.
+        assertEquals("%zz", Parameters.from("k=%zz").getOrThrow().get("k"))
+        assertEquals("%20", Parameters.from("k=%20").getOrThrow().get("k"))
 
         // Value containing '=': split on the FIRST '=' only.
-        assertEquals("b=c", Parameters.fromLenient("a=b=c").get("a"))
+        assertEquals("b=c", Parameters.from("a=b=c").getOrThrow().get("a"))
 
         // Flag without a value, empty chunks, blank input: all accepted.
-        assertEquals("", Parameters.fromLenient("flag").get("flag"))
-        assertEquals("1", Parameters.fromLenient(";;a=1;;").get("a"))
-        assertTrue(Parameters.fromLenient("").isEmpty())
+        assertEquals("", Parameters.from("flag").getOrThrow().get("flag"))
+        assertEquals("1", Parameters.from(";;a=1;;").getOrThrow().get("a"))
+        assertTrue(Parameters.from("").getOrThrow().isEmpty())
+
+        // The string round-trips verbatim (duplicates preserved) until an
+        // insert/remove normalizes it.
+        val p = Parameters.from("a=1;a=2;flag").getOrThrow()
+        assertEquals("a=1;a=2;flag", p.toString())
+        p.insert("a", "3")
+        assertEquals("flag;a=3", p.toString())
     }
 
     @Test
