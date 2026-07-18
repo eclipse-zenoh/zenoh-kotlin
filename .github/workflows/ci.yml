@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ZettaScaleLabs/zenoh-flat
-          ref: 108ebae6e1e900a682013aabbe6a1c14f52d940f
+          ref: 1ece3df5e64db63f980a43e8ae661bdd5ed760c2
           path: zenoh-flat
 
       - name: Use prebindgen from GitHub main
