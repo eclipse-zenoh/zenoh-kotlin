@@ -51,10 +51,10 @@ class Liveliness internal constructor(private val session: Session) {
      */
     fun declareToken(keyExpr: KeyExpr): Result<LivelinessToken> {
         val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
-        return zCall({ JniLivelinessToken(0L) }) { onError ->
+        return zCall({ JniLivelinessToken(0L) }) { onBindingError, onError ->
             jniSession.livelinessDeclareToken(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
-                onError
+                onBindingError, onError
             )
         }.map { LivelinessToken(it) }
     }
@@ -170,13 +170,13 @@ class Liveliness internal constructor(private val session: Session) {
         timeout: Duration
     ): Result<R> {
         val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             jniSession.livelinessGet(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 timeout.toMillis(),
                 replyCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { receiver }
     }
@@ -189,13 +189,13 @@ class Liveliness internal constructor(private val session: Session) {
         history: Boolean
     ): Result<Subscriber<R>> {
         val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
-        return zCall({ JniSubscriber(0L) }) { onError ->
+        return zCall({ JniSubscriber(0L) }) { onBindingError, onError ->
             jniSession.livelinessDeclareSubscriber(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 history,
                 sampleCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { Subscriber(keyExpr, receiver, it) }
     }

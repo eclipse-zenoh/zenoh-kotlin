@@ -91,12 +91,12 @@ class Publisher internal constructor(
         // When no per-put encoding override is given, the publisher's default
         // encoding — set NATIVELY at declare time — applies, so no encoding
         // data crosses (the selector arm is "absent", -1).
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             p.put(
                 payload.into().bytes,
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
                 attachment?.into()?.bytes,
-                onError
+                onBindingError, onError
             )
         }
     }
@@ -109,8 +109,8 @@ class Publisher internal constructor(
      */
     fun delete(attachment: IntoZBytes? = null): Result<Unit> {
         val p = jniPublisher ?: return InvalidPublisherResult
-        return zCallUnit { onError ->
-            p.delete(attachment?.into()?.bytes, onError)
+        return zCallUnit { onBindingError, onError ->
+            p.delete(attachment?.into()?.bytes, onBindingError, onError)
         }
     }
 

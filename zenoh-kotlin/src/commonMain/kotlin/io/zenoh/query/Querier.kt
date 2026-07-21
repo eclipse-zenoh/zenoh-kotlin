@@ -188,7 +188,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
         encoding: Encoding?
     ): Result<R> {
         val q = jniQuerier ?: return Result.failure(ZError("Querier is not valid."))
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             q.get(
                 parameters?.toString(),
                 payload?.into()?.bytes,
@@ -196,7 +196,7 @@ class Querier internal constructor(val keyExpr: KeyExpr, val qos: QoS, private v
                 attachment?.into()?.bytes,
                 replyCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { receiver }
     }

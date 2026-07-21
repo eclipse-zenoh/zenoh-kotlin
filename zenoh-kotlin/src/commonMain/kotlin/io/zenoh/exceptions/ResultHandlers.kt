@@ -24,12 +24,17 @@ import io.zenoh.jni.JniErrorHandler
  * Two distinct failure channels are folded into one [Result]:
  *
  * 1. **Native errors** — a generated wrapper never throws from native code;
- *    on failure it *returns* the value produced by its trailing `onError`
- *    handler (a generated typed `fun interface`). The helpers supply a
- *    handler that records the error into a local and, where the wrapper's
- *    return type demands a value, produces a throw-away *sentinel* (a
- *    born-closed handle such as `Session(0L)`, an empty list, …). No
- *    exception is ever in flight for a native error.
+ *    on failure it *returns* the value produced by an error handler (a
+ *    generated typed `fun interface`). A fallible wrapper has TWO handler
+ *    channels (prebindgen #45): `onBindingError` (a [JniErrorHandler], any
+ *    binding-layer failure — UTF-8 decode, closed handle, …) and `onError`
+ *    (the typed domain [ErrorHandler], the decomposed zenoh error message).
+ *    The [zCall]/[zCallUnit] helpers supply BOTH — each records the error
+ *    into one local and, where the wrapper's return type demands a value,
+ *    produces a throw-away *sentinel* (a born-closed handle such as
+ *    `Session(0L)`, an empty list, …). No exception is ever in flight for a
+ *    native error. Binding-only-fallible wrappers ([zCall0]/[zCallUnit0]) take
+ *    just the single [JniErrorHandler].
  * 2. **JVM-side exceptions** — argument preparation (collection ops, …),
  *    user-supplied conversions (`IntoZBytes.into()`), and class
  *    initialization (native-library loading) can throw before or around the
@@ -38,20 +43,23 @@ import io.zenoh.jni.JniErrorHandler
  *    pre-flat API. The `runCatching` never observes a native error — channel
  *    1 reports those without throwing.
  *
- * `je` is the binding-layer error (UTF-8 decode, closed handle, …); `message`
- * is the library (zenoh) error message. Exactly one is set.
- *
  * For the few non-[Result] contexts (where the public API today already lets
  * an unchecked [ZError] propagate), [throwZError]/[throwZError0] throw from
  * the handler instead — documented safe, as the handler runs after the native
  * call has returned.
  */
 
-/** Fallible flat call returning `Unit` — no sentinel needed. */
-internal inline fun zCallUnit(crossinline block: (ErrorHandler<Unit>) -> Unit): Result<Unit> {
+/** Fallible flat call returning `Unit` — no sentinel needed. The wrapper takes
+ * both channels (`onBindingError`, `onError`); each records into [err]. */
+internal inline fun zCallUnit(
+    crossinline block: (JniErrorHandler<Unit>, ErrorHandler<Unit>) -> Unit
+): Result<Unit> {
     var err: ZError? = null
     val outcome = runCatching {
-        block(ErrorHandler { je, message -> err = ZError(je ?: message) })
+        block(
+            JniErrorHandler { je -> err = ZError(je ?: "native binding error") },
+            ErrorHandler { message -> err = ZError(message) },
+        )
     }
     err?.let { return Result.failure(it) }
     return outcome
@@ -69,19 +77,25 @@ internal inline fun zCallUnit0(crossinline block: (JniErrorHandler<Unit>) -> Uni
 
 /**
  * Fallible flat call returning `T`; [sentinel] runs only on the error path to
- * satisfy the wrapper's return type (its value is discarded).
+ * satisfy the wrapper's return type (its value is discarded). The wrapper takes
+ * both channels (`onBindingError`, `onError`); each records into [err] and
+ * produces the sentinel.
  */
 internal inline fun <T> zCall(
     crossinline sentinel: () -> T,
-    crossinline block: (ErrorHandler<T>) -> T
+    crossinline block: (JniErrorHandler<T>, ErrorHandler<T>) -> T
 ): Result<T> {
     var err: ZError? = null
     val outcome = runCatching {
         block(
-            ErrorHandler { je, message ->
-                err = ZError(je ?: message)
+            JniErrorHandler { je ->
+                err = ZError(je ?: "native binding error")
                 sentinel()
-            }
+            },
+            ErrorHandler { message ->
+                err = ZError(message)
+                sentinel()
+            },
         )
     }
     err?.let { return Result.failure(it) }
@@ -106,11 +120,11 @@ internal inline fun <T> zCall0(
     return outcome
 }
 
-/** Handler for non-[Result] contexts: throws [ZError] (safe — runs after the
- * native call has returned). Binds `out R` to [Nothing] so one instance
- * satisfies every wrapper. */
+/** Domain handler for non-[Result] contexts: throws [ZError] (safe — runs after
+ * the native call has returned). Binds `out R` to [Nothing] so one instance
+ * satisfies every wrapper; paired with [throwZError0] as the `onBindingError`. */
 internal val throwZError: ErrorHandler<Nothing> =
-    ErrorHandler { je, message -> throw ZError(je ?: message) }
+    ErrorHandler { message -> throw ZError(message) }
 
 /** [throwZError] twin for binding-only-fallible wrappers. */
 internal val throwZError0: JniErrorHandler<Nothing> =

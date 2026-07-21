@@ -668,7 +668,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareKeyExpr(keyExpr: String): Result<KeyExpr> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniKeyExpr(0L) }) { session.declareKeyexpr(keyExpr, it) }
+        return zCall({ JniKeyExpr(0L) }) { onBindingError, onError ->
+            session.declareKeyexpr(keyExpr, onBindingError, onError)
+        }
             .map { KeyExpr(keyExpr, it) }
             .onSuccess { strongDeclarations.add(it) }
     }
@@ -686,7 +688,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         val session = jniSession ?: return Result.failure(sessionClosedException)
         val handle = keyExpr.jniKeyExpr
             ?: return Result.failure(ZError("Key expression is not declared through a session."))
-        return zCallUnit { session.undeclareKeyexpr(handle, it) }
+        return zCallUnit { onBindingError, onError -> session.undeclareKeyexpr(handle, onBindingError, onError) }
             .also {
                 // The generated wrapper consumes the handle even when the
                 // native undeclare fails (the Rust side takes it by value);
@@ -1102,12 +1104,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         reliability: Reliability
     ): Result<Publisher> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniPublisher(0L) }) { onError ->
+        return zCall({ JniPublisher(0L) }) { onBindingError, onError ->
             session.declarePublisher(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
                 qos.congestionControl.jni, qos.priority.jni, qos.express, reliability.jni,
-                onError
+                onBindingError, onError
             )
         }.map { Publisher(keyExpr, qos, encoding, it) }
             .onSuccess { weakDeclarations.add(WeakReference(it)) }
@@ -1120,12 +1122,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         receiver: R
     ): Result<Subscriber<R>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniSubscriber(0L) }) { onError ->
+        return zCall({ JniSubscriber(0L) }) { onBindingError, onError ->
             session.declareSubscriber(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 sampleCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { Subscriber(keyExpr, receiver, it) }
             .onSuccess { strongDeclarations.add(it) }
@@ -1139,13 +1141,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         complete: Boolean
     ): Result<Queryable<R>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniQueryable(0L) }) { onError ->
+        return zCall({ JniQueryable(0L) }) { onBindingError, onError ->
             session.declareQueryable(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 complete,
                 queryCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { Queryable(keyExpr, receiver, it) }
             .onSuccess { strongDeclarations.add(it) }
@@ -1160,13 +1162,13 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         acceptReplies: ReplyKeyExpr
     ): Result<Querier> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniQuerier(0L) }) { onError ->
+        return zCall({ JniQuerier(0L) }) { onBindingError, onError ->
             session.declareQuerier(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 target.jni, consolidation.jni,
                 qos.congestionControl.jni, qos.priority.jni, qos.express,
                 timeout.toMillis(), acceptReplies.jni,
-                onError
+                onBindingError, onError
             )
         }.map { Querier(keyExpr, qos, it) }
             .onSuccess { weakDeclarations.add(WeakReference(it)) }
@@ -1187,7 +1189,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         acceptReplies: ReplyKeyExpr
     ): Result<R> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             session.get(
                 selector.keyExpr.jniSel, selector.keyExpr.jniStr, selector.keyExpr.jniHandle,
                 selector.parameters?.toString(),
@@ -1199,14 +1201,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 attachment?.into()?.bytes,
                 replyCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { receiver }
     }
 
     private fun resolvePut(keyExpr: KeyExpr, put: Put): Result<Unit> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             session.put(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 put.payload.bytes,
@@ -1214,20 +1216,20 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 put.qos.congestionControl.jni, put.qos.priority.jni, put.qos.express,
                 put.attachment?.bytes,
                 put.reliability.jni,
-                onError
+                onBindingError, onError
             )
         }
     }
 
     private fun resolveDelete(keyExpr: KeyExpr, delete: Delete): Result<Unit> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCallUnit { onError ->
+        return zCallUnit { onBindingError, onError ->
             session.delete(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 delete.qos.congestionControl.jni, delete.qos.priority.jni, delete.qos.express,
                 delete.attachment?.bytes,
                 delete.reliability.jni,
-                onError
+                onBindingError, onError
             )
         }
     }
@@ -1255,7 +1257,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         // `open` consumes its config; clone so the user's [Config] stays reusable.
         val cloned = zCall0({ JniConfig(0L) }) { config.jniConfig.newClone(it) }
             .getOrElse { return Result.failure(it) }
-        return zCall({ JniSession(0L) }) { JniSession.open(cloned, it) }
+        return zCall({ JniSession(0L) }) { onBindingError, onError ->
+            JniSession.open(cloned, onBindingError, onError)
+        }
             .map {
                 jniSession = it
                 this@Session

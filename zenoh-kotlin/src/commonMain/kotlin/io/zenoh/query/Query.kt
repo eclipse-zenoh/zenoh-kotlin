@@ -81,7 +81,7 @@ class Query internal constructor(
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
-        val result = zCallUnit { onError ->
+        val result = zCallUnit { onBindingError, onError ->
             q.replySuccess(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 payload.into().bytes,
@@ -89,7 +89,7 @@ class Query internal constructor(
                 timestamp?.ntpValue(),
                 attachment?.into()?.bytes,
                 qos.express,
-                onError
+                onBindingError, onError
             )
         }
         // Single-reply model: dropping the native query finalizes the reply
@@ -148,11 +148,11 @@ class Query internal constructor(
      */
     fun replyErr(error: IntoZBytes, encoding: Encoding = Encoding.default()): Result<Unit> {
         val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
-        val result = zCallUnit { onError ->
+        val result = zCallUnit { onBindingError, onError ->
             q.replyError(
                 error.into().bytes,
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
-                onError
+                onBindingError, onError
             )
         }
         q.close()
@@ -183,13 +183,13 @@ class Query internal constructor(
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
-        val result = zCallUnit { onError ->
+        val result = zCallUnit { onBindingError, onError ->
             q.replyDelete(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 timestamp?.ntpValue(),
                 attachment?.into()?.bytes,
                 qos.express,
-                onError
+                onBindingError, onError
             )
         }
         q.close()
