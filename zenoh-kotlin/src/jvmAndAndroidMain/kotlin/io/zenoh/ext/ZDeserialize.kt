@@ -2,7 +2,7 @@ package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
 import io.zenoh.exceptions.zCall0
-import io.zenoh.jni.bytes.deserializeViaJNI
+import io.zenoh.jni.bytes.deserializeViaJNIKType
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -17,10 +17,16 @@ import kotlin.reflect.typeOf
  * - [Long]
  * - [Float]
  * - [Double]
+ * - [UByte]
+ * - [UShort]
+ * - [UInt]
+ * - [ULong]
  * - [List]
  * - [String]
  * - [ByteArray]
  * - [Map]
+ * - [Pair]
+ * - [Triple]
  *
  * **NOTE**
  *
@@ -71,14 +77,11 @@ inline fun <reified T : Any> zDeserialize(zbytes: ZBytes): Result<T> =
     zDeserializeImpl(zbytes, typeOf<T>()).mapCatching { it as T }
 
 /**
- * Implementation of [zDeserialize]: bridges the [KType] to a
- * `java.lang.reflect.Type` and calls the shared (de)serializer of the flat
- * bindings tier.
- *
- * TODO(zenoh-flat-transition): the flat deserializer does not yet support the
- * Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types — those
- * deserialize requests fail until a KType-aware serializer lands upstream.
+ * Implementation of [zDeserialize]: passes the full [KType] to the shared flat
+ * bindings deserializer, which inspects the KType classifier and so supports the
+ * Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types in
+ * addition to the signed/collection types.
  */
 @PublishedApi
 internal fun zDeserializeImpl(zbytes: ZBytes, type: KType): Result<Any> =
-    zCall0<Any>({ Unit }) { deserializeViaJNI(zbytes.toBytes(), type.javaBoxedType(), it) }
+    zCall0<Any>({ Unit }) { deserializeViaJNIKType(zbytes.toBytes(), type, it) }

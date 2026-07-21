@@ -52,9 +52,11 @@ the sink reports those without throwing.
 
 Planned follow-ups on this branch:
 
-- KType-aware serializer in the zenoh-flat-jni shared tier
+- ~~KType-aware serializer in the zenoh-flat-jni shared tier
   (restores `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` support in
-  `zSerialize`/`zDeserialize`).
+  `zSerialize`/`zDeserialize`).~~ **Done** — zenoh-flat-jni gained a KType path
+  (`serializeViaJNIKType`/`deserializeViaJNIKType`) alongside the Java
+  `Type` path; `zSerialize`/`zDeserialize` pass the full `KType`.
 - Advanced pub/sub (`AdvancedPublisher`/`AdvancedSubscriber`, matching and
   sample-miss listeners) surface in zenoh-flat → zenoh-flat-jni, replacing the
   temporary failing stubs.
