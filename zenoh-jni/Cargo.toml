@@ -14,7 +14,7 @@
 
 [package]
 rust-version = "1.75.0"
-version = "1.9.0"
+version = "1.9.0-21-g907492c5"
 repository = "https://github.com/eclipse-zenoh/zenoh"
 homepage = "http://zenoh.io"
 edition = "2021"
