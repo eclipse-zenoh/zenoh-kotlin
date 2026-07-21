@@ -2,10 +2,8 @@ package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
 import io.zenoh.exceptions.zCall0
-import io.zenoh.jni.bytes.serializeViaJNI
-import java.lang.reflect.Type
+import io.zenoh.jni.bytes.SerializationCodec
 import kotlin.reflect.KType
-import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
 /**
@@ -19,10 +17,16 @@ import kotlin.reflect.typeOf
  * - [Long]
  * - [Float]
  * - [Double]
+ * - [UByte]
+ * - [UShort]
+ * - [UInt]
+ * - [ULong]
  * - [List]
  * - [String]
  * - [ByteArray]
  * - [Map]
+ * - [Pair]
+ * - [Triple]
  *
  * **NOTE**
  *
@@ -72,29 +76,14 @@ import kotlin.reflect.typeOf
 inline fun <reified T : Any> zSerialize(t: T): Result<ZBytes> = zSerializeImpl(t, typeOf<T>())
 
 /**
- * Implementation of [zSerialize]: bridges the [KType] to a `java.lang.reflect.Type`
- * and calls the shared (de)serializer of the flat bindings tier.
- *
- * TODO(zenoh-flat-transition): the flat serializer does not yet support the
- * Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types — those
- * serialize requests fail until a KType-aware serializer lands upstream.
+ * Implementation of [zSerialize]: builds a [SerializationCodec.SerdeType] from the [KType]
+ * and runs the **pure-Kotlin** [SerializationCodec] serializer — no JNI crossing. Supports
+ * the Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types in
+ * addition to the signed/collection types. Wired through [zCall0] exactly like
+ * a generated wrapper: the error-sink callback carries a serializer failure, and
+ * `serdeTypeOf` failures surface through the same `runCatching`.
  */
 @PublishedApi
-@OptIn(ExperimentalStdlibApi::class)
 internal fun zSerializeImpl(t: Any, type: KType): Result<ZBytes> =
-    zCall0({ ByteArray(0) }) { serializeViaJNI(t, type.javaBoxedType(), it) }
+    zCall0({ ByteArray(0) }) { SerializationCodec.serialize(t, serdeTypeOf(type), it) }
         .map { ZBytes.from(it) }
-
-/**
- * The [java.lang.reflect.Type] of this [KType], with a top-level primitive
- * boxed to its wrapper class: `typeOf<Int>().javaType` is the primitive
- * `int`, but the shared serializer works on reference types
- * (`java.lang.Integer`, …) — as the generic positions (where boxing is
- * inherent) already do.
- */
-@PublishedApi
-@OptIn(ExperimentalStdlibApi::class)
-internal fun KType.javaBoxedType(): Type {
-    val jt = javaType
-    return if (jt is Class<*> && jt.isPrimitive) jt.kotlin.javaObjectType else jt
-}
