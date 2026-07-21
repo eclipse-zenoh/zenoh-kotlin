@@ -28,6 +28,7 @@ import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
 import io.zenoh.query.Selector
 import io.zenoh.exceptions.throwZError
+import io.zenoh.exceptions.throwZError0
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -121,7 +122,7 @@ class QueryableTest {
             null,                           // attachment
             replyCallbackOf { reply = it },
             {},                             // onClose
-            throwZError,
+            throwZError0, throwZError,
         )
         sleep(1000)
 

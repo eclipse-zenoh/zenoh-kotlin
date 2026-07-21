@@ -100,7 +100,7 @@ object Zenoh {
         whatAmI: Set<WhatAmI>,
         config: Config?
     ): Result<Scout<R>> {
-        return zCall({ JniScout(0L) }) { onError ->
+        return zCall({ JniScout(0L) }) { onBindingError, onError ->
             // Argument preparation stays inside the captured block: an empty
             // [whatAmI] makes `reduce` throw, which must surface as
             // Result.failure (the pre-flat API contract).
@@ -110,7 +110,7 @@ object Zenoh {
                 config?.jniConfig,
                 helloCallbackOf { callback.run(it) },
                 { onClose() },
-                onError
+                onBindingError, onError
             )
         }.map { Scout(receiver, it) }
     }

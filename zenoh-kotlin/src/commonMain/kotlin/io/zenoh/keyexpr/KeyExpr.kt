@@ -19,6 +19,7 @@ import io.zenoh.exceptions.throwZError
 import io.zenoh.exceptions.throwZError0
 import io.zenoh.exceptions.zCall
 import io.zenoh.jni.ErrorHandler
+import io.zenoh.jni.JniErrorHandler
 import io.zenoh.jni.keyexpr.KeyExpr as JniKeyExpr
 import io.zenoh.session.SessionDeclaration
 
@@ -80,7 +81,7 @@ class KeyExpr internal constructor(
     private inline fun <R> withHandle(body: (JniKeyExpr) -> R): R {
         val h = jniKeyExpr
         if (h != null) return body(h)
-        val tmp = JniKeyExpr.newTryFrom(keyExpr, throwZError)
+        val tmp = JniKeyExpr.newTryFrom(keyExpr, throwZError0, throwZError)
         try {
             return body(tmp)
         } finally {
@@ -96,8 +97,10 @@ class KeyExpr internal constructor(
          * (binding-only) string read failure both surface as
          * [Result.failure].
          */
-        private inline fun fromProbe(crossinline makeProbe: (ErrorHandler<JniKeyExpr>) -> JniKeyExpr): Result<KeyExpr> =
-            zCall({ JniKeyExpr(0L) }) { makeProbe(it) }
+        private inline fun fromProbe(
+            crossinline makeProbe: (JniErrorHandler<JniKeyExpr>, ErrorHandler<JniKeyExpr>) -> JniKeyExpr
+        ): Result<KeyExpr> =
+            zCall({ JniKeyExpr(0L) }) { onBindingError, onError -> makeProbe(onBindingError, onError) }
                 .mapCatching { probe ->
                     try {
                         KeyExpr(probe.getStr(throwZError0))
@@ -122,7 +125,9 @@ class KeyExpr internal constructor(
          * @return a [Result] with the [KeyExpr] in case of success.
          */
         fun tryFrom(keyExpr: String): Result<KeyExpr> =
-            zCall({ JniKeyExpr(0L) }) { JniKeyExpr.newTryFrom(keyExpr, it) }
+            zCall({ JniKeyExpr(0L) }) { onBindingError, onError ->
+                JniKeyExpr.newTryFrom(keyExpr, onBindingError, onError)
+            }
                 .map { probe ->
                     probe.close()
                     KeyExpr(keyExpr)
@@ -138,7 +143,9 @@ class KeyExpr internal constructor(
          * @return a [Result] with the canonized [KeyExpr] in case of success.
          */
         fun autocanonize(keyExpr: String): Result<KeyExpr> =
-            fromProbe { JniKeyExpr.newAutocanonize(keyExpr, it) }
+            fromProbe { onBindingError, onError ->
+                JniKeyExpr.newAutocanonize(keyExpr, onBindingError, onError)
+            }
     }
 
     /**
@@ -176,18 +183,18 @@ class KeyExpr internal constructor(
      * Joins both sides, inserting a `/` in between them.
      * This should be your preferred method when concatenating path segments.
      */
-    fun join(other: String): Result<KeyExpr> = fromProbe { onError ->
-        jniKeyExpr?.let { JniKeyExpr.newJoin(it, other, onError) }
-            ?: JniKeyExpr.newJoin(keyExpr, other, onError)
+    fun join(other: String): Result<KeyExpr> = fromProbe { onBindingError, onError ->
+        jniKeyExpr?.let { JniKeyExpr.newJoin(it, other, onBindingError, onError) }
+            ?: JniKeyExpr.newJoin(keyExpr, other, onBindingError, onError)
     }
 
     /**
      * Performs string concatenation and returns the result as a `KeyExpr` if possible.
      * You should probably prefer [join] as Zenoh may then take advantage of the hierarchical separation it inserts.
      */
-    fun concat(other: String): Result<KeyExpr> = fromProbe { onError ->
-        jniKeyExpr?.let { JniKeyExpr.newConcat(it, other, onError) }
-            ?: JniKeyExpr.newConcat(keyExpr, other, onError)
+    fun concat(other: String): Result<KeyExpr> = fromProbe { onBindingError, onError ->
+        jniKeyExpr?.let { JniKeyExpr.newConcat(it, other, onBindingError, onError) }
+            ?: JniKeyExpr.newConcat(keyExpr, other, onBindingError, onError)
     }
 
     override fun toString(): String {
