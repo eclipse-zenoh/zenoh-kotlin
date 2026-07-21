@@ -25,6 +25,7 @@ import io.zenoh.handlers.Handler
 import io.zenoh.jni.config.Config as JniConfig
 import io.zenoh.jni.config.ZenohId as JniZenohId
 import io.zenoh.jni.keyexpr.KeyExpr as JniKeyExpr
+import io.zenoh.jni.pubsub.AdvancedPublisher as JniAdvancedPublisher
 import io.zenoh.jni.pubsub.Publisher as JniPublisher
 import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.jni.query.Querier as JniQuerier
@@ -44,6 +45,7 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HeartbeatMode
 import io.zenoh.ext.HistoryConfig
 import io.zenoh.ext.MissDetectionConfig
 import io.zenoh.ext.RecoveryConfig
@@ -211,7 +213,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @return The result of the declaration, returning the advanced publisher in case of success.
      */
     @Unstable
-    @Suppress("UNUSED_PARAMETER")
     fun declareAdvancedPublisher(
         keyExpr: KeyExpr,
         qos: QoS = QoS.defaultPush,
@@ -221,9 +222,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         sampleMissDetection: MissDetectionConfig? = null,
         publisherDetection: Boolean = false
     ): Result<AdvancedPublisher> {
-        // TODO(zenoh-flat-transition): advanced pub/sub is not yet exposed by
-        // zenoh-flat / zenoh-flat-jni; the declaration fails until it is.
-        return Result.failure(advancedUnsupported)
+        return resolveAdvancedPublisher(
+            keyExpr, qos, encoding, reliability, cacheConfig, sampleMissDetection, publisherDetection
+        )
     }
 
     /**
@@ -1112,6 +1113,33 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 onBindingError, onError
             )
         }.map { Publisher(keyExpr, qos, encoding, it) }
+            .onSuccess { weakDeclarations.add(WeakReference(it)) }
+    }
+
+    private fun resolveAdvancedPublisher(
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability,
+        cacheConfig: CacheConfig?,
+        sampleMissDetection: MissDetectionConfig?,
+        publisherDetection: Boolean
+    ): Result<AdvancedPublisher> {
+        val session = jniSession ?: return Result.failure(sessionClosedException)
+        // Lower the pure-Kotlin config holders to the flat scalar params.
+        val heartbeat = sampleMissDetection?.heartbeat
+        val heartbeatPeriodicMs = (heartbeat as? HeartbeatMode.PeriodicHeartbeat)?.milliseconds?.toULong()
+        val heartbeatSporadicMs = (heartbeat as? HeartbeatMode.SporadicHeartbeat)?.milliseconds?.toULong()
+        return zCall({ JniAdvancedPublisher(0L) }) { onBindingError, onError ->
+            session.declareAdvancedPublisher(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                qos.congestionControl.jni, qos.priority.jni, qos.express, reliability.jni,
+                sampleMissDetection != null, heartbeatPeriodicMs, heartbeatSporadicMs,
+                publisherDetection, cacheConfig?.maxSamples?.toULong(),
+                onBindingError, onError
+            )
+        }.map { AdvancedPublisher(keyExpr, qos, encoding, it) }
             .onSuccess { weakDeclarations.add(WeakReference(it)) }
     }
 
