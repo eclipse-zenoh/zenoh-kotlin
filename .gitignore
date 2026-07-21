@@ -20,8 +20,5 @@
 .gradle
 build/
 examples/build
-gradle/
-gradlew
-gradlew.bat
 local.properties
 zenoh-kotlin/build
