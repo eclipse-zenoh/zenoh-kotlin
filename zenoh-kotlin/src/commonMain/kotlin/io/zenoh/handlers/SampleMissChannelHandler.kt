@@ -15,12 +15,12 @@
 package io.zenoh.handlers
 
 import io.zenoh.annotations.Unstable
-import io.zenoh.pubsub.SampleMiss
+import io.zenoh.pubsub.Miss
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.runBlocking
 
 /**
- * Channel handler for [SampleMiss] events.
+ * Channel handler for [Miss] events.
  *
  * Implementation of a [Handler] with a [Channel] receiver.
  *
@@ -28,21 +28,21 @@ import kotlinx.coroutines.runBlocking
  * @constructor Create empty Channel handler
  */
 @Unstable
-internal class SampleMissChannelHandler(private val channel: Channel<SampleMiss>) : SampleMissHandler<Channel<SampleMiss>> {
+internal class SampleMissChannelHandler(private val channel: Channel<Miss>) : SampleMissHandler<Channel<Miss>> {
 
     /**
      * Handle the received sample miss event.
      *
      * @param miss sample miss event.
      */
-    override fun handle(miss: SampleMiss) {
+    override fun handle(miss: Miss) {
         runBlocking { channel.send(miss) }
     }
 
     /**
      * Return the receiver of the handler.
      */
-    override fun receiver(): Channel<SampleMiss> {
+    override fun receiver(): Channel<Miss> {
         return channel
     }
 

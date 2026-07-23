@@ -25,7 +25,14 @@ import io.zenoh.handlers.Handler
 import io.zenoh.jni.config.Config as JniConfig
 import io.zenoh.jni.config.ZenohId as JniZenohId
 import io.zenoh.jni.keyexpr.KeyExpr as JniKeyExpr
+import io.zenoh.jni.pubsub.AdvancedPublisher as JniAdvancedPublisher
+import io.zenoh.jni.pubsub.AdvancedSubscriber as JniAdvancedSubscriber
+import io.zenoh.jni.pubsub.CacheConfig as JniCacheConfig
+import io.zenoh.jni.pubsub.HistoryConfig as JniHistoryConfig
+import io.zenoh.jni.pubsub.MissDetectionConfig as JniMissDetectionConfig
 import io.zenoh.jni.pubsub.Publisher as JniPublisher
+import io.zenoh.jni.pubsub.RecoveryConfig as JniRecoveryConfig
+import io.zenoh.jni.pubsub.RepliesConfig as JniRepliesConfig
 import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.jni.query.Querier as JniQuerier
 import io.zenoh.jni.query.Queryable as JniQueryable
@@ -44,9 +51,11 @@ import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.config.ZenohId
 import io.zenoh.ext.CacheConfig
+import io.zenoh.ext.HeartbeatMode
 import io.zenoh.ext.HistoryConfig
 import io.zenoh.ext.MissDetectionConfig
 import io.zenoh.ext.RecoveryConfig
+import io.zenoh.ext.RecoveryMode
 import io.zenoh.liveliness.Liveliness
 import io.zenoh.pubsub.AdvancedPublisher
 import io.zenoh.pubsub.AdvancedSubscriber
@@ -95,9 +104,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
     companion object {
 
         internal val sessionClosedException = ZError("Session is closed.")
-
-        private val advancedUnsupported =
-            ZError("Advanced pub/sub is not yet supported by zenoh-flat-jni.")
 
         /**
          * Open a [Session] with the provided [Config].
@@ -211,7 +217,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @return The result of the declaration, returning the advanced publisher in case of success.
      */
     @Unstable
-    @Suppress("UNUSED_PARAMETER")
     fun declareAdvancedPublisher(
         keyExpr: KeyExpr,
         qos: QoS = QoS.defaultPush,
@@ -221,9 +226,9 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         sampleMissDetection: MissDetectionConfig? = null,
         publisherDetection: Boolean = false
     ): Result<AdvancedPublisher> {
-        // TODO(zenoh-flat-transition): advanced pub/sub is not yet exposed by
-        // zenoh-flat / zenoh-flat-jni; the declaration fails until it is.
-        return Result.failure(advancedUnsupported)
+        return resolveAdvancedPublisher(
+            keyExpr, qos, encoding, reliability, cacheConfig, sampleMissDetection, publisherDetection
+        )
     }
 
     /**
@@ -283,7 +288,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @return A result with the [Subscriber] in case of success.
      */
     @Unstable
-    @Suppress("UNUSED_PARAMETER")
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -292,9 +296,12 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         callback: Callback<Sample>,
         onClose: (() -> Unit)? = null,
     ): Result<AdvancedSubscriber<Unit>> {
-        // TODO(zenoh-flat-transition): advanced pub/sub is not yet exposed by
-        // zenoh-flat / zenoh-flat-jni; the declaration fails until it is.
-        return Result.failure(advancedUnsupported)
+        val resolvedOnClose = fun() {
+            onClose?.invoke()
+        }
+        return resolveAdvancedSubscriber(
+            keyExpr, historyConfig, recoveryConfig, subscriberDetection, callback, resolvedOnClose, Unit
+        )
     }
 
     /**
@@ -378,7 +385,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @return A result with the [Subscriber] in case of success.
      */
     @Unstable
-    @Suppress("UNUSED_PARAMETER")
     fun <R> declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -387,9 +393,14 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         handler: Handler<Sample, R>,
         onClose: (() -> Unit)? = null,
     ): Result<AdvancedSubscriber<R>> {
-        // TODO(zenoh-flat-transition): advanced pub/sub is not yet exposed by
-        // zenoh-flat / zenoh-flat-jni; the declaration fails until it is.
-        return Result.failure(advancedUnsupported)
+        val resolvedOnClose = fun() {
+            handler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> handler.handle(t) }
+        return resolveAdvancedSubscriber(
+            keyExpr, historyConfig, recoveryConfig, subscriberDetection, callback, resolvedOnClose, handler.receiver()
+        )
     }
 
     /**
@@ -462,7 +473,6 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      * @return A result with the [Subscriber] in case of success.
      */
     @Unstable
-    @Suppress("UNUSED_PARAMETER")
     fun declareAdvancedSubscriber(
         keyExpr: KeyExpr,
         historyConfig: HistoryConfig? = null,
@@ -471,9 +481,15 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         channel: Channel<Sample>,
         onClose: (() -> Unit)? = null,
     ): Result<AdvancedSubscriber<Channel<Sample>>> {
-        // TODO(zenoh-flat-transition): advanced pub/sub is not yet exposed by
-        // zenoh-flat / zenoh-flat-jni; the declaration fails until it is.
-        return Result.failure(advancedUnsupported)
+        val channelHandler = ChannelHandler(channel)
+        val resolvedOnClose = fun() {
+            channelHandler.onClose()
+            onClose?.invoke()
+        }
+        val callback = Callback { t: Sample -> channelHandler.handle(t) }
+        return resolveAdvancedSubscriber(
+            keyExpr, historyConfig, recoveryConfig, subscriberDetection, callback, resolvedOnClose, channelHandler.receiver()
+        )
     }
 
     /**
@@ -1113,6 +1129,74 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             )
         }.map { Publisher(keyExpr, qos, encoding, it) }
             .onSuccess { weakDeclarations.add(WeakReference(it)) }
+    }
+
+    private fun resolveAdvancedPublisher(
+        keyExpr: KeyExpr,
+        qos: QoS,
+        encoding: Encoding,
+        reliability: Reliability,
+        cacheConfig: CacheConfig?,
+        sampleMissDetection: MissDetectionConfig?,
+        publisherDetection: Boolean
+    ): Result<AdvancedPublisher> {
+        val session = jniSession ?: return Result.failure(sessionClosedException)
+        // Lower the pure-Kotlin config holders to the generated data-class holders.
+        val missDetection = sampleMissDetection?.let {
+            when (val heartbeat = it.heartbeat) {
+                is HeartbeatMode.PeriodicHeartbeat -> JniMissDetectionConfig(heartbeat.milliseconds.toULong(), false)
+                is HeartbeatMode.SporadicHeartbeat -> JniMissDetectionConfig(heartbeat.milliseconds.toULong(), true)
+                null -> JniMissDetectionConfig(null, false)
+            }
+        }
+        val cache = cacheConfig?.let {
+            JniCacheConfig(
+                it.maxSamples.toULong(),
+                JniRepliesConfig(it.repliesQoS.priority.jni, it.repliesQoS.congestionControl.jni, it.repliesQoS.express)
+            )
+        }
+        return zCall({ JniAdvancedPublisher(0L) }) { onBindingError, onError ->
+            session.declareAdvancedPublisher(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
+                encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
+                qos.congestionControl.jni, qos.priority.jni, qos.express, reliability.jni,
+                missDetection, publisherDetection, cache,
+                onBindingError, onError
+            )
+        }.map { AdvancedPublisher(keyExpr, qos, encoding, it) }
+            .onSuccess { weakDeclarations.add(WeakReference(it)) }
+    }
+
+    private fun <R> resolveAdvancedSubscriber(
+        keyExpr: KeyExpr,
+        historyConfig: HistoryConfig?,
+        recoveryConfig: RecoveryConfig?,
+        subscriberDetection: Boolean,
+        callback: Callback<Sample>,
+        onClose: () -> Unit,
+        receiver: R,
+    ): Result<AdvancedSubscriber<R>> {
+        val session = jniSession ?: return Result.failure(sessionClosedException)
+        // Lower the pure-Kotlin config holders to the generated data-class holders.
+        val history = historyConfig?.let {
+            JniHistoryConfig(it.detectLatePublishers, it.maxSamples?.toULong(), it.maxAgeSeconds)
+        }
+        val recovery = recoveryConfig?.let {
+            when (val mode = it.mode) {
+                is RecoveryMode.PeriodicQuery -> JniRecoveryConfig(mode.milliseconds.toULong(), false)
+                RecoveryMode.Heartbeat -> JniRecoveryConfig(null, true)
+            }
+        }
+        return zCall({ JniAdvancedSubscriber(0L) }) { onBindingError, onError ->
+            session.declareAdvancedSubscriber(
+                keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
+                sampleCallbackOf { callback.run(it) },
+                { onClose() },
+                history, recovery, null, subscriberDetection,
+                onBindingError, onError
+            )
+        }.map { AdvancedSubscriber(keyExpr, receiver, it) }
+            .onSuccess { strongDeclarations.add(it) }
     }
 
     private fun <R> resolveSubscriber(

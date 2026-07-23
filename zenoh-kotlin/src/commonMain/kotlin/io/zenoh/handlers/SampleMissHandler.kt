@@ -15,22 +15,22 @@
 package io.zenoh.handlers
 
 import io.zenoh.annotations.Unstable
-import io.zenoh.pubsub.SampleMiss
+import io.zenoh.pubsub.Miss
 
 /**
- * Handler interface for classes implementing behavior to handle the incoming [SampleMiss] events.
+ * Handler interface for classes implementing behavior to handle the incoming [Miss] events.
  *
  * **Example**:
  * ```kotlin
- * class SampleMissQueueHandler : SampleMissHandler<ArrayDeque<SampleMiss>> {
+ * class SampleMissQueueHandler : SampleMissHandler<ArrayDeque<Miss>> {
  *     private val queue: ArrayDeque<T> = ArrayDeque()
  *
- *     override fun handle(miss: SampleMiss) {
+ *     override fun handle(miss: Miss) {
  *         println("Received $miss, enqueuing...")
  *         queue.add(miss)
  *     }
  *
- *     override fun receiver(): ArrayDeque<SampleMiss> {
+ *     override fun receiver(): ArrayDeque<Miss> {
  *         return queue
  *     }
  *
@@ -47,11 +47,11 @@ import io.zenoh.pubsub.SampleMiss
 interface SampleMissHandler<R> {
 
     /**
-     * Handle the received [SampleMiss] event.
+     * Handle the received [Miss] event.
      *
-     * @param miss A [SampleMiss] event.
+     * @param miss A [Miss] event.
      */
-    fun handle(miss: SampleMiss)
+    fun handle(miss: Miss)
 
     /**
      * Return the receiver of the handler.
