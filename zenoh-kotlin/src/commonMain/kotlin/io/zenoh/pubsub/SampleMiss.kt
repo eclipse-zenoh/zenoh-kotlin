@@ -15,20 +15,17 @@
 package io.zenoh.pubsub
 
 import io.zenoh.annotations.Unstable
+import io.zenoh.config.EntityGlobalId
 
 /**
  * # SampleMiss
- * A struct that represent missed samples.
+ * A report of samples missed from one source.
  *
- * @param zidLower: lower 8 bytes of zenoh id (the Zenoh session) of the source of missed samples.
- * @param zidUpper: upper 8 bytes of zenoh id (the Zenoh session) of the source of missed samples.
- * @param eid: entity id (entity in a Zenoh session) of the source of missed samples.
+ * @param source: the global id (zenoh id + entity id) of the source of the missed samples.
  * @param missedCount: number of missed samples
  */
 @Unstable
 data class SampleMiss(
-    val zidLower: Long,
-    val zidUpper: Long,
-    val eid: Long,
+    val source: EntityGlobalId,
     val missedCount: Long
 )

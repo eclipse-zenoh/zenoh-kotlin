@@ -19,6 +19,7 @@ import io.zenoh.bytes.ZBytes
 import io.zenoh.config.EntityGlobalId
 import io.zenoh.config.WhatAmI
 import io.zenoh.config.ZenohId
+import io.zenoh.pubsub.SampleMiss
 import io.zenoh.query.Query
 import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
@@ -42,6 +43,13 @@ internal fun sampleCallbackOf(
 ): io.zenoh.jni.sample.SampleCallback =
     io.zenoh.jni.sample.SampleCallback { keStr, payloadH, encId, encSchema, kindInt, ntp64, express, prioInt, ccInt, attachH, reliabilityInt, sourceZid, sourceEid, sourceSn ->
         f(Sample.fromParts(keStr, payloadH, encId, encSchema, kindInt, ntp64, express, prioInt, ccInt, attachH, reliabilityInt, sourceZid, sourceEid, sourceSn))
+    }
+
+internal fun sampleMissCallbackOf(
+    f: (SampleMiss) -> Unit
+): io.zenoh.jni.pubsub.SampleMissCallback =
+    io.zenoh.jni.pubsub.SampleMissCallback { miss ->
+        f(SampleMiss(EntityGlobalId(ZenohId(miss.sourceZid.bytes), miss.sourceEid.toUInt()), miss.nb))
     }
 
 internal fun queryCallbackOf(
