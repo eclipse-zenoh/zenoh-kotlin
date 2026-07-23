@@ -18,14 +18,14 @@ import io.zenoh.annotations.Unstable
 import io.zenoh.config.EntityGlobalId
 
 /**
- * # SampleMiss
+ * # Miss
  * A report of samples missed from one source.
  *
  * @param source: the global id (zenoh id + entity id) of the source of the missed samples.
- * @param missedCount: number of missed samples
+ * @param nb: number of missed samples
  */
 @Unstable
-data class SampleMiss(
+data class Miss(
     val source: EntityGlobalId,
-    val missedCount: Long
+    val nb: Long
 )

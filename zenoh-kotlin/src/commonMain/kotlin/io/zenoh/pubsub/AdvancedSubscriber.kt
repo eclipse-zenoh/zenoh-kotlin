@@ -250,7 +250,7 @@ class AdvancedSubscriber<R> internal constructor(
      * @param onClose: callback to be executed when associated [SampleMissListener] will be closed
      * */
     fun <R> declareSampleMissListener(
-        channel: Channel<SampleMiss>,
+        channel: Channel<Miss>,
         onClose: (() -> Unit)? = null,
     ): Result<SampleMissListener> {
         val channelHandler = SampleMissChannelHandler(channel)
@@ -307,7 +307,7 @@ class AdvancedSubscriber<R> internal constructor(
      * @param onClose: callback to be executed when associated [AdvancedSubscriber] will be closed
      * */
     fun <R> declareBackgroundSampleMissListener(
-        channel: Channel<SampleMiss>,
+        channel: Channel<Miss>,
         onClose: (() -> Unit)? = null,
     ): Result<Unit> {
         val channelHandler = SampleMissChannelHandler(channel)

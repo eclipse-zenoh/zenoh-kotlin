@@ -19,7 +19,7 @@ import io.zenoh.bytes.ZBytes
 import io.zenoh.config.EntityGlobalId
 import io.zenoh.config.WhatAmI
 import io.zenoh.config.ZenohId
-import io.zenoh.pubsub.SampleMiss
+import io.zenoh.pubsub.Miss
 import io.zenoh.query.Query
 import io.zenoh.query.Reply
 import io.zenoh.query.ReplyError
@@ -46,10 +46,10 @@ internal fun sampleCallbackOf(
     }
 
 internal fun sampleMissCallbackOf(
-    f: (SampleMiss) -> Unit
-): io.zenoh.jni.pubsub.SampleMissCallback =
-    io.zenoh.jni.pubsub.SampleMissCallback { miss ->
-        f(SampleMiss(EntityGlobalId(ZenohId(miss.sourceZid.bytes), miss.sourceEid.toUInt()), miss.nb))
+    f: (Miss) -> Unit
+): io.zenoh.jni.pubsub.MissCallback =
+    io.zenoh.jni.pubsub.MissCallback { miss ->
+        f(Miss(EntityGlobalId(ZenohId(miss.source.zid.bytes), miss.source.eid.toUInt()), miss.nb))
     }
 
 internal fun queryCallbackOf(

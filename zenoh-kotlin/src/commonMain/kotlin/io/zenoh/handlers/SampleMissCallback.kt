@@ -15,7 +15,7 @@
 package io.zenoh.handlers
 
 import io.zenoh.annotations.Unstable
-import io.zenoh.pubsub.SampleMiss
+import io.zenoh.pubsub.Miss
 
 /**
  * Runnable sample miss callback.
@@ -26,6 +26,6 @@ import io.zenoh.pubsub.SampleMiss
 fun interface SampleMissCallback {
 
     /** Callback to be run. */
-    fun run(miss: SampleMiss)
+    fun run(miss: Miss)
 
 }
