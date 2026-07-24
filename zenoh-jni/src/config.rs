@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::{ptr::null, sync::Arc};
 
 use jni::{
@@ -127,9 +128,10 @@ pub extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_loadYamlConfigViaJN
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    cfg_ptr: *const Config,
+    cfg_ptr: jlong,
     key: JString,
 ) -> jstring {
+    let cfg_ptr = cfg_ptr as *const Config;
     let arc_cfg: Arc<Config> = Arc::from_raw(cfg_ptr);
     let result = || -> ZResult<jstring> {
         let key = decode_string(&mut env, &key)?;
@@ -152,10 +154,11 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_getJsonViaJN
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_insertJson5ViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    cfg_ptr: *const Config,
+    cfg_ptr: jlong,
     key: JString,
     value: JString,
 ) {
+    let cfg_ptr = cfg_ptr as *const Config;
     || -> ZResult<()> {
         let key = decode_string(&mut env, &key)?;
         let value = decode_string(&mut env, &value)?;
@@ -179,7 +182,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_insertJson5V
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIConfig_00024Companion_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    config_ptr: *const Config,
+    config_ptr: jlong,
 ) {
+    let config_ptr = config_ptr as *const Config;
     Arc::from_raw(config_ptr);
 }

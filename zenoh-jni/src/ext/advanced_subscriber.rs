@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::sys::jboolean;
@@ -126,11 +127,12 @@ impl<'a> SetJniSampleMissListenerCallback for SampleMissListenerBuilder<'a, Defa
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPublishersSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
+    advanced_subscriber_ptr: jlong,
     history: jboolean,
     callback: JObject,
     on_close: JObject,
 ) -> *const Subscriber<()> {
+    let advanced_subscriber_ptr = advanced_subscriber_ptr as *const AdvancedSubscriber<()>;
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<*const Subscriber<()>> {
@@ -182,11 +184,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareDetectPu
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgroundDetectPublishersSubscriberViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
+    advanced_subscriber_ptr: jlong,
     history: jboolean,
     callback: JObject,
     on_close: JObject,
 ) {
+    let advanced_subscriber_ptr = advanced_subscriber_ptr as *const AdvancedSubscriber<()>;
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<()> {
@@ -246,11 +249,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMissListenerViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
+    advanced_subscriber_ptr: jlong,
 
     callback: JObject,
     on_close: JObject,
 ) -> *const SampleMissListener<()> {
+    let advanced_subscriber_ptr = advanced_subscriber_ptr as *const AdvancedSubscriber<()>;
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<*const SampleMissListener<()>> {
@@ -304,11 +308,12 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareSampleMi
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgroundSampleMissListenerViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    advanced_subscriber_ptr: *const AdvancedSubscriber<()>,
+    advanced_subscriber_ptr: jlong,
 
     callback: JObject,
     on_close: JObject,
 ) {
+    let advanced_subscriber_ptr = advanced_subscriber_ptr as *const AdvancedSubscriber<()>;
     let advanced_subscriber = OwnedObject::from_raw(advanced_subscriber_ptr);
 
     || -> ZResult<()> {
@@ -353,7 +358,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_declareBackgrou
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIAdvancedSubscriber_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    subscriber_ptr: *const AdvancedSubscriber<()>,
+    subscriber_ptr: jlong,
 ) {
+    let subscriber_ptr = subscriber_ptr as *const AdvancedSubscriber<()>;
     Arc::from_raw(subscriber_ptr);
 }

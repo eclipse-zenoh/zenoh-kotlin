@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::{
@@ -58,8 +59,8 @@ use crate::{
 pub unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_getViaJNI(
     mut env: JNIEnv,
     _class: JClass,
-    querier_ptr: *const Querier,
-    key_expr_ptr: /*nullable*/ *const KeyExpr<'static>,
+    querier_ptr: jlong,
+    key_expr_ptr: jlong,
     key_expr_str: JString,
     selector_params: /*nullable*/ JString,
     callback: JObject,
@@ -69,6 +70,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_getViaJNI(
     encoding_id: jint,
     encoding_schema: /*nullable*/ JString,
 ) {
+    let querier_ptr = querier_ptr as *const Querier;
+    let key_expr_ptr = key_expr_ptr as *const KeyExpr<'static>;
     let querier = Arc::from_raw(querier_ptr);
     let _ = || -> ZResult<()> {
         let key_expr = process_kotlin_key_expr(&mut env, &key_expr_str, key_expr_ptr)?;
@@ -131,7 +134,8 @@ pub unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_getViaJNI(
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNIQuerier_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    querier_ptr: *const Querier<'static>,
+    querier_ptr: jlong,
 ) {
+    let querier_ptr = querier_ptr as *const Querier<'static>;
     Arc::from_raw(querier_ptr);
 }
