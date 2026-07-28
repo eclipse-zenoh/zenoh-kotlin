@@ -23,6 +23,7 @@ import io.zenoh.keyexpr.intoKeyExpr
 import io.zenoh.query.Query
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
+import io.zenoh.time.Timestamp
 import org.apache.commons.net.ntp.TimeStamp
 import java.util.concurrent.CountDownLatch
 
@@ -47,6 +48,9 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     }
 
     private fun runChannelExample(session: Session, keyExpr: KeyExpr) {
+        // A timestamp is the pair (instant, id of the clock that produced
+        // it), so a reply stamps with THIS session's id.
+        val zid = session.info().zid().getOrThrow()
         println("Declaring Queryable on $key...")
         val queryable = session.declareQueryable(keyExpr, Channel()).getOrThrow()
         runBlocking {
@@ -56,7 +60,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                 query.reply(
                     keyExpr,
                     payload = ZBytes.from(value),
-                    timestamp = TimeStamp.getCurrentTime()
+                    timestamp = Timestamp.ofNtp64(TimeStamp.getCurrentTime().ntpValue(), zid)
                 ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
             }
         }
@@ -64,6 +68,9 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     }
 
     private fun runCallbackExample(session: Session, keyExpr: KeyExpr) {
+        // A timestamp is the pair (instant, id of the clock that produced
+        // it), so a reply stamps with THIS session's id.
+        val zid = session.info().zid().getOrThrow()
         println("Declaring Queryable on $key...")
         val queryable = session.declareQueryable(keyExpr, callback = { query ->
             val valueInfo = query.payload?.let { value -> " with value '$value'" } ?: ""
@@ -71,7 +78,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
             query.reply(
                 keyExpr,
                 payload = ZBytes.from(value),
-                timestamp = TimeStamp.getCurrentTime()
+                timestamp = Timestamp.ofNtp64(TimeStamp.getCurrentTime().ntpValue(), zid)
             ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
         }).getOrThrow()
 
@@ -82,6 +89,9 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
     }
 
     private fun runHandlerExample(session: Session, keyExpr: KeyExpr) {
+        // A timestamp is the pair (instant, id of the clock that produced
+        // it), so a reply stamps with THIS session's id.
+        val zid = session.info().zid().getOrThrow()
 
         // Create your own handler implementation
         class ExampleHandler : Handler<Query, Unit> {
@@ -91,7 +101,7 @@ class ZQueryable(private val emptyArgs: Boolean) : CliktCommand(
                 t.reply(
                     keyExpr,
                     payload = ZBytes.from(value),
-                    timestamp = TimeStamp.getCurrentTime()
+                    timestamp = Timestamp.ofNtp64(TimeStamp.getCurrentTime().ntpValue(), zid)
                 ).onFailure { println(">> [Queryable ] Error sending reply: $it") }
             }
 

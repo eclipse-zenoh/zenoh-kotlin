@@ -34,6 +34,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.withTimeout
+import io.zenoh.config.ZenohId
+import io.zenoh.jni.query.Selector as JniSelector
+import io.zenoh.time.Timestamp
 import org.apache.commons.net.ntp.TimeStamp
 import java.lang.Thread.sleep
 import java.time.Duration
@@ -70,7 +73,7 @@ class QueryableTest {
             testPayload,
             Encoding.default(),
             SampleKind.PUT,
-            TimeStamp(Date.from(Instant.now())),
+            Timestamp.ofNtp64(TimeStamp(Date.from(Instant.now())).ntpValue(), session.info().zid().getOrThrow()),
             QoS.defaultRequest
         )
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
@@ -105,8 +108,10 @@ class QueryableTest {
         var reply: Reply? = null
         // Bypass the Kotlin-side Selector validation, as a remote client would.
         session.jniSession!!.get(
-            testKeyExpr.toString(),         // s
-            "a=1;a=2;bad=%zz",              // parameters
+            // A Selector carries its parameters as an uninterpreted string, so
+            // constructing one directly is exactly the "remote client" path:
+            // nothing on the Kotlin side inspects them.
+            JniSelector(testKeyExpr.intoJniHandle(), "a=1;a=2;bad=%zz"),
             1000L,                          // timeoutMs
             null,                           // target
             null,                           // consolidation
@@ -137,7 +142,7 @@ class QueryableTest {
 
     @Test
     fun queryable_runsWithHandler() = runBlocking {
-        val handler = QueryHandler()
+        val handler = QueryHandler(session.info().zid().getOrThrow())
         val queryable = session.declareQueryable(testKeyExpr, handler = handler).getOrThrow()
 
         delay(500)
@@ -185,7 +190,7 @@ class QueryableTest {
     @Test
     fun queryReplySuccessTest() {
         val message = zSerialize("Test message").getOrThrow()
-        val timestamp = TimeStamp.getCurrentTime()
+        val timestamp = Timestamp.ofNtp64(TimeStamp.getCurrentTime().ntpValue(), session.info().zid().getOrThrow())
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
             query.reply(testKeyExpr, payload = message, timestamp = timestamp, qos = ReplyQoS(express = true))
         }).getOrThrow()
@@ -224,7 +229,7 @@ class QueryableTest {
 
     @Test
     fun queryReplyDeleteTest() {
-        val timestamp = TimeStamp.getCurrentTime()
+        val timestamp = Timestamp.ofNtp64(TimeStamp.getCurrentTime().ntpValue(), session.info().zid().getOrThrow())
 
         val queryable = session.declareQueryable(testKeyExpr, callback = { query ->
             query.replyDel(testKeyExpr, timestamp = timestamp, qos = ReplyQoS(express = true))
@@ -256,7 +261,9 @@ class QueryableTest {
 }
 
 /** A dummy handler that replies "Hello queryable" followed by the count of replies performed. */
-private class QueryHandler : Handler<Query, QueryHandler> {
+// A timestamp is only meaningful paired with the id of the node whose clock
+// produced it, so the handler is given the replying session's.
+private class QueryHandler(private val zid: ZenohId) : Handler<Query, QueryHandler> {
 
     private var counter = 0
 
@@ -280,7 +287,7 @@ private class QueryHandler : Handler<Query, QueryHandler> {
             payload,
             Encoding.default(),
             SampleKind.PUT,
-            TimeStamp(Date.from(Instant.now())),
+            Timestamp.ofNtp64(TimeStamp(Date.from(Instant.now())).ntpValue(), zid),
             QoS()
         )
         performedReplies.add(sample)

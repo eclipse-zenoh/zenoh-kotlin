@@ -459,8 +459,11 @@ internal val Encoding?.jniSel: Int
 internal val Encoding?.jniId: Int?
     get() = this?.id
 
-internal val Encoding?.jniSchema: String?
-    get() = this?.schema
+// A schema is raw bytes on the wire; zenoh transmits it verbatim and does not
+// require it to be UTF-8. This SDK's schema is a String, so the transcode
+// happens here, at the one point where the value crosses.
+internal val Encoding?.jniSchema: ByteArray?
+    get() = this?.schema?.toByteArray(Charsets.UTF_8)
 
 internal val Encoding?.jniHandle: io.zenoh.jni.bytes.Encoding?
     get() = null

@@ -66,7 +66,7 @@ class ZBytes private constructor(
         get() = eager ?: synchronized(this) {
             eager ?: run {
                 val h = handle!!
-                val b = h.asBytes(throwZError0)
+                val b = h.toBytes(throwZError0)
                 eager = b
                 handle = null
                 h.close()

@@ -24,6 +24,7 @@ import io.zenoh.query.Reply
 import io.zenoh.sample.Sample
 import io.zenoh.sample.SampleKind
 import kotlinx.coroutines.runBlocking
+import io.zenoh.time.Timestamp
 import org.apache.commons.net.ntp.TimeStamp
 import java.lang.Thread.sleep
 import java.time.Instant
@@ -59,7 +60,7 @@ class QuerierTest {
             testPayload,
             Encoding.default(),
             SampleKind.PUT,
-            TimeStamp(Date.from(Instant.now())),
+            Timestamp.ofNtp64(TimeStamp(Date.from(Instant.now())).ntpValue(), session.info().zid().getOrThrow()),
             QoS.defaultRequest
         )
         val examplePayload = ZBytes.from("Example payload")

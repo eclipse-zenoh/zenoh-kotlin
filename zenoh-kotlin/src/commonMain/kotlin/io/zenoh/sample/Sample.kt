@@ -21,7 +21,7 @@ import io.zenoh.qos.QoS
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.bytes.Encoding
 import io.zenoh.bytes.ZBytes
-import org.apache.commons.net.ntp.TimeStamp
+import io.zenoh.time.Timestamp
 
 /**
  * Class representing a Zenoh Sample.
@@ -30,7 +30,7 @@ import org.apache.commons.net.ntp.TimeStamp
  * @property payload [ZBytes] with the payload of the sample.
  * @property encoding [Encoding] of the payload.
  * @property kind The [SampleKind] of the sample.
- * @property timestamp Optional [TimeStamp].
+ * @property timestamp Optional [Timestamp].
  * @property qos The Quality of Service settings used to deliver the sample.
  * @property attachment Optional attachment.
  */
@@ -39,7 +39,7 @@ data class Sample(
     val payload: ZBytes,
     val encoding: Encoding,
     val kind: SampleKind,
-    val timestamp: TimeStamp?,
+    val timestamp: Timestamp?,
     val qos: QoS,
     val attachment: ZBytes? = null,
 ): ZenohType {
@@ -61,23 +61,25 @@ data class Sample(
             keStr: String,
             payloadH: io.zenoh.jni.bytes.ZBytes,
             encId: Int,
-            encSchema: String?,
+            encSchema: ByteArray?,
             kindInt: Int,
-            ntp64: Long?,
+            timestamp: io.zenoh.jni.time.Timestamp?,
             express: Boolean,
             prioInt: Int,
             ccInt: Int,
             attachH: io.zenoh.jni.bytes.ZBytes?,
             reliabilityInt: Int,
-            sourceZid: io.zenoh.jni.config.ZenohId?,
-            sourceEid: Int,
-            sourceSn: Long,
+            sourceInfo: io.zenoh.jni.sample.SourceInfo?,
         ): Sample = Sample(
             KeyExpr(keStr),
             ZBytes.fromHandle(payloadH),
-            Encoding(encId, schema = encSchema),
+            // A schema is raw bytes on the wire and zenoh does not require it
+            // to be UTF-8; this SDK's Encoding carries a String, so a schema
+            // that is not valid UTF-8 decodes lossily rather than throwing on
+            // a received message.
+            Encoding(encId, schema = encSchema?.toString(Charsets.UTF_8)),
             SampleKind.fromInt(kindInt),
-            ntp64?.let { TimeStamp(it) },
+            timestamp?.let { Timestamp.fromJni(it) },
             QoS(CongestionControl.fromInt(ccInt), Priority.fromInt(prioInt), express),
             attachH?.let { ZBytes.fromHandle(it) }
         )

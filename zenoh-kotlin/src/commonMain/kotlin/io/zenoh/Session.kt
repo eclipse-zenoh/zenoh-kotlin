@@ -32,6 +32,8 @@ import io.zenoh.jni.pubsub.HistoryConfig as JniHistoryConfig
 import io.zenoh.jni.pubsub.MissDetectionConfig as JniMissDetectionConfig
 import io.zenoh.jni.pubsub.Publisher as JniPublisher
 import io.zenoh.jni.pubsub.RecoveryConfig as JniRecoveryConfig
+import io.zenoh.jni.query.Selector as JniSelector
+import io.zenoh.jni.pubsub.RecoveryMode as JniRecoveryMode
 import io.zenoh.jni.pubsub.RepliesConfig as JniRepliesConfig
 import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.jni.query.Querier as JniQuerier
@@ -1181,11 +1183,17 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         val history = historyConfig?.let {
             JniHistoryConfig(it.detectLatePublishers, it.maxSamples?.toULong(), it.maxAgeSeconds)
         }
+        // The recovery mode is a data-carrying enum now, so the choice and its
+        // payload are one value rather than a (period, flag) pair in which
+        // only one of the two was ever meaningful. `retentionPeriod` is a
+        // separate field with no counterpart on the SDK config, so it stays
+        // absent, as it effectively was before.
         val recovery = recoveryConfig?.let {
-            when (val mode = it.mode) {
-                is RecoveryMode.PeriodicQuery -> JniRecoveryConfig(mode.milliseconds.toULong(), false)
-                RecoveryMode.Heartbeat -> JniRecoveryConfig(null, true)
+            val mode = when (val m = it.mode) {
+                is RecoveryMode.PeriodicQuery -> JniRecoveryMode.PeriodicQueries(m.milliseconds.toULong())
+                RecoveryMode.Heartbeat -> JniRecoveryMode.Heartbeat
             }
+            JniRecoveryConfig(mode, null)
         }
         return zCall({ JniAdvancedSubscriber(0L) }) { onBindingError, onError ->
             session.declareAdvancedSubscriber(
@@ -1275,8 +1283,10 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         val session = jniSession ?: return Result.failure(sessionClosedException)
         return zCallUnit { onBindingError, onError ->
             session.get(
-                selector.keyExpr.jniSel, selector.keyExpr.jniStr, selector.keyExpr.jniHandle,
-                selector.parameters?.toString(),
+                // `session_get` takes the whole selector by value: the key
+                // expression goes in as an owned handle, and the parameters
+                // ride along inside it rather than as a separate argument.
+                JniSelector(selector.keyExpr.intoJniHandle(), selector.parameters?.toString() ?: ""),
                 timeout.toMillis(),
                 target.jni, consolidation.jni, acceptReplies.jni,
                 qos.congestionControl.jni, qos.priority.jni, qos.express,

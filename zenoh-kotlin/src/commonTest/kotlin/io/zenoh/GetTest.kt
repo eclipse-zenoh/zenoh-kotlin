@@ -22,6 +22,7 @@ import io.zenoh.query.Queryable
 import io.zenoh.query.Parameters
 import io.zenoh.query.Selector
 import io.zenoh.query.intoSelector
+import io.zenoh.time.Timestamp
 import org.apache.commons.net.ntp.TimeStamp
 import java.lang.Thread.sleep
 import java.time.Duration
@@ -32,17 +33,20 @@ class GetTest {
 
     companion object {
         val payload = zSerialize("Test").getOrThrow()
-        val timestamp = TimeStamp.getCurrentTime()
+        val timestampNtp64 = TimeStamp.getCurrentTime().ntpValue()
         val kind = SampleKind.PUT
     }
 
     private lateinit var session: Session
     private lateinit var selector: Selector
     private lateinit var queryable: Queryable<Unit>
+    // Needs the session's id, so it cannot be a companion-object constant.
+    private lateinit var timestamp: Timestamp
 
     @BeforeTest
     fun setUp() {
         session = Session.open(Config.default()).getOrThrow()
+        timestamp = Timestamp.ofNtp64(timestampNtp64, session.info().zid().getOrThrow())
         selector = "example/testing/keyexpr".intoSelector().getOrThrow()
         queryable = session.declareQueryable(selector.keyExpr, callback = { query ->
             query.reply(query.keyExpr, payload, timestamp = timestamp)

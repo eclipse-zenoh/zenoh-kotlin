@@ -49,7 +49,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("commons-net:commons-net:3.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
                 // Zenoh Flat JNI - includes Kotlin sources and native libraries
@@ -61,6 +60,10 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                // Only the tests need an NTP64 clock now: the SDK's Timestamp
+                // carries the raw bits and an originating-node id, so it no
+                // longer depends on commons-net itself.
+                implementation("commons-net:commons-net:3.9.0")
                 implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
                 implementation("org.junit.jupiter:junit-jupiter-params:5.10.0")

@@ -41,8 +41,8 @@ import io.zenoh.scouting.Hello
 internal fun sampleCallbackOf(
     f: (Sample) -> Unit
 ): io.zenoh.jni.sample.SampleCallback =
-    io.zenoh.jni.sample.SampleCallback { keStr, payloadH, encId, encSchema, kindInt, ntp64, express, prioInt, ccInt, attachH, reliabilityInt, sourceZid, sourceEid, sourceSn ->
-        f(Sample.fromParts(keStr, payloadH, encId, encSchema, kindInt, ntp64, express, prioInt, ccInt, attachH, reliabilityInt, sourceZid, sourceEid, sourceSn))
+    io.zenoh.jni.sample.SampleCallback { keStr, payloadH, encId, encSchema, kindInt, timestamp, express, prioInt, ccInt, attachH, reliabilityInt, sourceInfo ->
+        f(Sample.fromParts(keStr, payloadH, encId, encSchema, kindInt, timestamp, express, prioInt, ccInt, attachH, reliabilityInt, sourceInfo))
     }
 
 internal fun sampleMissCallbackOf(
@@ -83,14 +83,16 @@ internal fun queryCallbackOf(
 internal fun replyCallbackOf(
     f: (Reply) -> Unit
 ): io.zenoh.jni.query.ReplyCallback =
-    io.zenoh.jni.query.ReplyCallback { zid, eid, isOk, keStr, payloadH, encId, encSchema, kindInt, ntp64, express, prioInt, ccInt, attachH, reliabilityInt, sourceZid, sourceEid, sourceSn, errPayloadH, errEncId, errEncSchema ->
-        val replierId = zid?.let { EntityGlobalId(ZenohId(it.bytes), eid.toUInt()) }
+    io.zenoh.jni.query.ReplyCallback { replier, isOk, keStr, payloadH, encId, encSchema, kindInt, timestamp, express, prioInt, ccInt, attachH, reliabilityInt, sourceInfo, errPayloadH, errEncId, errEncSchema ->
+        // The replier's id arrives as one whole `EntityGlobalId` value rather
+        // than as a (zid, eid) pair, so its optionality is the value's own.
+        val replierId = replier?.let { EntityGlobalId(ZenohId(it.zid.bytes), it.eid.toUInt()) }
         f(
             if (isOk) {
                 Reply(
                     replierId,
                     Result.success(
-                        Sample.fromParts(keStr!!, payloadH!!, encId!!, encSchema, kindInt!!, ntp64, express!!, prioInt!!, ccInt!!, attachH, reliabilityInt!!, sourceZid, sourceEid!!, sourceSn!!)
+                        Sample.fromParts(keStr!!, payloadH!!, encId!!, encSchema, kindInt!!, timestamp, express!!, prioInt!!, ccInt!!, attachH, reliabilityInt!!, sourceInfo)
                     )
                 )
             } else {
@@ -99,7 +101,7 @@ internal fun replyCallbackOf(
                     Result.failure(
                         ReplyError(
                             ZBytes.fromHandle(errPayloadH!!),
-                            errEncId?.let { Encoding(it, schema = errEncSchema) } ?: Encoding.default()
+                            errEncId?.let { Encoding(it, schema = errEncSchema?.toString(Charsets.UTF_8)) } ?: Encoding.default()
                         )
                     )
                 )

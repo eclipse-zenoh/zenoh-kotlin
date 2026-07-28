@@ -32,7 +32,7 @@ import io.zenoh.qos.ReplyQoS
 import io.zenoh.bytes.IntoZBytes
 import io.zenoh.bytes.ZBytes
 import io.zenoh.sample.Sample
-import org.apache.commons.net.ntp.TimeStamp
+import io.zenoh.time.Timestamp
 
 /**
  * Represents a Zenoh Query in Kotlin.
@@ -77,7 +77,7 @@ class Query internal constructor(
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
         qos: ReplyQoS = ReplyQoS.default,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
@@ -86,7 +86,7 @@ class Query internal constructor(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
                 payload.into().bytes,
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
-                timestamp?.ntpValue(),
+                timestamp?.toJni(),
                 attachment?.into()?.bytes,
                 qos.express,
                 onBindingError, onError
@@ -105,7 +105,7 @@ class Query internal constructor(
         payload: String,
         encoding: Encoding = Encoding.default(),
         qos: ReplyQoS = ReplyQoS.default,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: String? = null
     ): Result<Unit> =
         reply(keyExpr, ZBytes.from(payload), encoding, qos, timestamp, attachment?.let { ZBytes.from(it) })
@@ -119,7 +119,7 @@ class Query internal constructor(
         payload: IntoZBytes,
         encoding: Encoding = Encoding.default(),
         qos: QoS,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> = reply(keyExpr, payload, encoding, ReplyQoS(express = qos.express), timestamp, attachment)
 
@@ -132,7 +132,7 @@ class Query internal constructor(
         payload: String,
         encoding: Encoding = Encoding.default(),
         qos: QoS,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: String? = null
     ): Result<Unit> =
         reply(keyExpr, ZBytes.from(payload), encoding, ReplyQoS(express = qos.express), timestamp, attachment?.let { ZBytes.from(it) })
@@ -179,14 +179,14 @@ class Query internal constructor(
     fun replyDel(
         keyExpr: KeyExpr,
         qos: ReplyQoS = ReplyQoS.default,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> {
         val q = jniQuery ?: return Result.failure(ZError("Query is invalid"))
         val result = zCallUnit { onBindingError, onError ->
             q.replyDelete(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.jniHandle,
-                timestamp?.ntpValue(),
+                timestamp?.toJni(),
                 attachment?.into()?.bytes,
                 qos.express,
                 onBindingError, onError
@@ -200,7 +200,7 @@ class Query internal constructor(
     fun replyDel(
         keyExpr: KeyExpr,
         qos: ReplyQoS = ReplyQoS.default,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: String,
     ): Result<Unit> = replyDel(keyExpr, qos, timestamp, ZBytes.from(attachment))
 
@@ -215,7 +215,7 @@ class Query internal constructor(
     fun replyDel(
         keyExpr: KeyExpr,
         qos: QoS,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: IntoZBytes? = null
     ): Result<Unit> = replyDel(keyExpr, ReplyQoS(express = qos.express), timestamp, attachment)
 
@@ -226,7 +226,7 @@ class Query internal constructor(
     fun replyDel(
         keyExpr: KeyExpr,
         qos: QoS,
-        timestamp: TimeStamp? = null,
+        timestamp: Timestamp? = null,
         attachment: String,
     ): Result<Unit> = replyDel(keyExpr, ReplyQoS(express = qos.express), timestamp, ZBytes.from(attachment))
 
@@ -249,7 +249,7 @@ class Query internal constructor(
             parameters: String,
             payloadH: io.zenoh.jni.bytes.ZBytes?,
             encId: Int?,
-            encSchema: String?,
+            encSchema: ByteArray?,
             attachH: io.zenoh.jni.bytes.ZBytes?,
             acceptsRepliesInt: Int,
             zq: JniQuery,
@@ -264,7 +264,9 @@ class Query internal constructor(
                 ke,
                 selector,
                 payloadH?.let { ZBytes.fromHandle(it) },
-                encId?.let { Encoding(it, schema = encSchema) },
+                // Raw bytes on the wire; decoded lossily since this SDK's
+                // Encoding carries a String (see Sample.fromParts).
+                encId?.let { Encoding(it, schema = encSchema?.toString(Charsets.UTF_8)) },
                 attachH?.let { ZBytes.fromHandle(it) },
                 zq,
                 ReplyKeyExpr.fromInt(acceptsRepliesInt)

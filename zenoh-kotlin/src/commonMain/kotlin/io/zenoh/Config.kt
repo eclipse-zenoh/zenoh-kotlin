@@ -196,9 +196,12 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
          * @param config Json formatted config.
          * @return A result with the [Config].
          */
+        // Parsed by the JSON5 reader: base zenoh's `Config` has no `from_json`,
+        // and JSON is a subset of JSON5, so every input accepted here before is
+        // still accepted and parses to the same config.
         fun fromJson(config: String): Result<Config> =
             zCall({ JniConfig(0L) }) { onBindingError, onError ->
-                JniConfig.newFromJson(config, onBindingError, onError)
+                JniConfig.newFromJson5(config, onBindingError, onError)
             }.map { Config(it) }
 
         /**
