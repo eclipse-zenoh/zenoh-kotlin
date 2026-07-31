@@ -12,6 +12,7 @@
 //   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 //
 
+use jni::sys::jlong;
 use std::sync::Arc;
 
 use jni::{objects::JClass, JNIEnv};
@@ -35,7 +36,8 @@ use zenoh::pubsub::Subscriber;
 pub(crate) unsafe extern "C" fn Java_io_zenoh_jni_JNISubscriber_freePtrViaJNI(
     _env: JNIEnv,
     _: JClass,
-    subscriber_ptr: *const Subscriber<()>,
+    subscriber_ptr: jlong,
 ) {
+    let subscriber_ptr = subscriber_ptr as *const Subscriber<()>;
     Arc::from_raw(subscriber_ptr);
 }
