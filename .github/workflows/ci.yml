@@ -30,15 +30,17 @@ jobs:
       - name: Check out zenoh-flat-jni
         uses: actions/checkout@v4
         with:
-          repository: ZettaScaleLabs/zenoh-flat-jni
-          ref: 498ba268cf314b38bdca3faa131c2ee8402b2ac4
+          repository: eclipse-zenoh/zenoh-flat-jni
+          # TODO: re-pin to `main` once eclipse-zenoh/zenoh-flat-jni#23 merges.
+          ref: 227f2663b81f0dae3af15de38cd729ec29eac931
           path: zenoh-flat-jni
 
       - name: Check out zenoh-flat
         uses: actions/checkout@v4
         with:
-          repository: ZettaScaleLabs/zenoh-flat
-          ref: 3f431b6b581c49b6c4d0e94fab5922f860a98205
+          repository: eclipse-zenoh/zenoh-flat
+          # TODO: re-pin to `main` once eclipse-zenoh/zenoh-flat#79 merges.
+          ref: 8ca56d2bb9c00617c001928bf9b2bc564dd62071
           path: zenoh-flat
 
       - name: Use prebindgen from GitHub main
@@ -46,8 +48,7 @@ jobs:
         working-directory: zenoh-flat-jni
         run: |
           sed -i.bak \
-            -e 's|prebindgen = { path = "../prebindgen/prebindgen" }|prebindgen = { git = "https://github.com/milyin/prebindgen.git", branch = "main" }|g' \
-            -e 's|prebindgen-proc-macro = { path = "../prebindgen/prebindgen-proc-macro",|prebindgen-proc-macro = { git = "https://github.com/milyin/prebindgen.git", branch = "main",|g' \
+            -E -e 's|(prebindgen[a-z-]*) = \{ path = "\.\./prebindgen/[a-z-]+"|\1 = { git = "https://github.com/milyin/prebindgen.git", branch = "main"|g' \
             Cargo.toml ../zenoh-flat/Cargo.toml
           rm Cargo.toml.bak ../zenoh-flat/Cargo.toml.bak
 
