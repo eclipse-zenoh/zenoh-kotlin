@@ -30,26 +30,16 @@ jobs:
       - name: Check out zenoh-flat-jni
         uses: actions/checkout@v4
         with:
-          repository: ZettaScaleLabs/zenoh-flat-jni
-          ref: 498ba268cf314b38bdca3faa131c2ee8402b2ac4
+          repository: eclipse-zenoh/zenoh-flat-jni
+          ref: 6f81eb8f9d5c49b72dda2fb054a174cce3184f2a
           path: zenoh-flat-jni
 
       - name: Check out zenoh-flat
         uses: actions/checkout@v4
         with:
-          repository: ZettaScaleLabs/zenoh-flat
-          ref: 3f431b6b581c49b6c4d0e94fab5922f860a98205
+          repository: eclipse-zenoh/zenoh-flat
+          ref: 81feb940cce9f4c3b33a87de397b2ce42cb5fc9e
           path: zenoh-flat
-
-      - name: Use prebindgen from GitHub main
-        shell: bash
-        working-directory: zenoh-flat-jni
-        run: |
-          sed -i.bak \
-            -e 's|prebindgen = { path = "../prebindgen/prebindgen" }|prebindgen = { git = "https://github.com/milyin/prebindgen.git", branch = "main" }|g' \
-            -e 's|prebindgen-proc-macro = { path = "../prebindgen/prebindgen-proc-macro",|prebindgen-proc-macro = { git = "https://github.com/milyin/prebindgen.git", branch = "main",|g' \
-            Cargo.toml ../zenoh-flat/Cargo.toml
-          rm Cargo.toml.bak ../zenoh-flat/Cargo.toml.bak
 
       - uses: actions/setup-java@v4
         with:
