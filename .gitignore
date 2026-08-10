@@ -22,3 +22,6 @@ build/
 examples/build
 local.properties
 zenoh-kotlin/build
+
+# Fetched by settings.gradle.kts when building against the pinned zenoh-flat-jni
+/.zenoh-flat-jni/

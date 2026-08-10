@@ -155,7 +155,7 @@ release is blocked.
 
 | Rehearsal | resolves zenoh-flat-jni from | proves |
 | --- | --- | --- |
-| local build and tests | a sibling checkout, via `-PuseLocalFlatJni=true` | the code compiles and the tests pass |
+| local build and tests | its source — the pinned commit, or your own checkout ([Local development](#local-development)) | the code compiles and the tests pass |
 | CI, `maven_publish` unchecked | the snapshot repository | the artifacts assemble |
 | CI, snapshot publication | `zenoh-flat-jni:<version>-SNAPSHOT` | signing, credentials, a real upload |
 | live release | `zenoh-flat-jni:<version>` on Central | **blocked until that exists** |
@@ -218,30 +218,44 @@ Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
 ## Local development
 
 The default build resolves `zenoh-flat-jni` from Maven Central like any consumer.
-To work against a local checkout of it:
+A build can be pointed at its *source* instead, through a Gradle composite build.
+`settings.gradle.kts` decides where that source comes from, in this order:
 
-```bash
-./gradlew build -PuseLocalFlatJni=true
+| | says "use this source" | where it comes from |
+| --- | --- | --- |
+| 1 | `-PflatJniDir=<path>` | that directory, as it is |
+| 2 | `path = "…"` in `Cargo.toml` | that directory, as it is |
+| 3 | `-PuseLocalFlatJni=true` | the commit `Cargo.lock` pins, fetched into `.zenoh-flat-jni/` |
+| 4 | nothing | Maven Central — no composite build at all |
+
+So working against a checkout of your own is the ordinary Cargo edit, in
+`Cargo.toml`:
+
+```toml
+# zenoh-flat-jni = { git = "…/zenoh-flat-jni.git", branch = "main" }
+zenoh-flat-jni = { path = "../zenoh-flat-jni" }
 ```
 
-That substitutes `../zenoh-flat-jni` through a Gradle composite build, so changes
-there are picked up without publishing anything. Set it in your personal
-`gradle.properties` if you want it always on.
+and `./gradlew build` picks it up with no properties at all. `-PflatJniDir=…`
+does the same without editing anything, for a checkout somewhere else.
 
-**It must never be enabled for a release.** With it on, the published artifact
-would be built against whatever happens to be on the builder's disk rather than
-the resolved dependency, and the POM would still claim the released version. It
-is off by default and CI passes it explicitly only where it checks the sibling
-out.
+Reproducing what CI tested is `./gradlew jvmTest -PuseLocalFlatJni=true`, which
+fetches the pinned commit into `.zenoh-flat-jni/` — that is the whole of what CI
+does, so the same command reproduces a CI run anywhere. It fetches only when that
+directory is not already at the pinned commit, and `-PflatJniCommit=<sha>` tries a
+different one without touching the lockfile.
 
-### The pin crate, and which zenoh-flat-jni CI tests against
+**A release takes row 4, and must.** With a composite build the published
+artifact would be built against whatever was on the builder's disk while the POM
+still claimed the released version. Nothing opts in by default; CI opts in
+explicitly.
 
-CI does exactly that, and the commit it checks out is the one `Cargo.lock` pins.
+### The pin crate
 
-There is a Rust crate at the repository root — `Cargo.toml`, `ci/pin.rs`,
-`rust-toolchain.toml` — that compiles to nothing anyone ships. Its only content
-is a dependency on `zenoh-flat-jni`, and its only purpose is to make the commit
-under test a *resolved lockfile entry*:
+Rows 2 and 3 read a Rust crate at the repository root — `Cargo.toml`,
+`ci/pin.rs`, `rust-toolchain.toml`, `Cargo.lock` — that compiles to nothing
+anyone ships. Its only content is a dependency on `zenoh-flat-jni`, and its only
+purpose is to make the commit under test a *resolved lockfile entry*:
 
 ```toml
 zenoh-flat-jni = { git = "…/zenoh-flat-jni.git", branch = "main" }
@@ -261,7 +275,13 @@ crate sits at the root rather than in a subdirectory.
 The pin keeps a CI run reproducible from this repository's commit alone; the bot
 keeps it from going stale.
 
-#### Moving the pin yourself
+Nothing here builds that crate. Running `cargo build` at the repository root
+compiles zenoh and the bindings to produce an empty library — if an IDE offers to
+load the root `Cargo.toml` as a Rust project, decline. Gradle only *reads* these
+two files; it never runs Cargo against them, so switching to `path = "…"` leaves
+`Cargo.lock` untouched.
+
+### Moving the pin
 
 Normally you don't — the bot's pull request does. When you need to:
 
@@ -275,31 +295,13 @@ mechanism rather than steering it:
 
 - **Do not add `rev = "…"` to `Cargo.toml`.** That freezes resolution at a
   commit, so the sync can no longer move the pin and the bot goes silent.
-- **Do not commit a path override or `[patch]`.** It replaces the git source, the
-  lockfile then pins no commit at all, and CI fails with exactly that message.
+- **Do not commit the `path = "…"` form.** It is meant to be a local edit: the
+  lockfile then pins no commit, CI says so and fails, and the lockfile sync
+  cannot resolve `../zenoh-flat-jni` on a runner either. `git checkout Cargo.toml`
+  when you are done — and `Cargo.lock` too, if you ran Cargo while it was set.
 
-#### Developing against a local zenoh-flat-jni
-
-Use the composite build above (`-PuseLocalFlatJni=true`), not a Cargo path
-override. It substitutes `../zenoh-flat-jni` at the level that matters — the
-Kotlin and native artifacts the tests actually load — and works with whatever
-branch or commit you have checked out there. The pin is simply not consulted, so
-there is nothing to point anywhere and nothing to remember to revert.
-
-To reproduce what CI tested, check the sibling out at the pinned commit first:
-
-```bash
-git -C ../zenoh-flat-jni checkout "$(sed -n \
-  's|.*/zenoh-flat-jni\.git[^#]*#\([0-9a-f]\{40\}\)".*|\1|p' Cargo.lock | head -1)"
-./gradlew jvmTest -PuseLocalFlatJni=true
-```
-
-Nothing else here wants Cargo. Running `cargo build` at the repository root
-compiles zenoh and the bindings to produce an empty library — if an IDE offers
-to load the root `Cargo.toml` as a Rust project, decline.
-
-The pin governs CI only. Which `zenoh-flat-jni` *release* this SDK is built and
-published against is `zenohFlatJniVersion` in `gradle.properties`.
+The pin governs source builds only. Which `zenoh-flat-jni` *release* this SDK is
+built and published against is `zenohFlatJniVersion` in `gradle.properties`.
 
 ## Required secrets
 

@@ -27,42 +27,16 @@ jobs:
         with:
           path: zenoh-kotlin
 
-      # The commit under test is the one Cargo.lock pins for the root pin crate
-      # (see Cargo.toml). That lockfile is what eclipse-zenoh/ci's lockfile sync
-      # already knows how to move, so the pin is maintained by the same bot that
-      # keeps every other zenoh dependant aligned, rather than by hand.
-      - name: Read the zenoh-flat-jni commit from Cargo.lock
-        id: flat-jni
-        working-directory: zenoh-kotlin
-        run: |
-          set -euo pipefail
-          ref=$(sed -n 's|.*/zenoh-flat-jni\.git[^#]*#\([0-9a-f]\{40\}\)".*|\1|p' Cargo.lock | head -1)
-          if [[ -z "$ref" ]]; then
-            echo "::error::Cargo.lock pins no zenoh-flat-jni git commit. A path override or [patch] erases it - see PUBLISHING.md."
-            exit 1
-          fi
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-
-      - name: Check out zenoh-flat-jni
-        uses: actions/checkout@v4
-        with:
-          repository: eclipse-zenoh/zenoh-flat-jni
-          ref: ${{ steps.flat-jni.outputs.ref }}
-          # zenoh-flat is not checked out at all: zenoh-flat-jni resolves it
-          # from git, so its Cargo.lock is the rev that decides.
-          path: zenoh-flat-jni
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 11
 
-      # zenoh-flat-jni pins its toolchain in rust-toolchain.toml. Install it
-      # from that directory, so a missing toolchain fails here rather than
-      # inside the Gradle build - and so this repo never has to name a version
-      # its dependency is free to change.
+      # rust-toolchain.toml here tracks zenoh-flat-jni's own, because that is
+      # what has to compile. Installing it up front keeps a missing toolchain
+      # from surfacing in the middle of the Gradle build.
       - name: Install Rust toolchain
-        working-directory: zenoh-flat-jni
+        working-directory: zenoh-kotlin
         run: rustup show
 
       - name: Setup Gradle
@@ -70,12 +44,15 @@ jobs:
 
       - name: Gradle Test
         working-directory: zenoh-kotlin
-        # CI builds against the sibling checkout above, so it opts into the
-        # composite build. A release does not: it resolves zenoh-flat-jni from
-        # Maven Central like any other consumer.
+        # CI tests against zenoh-flat-jni's source, so it opts into the composite
+        # build; settings.gradle.kts then fetches the commit Cargo.lock pins. A
+        # release does not opt in: it resolves zenoh-flat-jni from Maven Central
+        # like any other consumer.
         #
-        # No cargo step precedes this: the composite build's test task depends
-        # on zenoh-flat-jni's own native build, so Gradle drives cargo.
+        # No checkout or cargo step precedes this. The build fetches its own
+        # pinned bindings, and their test task depends on their native build, so
+        # Gradle drives both git and cargo - which is why `./gradlew jvmTest
+        # -PuseLocalFlatJni=true` reproduces this run anywhere.
         run: ./gradlew jvmTest --info -PuseLocalFlatJni=true
 
   markdown_lint:
