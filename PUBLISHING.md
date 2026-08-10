@@ -22,6 +22,7 @@ which covers them once for the whole stack.
   - [The real release](#the-real-release)
   - [After a release](#after-a-release)
 - [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released)
+  - [Rehearsing the release workflow with a snapshot](#rehearsing-the-release-workflow-with-a-snapshot)
 - [How the pipeline works](#how-the-pipeline-works)
 - [Building against zenoh-flat-jni source](#building-against-zenoh-flat-jni-source)
 - [Required secrets](#required-secrets)
@@ -112,7 +113,7 @@ builds and publishes.
 | --- | --- |
 | `live-run` | **unchecked** |
 | `version` | a fresh provisional number, not one already used |
-| `zenoh-flat-jni-version` | leave empty for a rehearsal, or a released version |
+| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names an unreleased version and fails |
 | `maven_publish` | checked — or uncheck for the very first run |
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
@@ -168,11 +169,42 @@ published — a rehearsal there with `maven_publish` enabled uploads
 Nothing needs editing. Name the version on the command line:
 
 ```bash
-./gradlew build -PzenohFlatJniVersion=1.9.0-rc4-SNAPSHOT
+./gradlew build -PzenohFlatJniVersion=1.9.0-rc8-SNAPSHOT
 ```
 
-or pass the same value as the `zenoh-flat-jni-version` input to a rehearsal of
-the release workflow.
+### Rehearsing the release workflow with a snapshot
+
+Find what is actually published — the list moves as zenoh-flat-jni rehearses:
+
+```bash
+curl -s https://central.sonatype.com/repository/maven-snapshots/org/eclipse/zenoh/zenoh-flat-jni/maven-metadata.xml
+```
+
+```xml
+<latest>1.9.0-rc8-SNAPSHOT</latest>
+```
+
+Then run **Release** from the Actions tab with:
+
+| input | value |
+| --- | --- |
+| `live-run` | **unchecked** — a live run refuses a `-SNAPSHOT` binding |
+| `zenoh-flat-jni-version` | the version above, e.g. `1.9.0-rc8-SNAPSHOT` |
+| `maven_publish` | checked to rehearse the upload too, unchecked to stop at assembly |
+| `version`, `branch` | leave empty unless you are rehearsing a specific one |
+
+**`zenoh-flat-jni-version` is the field that matters.** Left empty, the build
+falls back to `zenohFlatJniVersion` in `gradle.properties` — currently `1.9.0`,
+which is not on Maven Central, and the run dies in `compileKotlinJvm`:
+
+```text
+Could not find org.eclipse.zenoh:zenoh-flat-jni:1.9.0
+```
+
+That is the conditional repository below doing its job, not a broken build: a
+non-snapshot version never gets the snapshot repository on its resolution path.
+The same applies to the nightly scheduled run of `release.yml`, which passes no
+inputs and so fails this way until zenoh-flat-jni is released for real.
 
 The Central snapshot repository is declared **conditionally** in
 `build.gradle.kts`, and this is the part worth understanding:
