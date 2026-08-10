@@ -232,7 +232,7 @@ So working against a checkout of your own is the ordinary Cargo edit, in
 `Cargo.toml`:
 
 ```toml
-# zenoh-flat-jni = { git = "…/zenoh-flat-jni.git", branch = "main" }
+# zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
 zenoh-flat-jni = { path = "../zenoh-flat-jni" }
 ```
 
@@ -258,11 +258,11 @@ anyone ships. Its only content is a dependency on `zenoh-flat-jni`, and its only
 purpose is to make the commit under test a *resolved lockfile entry*:
 
 ```toml
-zenoh-flat-jni = { git = "…/zenoh-flat-jni.git", branch = "main" }
+zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
 ```
 
 ```text
-Cargo.lock:  source = "git+…/zenoh-flat-jni.git?branch=main#<40-hex commit>"
+Cargo.lock:  source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#<40-hex commit>"
 ```
 
 A lockfile is the one pin `eclipse-zenoh/ci` already knows how to move. Its
