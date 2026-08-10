@@ -26,9 +26,9 @@ on:
         type: string
         description: Release number
         required: false
-      zenoh-version:
+      zenoh-flat-jni-version:
         type: string
-        description: Release number of Zenoh
+        description: The zenoh-flat-jni release to build against (must already be on Maven Central for a live run)
         required: false
       branch:
         type: string
@@ -67,29 +67,14 @@ jobs:
         env:
           LIVE_RUN: ${{ inputs.live-run || false }}
           VERSION: ${{ steps.create-release-branch.outputs.version }}
-          BUMP_DEPS_VERSION: ${{ inputs.zenoh-version }}
-          BUMP_DEPS_PATTERN: ${{ inputs.zenoh-version && 'zenoh.*' || '' }}
-          BUMP_DEPS_BRANCH: ${{ inputs.zenoh-version && format('release/{0}', inputs.zenoh-version) || '' }}
+          FLAT_JNI_VERSION: ${{ inputs.zenoh-flat-jni-version }}
           GIT_USER_NAME: eclipse-zenoh-bot
           GIT_USER_EMAIL: eclipse-zenoh-bot@users.noreply.github.com
 
-  publish-jvm:
-    name: Publish JVM package
+  publish:
+    name: Publish to Maven Central
     needs: tag
-    uses: ./.github/workflows/publish-jvm.yml
-    with:
-      snapshot: ${{ !(inputs.live-run || false) }}
-      branch: ${{ needs.tag.outputs.branch }}
-      maven_publish: ${{ !contains(inputs.maven_publish, 'false') }}
-    permissions:
-      contents: read
-      packages: write
-    secrets: inherit
-
-  publish-android:
-    name: Publish Android package
-    needs: tag
-    uses: ./.github/workflows/publish-android.yml
+    uses: ./.github/workflows/publish.yml
     with:
       snapshot: ${{ !(inputs.live-run || false) }}
       branch: ${{ needs.tag.outputs.branch }}
@@ -101,8 +86,12 @@ jobs:
 
   publish-dokka:
     name: Publish documentation
-    needs: [tag, publish-android, publish-jvm]
+    needs: [tag, publish]
     uses: ./.github/workflows/publish-dokka.yml
     with:
       live-run: ${{ inputs.live-run || false }}
       branch: ${{ needs.tag.outputs.branch }}
+    # peaceiris/actions-gh-pages pushes the generated site to the gh-pages
+    # branch, which the default read-only token cannot do.
+    permissions:
+      contents: write

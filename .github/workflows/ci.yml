@@ -60,7 +60,10 @@ jobs:
 
       - name: Gradle Test
         working-directory: zenoh-kotlin
-        run: ./gradlew jvmTest --info
+        # CI builds against the sibling checkouts above, so it opts into the
+        # composite build. A release does not: it resolves zenoh-flat-jni from
+        # Maven Central like any other consumer.
+        run: ./gradlew jvmTest --info -PuseLocalFlatJni=true
 
   markdown_lint:
     runs-on: ubuntu-latest
@@ -85,25 +88,13 @@ jobs:
       - name: Check whether all jobs pass
         run: echo '${{ toJson(needs) }}' | jq -e 'all(.result == "success")'
 
-  # Publish snapshot packages. These jobs will only be triggered when the CI is executed on main.
-  publish_jvm_snapshot_package:
-    name: Publish JVM snapshot package
+  # Publish snapshot packages. Both coordinates come from one Gradle
+  # invocation — see .github/workflows/publish.yml.
+  publish_snapshot_package:
+    name: Publish snapshot package
     if: contains(fromJSON('["refs/heads/main"]'), github.ref)
     needs: ci
-    uses: ./.github/workflows/publish-jvm.yml
-    permissions:
-      contents: read
-      packages: write
-    with:
-      snapshot: true
-      branch: ${{ github.ref_name }}
-    secrets: inherit
-
-  publish_android_snapshot_package:
-    name: Publish Android snapshot package
-    if: contains(fromJSON('["refs/heads/main"]'), github.ref)
-    needs: ci
-    uses: ./.github/workflows/publish-android.yml
+    uses: ./.github/workflows/publish.yml
     permissions:
       contents: read
       packages: write

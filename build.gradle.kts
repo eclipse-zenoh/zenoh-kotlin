@@ -54,9 +54,27 @@ nexusPublishing {
     }
 }
 
+val zenohFlatJniVersion: String by project
+
 subprojects {
     repositories {
         google()
         mavenCentral()
+
+        // Only reachable when a snapshot of the binding was explicitly asked
+        // for, which is how this SDK is rehearsed before zenoh-flat-jni has a
+        // real release. A release version never ends in -SNAPSHOT, so a release
+        // build cannot resolve a mutable artifact.
+        //
+        // includeGroup, not includeModule: the dependency names the root
+        // coordinate, but what Gradle downloads is zenoh-flat-jni-jvm or
+        // zenoh-flat-jni-android. Filtering to one module would hide those.
+        if (zenohFlatJniVersion.endsWith("-SNAPSHOT")) {
+            maven {
+                name = "centralSnapshots"
+                url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+                content { includeGroup("org.eclipse.zenoh") }
+            }
+        }
     }
 }

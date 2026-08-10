@@ -1,4 +1,10 @@
-name: Publish (Android)
+name: Publish
+
+# Both publications come from a *single* Gradle invocation, so they share one
+# staging repository and one close/release: either both coordinates become public
+# or neither does. That is only possible because zenoh-flat-jni is a Kotlin
+# Multiplatform library — one dependency declaration resolves per target, so an
+# Android-enabled build produces both publications correctly.
 
 on:
   workflow_call:
@@ -17,9 +23,13 @@ on:
         required: false
         default: true
 
+# The native libraries are not built here: they ship inside the
+# org.eclipse.zenoh:zenoh-flat-jni artifact this SDK depends on, already
+# cross-compiled and verified by that repository's release. This workflow only
+# compiles Kotlin and publishes.
 jobs:
-  publish_android_package:
-    name: Publish Android package
+  publish_package:
+    name: Publish to Maven Central
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,6 +47,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Assembles both artifacts and generates their POMs without uploading, so
+      # a `maven_publish: false` rehearsal actually proves something. Only the
+      # remote upload below is gated.
+      - name: Assemble and verify the publications
+        run: ./gradlew publishJvmPublicationToMavenLocal publishAndroidReleasePublicationToMavenLocal --info -Pandroid=true
+
       - name: Set pub mode env var
         # Note: This step is intended to allow publishing snapshot packages.
         # It allows to optionally append the property -PSNAPSHOT to the gradle
@@ -50,9 +66,11 @@ jobs:
           fi
 
       - if: ${{ inputs.maven_publish == true }}
-        name: Gradle Publish Android Package to Maven Central repository
+        name: Gradle Publish to Maven Central repository
         run: |
-          ./gradlew publishAndroidReleasePublicationToSonatypeRepository ${{ env.RELEASE }} --info -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+          ./gradlew publishJvmPublicationToSonatypeRepository \
+                    publishAndroidReleasePublicationToSonatypeRepository \
+                    ${{ env.RELEASE }} --info -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
           CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}

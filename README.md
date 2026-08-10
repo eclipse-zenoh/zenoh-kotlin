@@ -21,7 +21,7 @@ Check the website [zenoh.io](http://zenoh.io) and the [roadmap](https://github.c
 
 This repository provides a Kotlin binding based on the main [Zenoh implementation written in Rust](https://github.com/eclipse-zenoh/zenoh).
 
-The code relies on the Zenoh JNI native library, which written in Rust and communicates with the Kotlin layer via the Java Native Interface (JNI).
+The code relies on a native library written in Rust, communicating with the Kotlin layer through the Java Native Interface (JNI). That library is not built in this repository: it is generated and published separately as [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni) and consumed here as an ordinary Maven dependency.
 
 ## <img src="doc_icon.png" alt="Zenoh" height="70"> Documentation
 
@@ -96,7 +96,7 @@ dependencyResolutionManagement {
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:1.1.1")
+implementation("org.eclipse.zenoh:zenoh-kotlin:1.1.1")
 ```
 
 ### Platforms
@@ -125,7 +125,15 @@ and in case of targetting Android you'll also need:
 
 - Android SDK ([Installation guide](https://developer.android.com/about/versions/11/setup-sdk))
 
-> **Note:** zenoh-kotlin no longer builds its own native JNI library. The generated JNI bindings and the native library are provided by [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni), consumed as the Maven artifact `org.eclipse.zenoh:zenoh-flat-jni`. For local development, `settings.gradle.kts` includes `../zenoh-flat-jni` as a Gradle composite build: with a sibling checkout of that repository (and a Rust toolchain), the Maven dependency is automatically substituted by the locally built one.
+> **Note:** zenoh-kotlin builds no native code, so no Rust toolchain and no NDK
+> are needed. The generated JNI bindings and the native libraries come from
+> [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni), resolved as
+> `org.eclipse.zenoh:zenoh-flat-jni` — a Kotlin Multiplatform library, so the JVM
+> or Android variant is selected automatically. To build against a sibling
+> `../zenoh-flat-jni` checkout instead, pass `-PuseLocalFlatJni=true`; that path
+> does build the native library from source and so needs a Rust toolchain (see
+> [rustup.rs](https://rustup.rs)). See [PUBLISHING.md](PUBLISHING.md) for how
+> releases work.
 
 ## <img src="jvm.png" alt="JVM" height="50"> JVM
 
@@ -135,9 +143,9 @@ To publish a library for a JVM project into Maven local, run
 gradle publishJvmPublicationToMavenLocal
 ```
 
-This publishes the zenoh-kotlin library to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and native binaries and is published separately from the [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni) repository.
+This publishes the zenoh-kotlin library to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and the native binaries, and is released separately from the [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni) repository.
 
-Once we have published the package, we should be able to find it under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin-jvm/1.1.1`.
+Once we have published the package, we should be able to find it under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin/1.1.1`.
 
 Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
 
@@ -148,7 +156,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:1.1.1")
+    implementation("org.eclipse.zenoh:zenoh-kotlin:1.1.1")
 }
 ```
 
@@ -160,7 +168,7 @@ In order to use these bindings in a native Android project, publish them into Ma
 gradle -Pandroid=true publishAndroidReleasePublicationToMavenLocal
 ```
 
-This publishes the zenoh-kotlin-android artifact to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and prebuilt native binaries. The native binaries are published separately from the [zenoh-flat-jni](https://github.com/ZettaScaleLabs/zenoh-flat-jni) repository — no Rust toolchain or NDK cross-compilation is required when resolving from Maven.
+This publishes the zenoh-kotlin-android artifact to Maven local. It declares a dependency on `zenoh-flat-jni`, whose Android variant carries the prebuilt native libraries for all four ABIs, released separately from the [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni) repository — no Rust toolchain and no NDK cross-compilation is required here.
 
 You should now be able to see the package under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin-android/1.1.1`.
 
@@ -200,12 +208,18 @@ gradle dokkaGenerate
 gradle jvmTest
 ```
 
-The build resolves `zenoh-flat-jni` through the Gradle composite build against a
-sibling `../zenoh-flat-jni` checkout (see `settings.gradle.kts`), which builds the
-native library from source and therefore requires a Rust toolchain
-(see [rustup.rs](https://rustup.rs)). Once `zenoh-flat-jni` is published to Maven
-Central, removing the `includeBuild` line makes the build resolve the prebuilt
-artifact instead, with no Rust toolchain needed.
+By default this resolves `zenoh-flat-jni` from Maven Central, so no Rust
+toolchain is involved. To run the tests against a sibling `../zenoh-flat-jni`
+checkout instead — which is what CI does, and what you want when changing both
+repositories together — add `-PuseLocalFlatJni=true`:
+
+```bash
+gradle jvmTest -PuseLocalFlatJni=true
+```
+
+That substitutes the artifact through a Gradle composite build and does compile
+the native library from source, so it requires a Rust toolchain (see
+[rustup.rs](https://rustup.rs)).
 
 ## Logging
 
@@ -266,6 +280,6 @@ Then after that, add the dependency as usual:
 
 ```kotlin
 dependencies {
-    implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:<version>")
+    implementation("org.eclipse.zenoh:zenoh-kotlin:<version>")
 }
 ```

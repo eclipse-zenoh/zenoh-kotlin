@@ -23,6 +23,9 @@ plugins {
 
 val androidEnabled = project.findProperty("android")?.toString()?.toBoolean() == true
 
+// The zenoh-flat-jni release this SDK is built against — see gradle.properties.
+val zenohFlatJniVersion: String by project
+
 // If the publication is meant to be done on a remote repository (Maven central).
 // Modifying this property will affect the release workflows!
 val isRemotePublication = project.findProperty("remotePublication")?.toString()?.toBoolean() == true
@@ -51,8 +54,11 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                // Zenoh Flat JNI - includes Kotlin sources and native libraries
-                implementation("org.eclipse.zenoh:zenoh-flat-jni:1.9.0")
+                // Zenoh Flat JNI. One coordinate: it is a Kotlin Multiplatform
+                // library, so Gradle resolves the JVM or Android variant from
+                // its module metadata and the matching native libraries come
+                // with it. Nothing here selects a platform by hand.
+                implementation("org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion")
                 // Required by zenoh-flat-jni's deserializer (guava TypeToken)
                 implementation("com.google.guava:guava:33.3.1-jre")
             }
