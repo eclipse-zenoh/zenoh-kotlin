@@ -129,11 +129,104 @@ and in case of targetting Android you'll also need:
 > are needed. The generated JNI bindings and the native libraries come from
 > [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni), resolved as
 > `org.eclipse.zenoh:zenoh-flat-jni` — a Kotlin Multiplatform library, so the JVM
-> or Android variant is selected automatically. To build against a sibling
-> `../zenoh-flat-jni` checkout instead, pass `-PuseLocalFlatJni=true`; that path
-> does build the native library from source and so needs a Rust toolchain (see
-> [rustup.rs](https://rustup.rs)). See [PUBLISHING.md](PUBLISHING.md) for how
-> releases work.
+> or Android variant is selected automatically. Building against its _source_
+> instead does need a Rust toolchain — see below. For releases, see
+> [PUBLISHING.md](PUBLISHING.md).
+
+## Building against zenoh-flat-jni source
+
+The default build resolves `zenoh-flat-jni` from Maven Central like any consumer,
+and needs nothing from this section. A build can be pointed at its source instead,
+through a Gradle composite build — for working on the bindings and this SDK
+together, or for reproducing a CI run. `settings.gradle.kts` decides where that
+source comes from, in this order:
+
+| | says "use this source" | where it comes from |
+| --- | --- | --- |
+| 1 | `-PflatJniDir=<path>` | that directory, as it is |
+| 2 | `path = "…"` in `Cargo.toml` | that directory, as it is |
+| 3 | `-PuseLocalFlatJni=true` | the commit `Cargo.lock` pins, fetched into `.zenoh-flat-jni/` |
+| 4 | nothing | Maven Central — no composite build at all |
+
+Rows 1–3 build the native library from source, so they need a Rust toolchain
+([rustup.rs](https://rustup.rs)); Gradle drives cargo for you. Row 4 — the
+default — needs none.
+
+Working against a checkout of your own is the ordinary Cargo edit, in
+`Cargo.toml`:
+
+```toml
+# zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
+zenoh-flat-jni = { path = "../zenoh-flat-jni" }
+```
+
+and `./gradlew build` picks it up with no properties at all. `-PflatJniDir=…`
+does the same without editing anything, for a checkout somewhere else.
+
+Reproducing what CI tested is:
+
+```bash
+./gradlew jvmTest -PuseLocalFlatJni=true
+```
+
+which fetches the pinned commit into `.zenoh-flat-jni/` — that is the whole of
+what CI does, so this one command reproduces a CI run anywhere. It fetches only
+when that directory is not already at the pinned commit, and
+`-PflatJniCommit=<sha>` tries a different commit without touching the lockfile.
+
+### Where the pinned commit comes from
+
+Rows 2 and 3 read a Rust crate at the repository root — `Cargo.toml`,
+`ci/pin.rs`, `rust-toolchain.toml`, `Cargo.lock` — that compiles to nothing
+anyone ships. Its only content is a dependency on `zenoh-flat-jni`, and its only
+purpose is to make the commit this SDK is tested against a _resolved lockfile
+entry_:
+
+```toml
+zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
+```
+
+```text
+Cargo.lock:  source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#<40-hex commit>"
+```
+
+A lockfile is the one pin `eclipse-zenoh/ci` already knows how to move. Its
+lockfile sync overwrites a dependant's `Cargo.lock` with zenoh's, resolves the
+manifest again — which writes back the current zenoh-flat-jni commit — compiles
+the result, and opens an auto-merging pull request. This repository is an
+ordinary dependant of that workflow, not a special case in it, which is why the
+crate sits at the root rather than in a subdirectory.
+
+The pin keeps a CI run reproducible from this repository's commit alone; the bot
+keeps it from going stale.
+
+Nothing here builds that crate. Running `cargo build` at the repository root
+compiles zenoh and the bindings to produce an empty library — if an IDE offers to
+load the root `Cargo.toml` as a Rust project, decline. Gradle only _reads_ these
+two files; it never runs Cargo against them, so switching to `path = "…"` leaves
+`Cargo.lock` untouched.
+
+### Moving the pin
+
+Normally you don't — the bot's pull request does. When you need to:
+
+```bash
+cargo update -p zenoh-flat-jni                 # to zenoh-flat-jni's main tip
+cargo update -p zenoh-flat-jni --precise <sha> # to one specific commit
+```
+
+Commit the resulting `Cargo.lock`. Two things to avoid, because both defeat the
+mechanism rather than steering it:
+
+- **Do not add `rev = "…"` to `Cargo.toml`.** That freezes resolution at a
+  commit, so the sync can no longer move the pin and the bot goes silent.
+- **Do not commit the `path = "…"` form.** It is meant to be a local edit: the
+  lockfile then pins no commit, CI says so and fails, and the lockfile sync
+  cannot resolve `../zenoh-flat-jni` on a runner either. `git checkout Cargo.toml`
+  when you are done — and `Cargo.lock` too, if you ran Cargo while it was set.
+
+A release resolves the Maven artifact and must never use a composite build; see
+[PUBLISHING.md](PUBLISHING.md#building-against-zenoh-flat-jni-source).
 
 ## <img src="jvm.png" alt="JVM" height="50"> JVM
 
