@@ -2,6 +2,7 @@ package io.zenoh
 
 import io.zenoh.exceptions.ZError
 import io.zenoh.keyexpr.intoKeyExpr
+import io.zenoh.query.ReplyKeyExpr
 import io.zenoh.query.Selector
 import io.zenoh.query.intoSelector
 import org.junit.jupiter.api.Assertions.assertNull
@@ -35,6 +36,14 @@ class SelectorTest {
         "a/b/c".intoSelector().getOrThrow().use { selector: Selector ->
             assertEquals("a/b/c", selector.toString())
         }
+    }
+
+    @Test
+    fun `ReplyKeyExpr keeps its declaration order`() {
+        // The constants carry the flat wire value in `value`, so the
+        // declaration order is free — and must stay as published, since
+        // reordering silently changes `ordinal` and `values()` for consumers.
+        assertEquals(listOf(ReplyKeyExpr.ANY, ReplyKeyExpr.MATCHING_QUERY), ReplyKeyExpr.entries)
     }
 
     /**
