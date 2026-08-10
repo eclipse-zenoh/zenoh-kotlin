@@ -41,23 +41,25 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      # zenoh-flat-jni pins its toolchain in rust-toolchain.toml. Install it
+      # from that directory, so a missing toolchain fails here rather than
+      # inside the Gradle build - and so this repo never has to name a version
+      # its dependency is free to change.
       - name: Install Rust toolchain
-        run: |
-          rustup show
-          rustup component add rustfmt clippy --toolchain 1.93.0
-
-      - name: Build zenoh-flat-jni
         working-directory: zenoh-flat-jni
-        run: cargo build
+        run: rustup show
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Gradle Test
         working-directory: zenoh-kotlin
-        # CI builds against the sibling checkouts above, so it opts into the
+        # CI builds against the sibling checkout above, so it opts into the
         # composite build. A release does not: it resolves zenoh-flat-jni from
         # Maven Central like any other consumer.
+        #
+        # No cargo step precedes this: the composite build's test task depends
+        # on zenoh-flat-jni's own native build, so Gradle drives cargo.
         run: ./gradlew jvmTest --info -PuseLocalFlatJni=true
 
   markdown_lint:
