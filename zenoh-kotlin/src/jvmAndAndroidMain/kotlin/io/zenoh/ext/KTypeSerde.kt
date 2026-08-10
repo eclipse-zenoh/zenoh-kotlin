@@ -9,8 +9,12 @@ import kotlin.reflect.KType
  * the pure-Kotlin serializer. Inspects the type's classifier (a [KClass] with a
  * qualified name) so it recognizes the Kotlin-only unsigned value classes and
  * `Pair`/`Triple` that erase away in `java.lang.reflect.Type`. Mirrors the
- * former native `decode_ktype`, in Kotlin. Lives in `jvmAndAndroidMain` (the
- * source set carrying kotlin-reflect).
+ * former native `decode_ktype`, in Kotlin.
+ *
+ * Lives in `jvmAndAndroidMain` because `typeOf<T>()` and [KClass.qualifiedName]
+ * resolve through `kotlin.jvm.internal.Reflection`, which the JVM stdlib
+ * provides (no kotlin-reflect artifact needed) but Kotlin/Native and
+ * Kotlin/JS do not.
  */
 internal fun serdeTypeOf(type: KType): SerializationCodec.SerdeType {
     val classifier = type.classifier as? KClass<*>

@@ -59,8 +59,6 @@ kotlin {
                 // its module metadata and the matching native libraries come
                 // with it. Nothing here selects a platform by hand.
                 implementation("org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion")
-                // Required by zenoh-flat-jni's deserializer (guava TypeToken)
-                implementation("com.google.guava:guava:33.3.1-jre")
             }
         }
         val commonTest by getting {
@@ -76,8 +74,10 @@ kotlin {
             }
         }
         // jvmAndAndroidMain is an intermediate source set between commonMain and both jvmMain/androidMain.
-        // It holds code that uses kotlin-reflect — available on JVM and Android (ART),
-        // but absent on Kotlin/Native and Kotlin/JS targets.
+        // It holds the reflection-based serde entry points (zSerialize/zDeserialize,
+        // KTypeSerde), which need `typeOf<T>()` and KClass.qualifiedName. Both are
+        // served by the JVM stdlib's kotlin.jvm.internal.Reflection — no kotlin-reflect
+        // artifact — but only on JVM and Android (ART).
         val jvmAndAndroidMain by creating { dependsOn(commonMain) }
         val jvmMain by getting {
             dependsOn(jvmAndAndroidMain)
