@@ -24,10 +24,16 @@ rootProject.name = "zenoh-kotlin"
 include(":zenoh-kotlin")
 include(":examples")
 
-// zenoh-flat-jni is a separate repository (https://github.com/ZettaScaleLabs/zenoh-flat-jni)
-// and is consumed as a Maven artifact: org.eclipse.zenoh:zenoh-flat-jni:VERSION
-// For local development with coordinated changes, use Gradle composite build:
-includeBuild("../zenoh-flat-jni")
+// zenoh-flat-jni (https://github.com/eclipse-zenoh/zenoh-flat-jni) is consumed as
+// an ordinary Maven artifact: org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion.
+//
+// For coordinated local development, `-PuseLocalFlatJni=true` substitutes a
+// sibling checkout through a composite build. It is off by default and must stay
+// off for a release: with it on, the published artifact would be built against
+// whatever is on that developer's disk rather than the resolved dependency.
+if (providers.gradleProperty("useLocalFlatJni").orNull?.toBoolean() == true) {
+    includeBuild("../zenoh-flat-jni")
+}
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
