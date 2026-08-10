@@ -56,12 +56,20 @@ fun run(command: String, dir: File, vararg args: String): String {
 
 fun git(dir: File, vararg args: String): String = run("git", dir, *args)
 
+/** A commit that `git fetch <url> <sha>` can actually ask for: a full 40-hex hash. */
+fun fullCommit(value: String): String = value.lowercase().also {
+    check(it.matches(Regex("[0-9a-f]{40}"))) {
+        "-PlocalJniCommit must be a full 40-character commit hash, not \"$value\": " +
+            "a remote cannot be asked to fetch an abbreviation."
+    }
+}
+
 /** The pinned commit, checked out under [into]; fetched only when it is not already there. */
 fun checkoutPinned(commit: String, into: File): File {
-    // rev-parse fails on a directory that was initialised but never fetched, and
-    // -PlocalJniCommit may be abbreviated: both mean "not there yet", not "give up".
+    // rev-parse fails on a directory that was initialised but never fetched: that
+    // means "not there yet", not "give up".
     val head = runCatching { git(into, "rev-parse", "HEAD") }.getOrNull()
-    if (head?.startsWith(commit.lowercase()) == true) return into
+    if (head == commit) return into
     into.mkdirs()
     if (!File(into, ".git").isDirectory) git(into, "init", "--quiet")
     println("Fetching zenoh-flat-jni $commit into $into")
@@ -99,7 +107,8 @@ val flatJniSource: File? =
     providers.gradleProperty("localJniDir").orNull?.let { settingsDir.resolve(it) }
         ?: cargoTomlPath()?.let { settingsDir.resolve(it) }
         ?: if (providers.gradleProperty("useLocalJni").orNull?.toBoolean() == true) {
-            val commit = providers.gradleProperty("localJniCommit").orNull ?: pinnedCommit()
+            val commit = providers.gradleProperty("localJniCommit").orNull?.let { fullCommit(it) }
+                ?: pinnedCommit()
             checkoutPinned(commit, File(settingsDir, ".zenoh-flat-jni"))
         } else null
 

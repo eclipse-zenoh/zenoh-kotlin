@@ -53,7 +53,8 @@ would be for a Cargo build.
   would do, needing the network but no compiler. The commit is then fetched into
   `.zenoh-flat-jni/` (gitignored), shallow, and only when that directory is not
   already at it. `-PlocalJniCommit=<sha>` overrides the commit without touching
-  the lockfile.
+  the lockfile; it has to be a full 40-character hash, because that is what a
+  remote can be asked to fetch.
 - **`path`** is honoured with or without the property — it is a deliberate local
   edit, and Cargo would honour it too:
 
