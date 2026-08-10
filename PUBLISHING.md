@@ -219,7 +219,8 @@ Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
 
 A build can be pointed at zenoh-flat-jni's *source* through a Gradle composite
 build, which is what CI and local development do — see
-[How to build it](README.md#building-against-zenoh-flat-jni-source) in the README.
+[How to build it](README.md#building-against-zenoh-flat-jni-source) in the README,
+and [CI.md](CI.md) for the commit pin behind it.
 
 **A release must not.** With a composite build the published artifact would be
 built from source on the builder's disk while the POM still claimed the released
