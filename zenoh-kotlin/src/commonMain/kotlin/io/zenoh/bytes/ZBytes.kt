@@ -50,9 +50,16 @@ import io.zenoh.jni.bytes.ZBytes as JniZBytes
  * See also: [ZBytes examples](https://github.com/eclipse-zenoh/zenoh-kotlin/blob/main/examples/src/main/kotlin/io.zenoh/ZBytes.kt)
  */
 class ZBytes private constructor(
-    private var eager: ByteArray?,
+    initialBytes: ByteArray?,
     private var handle: JniZBytes?,
 ) : IntoZBytes {
+
+    // Volatile: [bytes] publishes this from inside the lock and reads it from
+    // outside. A received ZBytes routinely crosses threads (a sample piped
+    // through a Channel), and without the volatile write a reader could see
+    // the array reference before the copied contents.
+    @Volatile
+    private var eager: ByteArray? = initialBytes
 
     internal constructor(bytes: ByteArray) : this(bytes, null)
 

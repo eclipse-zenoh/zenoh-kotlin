@@ -27,10 +27,11 @@ import java.lang.Thread.sleep
 import kotlin.test.*
 
 /**
- * Round 1 of advanced pub/sub: [AdvancedPublisher] + [MatchingListener]
- * validated against a regular [Subscriber] on a single session (loopback).
- * The full [AdvancedPubSubTest] (advanced subscriber, sample-miss detection,
- * detect-publishers) remains `@Ignore`'d until Round 2.
+ * [AdvancedPublisher] + [MatchingListener] validated against a *regular*
+ * [Subscriber] on a single session (loopback) — an advanced publisher must
+ * serve plain subscribers too. [AdvancedPubSubTest] covers the same publisher
+ * against an [io.zenoh.pubsub.AdvancedSubscriber], with sample-miss detection
+ * and publisher detection on top.
  */
 class AdvancedPublisherTest {
 
