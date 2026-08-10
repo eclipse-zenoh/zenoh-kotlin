@@ -96,7 +96,7 @@ dependencyResolutionManagement {
 After that add to the dependencies in the app's `build.gradle.kts`:
 
 ```kotlin
-implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:1.1.1")
+implementation("org.eclipse.zenoh:zenoh-kotlin:1.1.1")
 ```
 
 ### Platforms
@@ -145,7 +145,7 @@ gradle publishJvmPublicationToMavenLocal
 
 This publishes the zenoh-kotlin library to Maven local. The published artifact declares a dependency on `zenoh-flat-jni`, which provides the generated JNI bindings and the native binaries, and is released separately from the [zenoh-flat-jni](https://github.com/eclipse-zenoh/zenoh-flat-jni) repository.
 
-Once we have published the package, we should be able to find it under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin-jvm/1.1.1`.
+Once we have published the package, we should be able to find it under `~/.m2/repository/org/eclipse/zenoh/zenoh-kotlin/1.1.1`.
 
 Finally, in the `build.gradle.kts` file of the project where you intend to use this library, add mavenLocal to the list of repositories and add zenoh-kotlin as a dependency:
 
@@ -156,7 +156,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:1.1.1")
+    implementation("org.eclipse.zenoh:zenoh-kotlin:1.1.1")
 }
 ```
 
@@ -280,6 +280,6 @@ Then after that, add the dependency as usual:
 
 ```kotlin
 dependencies {
-    implementation("org.eclipse.zenoh:zenoh-kotlin-jvm:<version>")
+    implementation("org.eclipse.zenoh:zenoh-kotlin:<version>")
 }
 ```
