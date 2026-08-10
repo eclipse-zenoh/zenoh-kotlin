@@ -234,6 +234,23 @@ the resolved dependency, and the POM would still claim the released version. It
 is off by default and CI passes it explicitly only where it checks the sibling
 out.
 
+### `zenoh-flat-jni.pin`
+
+CI does exactly that, and the commit it checks out is the one named in
+`zenoh-flat-jni.pin` at the repository root — a single line holding a full
+zenoh-flat-jni commit SHA, and nothing else, so that moving it is a whole-file
+overwrite.
+
+That is the same shape `eclipse-zenoh/ci` already uses to keep `Cargo.lock`
+aligned with zenoh across the org: a committed pin, rewritten by a bot that runs
+the dependant's own tests before opening the pull request. The pin keeps a CI run
+reproducible from this repository's commit alone; the bot keeps it from going
+stale. Edit it by hand only to unblock something — the normal path is the bot's
+pull request.
+
+It governs CI only. Which `zenoh-flat-jni` *release* this SDK is built and
+published against is `zenohFlatJniVersion` in `gradle.properties`.
+
 ## Required secrets
 
 | Secret | Use |
