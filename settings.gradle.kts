@@ -31,10 +31,10 @@ include(":examples")
 // Three ways to build, and nothing else to know:
 //
 //   nothing                the Maven artifact, no composite build, no Rust
-//   -PuseLocalFlatJni=true whatever Cargo.toml says: `git` means the commit
+//   -PuseLocalJni=true whatever Cargo.toml says: `git` means the commit
 //                          Cargo.lock pins (resolved with Cargo if there is no
 //                          lockfile yet), `path` means that directory
-//   -PflatJniDir=<path>    that directory, skipping Cargo.toml altogether
+//   -PlocalJniDir=<path>    that directory, skipping Cargo.toml altogether
 //
 // A release takes the first, and must: with a composite build the published
 // artifact would carry whatever was on the builder's disk while the POM still
@@ -93,10 +93,10 @@ fun pinnedCommit(): String {
 }
 
 val flatJniSource: File? =
-    providers.gradleProperty("flatJniDir").orNull?.let { settingsDir.resolve(it) }
+    providers.gradleProperty("localJniDir").orNull?.let { settingsDir.resolve(it) }
         ?: cargoTomlPath()?.let { settingsDir.resolve(it) }
-        ?: if (providers.gradleProperty("useLocalFlatJni").orNull?.toBoolean() == true) {
-            val commit = providers.gradleProperty("flatJniCommit").orNull ?: pinnedCommit()
+        ?: if (providers.gradleProperty("useLocalJni").orNull?.toBoolean() == true) {
+            val commit = providers.gradleProperty("localJniCommit").orNull ?: pinnedCommit()
             checkoutPinned(commit, File(settingsDir, ".zenoh-flat-jni"))
         } else null
 

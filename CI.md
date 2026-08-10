@@ -18,7 +18,7 @@ source yourself, [README.md](README.md#where-the-native-library-comes-from).
 One job per platform, and one command that matters:
 
 ```bash
-./gradlew jvmTest --info -PuseLocalFlatJni=true
+./gradlew jvmTest --info -PuseLocalJni=true
 ```
 
 That property makes the build resolve `zenoh-flat-jni` from **source** rather
@@ -40,8 +40,8 @@ time. In order:
 
 | | | |
 | --- | --- | --- |
-| `-PflatJniDir=<path>` | that directory, as it is | `Cargo.toml` not read |
-| `-PuseLocalFlatJni=true` | whatever `Cargo.toml` says | `git` → the `Cargo.lock` commit; `path` → that directory |
+| `-PlocalJniDir=<path>` | that directory, as it is | `Cargo.toml` not read |
+| `-PuseLocalJni=true` | whatever `Cargo.toml` says | `git` → the `Cargo.lock` commit; `path` → that directory |
 | neither | Maven Central | no composite build |
 
 The middle row is the Rust-shaped one: the manifest is the switch, exactly as it
@@ -52,7 +52,7 @@ would be for a Cargo build.
   generate-lockfile` to produce one — the same resolution a `cargo build` here
   would do, needing the network but no compiler. The commit is then fetched into
   `.zenoh-flat-jni/` (gitignored), shallow, and only when that directory is not
-  already at it. `-PflatJniCommit=<sha>` overrides the commit without touching
+  already at it. `-PlocalJniCommit=<sha>` overrides the commit without touching
   the lockfile.
 - **`path`** is honoured with or without the property — it is a deliberate local
   edit, and Cargo would honour it too:

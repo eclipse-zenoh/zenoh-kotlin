@@ -52,8 +52,8 @@ jobs:
         # No checkout or cargo step precedes this. The build fetches its own
         # pinned bindings, and their test task depends on their native build, so
         # Gradle drives both git and cargo - which is why `./gradlew jvmTest
-        # -PuseLocalFlatJni=true` reproduces this run anywhere.
-        run: ./gradlew jvmTest --info -PuseLocalFlatJni=true
+        # -PuseLocalJni=true` reproduces this run anywhere.
+        run: ./gradlew jvmTest --info -PuseLocalJni=true
 
   markdown_lint:
     runs-on: ubuntu-latest

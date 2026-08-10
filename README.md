@@ -140,26 +140,26 @@ Three ways to build. Pick by what you are doing:
 | I want to… | build with | Rust needed |
 | --- | --- | --- |
 | just build or use the SDK | `./gradlew build` | no |
-| build the bindings from source too | `./gradlew build -PuseLocalFlatJni=true` | yes |
-| build against my own checkout | `./gradlew build -PflatJniDir=../zenoh-flat-jni` | yes |
+| build the bindings from source too | `./gradlew build -PuseLocalJni=true` | yes |
+| build against my own checkout | `./gradlew build -PlocalJniDir=../zenoh-flat-jni` | yes |
 
 **The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` from Maven Central
 with the native library already inside it. Nothing is compiled from Rust and no
 toolchain is needed.
 
-**`-PuseLocalFlatJni=true`** builds the bindings from source, as `Cargo.toml`
+**`-PuseLocalJni=true`** builds the bindings from source, as `Cargo.toml`
 says — the usual Rust arrangement, and the one CI uses. A `git` dependency there
 means the exact commit recorded in `Cargo.lock` (resolved on the spot if there is
 no lockfile yet); a `path` means that directory. So
 
 ```bash
-./gradlew jvmTest -PuseLocalFlatJni=true
+./gradlew jvmTest -PuseLocalJni=true
 ```
 
 reproduces a CI run exactly. See [CI.md](CI.md) for how that commit is chosen and
 kept current.
 
-**`-PflatJniDir=<path>`** points straight at a checkout, no `Cargo.toml` involved.
+**`-PlocalJniDir=<path>`** points straight at a checkout, no `Cargo.toml` involved.
 Use it to try a branch or a scratch copy without editing anything.
 
 Both source options need a Rust toolchain ([rustup.rs](https://rustup.rs));
@@ -245,10 +245,10 @@ gradle jvmTest
 By default this resolves `zenoh-flat-jni` from Maven Central, so no Rust
 toolchain is involved. To run the tests against a sibling `../zenoh-flat-jni`
 checkout instead — which is what CI does, and what you want when changing both
-repositories together — add `-PuseLocalFlatJni=true`:
+repositories together — add `-PuseLocalJni=true`:
 
 ```bash
-gradle jvmTest -PuseLocalFlatJni=true
+gradle jvmTest -PuseLocalJni=true
 ```
 
 That substitutes the artifact through a Gradle composite build and does compile

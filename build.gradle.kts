@@ -57,8 +57,8 @@ nexusPublishing {
 // A composite build must never reach a publication: the artifact would be built
 // from zenoh-flat-jni source on the builder's disk, while the POM went on
 // naming the released version it was supposed to be built against. Nothing opts
-// in by default, so this only catches a leftover - `-PuseLocalFlatJni`,
-// `-PflatJniDir`, or a `path = "..."` left in Cargo.toml.
+// in by default, so this only catches a leftover - `-PuseLocalJni`,
+// `-PlocalJniDir`, or a `path = "..."` left in Cargo.toml.
 gradle.taskGraph.whenReady {
     val included = gradle.includedBuilds.map { it.name }
     check(included.isEmpty() || allTasks.none { it.name.startsWith("publish") }) {
