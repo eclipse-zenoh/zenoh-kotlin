@@ -31,9 +31,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: eclipse-zenoh/zenoh-flat-jni
-          # zenoh-flat is not checked out here: zenoh-flat-jni resolves it
-          # from git, so its Cargo.lock is the pin that decides.
-          ref: e75529ce3758401ce213456e7b8e4e5667635cf8
+          # No ref: track that repository's default branch. A pinned commit has
+          # to be hand-edited for every upstream fix, and this is the one hop
+          # in the chain no bot covers - zenoh-flat-jni's own Cargo.lock is
+          # kept aligned with zenoh for it, so following its main keeps the
+          # whole chain automatic. zenoh-flat is not checked out at all: it is
+          # resolved from git by that lockfile.
           path: zenoh-flat-jni
 
       - uses: actions/setup-java@v4
