@@ -63,7 +63,7 @@ gradle.taskGraph.whenReady {
     val included = gradle.includedBuilds.map { it.name }
     check(included.isEmpty() || allTasks.none { it.name.startsWith("publish") }) {
         "Refusing to publish while zenoh-flat-jni is an included build $included. " +
-            "See README.md, Building against zenoh-flat-jni source."
+            "See README.md, Where the native library comes from."
     }
 }
 

@@ -2,11 +2,12 @@
 
 What CI here checks, and how it stays current with the rest of the stack. For
 releases see [PUBLISHING.md](PUBLISHING.md); for building against zenoh-flat-jni
-source yourself, [README.md](README.md#building-against-zenoh-flat-jni-source).
+source yourself, [README.md](README.md#where-the-native-library-comes-from).
 
 ## Contents
 
 - [What CI runs](#what-ci-runs)
+- [How the source is resolved](#how-the-source-is-resolved)
 - [The pin](#the-pin)
 - [Lockfile synchronization](#lockfile-synchronization)
 - [Moving the pin by hand](#moving-the-pin-by-hand)
@@ -30,6 +31,40 @@ Nothing else Rust runs here. Formatting, clippy and the native build belong to
 zenoh-flat-jni's own CI, which runs them on three platforms for the very commit
 pinned here; repeating them from this repository would only add ways for two
 toolchains to disagree.
+
+## How the source is resolved
+
+`settings.gradle.kts` decides where `zenoh-flat-jni` comes from before any
+project is configured, because a composite build has to be declared at settings
+time. In order:
+
+| | | |
+| --- | --- | --- |
+| `-PflatJniDir=<path>` | that directory, as it is | `Cargo.toml` not read |
+| `-PuseLocalFlatJni=true` | whatever `Cargo.toml` says | `git` → the `Cargo.lock` commit; `path` → that directory |
+| neither | Maven Central | no composite build |
+
+The middle row is the Rust-shaped one: the manifest is the switch, exactly as it
+would be for a Cargo build.
+
+- **`git`** (the committed form) resolves to the commit `Cargo.lock` records. If
+  there is no lockfile, or none mentioning zenoh-flat-jni, Gradle runs `cargo
+  generate-lockfile` to produce one — the same resolution a `cargo build` here
+  would do, needing the network but no compiler. The commit is then fetched into
+  `.zenoh-flat-jni/` (gitignored), shallow, and only when that directory is not
+  already at it. `-PflatJniCommit=<sha>` overrides the commit without touching
+  the lockfile.
+- **`path`** is honoured with or without the property — it is a deliberate local
+  edit, and Cargo would honour it too:
+
+  ```toml
+  # zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
+  zenoh-flat-jni = { path = "../zenoh-flat-jni" }
+  ```
+
+  Don't commit that form: the lockfile then pins no commit, and the sync below
+  cannot resolve a sibling directory on a runner. `git checkout Cargo.toml` when
+  you are done — and `Cargo.lock` too, if you ran Cargo while it was set.
 
 ## The pin
 
@@ -56,8 +91,9 @@ Cargo.lock:  source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?b
 
 Nothing here builds that crate. `cargo build` at the repository root would
 compile zenoh and the bindings only to produce an empty library — if an IDE
-offers to load the root `Cargo.toml` as a Rust project, decline. Gradle only
-*reads* these two files; it never runs Cargo against them.
+offers to load the root `Cargo.toml` as a Rust project, decline. Gradle reads
+these two files, and runs Cargo against them only to *resolve* a missing
+lockfile, never to compile.
 
 ## Lockfile synchronization
 
@@ -102,18 +138,10 @@ cargo update -p zenoh-flat-jni                 # to zenoh-flat-jni's main tip
 cargo update -p zenoh-flat-jni --precise <sha> # to one specific commit
 ```
 
-Commit the resulting `Cargo.lock`. Two edits defeat the mechanism rather than
-steering it:
-
-- **`rev = "…"` in `Cargo.toml`** freezes resolution at a commit, so the sync can
-  no longer move the pin and the bot goes silent.
-- **A committed `path = "…"`** leaves the lockfile pinning no commit at all: CI
-  says so and fails, and the sync cannot resolve a sibling directory on a runner
-  either. It is meant to be a local edit — `git checkout Cargo.toml` when you are
-  done, and `Cargo.lock` too if you ran Cargo while it was set.
-
-To try a commit without touching the lockfile at all, pass
-`-PflatJniCommit=<sha>`.
+Commit the resulting `Cargo.lock`. Do not add `rev = "…"` to `Cargo.toml`: that
+freezes resolution at a commit, so the sync can no longer move the pin and the
+bot goes silent. (The other way to defeat it — committing the `path = "…"` form —
+is covered above.)
 
 ## Publishing does not use any of this
 

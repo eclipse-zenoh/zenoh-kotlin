@@ -133,54 +133,41 @@ and in case of targetting Android you'll also need:
 > instead does need a Rust toolchain — see below. For releases, see
 > [PUBLISHING.md](PUBLISHING.md).
 
-## Building against zenoh-flat-jni source
+## Where the native library comes from
 
-The default build resolves `zenoh-flat-jni` from Maven Central like any consumer,
-and needs nothing from this section. A build can be pointed at its source instead,
-through a Gradle composite build — for working on the bindings and this SDK
-together, or for reproducing a CI run. `settings.gradle.kts` decides where that
-source comes from, in this order:
+Three ways to build. Pick by what you are doing:
 
-| | says "use this source" | where it comes from |
+| I want to… | build with | Rust needed |
 | --- | --- | --- |
-| 1 | `-PflatJniDir=<path>` | that directory, as it is |
-| 2 | `path = "…"` in `Cargo.toml` | that directory, as it is |
-| 3 | `-PuseLocalFlatJni=true` | the commit `Cargo.lock` pins, fetched into `.zenoh-flat-jni/` |
-| 4 | nothing | Maven Central — no composite build at all |
+| just build or use the SDK | `./gradlew build` | no |
+| build the bindings from source too | `./gradlew build -PuseLocalFlatJni=true` | yes |
+| build against my own checkout | `./gradlew build -PflatJniDir=../zenoh-flat-jni` | yes |
 
-Rows 1–3 build the native library from source, so they need a Rust toolchain
-([rustup.rs](https://rustup.rs)); Gradle drives cargo for you. Row 4 — the
-default — needs none.
+**The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` from Maven Central
+with the native library already inside it. Nothing is compiled from Rust and no
+toolchain is needed.
 
-Working against a checkout of your own is the ordinary Cargo edit, in
-`Cargo.toml`:
-
-```toml
-# zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
-zenoh-flat-jni = { path = "../zenoh-flat-jni" }
-```
-
-and `./gradlew build` picks it up with no properties at all. `-PflatJniDir=…`
-does the same without editing anything, for a checkout somewhere else.
-
-Reproducing what CI tested is:
+**`-PuseLocalFlatJni=true`** builds the bindings from source, as `Cargo.toml`
+says — the usual Rust arrangement, and the one CI uses. A `git` dependency there
+means the exact commit recorded in `Cargo.lock` (resolved on the spot if there is
+no lockfile yet); a `path` means that directory. So
 
 ```bash
 ./gradlew jvmTest -PuseLocalFlatJni=true
 ```
 
-which fetches the pinned commit into `.zenoh-flat-jni/` — that is the whole of
-what CI does, so this one command reproduces a CI run anywhere. It fetches only
-when that directory is not already at the pinned commit, and
-`-PflatJniCommit=<sha>` tries a different commit without touching the lockfile.
+reproduces a CI run exactly. See [CI.md](CI.md) for how that commit is chosen and
+kept current.
 
-Which commit row 3 fetches is recorded in this repository's `Cargo.lock`, kept
-current by a bot — that is [CI.md](CI.md). Working further down the stack, on
-`zenoh-flat` or `zenoh` themselves, is an edit inside your `zenoh-flat-jni`
-checkout (rows 1 and 2), whose own `Cargo.toml` points at them the same way.
+**`-PflatJniDir=<path>`** points straight at a checkout, no `Cargo.toml` involved.
+Use it to try a branch or a scratch copy without editing anything.
 
-The `path = "…"` form is a local edit — don't commit it. Row 4 is what a release
-uses, and must be: see [PUBLISHING.md](PUBLISHING.md#building-against-zenoh-flat-jni-source).
+Both source options need a Rust toolchain ([rustup.rs](https://rustup.rs));
+Gradle drives cargo for you. To work further down the stack — on `zenoh-flat` or
+`zenoh` themselves — edit inside your `zenoh-flat-jni` checkout, whose own
+`Cargo.toml` points at them the same way.
+
+Releases always use the first option; see [PUBLISHING.md](PUBLISHING.md).
 
 ## <img src="jvm.png" alt="JVM" height="50"> JVM
 

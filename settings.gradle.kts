@@ -28,30 +28,33 @@ include(":examples")
 // an ordinary Maven artifact: org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion.
 //
 // A build can be pointed at its *source* instead, through a composite build.
-// Where that source comes from is decided here, in this order:
+// Three ways to build, and nothing else to know:
 //
-//   1. -PflatJniDir=<path>       an existing checkout, used as it is
-//   2. path = "…" in Cargo.toml  the ordinary Cargo way of saying "use my copy",
-//                                and the only switch that lives in a tracked file
-//   3. -PuseLocalFlatJni=true    the commit Cargo.lock pins - fetched into
-//                                .zenoh-flat-jni/ unless it is already there, or
-//                                overridden with -PflatJniCommit=<sha>
-//   4. otherwise                 the Maven artifact, with no composite at all
+//   nothing                the Maven artifact, no composite build, no Rust
+//   -PuseLocalFlatJni=true whatever Cargo.toml says: `git` means the commit
+//                          Cargo.lock pins (resolved with Cargo if there is no
+//                          lockfile yet), `path` means that directory
+//   -PflatJniDir=<path>    that directory, skipping Cargo.toml altogether
 //
-// A release takes 4, and must: with a composite build the published artifact
-// would carry whatever was on the builder's disk while the POM still claimed the
-// released version.
+// A release takes the first, and must: with a composite build the published
+// artifact would carry whatever was on the builder's disk while the POM still
+// claimed the released version.
+//
+// A `path = "…"` in Cargo.toml is honoured with or without the property - it is
+// a deliberate local edit, and Cargo would honour it too.
 val flatJniRepository = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git"
 
-fun git(dir: File, vararg args: String): String {
-    val process = ProcessBuilder(listOf("git", *args))
+fun run(command: String, dir: File, vararg args: String): String {
+    val process = ProcessBuilder(listOf(command, *args))
         .directory(dir)
         .redirectErrorStream(true)
         .start()
     val output = process.inputStream.bufferedReader().readText().trim()
-    check(process.waitFor() == 0) { "git ${args.joinToString(" ")} failed in $dir:\n$output" }
+    check(process.waitFor() == 0) { "$command ${args.joinToString(" ")} failed in $dir:\n$output" }
     return output
 }
+
+fun git(dir: File, vararg args: String): String = run("git", dir, *args)
 
 /** The pinned commit, checked out under [into]; fetched only when it is not already there. */
 fun checkoutPinned(commit: String, into: File): File {
@@ -70,20 +73,30 @@ fun cargoTomlPath(): String? =
         ?.let { Regex("""^\s*zenoh-flat-jni\s*=\s*\{[^}\n]*\bpath\s*=\s*"([^"]+)"""", RegexOption.MULTILINE).find(it) }
         ?.groupValues?.get(1)
 
-/** The commit Cargo.lock pins for the root pin crate; null if a path override erased it. */
+/** The commit Cargo.lock pins for the root pin crate; null if there is no lockfile or no entry. */
 fun cargoLockCommit(): String? =
     File(settingsDir, "Cargo.lock").takeIf { it.isFile }?.readText()
         ?.let { Regex("""/zenoh-flat-jni\.git[^#"]*#([0-9a-f]{40})"""").find(it) }
         ?.groupValues?.get(1)
 
+/** The commit the git dependency in Cargo.toml resolves to, resolving it first if need be. */
+fun pinnedCommit(): String {
+    cargoLockCommit()?.let { return it }
+    // No lockfile, or none that mentions zenoh-flat-jni: let Cargo write one. That
+    // is the same resolution a `cargo build` here would do, and it needs the
+    // network but not a compiler.
+    println("No zenoh-flat-jni commit in Cargo.lock; resolving it with Cargo")
+    run("cargo", settingsDir, "generate-lockfile")
+    return checkNotNull(cargoLockCommit()) {
+        "Cargo.toml declares no git dependency on zenoh-flat-jni to resolve - see CI.md."
+    }
+}
+
 val flatJniSource: File? =
     providers.gradleProperty("flatJniDir").orNull?.let { File(settingsDir, it) }
         ?: cargoTomlPath()?.let { File(settingsDir, it) }
         ?: if (providers.gradleProperty("useLocalFlatJni").orNull?.toBoolean() == true) {
-            val commit = providers.gradleProperty("flatJniCommit").orNull ?: cargoLockCommit()
-            checkNotNull(commit) {
-                "Cargo.lock pins no zenoh-flat-jni commit. A path override or [patch] erases it - see PUBLISHING.md."
-            }
+            val commit = providers.gradleProperty("flatJniCommit").orNull ?: pinnedCommit()
             checkoutPinned(commit, File(settingsDir, ".zenoh-flat-jni"))
         } else null
 

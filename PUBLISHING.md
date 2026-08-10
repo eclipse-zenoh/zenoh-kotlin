@@ -155,7 +155,7 @@ release is blocked.
 
 | Rehearsal | resolves zenoh-flat-jni from | proves |
 | --- | --- | --- |
-| local build and tests | its source — the pinned commit, or your own checkout ([README](README.md#building-against-zenoh-flat-jni-source)) | the code compiles and the tests pass |
+| local build and tests | its source — the pinned commit, or your own checkout ([README](README.md#where-the-native-library-comes-from)) | the code compiles and the tests pass |
 | CI, `maven_publish` unchecked | the snapshot repository | the artifacts assemble |
 | CI, snapshot publication | `zenoh-flat-jni:<version>-SNAPSHOT` | signing, credentials, a real upload |
 | live release | `zenoh-flat-jni:<version>` on Central | **blocked until that exists** |
@@ -219,7 +219,7 @@ Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
 
 A build can be pointed at zenoh-flat-jni's *source* through a Gradle composite
 build, which is what CI and local development do — see
-[How to build it](README.md#building-against-zenoh-flat-jni-source) in the README,
+[Where the native library comes from](README.md#where-the-native-library-comes-from) in the README,
 and [CI.md](CI.md) for the commit pin behind it.
 
 **A release must not.** With a composite build the published artifact would be
