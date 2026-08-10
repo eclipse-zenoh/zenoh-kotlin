@@ -113,7 +113,7 @@ builds and publishes.
 | --- | --- |
 | `live-run` | **unchecked** |
 | `version` | a fresh provisional number, not one already used |
-| `zenoh-flat-jni-version` | leave empty for a rehearsal, or a released version |
+| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names an unreleased version and fails |
 | `maven_publish` | checked — or uncheck for the very first run |
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
