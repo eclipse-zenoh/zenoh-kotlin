@@ -27,16 +27,29 @@ jobs:
         with:
           path: zenoh-kotlin
 
+      # The pinned commit lives in one file at the repository root, so moving it
+      # is a whole-file overwrite - the shape eclipse-zenoh/ci's lockfile sync
+      # already uses for Cargo.lock, and what lets a bot maintain this pin
+      # instead of a human editing it per upstream fix.
+      - name: Read the zenoh-flat-jni pin
+        id: flat-jni
+        working-directory: zenoh-kotlin
+        run: |
+          set -euo pipefail
+          ref=$(tr -d '[:space:]' < zenoh-flat-jni.pin)
+          if [[ ! "$ref" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::zenoh-flat-jni.pin must hold a full commit SHA, got '$ref'"
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
       - name: Check out zenoh-flat-jni
         uses: actions/checkout@v4
         with:
           repository: eclipse-zenoh/zenoh-flat-jni
-          # No ref: track that repository's default branch. A pinned commit has
-          # to be hand-edited for every upstream fix, and this is the one hop
-          # in the chain no bot covers - zenoh-flat-jni's own Cargo.lock is
-          # kept aligned with zenoh for it, so following its main keeps the
-          # whole chain automatic. zenoh-flat is not checked out at all: it is
-          # resolved from git by that lockfile.
+          ref: ${{ steps.flat-jni.outputs.ref }}
+          # zenoh-flat is not checked out at all: zenoh-flat-jni resolves it
+          # from git, so its Cargo.lock is the rev that decides.
           path: zenoh-flat-jni
 
       - uses: actions/setup-java@v4
