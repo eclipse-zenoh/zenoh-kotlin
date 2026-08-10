@@ -93,8 +93,8 @@ fun pinnedCommit(): String {
 }
 
 val flatJniSource: File? =
-    providers.gradleProperty("flatJniDir").orNull?.let { File(settingsDir, it) }
-        ?: cargoTomlPath()?.let { File(settingsDir, it) }
+    providers.gradleProperty("flatJniDir").orNull?.let { settingsDir.resolve(it) }
+        ?: cargoTomlPath()?.let { settingsDir.resolve(it) }
         ?: if (providers.gradleProperty("useLocalFlatJni").orNull?.toBoolean() == true) {
             val commit = providers.gradleProperty("flatJniCommit").orNull ?: pinnedCommit()
             checkoutPinned(commit, File(settingsDir, ".zenoh-flat-jni"))
