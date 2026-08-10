@@ -2,8 +2,8 @@
 # commit this SDK is tested against is recorded in a Cargo.lock, which is the
 # artifact eclipse-zenoh/ci's lockfile sync knows how to move: it overwrites the
 # lockfile with zenoh's, and resolving this manifest again writes back the
-# current zenoh-flat-jni commit. CI reads that commit out of Cargo.lock and
-# checks it out; see PUBLISHING.md.
+# current zenoh-flat-jni commit. The Gradle build reads that commit out of
+# Cargo.lock and checks it out; see CI.md.
 #
 # It sits at the repository root so this repository is an ordinary dependant of
 # that workflow rather than a special case in it.

@@ -58,7 +58,10 @@ fun git(dir: File, vararg args: String): String = run("git", dir, *args)
 
 /** The pinned commit, checked out under [into]; fetched only when it is not already there. */
 fun checkoutPinned(commit: String, into: File): File {
-    if (File(into, ".git").isDirectory && git(into, "rev-parse", "HEAD") == commit) return into
+    // rev-parse fails on a directory that was initialised but never fetched, and
+    // -PlocalJniCommit may be abbreviated: both mean "not there yet", not "give up".
+    val head = runCatching { git(into, "rev-parse", "HEAD") }.getOrNull()
+    if (head?.startsWith(commit.lowercase()) == true) return into
     into.mkdirs()
     if (!File(into, ".git").isDirectory) git(into, "init", "--quiet")
     println("Fetching zenoh-flat-jni $commit into $into")

@@ -243,17 +243,18 @@ gradle jvmTest
 ```
 
 By default this resolves `zenoh-flat-jni` from Maven Central, so no Rust
-toolchain is involved. To run the tests against a sibling `../zenoh-flat-jni`
-checkout instead — which is what CI does, and what you want when changing both
-repositories together — add `-PuseLocalJni=true`:
+toolchain is involved. The two source options from
+[Where the native library comes from](#where-the-native-library-comes-from)
+apply here as well, and both compile the native library, so both need a Rust
+toolchain (see [rustup.rs](https://rustup.rs)):
 
 ```bash
-gradle jvmTest -PuseLocalJni=true
+gradle jvmTest -PuseLocalJni=true                    # the pinned commit — what CI runs
+gradle jvmTest -PlocalJniDir=../zenoh-flat-jni       # your own checkout
 ```
 
-That substitutes the artifact through a Gradle composite build and does compile
-the native library from source, so it requires a Rust toolchain (see
-[rustup.rs](https://rustup.rs)).
+Use the second when you are changing both repositories together — the first
+tests the commit `Cargo.lock` pins, not your working tree.
 
 ## Logging
 

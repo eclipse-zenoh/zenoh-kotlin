@@ -10,6 +10,7 @@ source yourself, [README.md](README.md#where-the-native-library-comes-from).
 - [How the source is resolved](#how-the-source-is-resolved)
 - [The pin](#the-pin)
 - [Lockfile synchronization](#lockfile-synchronization)
+- [Moving the pin: the two bots](#moving-the-pin-the-two-bots)
 - [Moving the pin by hand](#moving-the-pin-by-hand)
 - [Publishing does not use any of this](#publishing-does-not-use-any-of-this)
 
@@ -97,9 +98,10 @@ lockfile, never to compile.
 
 ## Lockfile synchronization
 
-The pin makes a run reproducible. What keeps it from going stale is
-[`eclipse-zenoh/ci`](https://github.com/eclipse-zenoh/ci)'s **`sync-lockfiles`**
-workflow, which every zenoh dependant already uses to stay aligned with zenoh:
+The pin makes a run reproducible. Two bots keep it from going stale; this is the
+first. [`eclipse-zenoh/ci`](https://github.com/eclipse-zenoh/ci)'s
+**`sync-lockfiles`** workflow is what every zenoh dependant already uses to stay
+aligned with zenoh:
 
 ```text
 zenoh ──> zenoh-flat ──> zenoh-flat-jni ──> zenoh-kotlin
@@ -127,6 +129,26 @@ where zenoh is merely a transitive dependency of the pin crate. Harmless —
 nothing is built from this lockfile — but it means the zenoh revision recorded
 here is not necessarily the one inside the zenoh-flat-jni commit it pins. The
 commit is the pin; the rest of the lockfile is a by-product.
+
+## Moving the pin: the two bots
+
+The lockfile sync above runs only when **zenoh's** `Cargo.lock` moves. That
+covers the case it was built for — an ABI change rippling down the stack — but
+not a change that never touches zenoh: a JNI fix, a generator change, anything
+landing in zenoh-flat-jni alone. Left at that, the pin would sit still until an
+unrelated zenoh change happened to drag it forward.
+
+So the pin has a second mover, in this repository:
+[`update-flat-jni.yml`](.github/workflows/update-flat-jni.yml). It runs
+`cargo update -p zenoh-flat-jni` on a weekday schedule, and opens the same kind
+of pull request — auto-merging once this repository's CI has passed against the
+new commit. `workflow_dispatch` runs it on demand, optionally with a `commit`
+input to pin something specific.
+
+Between the two: zenoh's lockfile moves → the sync brings this one along;
+zenoh-flat-jni's `main` moves → the scheduled job brings the pin along. Both
+land through a pull request whose merge is gated on the tests here, so the pin
+only ever advances to a commit this SDK actually passes against.
 
 ## Moving the pin by hand
 

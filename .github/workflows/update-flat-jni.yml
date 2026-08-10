@@ -1,0 +1,80 @@
+# Moves the zenoh-flat-jni commit this SDK is tested against - see CI.md.
+#
+# eclipse-zenoh/ci's lockfile sync only runs when *zenoh's* Cargo.lock moves, so
+# it cannot advance this pin for a change that never touches zenoh - a JNI fix,
+# a generator change. This does, on a schedule, and produces the same artifact:
+# a pull request that auto-merges once this repository's own CI has passed
+# against the new commit.
+name: Update zenoh-flat-jni pin
+
+on:
+  schedule:
+    - cron: "0 3 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      commit:
+        type: string
+        description: The zenoh-flat-jni commit to pin. Defaults to its main tip.
+        required: false
+
+jobs:
+  update:
+    name: Update the pinned commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: cargo update zenoh-flat-jni
+        run: |
+          if [[ -n "${{ inputs.commit }}" ]]; then
+            cargo update -p zenoh-flat-jni --precise "${{ inputs.commit }}"
+          else
+            cargo update -p zenoh-flat-jni
+          fi
+
+      - name: Read the pinned commit
+        id: pin
+        run: |
+          commit=$(sed -n 's|.*zenoh-flat-jni\.git[^#]*#\([0-9a-f]\{40\}\).*|\1|p' Cargo.lock | head -1)
+          echo "commit=$commit" >> $GITHUB_OUTPUT
+          echo "short=${commit:0:7}" >> $GITHUB_OUTPUT
+
+      - name: Create/Update a pull request if the lockfile changed
+        id: cpr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          title: "build: Pin zenoh-flat-jni ${{ steps.pin.outputs.short }}"
+          body: |
+            Moves the zenoh-flat-jni commit this SDK is built and tested against.
+
+            - **sha**: eclipse-zenoh/zenoh-flat-jni@${{ steps.pin.outputs.commit }}
+            - **workflow**: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Merging is gated on this repository's CI, which runs its tests against
+            that very commit. See [CI.md](../blob/main/CI.md).
+          commit-message: "build: Pin zenoh-flat-jni ${{ steps.pin.outputs.short }}"
+          committer: eclipse-zenoh-bot <eclipse-zenoh-bot@users.noreply.github.com>
+          author: eclipse-zenoh-bot <eclipse-zenoh-bot@users.noreply.github.com>
+          branch: eclipse-zenoh-bot/update-flat-jni-pin
+          delete-branch: true
+          labels: dependencies, internal
+          token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+
+      - name: Enable auto merge for the pull request
+        if: contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
+        run: >
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}"
+          --subject "build: Pin zenoh-flat-jni ${{ steps.pin.outputs.short }} (#${{ steps.cpr.outputs.pull-request-number }})"
+          --squash
+          --auto
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+
+      - name: Add the PR as annotation to workflow run
+        if: contains(fromJSON('["created", "updated"]'), steps.cpr.outputs.pull-request-operation)
+        run: >
+          echo "::notice:: PR ${{ steps.cpr.outputs.pull-request-operation }}:
+          https://github.com/${{ github.repository }}/pull/${{ steps.cpr.outputs.pull-request-number }}"
