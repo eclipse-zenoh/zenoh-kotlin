@@ -33,7 +33,7 @@ jobs:
           repository: eclipse-zenoh/zenoh-flat-jni
           # zenoh-flat is not checked out here: zenoh-flat-jni resolves it
           # from git, so its Cargo.lock is the pin that decides.
-          ref: 80f0d09abac4d4201842d06ad0c0791876472fae
+          ref: e75529ce3758401ce213456e7b8e4e5667635cf8
           path: zenoh-flat-jni
 
       - uses: actions/setup-java@v4
