@@ -286,6 +286,18 @@ Kotlin and native artifacts the tests actually load — and works with whatever
 branch or commit you have checked out there. The pin is simply not consulted, so
 there is nothing to point anywhere and nothing to remember to revert.
 
+To reproduce what CI tested, check the sibling out at the pinned commit first:
+
+```bash
+git -C ../zenoh-flat-jni checkout "$(sed -n \
+  's|.*/zenoh-flat-jni\.git[^#]*#\([0-9a-f]\{40\}\)".*|\1|p' Cargo.lock | head -1)"
+./gradlew jvmTest -PuseLocalFlatJni=true
+```
+
+Nothing else here wants Cargo. Running `cargo build` at the repository root
+compiles zenoh and the bindings to produce an empty library — if an IDE offers
+to load the root `Cargo.toml` as a Rust project, decline.
+
 The pin governs CI only. Which `zenoh-flat-jni` *release* this SDK is built and
 published against is `zenohFlatJniVersion` in `gradle.properties`.
 
