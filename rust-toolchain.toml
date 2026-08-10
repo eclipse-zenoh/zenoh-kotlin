@@ -1,0 +1,5 @@
+# The toolchain the pin crate (see Cargo.toml) resolves under. It tracks
+# zenoh-flat-jni's own rust-toolchain.toml, because that is what has to compile
+# when eclipse-zenoh/ci's lockfile sync rectifies the lockfile here.
+[toolchain]
+channel = "1.97.1"

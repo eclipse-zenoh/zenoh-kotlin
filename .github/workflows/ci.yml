@@ -27,18 +27,18 @@ jobs:
         with:
           path: zenoh-kotlin
 
-      # The pinned commit lives in one file at the repository root, so moving it
-      # is a whole-file overwrite - the shape eclipse-zenoh/ci's lockfile sync
-      # already uses for Cargo.lock, and what lets a bot maintain this pin
-      # instead of a human editing it per upstream fix.
-      - name: Read the zenoh-flat-jni pin
+      # The commit under test is the one Cargo.lock pins for the root pin crate
+      # (see Cargo.toml). That lockfile is what eclipse-zenoh/ci's lockfile sync
+      # already knows how to move, so the pin is maintained by the same bot that
+      # keeps every other zenoh dependant aligned, rather than by hand.
+      - name: Read the zenoh-flat-jni commit from Cargo.lock
         id: flat-jni
         working-directory: zenoh-kotlin
         run: |
           set -euo pipefail
-          ref=$(tr -d '[:space:]' < zenoh-flat-jni.pin)
-          if [[ ! "$ref" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::zenoh-flat-jni.pin must hold a full commit SHA, got '$ref'"
+          ref=$(sed -n 's|.*/zenoh-flat-jni\.git[^#]*#\([0-9a-f]\{40\}\)".*|\1|p' Cargo.lock | head -1)
+          if [[ -z "$ref" ]]; then
+            echo "::error::Cargo.lock pins no zenoh-flat-jni git commit. A path override or [patch] erases it - see PUBLISHING.md."
             exit 1
           fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"

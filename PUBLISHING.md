@@ -234,21 +234,59 @@ the resolved dependency, and the POM would still claim the released version. It
 is off by default and CI passes it explicitly only where it checks the sibling
 out.
 
-### `zenoh-flat-jni.pin`
+### The pin crate, and which zenoh-flat-jni CI tests against
 
-CI does exactly that, and the commit it checks out is the one named in
-`zenoh-flat-jni.pin` at the repository root — a single line holding a full
-zenoh-flat-jni commit SHA, and nothing else, so that moving it is a whole-file
-overwrite.
+CI does exactly that, and the commit it checks out is the one `Cargo.lock` pins.
 
-That is the same shape `eclipse-zenoh/ci` already uses to keep `Cargo.lock`
-aligned with zenoh across the org: a committed pin, rewritten by a bot that runs
-the dependant's own tests before opening the pull request. The pin keeps a CI run
-reproducible from this repository's commit alone; the bot keeps it from going
-stale. Edit it by hand only to unblock something — the normal path is the bot's
-pull request.
+There is a Rust crate at the repository root — `Cargo.toml`, `ci/pin.rs`,
+`rust-toolchain.toml` — that compiles to nothing anyone ships. Its only content
+is a dependency on `zenoh-flat-jni`, and its only purpose is to make the commit
+under test a *resolved lockfile entry*:
 
-It governs CI only. Which `zenoh-flat-jni` *release* this SDK is built and
+```toml
+zenoh-flat-jni = { git = "…/zenoh-flat-jni.git", branch = "main" }
+```
+
+```text
+Cargo.lock:  source = "git+…/zenoh-flat-jni.git?branch=main#<40-hex commit>"
+```
+
+A lockfile is the one pin `eclipse-zenoh/ci` already knows how to move. Its
+lockfile sync overwrites a dependant's `Cargo.lock` with zenoh's, resolves the
+manifest again — which writes back the current zenoh-flat-jni commit — compiles
+the result, and opens an auto-merging pull request. This repository is an
+ordinary dependant of that workflow, not a special case in it, which is why the
+crate sits at the root rather than in a subdirectory.
+
+The pin keeps a CI run reproducible from this repository's commit alone; the bot
+keeps it from going stale.
+
+#### Moving the pin yourself
+
+Normally you don't — the bot's pull request does. When you need to:
+
+```bash
+cargo update -p zenoh-flat-jni                 # to zenoh-flat-jni's main tip
+cargo update -p zenoh-flat-jni --precise <sha> # to one specific commit
+```
+
+Commit the resulting `Cargo.lock`. Two things to avoid, because both defeat the
+mechanism rather than steering it:
+
+- **Do not add `rev = "…"` to `Cargo.toml`.** That freezes resolution at a
+  commit, so the sync can no longer move the pin and the bot goes silent.
+- **Do not commit a path override or `[patch]`.** It replaces the git source, the
+  lockfile then pins no commit at all, and CI fails with exactly that message.
+
+#### Developing against a local zenoh-flat-jni
+
+Use the composite build above (`-PuseLocalFlatJni=true`), not a Cargo path
+override. It substitutes `../zenoh-flat-jni` at the level that matters — the
+Kotlin and native artifacts the tests actually load — and works with whatever
+branch or commit you have checked out there. The pin is simply not consulted, so
+there is nothing to point anywhere and nothing to remember to revert.
+
+The pin governs CI only. Which `zenoh-flat-jni` *release* this SDK is built and
 published against is `zenohFlatJniVersion` in `gradle.properties`.
 
 ## Required secrets
