@@ -86,8 +86,9 @@ Central, because:
   a binding version that never materializes cannot be repaired, only superseded.
 
 `ci/scripts/bump-and-tag.bash` enforces the first half: it refuses to run a
-**live** release against a `-SNAPSHOT` binding version. A rehearsal is allowed
-to, which is what makes the transition workable — see
+**live** release against a `-SNAPSHOT` binding version — including the one
+`gradle.properties` carries by default, so a live release has to name a real
+one. A rehearsal is allowed to, which is what makes the transition workable — see
 [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released).
 
 ## Running a release
@@ -113,7 +114,7 @@ builds and publishes.
 | --- | --- |
 | `live-run` | **unchecked** |
 | `version` | a fresh provisional number, not one already used |
-| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names an unreleased version and fails |
+| `zenoh-flat-jni-version` | empty is fine — `gradle.properties` names the snapshot zenoh-flat-jni publishes from main. Fill it in only to rehearse against a specific version, see [below](#rehearsing-the-release-workflow-with-a-snapshot) |
 | `maven_publish` | checked — or uncheck for the very first run |
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
@@ -162,11 +163,13 @@ release is blocked.
 | live release | `zenoh-flat-jni:<version>` on Central | **blocked until that exists** |
 
 A snapshot may depend on a snapshot, because nothing published is permanent. So
-the answer is to consume the snapshot that zenoh-flat-jni's *own* rehearsal
-published — a rehearsal there with `maven_publish` enabled uploads
-`zenoh-flat-jni:<version>-SNAPSHOT` to the Central snapshot repository.
+this is what `gradle.properties` already names: `zenoh-flat-jni`'s CI publishes
+`<version>-SNAPSHOT` from its `main` to the Central snapshot repository, and
+`zenohFlatJniVersion` here points at it. Nothing needs passing on the command
+line, and — because the version ends in `-SNAPSHOT` — the snapshot repository is
+on the resolution path, which is the whole mechanism.
 
-Nothing needs editing. Name the version on the command line:
+To try a different one, name it per-invocation:
 
 ```bash
 ./gradlew build -PzenohFlatJniVersion=1.9.0-rc8-SNAPSHOT
@@ -189,22 +192,25 @@ Then run **Release** from the Actions tab with:
 | input | value |
 | --- | --- |
 | `live-run` | **unchecked** — a live run refuses a `-SNAPSHOT` binding |
-| `zenoh-flat-jni-version` | the version above, e.g. `1.9.0-rc8-SNAPSHOT` |
+| `zenoh-flat-jni-version` | empty to take `main`'s snapshot, or one of the versions above, e.g. `1.9.0-rc8-SNAPSHOT` |
 | `maven_publish` | checked to rehearse the upload too, unchecked to stop at assembly |
 | `version`, `branch` | leave empty unless you are rehearsing a specific one |
 
-**`zenoh-flat-jni-version` is the field that matters.** Left empty, the build
-falls back to `zenohFlatJniVersion` in `gradle.properties` — currently `1.9.0`,
-which is not on Maven Central, and the run dies in `compileKotlinJvm`:
+Left empty, the build falls back to `zenohFlatJniVersion` in `gradle.properties`,
+which names `main`'s snapshot — so the nightly scheduled runs of `release.yml`
+and of the snapshot publication in `ci.yml`, neither of which passes inputs,
+resolve it too.
+
+If that property ever names a version that is *not* published, the run dies in
+`compileKotlinJvm`:
 
 ```text
 Could not find org.eclipse.zenoh:zenoh-flat-jni:1.9.0
 ```
 
-That is the conditional repository below doing its job, not a broken build: a
-non-snapshot version never gets the snapshot repository on its resolution path.
-The same applies to the nightly scheduled run of `release.yml`, which passes no
-inputs and so fails this way until zenoh-flat-jni is released for real.
+For a non-snapshot version that is the conditional repository below doing its
+job, not a broken build: it never gets the snapshot repository on its resolution
+path, so it has to be on Maven Central for real.
 
 The Central snapshot repository is declared **conditionally** in
 `build.gradle.kts`, and this is the part worth understanding:
@@ -234,8 +240,9 @@ policy, but because the repository that serves them is not on the path.
 
 1. **`tag`** — `eclipse-zenoh/ci/create-release-branch` cuts the release branch,
    then `ci/scripts/bump-and-tag.bash` writes `version.txt`, optionally rewrites
-   `zenohFlatJniVersion` in `gradle.properties`, commits and tags. It refuses a
-   `-SNAPSHOT` binding version on a live run.
+   `zenohFlatJniVersion` in `gradle.properties`, commits and tags. A live run
+   refuses a `-SNAPSHOT` binding version — checked on what `gradle.properties`
+   ends up saying, since between releases that is a snapshot by default.
 2. **`publish`** — compiles Kotlin and publishes both artifacts in one Gradle
    invocation, so they share one staging repository and are released together.
    No native toolchain is installed and no Rust is built; both would be
