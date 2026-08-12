@@ -14,8 +14,11 @@
 name: Release
 
 on:
-  schedule:
-    - cron: "0 0 * * 1-5"
+  # Dispatch only. The weekday schedule this had ran a dry-run release every
+  # night with no inputs, which means no `zenoh-flat-jni-version` - so it
+  # resolved the unreleased fallback in gradle.properties and died compiling,
+  # every night. A release is a deliberate act, and rehearsing one is a
+  # deliberate act too; both are `Run workflow` here. See PUBLISHING.md.
   workflow_dispatch:
     inputs:
       live-run:
@@ -58,7 +61,7 @@ jobs:
           github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
 
       - name: Checkout this repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.create-release-branch.outputs.branch }}
 

@@ -203,8 +203,11 @@ Could not find org.eclipse.zenoh:zenoh-flat-jni:1.9.0
 
 That is the conditional repository below doing its job, not a broken build: a
 non-snapshot version never gets the snapshot repository on its resolution path.
-The same applies to the nightly scheduled run of `release.yml`, which passes no
-inputs and so fails this way until zenoh-flat-jni is released for real.
+
+`release.yml` used to run on a weekday schedule as well, and a scheduled run
+passes no inputs — so it failed exactly this way every night. The schedule is
+gone: the workflow is `workflow_dispatch` only, and a rehearsal is something you
+start on purpose, with the version filled in.
 
 The Central snapshot repository is declared **conditionally** in
 `build.gradle.kts`, and this is the part worth understanding:
@@ -246,6 +249,13 @@ policy, but because the repository that serves them is not on the path.
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
+
+Every third-party action these workflows use is pinned to a **commit SHA**, with
+the version in a trailing comment — a tag is mutable, and a moved tag would run
+code nobody reviewed on a job that holds the signing key and the Central token.
+The `eclipse-zenoh/ci` actions are ours and stay on `@main` deliberately: the
+tagging and GitHub-release steps track whatever that branch holds at run time.
+Bumping a pin is an ordinary pull request; read the diff of the action first.
 
 ## Building against zenoh-flat-jni source
 
