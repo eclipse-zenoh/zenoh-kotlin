@@ -16,6 +16,8 @@ which covers them once for the whole stack.
 
 - [What this repository publishes](#what-this-repository-publishes)
 - [Relationship to zenoh-flat-jni](#relationship-to-zenoh-flat-jni)
+- [The snapshot publication](#the-snapshot-publication)
+  - [What it does not guarantee](#what-it-does-not-guarantee)
 - [Running a release](#running-a-release)
   - [Before the first run](#before-the-first-run)
   - [Rehearsal (dry run)](#rehearsal-dry-run)
@@ -86,9 +88,80 @@ Central, because:
   a binding version that never materializes cannot be repaired, only superseded.
 
 `ci/scripts/bump-and-tag.bash` enforces the first half: it refuses to run a
-**live** release against a `-SNAPSHOT` binding version. A rehearsal is allowed
-to, which is what makes the transition workable — see
+**live** release against a `-SNAPSHOT` binding version. It checks the value
+`gradle.properties` ends up with, not the workflow input: between releases that
+file names a snapshot, so *omitting* the input is the way a release would reach
+one. A rehearsal is allowed to, which is what makes the transition workable —
+see
 [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released).
+
+## The snapshot publication
+
+Between releases, every merge to `main` uploads a mutable pre-release build to
+the [Central snapshot
+repository](https://central.sonatype.com/repository/maven-snapshots/). Its
+purpose is to keep the upload machinery exercised — signing keys, credentials,
+what Central accepts — and to give people a way to try the current `main`.
+
+It publishes **five** coordinates, not two:
+
+```text
+org.eclipse.zenoh:zenoh-kotlin:<version>-SNAPSHOT
+org.eclipse.zenoh:zenoh-kotlin-android:<version>-SNAPSHOT
+org.eclipse.zenoh:zenoh-flat-jni:1.9.0-kotlin-SNAPSHOT        (+ -jvm, -android)
+```
+
+The last three are **our own copy** of zenoh-flat-jni, built from the commit
+`Cargo.lock` pins. Publishing what we depend on is what makes the snapshot both
+self-sufficient and coherent:
+
+- **self-sufficient** — if zenoh-flat-jni's CI were switched off entirely, this
+  publication still works. It uses that repository's *source at a commit we
+  choose*, never an artifact its CI produced.
+- **coherent** — the dependency our POM names is the code we compiled against.
+  Pointing instead at zenoh-flat-jni's own `1.9.0-SNAPSHOT` would name the tip
+  of *its* `main` while we compiled against our pin; JNI being a binary
+  contract, that mismatch surfaces as `UnsatisfiedLinkError` at runtime rather
+  than as a build failure.
+
+The `-kotlin` qualifier keeps our copy from overwriting the one zenoh-flat-jni
+publishes itself, or zenoh-java's — the three can legitimately pin different
+commits at the same moment. The names are fixed rather than derived from a
+commit, so each is overwritten in place and storage does not grow with the
+number of builds. (Central still stores snapshots as timestamped builds and
+cleans them after 90 days, so it is the consumer-facing *name* that is constant,
+not the bytes behind it.)
+
+Rebuilding that copy means cross-compiling ten targets, on the order of half an
+hour, and the pin moves roughly once a day — so it is rebuilt only when it has
+to be. Every POM zenoh-flat-jni publishes carries the commit it was built from:
+
+```console
+$ curl -s .../1.9.0-kotlin-SNAPSHOT/maven-metadata.xml           # ~2.9 kB
+$ curl -s .../zenoh-flat-jni-1.9.0-kotlin-<timestamp>-<n>.pom    # ~1.8 kB
+<zenoh.flatJniCommit>e75529ce…</zenoh.flatJniCommit>
+```
+
+`ci/scripts/flat-jni-copy.bash` reads that stamp from all three coordinates and
+compares it with the pin; anything missing or different means rebuild. Run it
+locally to see the decision, or `--self-test` to check its parsers.
+
+### What it does not guarantee
+
+The two uploads are separate Gradle invocations and a snapshot repository has no
+staging-and-flip, so nothing makes the pair atomic. `main`'s CI runs are
+serialized rather than cancelled — cancelling mid-publication is what splits
+them — but a failure during the second upload still leaves a split state until
+the next successful run. That is accepted for a mutable pre-release artifact;
+strict coherence would need the SDK to name an immutable, timestamped snapshot,
+which conflicts with the fixed names above.
+
+Every publication is followed by `ci/consumer-smoke-test`, a separate Gradle
+build with no connection to this one, which resolves the published
+`zenoh-kotlin:<version>-SNAPSHOT` from the snapshot repository with
+`--refresh-dependencies` and runs a key-expression round trip through JNI. That
+is the check that the whole chain — POM, transitive zenoh-flat-jni, native
+library — works for someone who is not us.
 
 ## Running a release
 
@@ -113,7 +186,7 @@ builds and publishes.
 | --- | --- |
 | `live-run` | **unchecked** |
 | `version` | a fresh provisional number, not one already used |
-| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names an unreleased version and fails |
+| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names our own `1.9.0-kotlin-SNAPSHOT` copy: fine for a rehearsal, refused for a live run |
 | `maven_publish` | checked — or uncheck for the very first run |
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
@@ -161,12 +234,15 @@ release is blocked.
 | CI, snapshot publication | `zenoh-flat-jni:<version>-SNAPSHOT` | signing, credentials, a real upload |
 | live release | `zenoh-flat-jni:<version>` on Central | **blocked until that exists** |
 
-A snapshot may depend on a snapshot, because nothing published is permanent. So
-the answer is to consume the snapshot that zenoh-flat-jni's *own* rehearsal
-published — a rehearsal there with `maven_publish` enabled uploads
-`zenoh-flat-jni:<version>-SNAPSHOT` to the Central snapshot repository.
+A snapshot may depend on a snapshot, because nothing published is permanent —
+which is what [The snapshot publication](#the-snapshot-publication) above rests
+on. `gradle.properties` names `1.9.0-kotlin-SNAPSHOT`, our own copy, and every
+merge to `main` republishes it from the pinned commit. So a rehearsal needs
+nothing set: the default already resolves.
 
-Nothing needs editing. Name the version on the command line:
+Name another one on the command line to build against a different
+zenoh-flat-jni — the snapshot it publishes itself, or one from a rehearsal
+there:
 
 ```bash
 ./gradlew build -PzenohFlatJniVersion=1.9.0-rc8-SNAPSHOT
@@ -193,21 +269,16 @@ Then run **Release** from the Actions tab with:
 | `maven_publish` | checked to rehearse the upload too, unchecked to stop at assembly |
 | `version`, `branch` | leave empty unless you are rehearsing a specific one |
 
-**`zenoh-flat-jni-version` is the field that matters.** Left empty, the build
-falls back to `zenohFlatJniVersion` in `gradle.properties` — currently `1.9.0`,
-which is not on Maven Central, and the run dies in `compileKotlinJvm`:
+**`zenoh-flat-jni-version` decides what the rehearsal builds against.** Left
+empty it falls back to `zenohFlatJniVersion` in `gradle.properties` —
+`1.9.0-kotlin-SNAPSHOT`, our own copy, which `main` republishes on every merge. A
+rehearsal against that is a real rehearsal — leaving the field empty is now a
+sound default rather than the guaranteed compile failure it used to be.
 
-```text
-Could not find org.eclipse.zenoh:zenoh-flat-jni:1.9.0
-```
-
-That is the conditional repository below doing its job, not a broken build: a
-non-snapshot version never gets the snapshot repository on its resolution path.
-
-`release.yml` used to run on a weekday schedule as well, and a scheduled run
-passes no inputs — so it failed exactly this way every night. The schedule is
-gone: the workflow is `workflow_dispatch` only, and a rehearsal is something you
-start on purpose, with the version filled in.
+What that fallback cannot do is reach a **live** release:
+`ci/scripts/bump-and-tag.bash` refuses a `-SNAPSHOT` binding, and it checks the
+value `gradle.properties` ends up with rather than the input, precisely because
+an omitted input now inherits one.
 
 The Central snapshot repository is declared **conditionally** in
 `build.gradle.kts`, and this is the part worth understanding:
@@ -290,9 +361,11 @@ repository.
 - **The rewritten release path has never run.** The workflows were repaired for
   a repository that no longer contains Rust; no rehearsal has yet exercised
   them.
-- **No consumer test.** Unlike zenoh-flat-jni, nothing resolves the published
-  `zenoh-kotlin` artifact from a repository and runs it before release. The
-  tests here run against the build's own output.
+- **No consumer test before a *release*.** Every snapshot publication is followed
+  by `ci/consumer-smoke-test`, which resolves the published artifact from the
+  snapshot repository and runs it — but a release goes to a staging repository
+  and is not resolvable at that point, so nothing consumes a release candidate
+  the way zenoh-flat-jni's own dry-run repository lets it consume one.
 - **No GitHub release is created.** Unlike zenoh-java, `release.yml` has no
   `publish-github` job, so a release produces Maven artifacts, a tag and updated
   documentation, but no GitHub release entry. This predates the flat-jni

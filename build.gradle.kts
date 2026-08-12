@@ -74,10 +74,12 @@ subprojects {
         google()
         mavenCentral()
 
-        // Only reachable when a snapshot of the binding was explicitly asked
-        // for, which is how this SDK is rehearsed before zenoh-flat-jni has a
-        // real release. A release version never ends in -SNAPSHOT, so a release
-        // build cannot resolve a mutable artifact.
+        // Between releases this SDK builds against a snapshot: our own copy of
+        // zenoh-flat-jni, `1.9.0-kotlin-SNAPSHOT`, published by the same job
+        // that publishes this SDK's snapshot (see CI.md). A rehearsal can name
+        // another one. Reachable only when the version asked for is a snapshot,
+        // so a release — whose version never ends in -SNAPSHOT — cannot resolve
+        // a mutable artifact by accident.
         //
         // includeGroup, not includeModule: the dependency names the root
         // coordinate, but what Gradle downloads is zenoh-flat-jni-jvm or

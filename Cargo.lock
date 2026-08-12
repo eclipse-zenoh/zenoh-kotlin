@@ -3912,7 +3912,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat-jni"
 version = "1.9.0"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#e75529ce3758401ce213456e7b8e4e5667635cf8"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#6b5c04c8ee89422d6631f457f27ac79d2d0f3f5f"
 dependencies = [
  "jni 0.21.1",
  "konst 0.3.17",

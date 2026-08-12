@@ -15,7 +15,7 @@ on:
         description: "If the publication is for a snapshot version."
         default: false
       branch:
-        description: Target branch
+        description: Branch, tag or commit to publish from
         type: string
         required: false
       maven_publish:
@@ -50,8 +50,14 @@ jobs:
       # Assembles both artifacts and generates their POMs without uploading, so
       # a `maven_publish: false` rehearsal actually proves something. Only the
       # remote upload below is gated.
+      #
+      # `--refresh-dependencies` because zenohFlatJniVersion is a snapshot that
+      # the job before this one may have just replaced. Gradle caches changing
+      # modules for 24 hours and setup-gradle restores that cache, so without it
+      # this could compile against yesterday's copy while publishing a POM that
+      # names the coordinate now holding today's.
       - name: Assemble and verify the publications
-        run: ./gradlew publishJvmPublicationToMavenLocal publishAndroidReleasePublicationToMavenLocal --info -Pandroid=true
+        run: ./gradlew publishJvmPublicationToMavenLocal publishAndroidReleasePublicationToMavenLocal --info --refresh-dependencies -Pandroid=true
 
       - name: Set pub mode env var
         # Note: This step is intended to allow publishing snapshot packages.
@@ -70,7 +76,8 @@ jobs:
         run: |
           ./gradlew publishJvmPublicationToSonatypeRepository \
                     publishAndroidReleasePublicationToSonatypeRepository \
-                    ${{ env.RELEASE }} --info -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
+                    ${{ env.RELEASE }} --info --refresh-dependencies \
+                    -PremotePublication=true -Pandroid=true ${{ env.PUB_MODE }}
         env:
           CENTRAL_SONATYPE_TOKEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
           CENTRAL_SONATYPE_TOKEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
@@ -85,3 +92,41 @@ jobs:
         with:
           name: problem-reports-${{ github.job }}.zip
           path: ${{ github.workspace }}/build/reports/problems/
+
+  # Everything above runs inside this repository's own build. What a user gets
+  # is the published coordinate and whatever it transitively pulls in — which is
+  # where a snapshot has failed before, by naming a zenoh-flat-jni that did not
+  # exist. So resolve it as an outsider would and run it.
+  #
+  # Snapshots only: a release goes to a staging repository and is not public at
+  # this point.
+  consumer_test:
+    name: Consume the published snapshot
+    needs: publish_package
+    if: ${{ inputs.snapshot == true && inputs.maven_publish == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.branch }}
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # A separate Gradle build with no path or composite dependency on this
+      # one, resolving from the snapshot repository with `--refresh-dependencies`
+      # so a cached copy of the same coordinates cannot stand in for what was
+      # just uploaded.
+      - name: Resolve and run it
+        working-directory: ci/consumer-smoke-test
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/version.txt")-SNAPSHOT"
+          echo "Consuming org.eclipse.zenoh:zenoh-kotlin:$version" >> "$GITHUB_STEP_SUMMARY"
+          ../../gradlew run --no-daemon --refresh-dependencies -PcandidateVersion="$version"

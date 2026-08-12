@@ -25,19 +25,6 @@ git commit version.txt -m "chore: Bump version to \`$version\`"
 
 # Point at the zenoh-flat-jni release this SDK is built against.
 if [[ -n "$flat_jni_version" ]]; then
-  # A *release* may not depend on a snapshot: consumers do not configure the
-  # snapshot repository, and snapshots mutate and expire. A rehearsal may — that
-  # is how the SDK is exercised before the binding is released at all.
-  case "$flat_jni_version" in
-    *-SNAPSHOT)
-      if [[ "$live_run" == "true" ]]; then
-        echo "error: refusing to release against a snapshot dependency ($flat_jni_version)" >&2
-        exit 1
-      fi
-      echo "note: rehearsing against snapshot $flat_jni_version"
-      ;;
-  esac
-
   sed -i.bak -E "s|^zenohFlatJniVersion=.*|zenohFlatJniVersion=$flat_jni_version|" gradle.properties
   rm -f gradle.properties.bak
 
@@ -50,6 +37,24 @@ if [[ -n "$flat_jni_version" ]]; then
     git commit gradle.properties -m "chore: Build against zenoh-flat-jni \`$flat_jni_version\`"
   fi
 fi
+
+# Checked on the value the release will actually build against, not on the
+# workflow input: main now inherits `1.9.0-kotlin-SNAPSHOT`, our own mutable copy
+# of zenoh-flat-jni, so omitting the input is exactly how a release would reach
+# a snapshot dependency — which the earlier input-only check did not cover.
+# A rehearsal may depend on one; that is how the SDK is exercised before the
+# binding is released at all.
+effective_flat_jni_version=$(sed -n 's/^zenohFlatJniVersion=//p' gradle.properties | tr -d '[:space:]')
+case "$effective_flat_jni_version" in
+  *-SNAPSHOT)
+    if [[ "$live_run" == "true" ]]; then
+      echo "error: refusing to release against a snapshot dependency ($effective_flat_jni_version)." >&2
+      echo "       Pass zenoh-flat-jni-version naming a release that is on Maven Central." >&2
+      exit 1
+    fi
+    echo "note: rehearsing against snapshot $effective_flat_jni_version"
+    ;;
+esac
 
 if [[ ${live_run} ]]; then
   git tag --force "$version" -m "v$version"

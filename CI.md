@@ -11,7 +11,7 @@ source yourself, [README.md](README.md#where-the-native-library-comes-from).
 - [The pin](#the-pin)
 - [Lockfile synchronization](#lockfile-synchronization)
 - [Moving the pin by hand](#moving-the-pin-by-hand)
-- [Publishing does not use any of this](#publishing-does-not-use-any-of-this)
+- [What publishing uses](#what-publishing-uses)
 
 ## What CI runs
 
@@ -151,18 +151,37 @@ freezes resolution at a commit, so the sync can no longer move the pin and the
 bot goes silent. (The other way to defeat it — committing the `path = "…"` form —
 is covered above.)
 
-## Publishing does not use any of this
+## What publishing uses
 
-A release resolves `org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion` from
-Maven Central, like any other consumer. The pin, the lockfile and the composite
-build play no part in it — they exist so that *testing* against unreleased
-bindings is reproducible.
+A **release** does not use any of this. It resolves
+`org.eclipse.zenoh:zenoh-flat-jni:$zenohFlatJniVersion` from Maven Central like
+any other consumer; the pin, the lockfile and the composite build play no part.
+There, `zenohFlatJniVersion` says which **release** the SDK is published against
+and `Cargo.lock` says which **commit** it is tested against, and moving one does
+not move the other.
 
-The two are deliberately independent: `zenohFlatJniVersion` in
-`gradle.properties` says which **release** this SDK is built and published
-against, `Cargo.lock` says which **commit** it is tested against, and moving one
-does not move the other. A release must in fact avoid the composite build
-entirely — the artifact would be built from source on the builder's disk while
-the POM still claimed the released version — so `build.gradle.kts` fails any
-`publish*` task while an included build is present. See
+A **snapshot** makes them the same commit, by construction. It has to satisfy
+two things at once — it must publish even if zenoh-flat-jni's CI has never run,
+and the dependency it names must exist and be the code it compiled against — and
+the only construction that does both is to publish what it depends on:
+
+```text
+Cargo.lock pin ──> build zenoh-flat-jni from that commit
+                   publish it as 1.9.0-kotlin-SNAPSHOT
+                                   |
+                                   v
+                   build the SDK against that coordinate
+                   publish zenoh-kotlin:<version>-SNAPSHOT
+```
+
+So on `main`, the pin drives the publication as well as the tests, and
+`gradle.properties` names our own copy rather than a zenoh-flat-jni release.
+The mechanics — the qualifier, the commit stamp that decides whether the copy
+needs rebuilding, what the pairing does and does not guarantee — are in
+[PUBLISHING.md](PUBLISHING.md#the-snapshot-publication).
+
+Either way a publication must avoid the composite build: the artifact would be
+built from source on the builder's disk while the POM still claimed a resolved
+version, so `build.gradle.kts` fails any `publish*` task while an included build
+is present. See
 [PUBLISHING.md](PUBLISHING.md#building-against-zenoh-flat-jni-source).

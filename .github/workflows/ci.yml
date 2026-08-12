@@ -26,6 +26,15 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+# A run on main publishes two coordinates from two separate uploads — our copy
+# of zenoh-flat-jni, then this SDK naming it. Nothing makes that pair atomic, so
+# runs are serialized rather than cancelled: cancelling a run mid-publication is
+# exactly what leaves the two naming different commits. Per ref, so branches do
+# not queue behind each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 # Third-party actions are pinned to a commit, with the version in a trailing
 # comment: a tag is mutable, and a moved tag runs code nobody reviewed. Actions
 # under eclipse-zenoh/ are ours and stay on a branch.
@@ -95,17 +104,81 @@ jobs:
       - name: Check whether all jobs pass
         run: echo '${{ toJson(needs) }}' | jq -e 'all(.result == "success")'
 
-  # Publish snapshot packages. Both coordinates come from one Gradle
-  # invocation — see .github/workflows/publish.yml.
-  publish_snapshot_package:
-    name: Publish snapshot package
+  # Everything below publishes, and only from main, on every merge there.
+  # Branches and pull requests publish nothing.
+  #
+  # The snapshot must be usable by someone who is not us, which means its
+  # zenoh-flat-jni dependency has to exist — and be the commit this SDK compiled
+  # against. It must also not wait on zenoh-flat-jni's CI. Both follow from one
+  # rule: this job publishes what it depends on. See CI.md.
+
+  # Which commit that is, and whether the copy already published is it.
+  flat_jni_pin:
+    name: Resolve the zenoh-flat-jni pin
     if: contains(fromJSON('["refs/heads/main"]'), github.ref)
     needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.pin.outputs.commit }}
+      base: ${{ steps.pin.outputs.base }}
+      qualifier: ${{ steps.pin.outputs.qualifier }}
+      rebuild: ${{ steps.pin.outputs.rebuild }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: pin
+        run: bash ci/scripts/flat-jni-copy.bash
+
+  # Our own copy, built from that commit by zenoh-flat-jni's own publication
+  # workflow — its cross-compilation matrix is six desktop targets and four
+  # Android ABIs, and duplicating it here is how the two would drift.
+  #
+  # The workflow file is taken from its main, reviewed like any dependency;
+  # `uses:` cannot hold an expression, so the pin cannot go there. What is built
+  # is `branch:`, and that is the whole of the coupling: this needs a *file* in
+  # that repository, never a run of its CI.
+  #
+  # Half an hour when it runs, so it runs only when the pin has moved.
+  publish_flat_jni_copy:
+    name: Publish our zenoh-flat-jni copy
+    needs: flat_jni_pin
+    if: needs.flat_jni_pin.outputs.rebuild == 'true'
+    uses: eclipse-zenoh/zenoh-flat-jni/.github/workflows/publish.yml@main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      snapshot: true
+      # A called workflow runs with the caller's context, so it has to be told
+      # whose sources to check out.
+      source-repository: eclipse-zenoh/zenoh-flat-jni
+      branch: ${{ needs.flat_jni_pin.outputs.commit }}
+      version-qualifier: ${{ needs.flat_jni_pin.outputs.qualifier }}
+      # It derives the coordinate from its own version.txt; this is what we
+      # expect that to be, so a pin that moved past a version bump there fails
+      # before publishing something we cannot resolve.
+      expected-base-version: ${{ needs.flat_jni_pin.outputs.base }}
+    secrets: inherit
+
+  # Then the SDK snapshot, naming the copy above. Reached both ways: the copy
+  # was rebuilt, or it was already current and skipped.
+  publish_snapshot_package:
+    name: Publish snapshot package
+    needs: [flat_jni_pin, publish_flat_jni_copy]
+    if: >-
+      ${{ !cancelled()
+          && needs.flat_jni_pin.result == 'success'
+          && needs.publish_flat_jni_copy.result != 'failure' }}
     uses: ./.github/workflows/publish.yml
     permissions:
       contents: read
       packages: write
     with:
       snapshot: true
-      branch: ${{ github.ref_name }}
+      # The commit that triggered this run, not `main`. Concurrency queues a
+      # newer run; it does not hold the branch still. Passing the branch name,
+      # this job would check out whatever `main` had become while the JNI copy
+      # was being built for half an hour — publishing SDK source B against the
+      # copy built from A's pin, which is the mismatch the whole job exists to
+      # prevent.
+      branch: ${{ github.sha }}
     secrets: inherit

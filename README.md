@@ -143,9 +143,13 @@ Three ways to build. Pick by what you are doing:
 | build the bindings from source too | `./gradlew build -PuseLocalJni=true` | yes |
 | build against my own checkout | `./gradlew build -PlocalJniDir=../zenoh-flat-jni` | yes |
 
-**The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` from Maven Central
-with the native library already inside it. Nothing is compiled from Rust and no
-toolchain is needed.
+**The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` with the native
+library already inside it. Nothing is compiled from Rust and no toolchain is
+needed. On `main` that is `1.9.0-kotlin-SNAPSHOT`, published from this repository
+alongside the SDK snapshot ([CI.md](CI.md#what-publishing-uses)); a release
+names a zenoh-flat-jni release on Maven Central. Either way it is one coordinate
+in `gradle.properties`, and if it has not been published yet the other two rows
+build without it.
 
 **`-PuseLocalJni=true`** builds the bindings from source, as `Cargo.toml`
 says — the usual Rust arrangement, and the one CI uses. A `git` dependency there
