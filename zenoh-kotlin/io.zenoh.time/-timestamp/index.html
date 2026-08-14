@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>SampleMiss</title>
+    <title>Timestamp</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -104,28 +104,53 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.pubsub/SampleMiss///PointingToDeclaration//886165161">
-  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.pubsub</a><span class="delimiter">/</span><span class="current">SampleMiss</span></div>
+<div class="main-content" data-page-type="classlike" id="content" pageIds="zenoh-kotlin::io.zenoh.time/Timestamp///PointingToDeclaration//886165161">
+  <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.time</a><span class="delimiter">/</span><span class="current">Timestamp</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>Sample</span><wbr></wbr><span><span>Miss</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">SampleMiss</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>zidLower<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>zidUpper<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>eid<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>missedCount<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span></div><h1 class="">SampleMiss</h1><p class="paragraph">A struct that represent missed samples.</p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>zid</span><wbr></wbr><span><span>Lower</span></span></u></div></span></div><div><div class="title"><p class="paragraph">: lower 8 bytes of zenoh id (the Zenoh session) of the source of missed samples.</p></div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>zid</span><wbr></wbr><span><span>Upper</span></span></u></div></span></div><div><div class="title"><p class="paragraph">: upper 8 bytes of zenoh id (the Zenoh session) of the source of missed samples.</p></div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>eid</span></span></u></div></span></div><div><div class="title"><p class="paragraph">: entity id (entity in a Zenoh session) of the source of missed samples.</p></div></div></div></div><div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span>missed</span><wbr></wbr><span><span>Count</span></span></u></div></span></div><div><div class="title"><p class="paragraph">: number of missed samples</p></div></div></div></div></div></div></div>
+    <h1 class="cover"><span><span>Timestamp</span></span></h1>
+    <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">Timestamp</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>ntp64<span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>id<span class="token operator">: </span><a href="../../io.zenoh.config/-zenoh-id/index.html">ZenohId</a></span></span><span class="token punctuation">)</span></div><p class="paragraph">A Zenoh timestamp: an NTP64 instant together with the identifier of the node whose clock produced it.</p><p class="paragraph">Both halves are significant. Zenoh orders and de-duplicates on the whole <code class="lang-kotlin">(ntp64, id)</code> pair, so a timestamp is only meaningful when its <a href="id.html">id</a> is the real identifier of the originating node — obtain it from the session that will publish the value, via <code class="lang-kotlin">session.info().zid()</code>.</p></div>    </div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
     <div class="tabs-section-body">
       <div data-togglable="CONSTRUCTOR">
         <h2 class="">Constructors</h2>
-        <div class="table"><a data-name="-370030873%2FConstructors%2F886165161" anchor-label="SampleMiss" id="-370030873%2FConstructors%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+        <div class="table"><a data-name="1265264139%2FConstructors%2F886165161" anchor-label="Timestamp" id="1265264139%2FConstructors%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-sample-miss.html"><span>Sample</span><wbr></wbr><span><span>Miss</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-370030873%2FConstructors%2F886165161"></span>
+                  <div><a href="-timestamp.html"><span><span>Timestamp</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1265264139%2FConstructors%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">zidLower<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">zidUpper<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">eid<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token punctuation">, </span></span><span class="parameter ">missedCount<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></span></span><span class="token punctuation">)</span></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">ntp64<span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token punctuation">, </span></span><span class="parameter ">id<span class="token operator">: </span><a href="../../io.zenoh.config/-zenoh-id/index.html">ZenohId</a></span></span><span class="token punctuation">)</span></div></div>                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-1952146875%2FClasslikes%2F886165161" anchor-label="Companion" id="-1952146875%2FClasslikes%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1952146875%2FClasslikes%2F886165161"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -134,62 +159,57 @@
       </div>
       <div data-togglable="PROPERTY">
         <h2 class="">Properties</h2>
-        <div class="table"><a data-name="1650452308%2FProperties%2F886165161" anchor-label="eid" id="1650452308%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+        <div class="table"><a data-name="393530593%2FProperties%2F886165161" anchor-label="id" id="393530593%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="eid.html"><span><span>eid</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1650452308%2FProperties%2F886165161"></span>
+                  <div><a href="id.html"><span><span>id</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="393530593%2FProperties%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="eid.html">eid</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="id.html">id</a><span class="token operator">: </span><a href="../../io.zenoh.config/-zenoh-id/index.html">ZenohId</a></div><div class="brief "><p class="paragraph">Identifier of the node whose clock produced <a href="ntp64.html">ntp64</a>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-97666080%2FProperties%2F886165161" anchor-label="missedCount" id="-97666080%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+<a data-name="1759346390%2FProperties%2F886165161" anchor-label="ntp64" id="1759346390%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="missed-count.html"><span>missed</span><wbr></wbr><span><span>Count</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-97666080%2FProperties%2F886165161"></span>
+                  <div><a href="ntp64.html"><span><span>ntp64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1759346390%2FProperties%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="missed-count.html">missedCount</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="ntp64.html">ntp64</a><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span></div><div class="brief "><p class="paragraph">The NTP64 instant. This is an <i>unsigned</i> 64-bit value whose high bit marks the current era; <a href="get-ntp64.html">getNtp64</a> returns the same 64 bits in the form <code class="lang-kotlin">org.apache.commons.net.ntp.TimeStamp(long)</code> expects.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-1657567526%2FProperties%2F886165161" anchor-label="zidLower" id="-1657567526%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="-1022402390%2FFunctions%2F886165161" anchor-label="getNtp64" id="-1022402390%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
           <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="zid-lower.html"><span>zid</span><wbr></wbr><span><span>Lower</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1657567526%2FProperties%2F886165161"></span>
+                  <div><a href="get-ntp64.html"><span>get</span><wbr></wbr><span><span>Ntp64</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1022402390%2FFunctions%2F886165161"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="zid-lower.html">zidLower</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
-                </div>
-              </div>
-            </div>
-          </div>
-<a data-name="920535129%2FProperties%2F886165161" anchor-label="zidUpper" id="920535129%2FProperties%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
-          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
-            <div class="main-subrow keyValue ">
-              <div class=""><span class="inline-flex">
-                  <div><a href="zid-upper.html"><span>zid</span><wbr></wbr><span><span>Upper</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="920535129%2FProperties%2F886165161"></span>
-                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
-                  </span></span></div>
-              <div>
-                <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">val </span><a href="zid-upper.html">zidUpper</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-ntp64.html"><span class="token function">getNtp64</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div></div>                  </div>
                 </div>
               </div>
             </div>

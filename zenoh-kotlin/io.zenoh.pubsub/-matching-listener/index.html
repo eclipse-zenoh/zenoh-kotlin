@@ -108,7 +108,9 @@
   <div class="breadcrumbs"><a href="../../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><a href="../index.html">io.zenoh.pubsub</a><span class="delimiter">/</span><span class="current">MatchingListener</span></div>
   <div class="cover ">
     <h1 class="cover"><span>Matching</span><wbr></wbr><span><span>Listener</span></span></h1>
-    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">MatchingListener</a> : <a href="../../io.zenoh.session/-session-declaration/index.html">SessionDeclaration</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><h1 class="">MatchingListener</h1><p class="paragraph">A listener that sends notifications when the matching status of a corresponding Zenoh entity changes.</p><p class="paragraph">Matching listeners will run in background until the corresponding Zenoh entity is undeclared, or until it is undeclared.</p></div></div>
+    <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+      <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">class </span><a href="index.html">MatchingListener</a> : <a href="../../io.zenoh.session/-session-declaration/index.html">SessionDeclaration</a>, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html">AutoCloseable</a></div><h1 class="">MatchingListener</h1><p class="paragraph">A listener that sends notifications when the matching status of a corresponding Zenoh entity changes.</p><p class="paragraph">Matching listeners run in the background until the corresponding Zenoh entity is undeclared, or until the listener itself is undeclared.</p><p class="paragraph">A background matching listener (declared via <a href="../-advanced-publisher/declare-background-matching-listener.html">AdvancedPublisher.declareBackgroundMatchingListener</a>) has no handle to undeclare — its <span data-unresolved-link="io.zenoh.pubsub/MatchingListener/jniMatchingListener/#/PointingToDeclaration/">jniMatchingListener</span> is <code class="lang-kotlin">null</code> and it lives until the publisher ends.</p></div>    </div>
   </div>
   <div class="tabbedcontent">
     <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
@@ -125,7 +127,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Closes the listener. This function is equivalent to <a href="undeclare.html">undeclare</a> and is called automatically when using try-with-resources.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Closes the listener. This function is equivalent to <a href="undeclare.html">undeclare</a> and is called automatically when using try-with-resources.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -140,7 +144,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="is-valid.html"><span class="token function">isValid</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns <code class="lang-kotlin">true</code> if the listener is still running.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">fun </span><a href="is-valid.html"><span class="token function">isValid</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns <code class="lang-kotlin">true</code> if the listener is still running.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -155,7 +161,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Undeclares the listener.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="undeclare.html"><span class="token function">undeclare</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Undeclares the listener.</p></div></div>                  </div>
                 </div>
               </div>
             </div>

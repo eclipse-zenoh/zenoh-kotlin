@@ -51,6 +51,8 @@
         <div class="filter-section filter-section_loading" id="filter-section">
                 <button class="platform-tag platform-selector jvm-like" data-active=""
                         data-filter=":zenoh-kotlin/commonMain">common</button>
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":zenoh-kotlin/jvmAndAndroidMain">jvmAndAndroid</button>
             <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
                 <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
                         data-role="dropdown-toggle"
@@ -71,6 +73,14 @@
                                        data-filter=":zenoh-kotlin/commonMain"/>
                                 <span class="checkbox--icon"></span>
                                 common
+                            </label>
+                        </li>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":zenoh-kotlin/jvmAndAndroidMain"
+                                       data-filter=":zenoh-kotlin/jvmAndAndroidMain"/>
+                                <span class="checkbox--icon"></span>
+                                jvmAndAndroid
                             </label>
                         </li>
                 </ul>
@@ -104,7 +114,7 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="package" id="content" pageIds="zenoh-kotlin::io.zenoh.ext////PointingToDeclaration//886165161">
+<div class="main-content" data-page-type="package" id="content" pageIds="zenoh-kotlin::io.zenoh.ext////PointingToDeclaration//-1395288020">
   <div class="breadcrumbs"><a href="../../index.html">zenoh-kotlin</a><span class="delimiter">/</span><span class="current">io.zenoh.ext</span></div>
   <div class="cover ">
     <h1 class="cover"><span><span>Package-level</span></span> <span><span>declarations</span></span></h1>
@@ -124,7 +134,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-cache-config/index.html">CacheConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>maxSamples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">1</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>repliesQoS<span class="token operator">: </span><a href="../io.zenoh.qos/-qo-s/index.html">QoS</a><span class="token operator"> = </span>QoS.defaultPush</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure an <a href="../io.zenoh.pubsub/-advanced-publisher/index.html">AdvancedPublisher</a> cache.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-cache-config/index.html">CacheConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>maxSamples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">1</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>repliesQoS<span class="token operator">: </span><a href="../io.zenoh.qos/-qo-s/index.html">QoS</a><span class="token operator"> = </span>QoS.defaultPush</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure an <a href="../io.zenoh.pubsub/-advanced-publisher/index.html">AdvancedPublisher</a> cache.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -139,7 +151,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-heartbeat-mode/index.html">HeartbeatMode</a></div><div class="brief "><p class="paragraph">Heartbeat sample miss detection mode</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-heartbeat-mode/index.html">HeartbeatMode</a></div><div class="brief "><p class="paragraph">Heartbeat sample miss detection mode</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -154,7 +168,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-history-config/index.html">HistoryConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>detectLatePublishers<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxSamples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxAgeSeconds<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure query for historical data.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-history-config/index.html">HistoryConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>detectLatePublishers<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a><span class="token operator"> = </span><span class="token boolean">false</span><span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxSamples<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">?</span><span class="token operator"> = </span>null<span class="token punctuation">, </span></span><span class="parameter "><span class="token keyword">val </span>maxAgeSeconds<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-double/index.html">Double</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure query for historical data.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -169,7 +185,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-miss-detection-config/index.html">MissDetectionConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>heartbeat<span class="token operator">: </span><a href="-heartbeat-mode/index.html">HeartbeatMode</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configuration for sample miss detection Enabling sample miss detection allows <a href="../io.zenoh.pubsub/-advanced-subscriber/index.html">AdvancedSubscriber</a> to detect missed samples through <a href="../io.zenoh.pubsub/-sample-miss-listener/index.html">SampleMissListener</a> and to recover missed samples through <a href="-recovery-config/index.html">RecoveryConfig</a> in heartbeat mode.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-miss-detection-config/index.html">MissDetectionConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>heartbeat<span class="token operator">: </span><a href="-heartbeat-mode/index.html">HeartbeatMode</a><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configuration for sample miss detection Enabling sample miss detection allows <a href="../io.zenoh.pubsub/-advanced-subscriber/index.html">AdvancedSubscriber</a> to detect missed samples through <a href="../io.zenoh.pubsub/-sample-miss-listener/index.html">SampleMissListener</a> and to recover missed samples through <a href="-recovery-config/index.html">RecoveryConfig</a> in heartbeat mode.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -184,7 +202,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-recovery-config/index.html">RecoveryConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>mode<span class="token operator">: </span><a href="-recovery-mode/index.html">RecoveryMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure retransmission.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">data </span><span class="token keyword">class </span><a href="-recovery-config/index.html">RecoveryConfig</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>mode<span class="token operator">: </span><a href="-recovery-mode/index.html">RecoveryMode</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Configure retransmission.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -199,7 +219,9 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-recovery-mode/index.html">RecoveryMode</a></div><div class="brief "><p class="paragraph">Sample recovery mode.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain" data-active="" data-toggle=":zenoh-kotlin/commonMain">common</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">sealed </span><span class="token keyword">class </span><a href="-recovery-mode/index.html">RecoveryMode</a></div><div class="brief "><p class="paragraph">Sample recovery mode.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
@@ -208,32 +230,36 @@
       </div>
       <div data-togglable="FUNCTION">
         <h2 class="">Functions</h2>
-        <div class="table"><a data-name="408633283%2FFunctions%2F886165161" anchor-label="zDeserialize" id="408633283%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
-          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+        <div class="table"><a data-name="408633283%2FFunctions%2F-1028400535" anchor-label="zDeserialize" id="408633283%2FFunctions%2F-1028400535" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/jvmAndAndroidMain" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="z-deserialize.html"><span>z</span><wbr></wbr><span><span>Deserialize</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="408633283%2FFunctions%2F886165161"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="408633283%2FFunctions%2F-1028400535"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="z-deserialize.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="z-deserialize.html"><span class="token function">zDeserialize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">zbytes<span class="token operator">: </span><a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="z-deserialize.html">T</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Deserialize the <a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a> instance into an element of type <a href="z-deserialize.html">T</a>.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/jvmAndAndroidMain" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain" data-active="" data-toggle=":zenoh-kotlin/jvmAndAndroidMain">jvmAndAndroid</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/jvmAndAndroidMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="z-deserialize.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="z-deserialize.html"><span class="token function">zDeserialize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">zbytes<span class="token operator">: </span><a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="z-deserialize.html">T</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Deserialize the <a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a> instance into an element of type <a href="z-deserialize.html">T</a>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="819684669%2FFunctions%2F886165161" anchor-label="zSerialize" id="819684669%2FFunctions%2F886165161" data-filterable-set=":zenoh-kotlin/commonMain"></a>
-          <div class="table-row" data-filterable-current=":zenoh-kotlin/commonMain" data-filterable-set=":zenoh-kotlin/commonMain">
+<a data-name="819684669%2FFunctions%2F-1028400535" anchor-label="zSerialize" id="819684669%2FFunctions%2F-1028400535" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain"></a>
+          <div class="table-row" data-filterable-current=":zenoh-kotlin/jvmAndAndroidMain" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
                   <div><a href="z-serialize.html"><span>z</span><wbr></wbr><span><span>Serialize</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="819684669%2FFunctions%2F886165161"></span>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="819684669%2FFunctions%2F-1028400535"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/commonMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="z-serialize.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="z-serialize.html"><span class="token function">zSerialize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">t<span class="token operator">: </span><a href="z-serialize.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Serializes an element of type <a href="z-serialize.html">T</a> into a <a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a>.</p></div></div></div>
+                  <div class="platform-hinted  with-platform-tabs" data-platform-hinted="data-platform-hinted">
+                    <div class="platform-bookmarks-row" data-toggle-list="data-toggle-list"><button class="platform-bookmark" data-filterable-current=":zenoh-kotlin/jvmAndAndroidMain" data-filterable-set=":zenoh-kotlin/jvmAndAndroidMain" data-active="" data-toggle=":zenoh-kotlin/jvmAndAndroidMain">jvmAndAndroid</button></div>
+<div class="content sourceset-dependent-content" data-active="" data-togglable=":zenoh-kotlin/jvmAndAndroidMain"><div class="symbol monospace"><span class="token keyword">inline </span><span class="token keyword">fun </span><span class="token operator">&lt;</span><a href="z-serialize.html">T</a><span class="token operator"> : </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-any/index.html">Any</a><span class="token operator">&gt; </span><a href="z-serialize.html"><span class="token function">zSerialize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">t<span class="token operator">: </span><a href="z-serialize.html">T</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="/&amp;lt;Error class: unknown class&amp;gt;///PointingToDeclaration/">&lt;Error class: unknown class&gt;</span><span class="token operator">&lt;</span><a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">Serializes an element of type <a href="z-serialize.html">T</a> into a <a href="../io.zenoh.bytes/-z-bytes/index.html">ZBytes</a>.</p></div></div>                  </div>
                 </div>
               </div>
             </div>
