@@ -479,16 +479,23 @@ Jobs 3 and 4 both delegate to workflows that can be dispatched directly, which
 is what makes [recovery](#if-a-step-after-maven-central-fails) possible without
 re-running a release.
 
-`publish-github` calls `gh release create` itself rather than
-`eclipse-zenoh/ci/publish-crates-github`, which zenoh-java uses. The action
-would work — it needs no crate in the repository — but it reaches
-`build-crates-debian.ts` for one artifact regex, and that module initializes
-TOML at import, so every run first does `cargo +stable install
-toml-cli2@0.3.2 --force`: a Rust toolchain, a crates.io fetch and about 40
-seconds before it calls `gh`. A workflow whose purpose is to work when the
-release pipeline did not should not depend on crates.io. The two `gh` calls it
-makes for us are short enough to keep inline, and the artifact upload it also
-does is a no-op here.
+The release itself is created by `eclipse-zenoh/ci/publish-crates-github`, the
+shared action the rest of the Zenoh repositories use. Despite the name it
+publishes no crate: it creates the release from the tag with generated notes,
+then attaches any `*-standalone.zip` / `*-debian.zip` build archives. This
+repository produces none, so that half is inert and every release it has made
+here carries notes and GitHub's own source archives only.
+
+Two upstream defects are known and tracked in `eclipse-zenoh/ci`. Neither
+affects a normal release, and both are left upstream deliberately — a fix there
+reaches every Zenoh repository, whereas working around them here would fix one:
+
+- it installs `toml-cli2` from crates.io before running `gh`, costing roughly 40
+  seconds and a crates.io dependency this workflow has no use for;
+- it bounds the generated notes with the *newest* existing release rather than
+  the one preceding this version. Identical during a release; wrong only when
+  recovering a version after a newer one has already shipped, which produces
+  empty notes.
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.

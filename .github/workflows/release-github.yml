@@ -25,22 +25,12 @@ name: Release (GitHub)
 # undone is notify watchers.
 #
 # The job was removed in the zenoh-flat transition on the belief that
-# `eclipse-zenoh/ci/publish-crates-github` publishes Rust crates and would fail
-# without any in the repository. That was wrong - it needs no crate here, and
-# zenoh-java runs it successfully today - but the action is still not the right
-# thing to call from a recovery path. It reaches
-# `build-crates-debian.ts` for one artifact regex, and that module runs
-# `await TOML.init()` at import, so every invocation first does
-# `cargo +stable install toml-cli2@0.3.2 --force`: a Rust toolchain, a
-# crates.io fetch and about 40s of compiling before it runs `gh`. This
-# workflow's whole purpose is to still work when the release pipeline did not,
-# so it should not depend on crates.io being up.
-#
-# What the action does that we need is two `gh` calls, reproduced below. What it
-# does that we do not need is upload `*-standalone.zip` / `*-debian.zip` build
-# artifacts, of which this repository produces none. Keeping the two calls
-# inline costs a few lines and removes a whole class of unrelated failure.
-# See eclipse-zenoh/ci - the eager TOML init is worth removing upstream too.
+# `eclipse-zenoh/ci/publish-crates-github` publishes crates and would fail
+# without any in the repository. That was wrong: it needs no crate here, and
+# zenoh-java has been running it successfully throughout. So the action is back,
+# unchanged, and this repository stays on the same release path as the rest of
+# the org - see the note above the step for what that costs and why it is worth
+# it anyway.
 
 on:
   workflow_call:
@@ -162,57 +152,30 @@ jobs:
               >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      # Same two calls eclipse-zenoh/ci/publish-crates-github makes, minus the
-      # Cargo dependency it drags in - see the note at the top of this file.
-      # Notes start at the newest existing release so they cover only what is
-      # new in this one. Pre-release detection matches the action's rule: a `-`
-      # anywhere but the front, or four dot-separated components.
-      - name: Create the GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.BOT_TOKEN_WORKFLOW }}
-          VERSION: ${{ inputs.version }}
-          BRANCH: ${{ inputs.branch }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          args=(--repo "$REPO" --target "$BRANCH" --verify-tag --generate-notes)
-
-          # The release *preceding this version*, not simply the newest one.
-          # They are the same during a release, but not for a recovery run: if
-          # 1.11.0 shipped while 1.10.0 was missing its release, starting from
-          # the newest would generate notes from 1.11.0 to 1.10.0 - backwards,
-          # and empty. Sorting VERSION into the list and taking its predecessor
-          # is right in both cases.
-          previous="$(
-            {
-              gh release list --repo "$REPO" --exclude-drafts --limit 100 \
-                 --json tagName --jq '.[].tagName'
-              printf '%s\n' "$VERSION"
-            } | sort -V -u | awk -v v="$VERSION" '$0 == v { print prev; exit } { prev = $0 }'
-          )"
-          if [[ -n "$previous" ]]; then
-            args+=(--notes-start-tag "$previous")
-            echo "notes start after $previous"
-          else
-            echo "no earlier release; notes cover the full history"
-          fi
-
-          prerelease=false
-          case "$VERSION" in ?*-*) prerelease=true ;; esac
-          if [[ "$(printf '%s' "$VERSION" | awk -F. '{print NF}')" == 4 ]]; then
-            prerelease=true
-          fi
-          if [[ "$prerelease" == true ]]; then
-            args+=(--prerelease)
-            echo "$VERSION is a pre-release"
-          fi
-
-          if [[ "${{ inputs.live-run || false }}" != "true" ]]; then
-            echo "dry run; would have run: gh release create $VERSION ${args[*]}" \
-              >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          gh release create "$VERSION" "${args[@]}"
-          echo "released https://github.com/$REPO/releases/tag/$VERSION" >> "$GITHUB_STEP_SUMMARY"
+      # The org's shared release action, as zenoh-java and the rest of the Zenoh
+      # repositories use it. It creates the release from the tag with generated
+      # notes, then attaches any `*-standalone.zip` / `*-debian.zip` build
+      # archives - of which this repository produces none, so that half is inert
+      # here and every release it has ever made carried notes only.
+      #
+      # Two known upstream defects, tracked in eclipse-zenoh/ci, neither of which
+      # affects a normal release:
+      #
+      #  - it installs `toml-cli2` from crates.io before running `gh`, because
+      #    `publish-crates-github.ts` imports `build-crates-debian.ts` for one
+      #    filename pattern and that module runs `await TOML.init()` at import.
+      #    Roughly 40s and a crates.io dependency this workflow does not need.
+      #  - it bounds the generated notes with the *newest* existing release
+      #    rather than the one preceding this version. Identical during a
+      #    release; wrong only when recovering a version after a newer one has
+      #    already shipped, which then produces empty notes.
+      #
+      # Reusing the shared action is worth both: fixes belong upstream where
+      # every Zenoh repository gets them, not worked around in one repo.
+      - uses: eclipse-zenoh/ci/publish-crates-github@main
+        with:
+          repo: ${{ github.repository }}
+          live-run: ${{ inputs.live-run || false }}
+          version: ${{ inputs.version }}
+          branch: ${{ inputs.branch }}
+          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
