@@ -99,17 +99,43 @@ jobs:
           fi
           echo "tag ${{ inputs.version }} carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"
 
+      # Only a 404 is evidence of absence. A timeout, a CDN 5xx or a DNS failure
+      # means Central did not answer, which is not the same thing - and a
+      # release that just went out can take a while to appear, so an early 404
+      # can be lag rather than a typo. So: retry, fail closed on a *settled*
+      # 404, and on anything else say so and continue. The version.txt check
+      # above is the one that must hold; this catches the narrower case of a
+      # version that was tagged but never published, and it should not be able
+      # to block a release because repo1.maven.org had a bad minute.
       - name: Verify the version is on Maven Central
         if: ${{ inputs.check-maven }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           pom="https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/${{ inputs.version }}/zenoh-kotlin-${{ inputs.version }}.pom"
-          if ! curl -sfI "$pom" > /dev/null; then
-            echo "::error::zenoh-kotlin:${{ inputs.version }} is not on Maven Central." \
-                 "Releasing it on GitHub would announce a version nobody can depend on." >&2
+          code=000
+          for attempt in 1 2 3 4 5; do
+            # curl already writes 000 on a connection failure; don't append another.
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -I "$pom") || true
+            [[ -n "$code" ]] || code=000
+            case "$code" in
+              200) break ;;
+              404) echo "attempt $attempt: not published yet (404)"; sleep $((attempt * 15)) ;;
+              *)   echo "attempt $attempt: Central did not answer (HTTP $code)"; sleep $((attempt * 15)) ;;
+            esac
+          done
+
+          if [[ "$code" == 200 ]]; then
+            echo "zenoh-kotlin:${{ inputs.version }} resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$code" == 404 ]]; then
+            echo "::error::zenoh-kotlin:${{ inputs.version }} is not on Maven Central (404 after 5 attempts)." \
+                 "Releasing it on GitHub would announce a version nobody can depend on." \
+                 "If it was published minutes ago this may be propagation lag - wait, or re-run with check-maven off." >&2
             exit 1
+          else
+            echo "::warning::Could not reach Maven Central (last status $code); proceeding unverified." >&2
+            echo "⚠️ Maven Central unreachable (HTTP $code) - the release was **not** verified against it." \
+              >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "zenoh-kotlin:${{ inputs.version }} resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: eclipse-zenoh/ci/publish-crates-github@main
         with:

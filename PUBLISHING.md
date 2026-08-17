@@ -239,9 +239,14 @@ A tag alone is not proof, though — rehearsals are tagged too, so `1.10.0-rc4`
 is a real tag that was never published. Two checks run before the release is
 created: `version.txt` at the tag must equal `version`, and with `check-maven`
 the coordinate must already resolve from Maven Central. A mistyped version
-fails rather than announcing a release Maven never got. The pipeline leaves
-`check-maven` off, because the publish job that just ran is the evidence and a
-freshly released coordinate takes a while to appear on `repo1.maven.org`.
+fails rather than announcing a release Maven never got.
+
+`check-maven` distinguishes *absent* from *unanswered*. A settled 404 fails the
+run; a timeout or a 5xx is reported and the release proceeds, because Central
+having a bad minute is not evidence about the version and should not block a
+release. A 404 immediately after a live release can also be propagation lag
+rather than a mistake — wait, or re-run with `check-maven` off. The pipeline
+leaves it off for that reason: the publish job that just ran is the evidence.
 
 This is the asymmetry worth remembering: the Maven publication cannot be
 undone, but a GitHub release can be edited (`gh release edit`) or removed
