@@ -22,6 +22,7 @@ which covers them once for the whole stack.
   - [Before the first run](#before-the-first-run)
   - [Rehearsal (dry run)](#rehearsal-dry-run)
   - [The real release](#the-real-release)
+  - [Creating a GitHub release on its own](#creating-a-github-release-on-its-own)
   - [After a release](#after-a-release)
 - [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released)
   - [Rehearsing the release workflow with a snapshot](#rehearsing-the-release-workflow-with-a-snapshot)
@@ -188,6 +189,7 @@ builds and publishes.
 | `version` | a fresh provisional number, not one already used |
 | `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names our own `1.9.0-kotlin-SNAPSHOT` copy: fine for a rehearsal, refused for a live run |
 | `maven_publish` | checked — or uncheck for the very first run |
+| `github_release` | either — a rehearsal is not a live run, so no release is created regardless |
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
 `live-run` publishes `<version>-SNAPSHOT` to the **mutable** snapshot repository
@@ -207,10 +209,45 @@ never give a rehearsal the number you intend to release.
 | `version` | the release number |
 | `zenoh-flat-jni-version` | the zenoh-flat-jni release to build against — **must already be on Central** |
 | `maven_publish` | checked |
+| `github_release` | checked |
 
 Supplying `zenoh-flat-jni-version` rewrites `zenohFlatJniVersion` in
 `gradle.properties` and commits it, so the published POM records exactly which
 binding release the SDK was built against.
+
+### Creating a GitHub release on its own
+
+The **Release (GitHub)** workflow creates the GitHub release for a version that
+is already tagged, without re-running the tag or publish jobs. Use it when a
+release reached Maven Central without one — as `1.10.0` did, when `release.yml`
+still had no `publish-github` job.
+
+| Field | Value |
+| --- | --- |
+| `live-run` | **checked** — without it the action does nothing |
+| `version` | the released number, e.g. `1.10.0` |
+| `branch` | the release branch the tag is on, e.g. `release/1.10.0` |
+| `check-maven` | checked |
+
+**The release describes the tag, not the branch.** `bump-and-tag.bash` writes
+`version.txt` and tags it in the same run that publishes, so the tag *is* the
+version, and `gh release create --verify-tag` refuses a version that has none.
+`branch` only names where to cut a tag that does not exist yet, which here it
+always does.
+
+A tag alone is not proof, though — rehearsals are tagged too, so `1.10.0-rc4`
+is a real tag that was never published. Two checks run before the release is
+created: `version.txt` at the tag must equal `version`, and with `check-maven`
+the coordinate must already resolve from Maven Central. A mistyped version
+fails rather than announcing a release Maven never got. The pipeline leaves
+`check-maven` off, because the publish job that just ran is the evidence and a
+freshly released coordinate takes a while to appear on `repo1.maven.org`.
+
+This is the asymmetry worth remembering: the Maven publication cannot be
+undone, but a GitHub release can be edited (`gh release edit`) or removed
+(`gh release delete`, which leaves the tag in place), so running this again to
+correct a mistake costs nothing. The one effect that cannot be taken back is
+that publishing notifies everyone watching releases.
 
 ### After a release
 
@@ -304,7 +341,7 @@ policy, but because the repository that serves them is not on the path.
 
 ## How the pipeline works
 
-`release.yml` runs three jobs:
+`release.yml` runs four jobs:
 
 1. **`tag`** — `eclipse-zenoh/ci/create-release-branch` cuts the release branch,
    then `ci/scripts/bump-and-tag.bash` writes `version.txt`, optionally rewrites
@@ -317,6 +354,10 @@ policy, but because the repository that serves them is not on the path.
 3. **`publish-dokka`** — regenerates the API documentation and, on a live run
    only, deploys it to the `gh-pages` site README.md links to. The javadoc JAR
    attached to the Maven publications does not serve that site; this job does.
+4. **`publish-github`** — creates the GitHub release from the tag, on a live run
+   only. It calls `release-github.yml`, which is **also dispatchable on its
+   own** — see [Creating a GitHub release on its
+   own](#creating-a-github-release-on-its-own).
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
@@ -351,7 +392,7 @@ Which `zenoh-flat-jni` *release* this SDK is built and published against is
 | --- | --- |
 | `CENTRAL_SONATYPE_TOKEN_USERNAME` / `_PASSWORD` | Central Portal user token |
 | `ORG_GPG_KEY_ID` / `_SUBKEY_ID` / `_PRIVATE_KEY` / `_PASSPHRASE` | signing |
-| `BOT_TOKEN_WORKFLOW` | release branch and tag push |
+| `BOT_TOKEN_WORKFLOW` | release branch, tag push, GitHub release |
 
 All are organization-level on `eclipse-zenoh`; nothing is configured per
 repository.
@@ -366,10 +407,10 @@ repository.
   snapshot repository and runs it — but a release goes to a staging repository
   and is not resolvable at that point, so nothing consumes a release candidate
   the way zenoh-flat-jni's own dry-run repository lets it consume one.
-- **No GitHub release is created.** Unlike zenoh-java, `release.yml` has no
-  `publish-github` job, so a release produces Maven artifacts, a tag and updated
-  documentation, but no GitHub release entry. This predates the flat-jni
-  transition and is left as it was.
+- **The GitHub release carries generated notes only.** The action uploads any
+  `*-standalone.zip` / `*-debian.zip` build artifacts it finds, and this
+  repository produces none, so the release is notes and source archives — the
+  binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.
 - **`zenoh-flat-jni` itself has not been released**, so the ordering constraint
@@ -386,3 +427,4 @@ repository.
 - [ ] For an Android release: the Android POM references
       `zenoh-flat-jni-android`, not the desktop coordinate.
 - [ ] The released coordinates resolve from Maven Central.
+- [ ] The GitHub release exists and its notes start at the previous release.

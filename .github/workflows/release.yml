@@ -42,6 +42,11 @@ on:
         description: Publish the package to Maven Central
         required: false
         default: true
+      github_release:
+        type: boolean
+        description: Create the GitHub release
+        required: false
+        default: true
 
 jobs:
   tag:
@@ -98,3 +103,19 @@ jobs:
     # branch, which the default read-only token cannot do.
     permissions:
       contents: write
+
+  # Last, because a GitHub release is the announcement: it notifies watchers,
+  # and it should not fire for a version whose artifacts failed to publish.
+  # `release-github.yml` is also dispatchable on its own, which is how you
+  # recover a release that was published to Maven Central without one - see the
+  # comment at the top of that file.
+  publish-github:
+    name: Create the GitHub release
+    needs: [tag, publish]
+    if: ${{ !contains(inputs.github_release, 'false') }}
+    uses: ./.github/workflows/release-github.yml
+    with:
+      live-run: ${{ inputs.live-run || false }}
+      version: ${{ needs.tag.outputs.version }}
+      branch: ${{ needs.tag.outputs.branch }}
+    secrets: inherit
