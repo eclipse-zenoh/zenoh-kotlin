@@ -56,6 +56,28 @@ jobs:
       version: ${{ steps.create-release-branch.outputs.version }}
       branch: ${{ steps.create-release-branch.outputs.branch }}
     steps:
+      # First, so nothing is created when the combination is rejected.
+      #
+      # `maven_publish` suppresses the upload; it does not make a run a
+      # rehearsal. Combined with `live-run` it would cut the real release
+      # branch, force-push the real tag, and then upload, deploy and announce
+      # nothing - leaving a tag for a version that exists nowhere, which is the
+      # state a failed release leaves and that PUBLISHING.md says to avoid.
+      #
+      # Nothing is lost by refusing it. Rehearsing without uploading is
+      # `live-run` off, which does the same build and leaves a prunable
+      # dry-run branch; a GitHub-only release is the Release (GitHub) workflow,
+      # which verifies against Central instead of assuming an upload happened.
+      - name: Reject a live run with publishing disabled
+        if: ${{ (inputs.live-run || false) && contains(inputs.maven_publish, 'false') }}
+        run: |
+          echo "::error::live-run with maven_publish disabled would force-push the real tag" \
+               "and publish nothing, leaving a tag for a version that exists nowhere." \
+               "To rehearse without uploading, uncheck live-run." \
+               "To create a GitHub release for a version already on Central, run" \
+               "the 'Release (GitHub)' workflow." >&2
+          exit 1
+
       - id: create-release-branch
         uses: eclipse-zenoh/ci/create-release-branch@main
         with:
@@ -98,6 +120,10 @@ jobs:
   # repository, over the docs of the version people are actually using. The job
   # still runs and still builds the site - that is the part worth exercising -
   # it just does not publish it.
+  #
+  # The tag job now rejects that combination outright, so this is defence in
+  # depth: the invariant "nothing outward-facing without an upload" is stated
+  # where it applies, not only where it is currently enforced.
   publish-dokka:
     name: Publish documentation
     needs: [tag, publish]
@@ -121,13 +147,11 @@ jobs:
   # so without this a live run with uploads disabled would announce a release
   # for a coordinate that was never published.
   #
-  # `live-run: true` with `maven_publish: false` is not a rehearsal: it cuts the
-  # real release branch, force-pushes the real tag, and but for these two gates
-  # would deploy the real docs and announce a real release. It is a live release
-  # with the upload switched off - useful for exercising the tag and build path,
-  # and precisely the state in which nothing outward-facing should happen. A
-  # genuine GitHub-only release is the standalone workflow, which verifies
-  # against Central rather than assuming an upload happened.
+  # The tag job rejects `live-run` with `maven_publish` off before anything is
+  # created, so the `maven_publish` half of this condition is defence in depth;
+  # the `github_release` half is what actually varies. A genuine GitHub-only
+  # release is the standalone workflow, which verifies against Central rather
+  # than assuming an upload happened.
   publish-github:
     name: Create the GitHub release
     needs: [tag, publish]

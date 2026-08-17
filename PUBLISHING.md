@@ -172,6 +172,23 @@ Run the **Release** workflow from the Actions tab, from `main` or a release
 branch. The workflow creates the release branch, bumps the version, tags it,
 builds and publishes.
 
+Two checkboxes decide what it does. `live-run` chooses what "publish" *means*;
+`maven_publish` chooses whether the upload happens at all. Three combinations
+are accepted and the fourth is refused:
+
+| `live-run` | `maven_publish` | What it does |
+| --- | --- | --- |
+| ✗ | ✓ | **The normal rehearsal.** Uploads `<version>-SNAPSHOT` to the mutable snapshot repository — a real signed upload, so credentials and signing are exercised |
+| ✗ | ✗ | Assembles both publications and their POMs, uploads nothing |
+| ✓ | ✓ | **The real release.** Permanent and immutable on Maven Central |
+| ✓ | ✗ | **Refused** by the `tag` job — it would tag a version and publish nothing |
+
+Note that `maven_publish` defaults to checked, and that a rehearsal uploading a
+snapshot is normal rather than something to avoid: the snapshot repository is
+mutable, is not on consumers' default resolution path, and is cleaned after 90
+days. A rehearsal that uploads nothing cannot tell you whether the signing key
+and credentials work, which is the half of a release most likely to fail.
+
 ### Before the first run
 
 - **Secrets are already in place.** `CENTRAL_SONATYPE_TOKEN_*` and `ORG_GPG_*`
@@ -193,17 +210,18 @@ builds and publishes.
 | `maven_publish` | checked — or uncheck for the very first run |
 | `github_release` | either — a rehearsal is not a live run, so no release is created regardless |
 
-Unchecking `maven_publish` suppresses **everything outward-facing**, even on a
-live run: no GitHub release, whatever `github_release` says, and no
-documentation deploy. With no upload there is nothing to announce, and nothing
-whose documentation should replace the published site. Both jobs still run and
-still build, so the rehearsal value is intact — only the publishing stops.
+`maven_publish` suppresses the **upload**; it does not turn a run into a
+rehearsal. Combined with `live-run` it would cut the real release branch and
+force-push the real tag while publishing nothing — leaving a tag for a version
+that exists nowhere, which is what a
+[failed release](#if-a-release-fails) leaves behind. **The `tag` job rejects
+that combination before creating anything**, so `maven_publish` is only
+meaningful on a rehearsal.
 
-Note that `live-run` checked with `maven_publish` unchecked is *not* a
-rehearsal: it cuts the real release branch and force-pushes the real tag. It is
-a live release with the upload switched off. To publish a GitHub release or the
-documentation for a version already on Central, use the standalone workflows
-under [If a step after Maven Central
+Nothing is lost by that. To rehearse without uploading, uncheck `live-run`: the
+same build runs, and the branch it leaves is a prunable dry-run one. To publish
+a GitHub release or the documentation for a version already on Central, use the
+standalone workflows under [If a step after Maven Central
 fails](#if-a-step-after-maven-central-fails), which verify rather than assume.
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
@@ -223,7 +241,7 @@ never give a rehearsal the number you intend to release.
 | `live-run` | **checked** |
 | `version` | the release number |
 | `zenoh-flat-jni-version` | the zenoh-flat-jni release to build against — **must already be on Central** |
-| `maven_publish` | checked |
+| `maven_publish` | checked — the only accepted value on a live run |
 | `github_release` | checked |
 
 Supplying `zenoh-flat-jni-version` rewrites `zenohFlatJniVersion` in
