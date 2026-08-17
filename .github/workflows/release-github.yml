@@ -19,10 +19,12 @@ name: Release (GitHub)
 # own. Standalone is the point: the Maven publication is irreversible, so if a
 # release reaches Maven Central but the GitHub release is missing or wrong, you
 # must be able to create it without re-running the tag and publish jobs. A
-# GitHub release, unlike a Maven coordinate, can be edited or deleted
-# afterwards (`gh release edit` / `gh release delete`, which leaves the tag
-# alone), so re-running this is cheap - the one thing it does that cannot be
-# undone is notify watchers.
+# GitHub release, unlike a Maven coordinate, can be edited or deleted afterwards
+# (`gh release edit` / `gh release delete`, which leaves the tag alone), so a
+# mistake here is cheap to correct - though correcting it means editing or
+# deleting, since the action runs `gh release create`, which fails rather than
+# replacing an existing release. The one thing that cannot be undone is that
+# publishing notifies watchers.
 #
 # The job was removed in the zenoh-flat transition on the belief that
 # `eclipse-zenoh/ci/publish-crates-github` publishes crates and would fail
@@ -93,9 +95,15 @@ jobs:
       # here. A tag force-moved onto another commit with the same version.txt
       # would still pass. Reaching that state means re-running a release whose
       # version Central already accepted, which PUBLISHING.md says not to do.
+      # Fully qualified: given a bare name, actions/checkout looks for a remote
+      # branch before a tag, so a branch named `1.10.0` alongside the tag would
+      # have this validate version.txt from the branch while the action below
+      # publishes the tag - the guard failing open in exactly the ambiguous case
+      # it exists to catch. `refs/tags/` names the same thing `--verify-tag`
+      # resolves.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.version }}
+          ref: refs/tags/${{ inputs.version }}
 
       # `version` is operator-supplied, so it reaches the shell through the
       # environment rather than being pasted into the script source.
@@ -128,15 +136,19 @@ jobs:
           set -uo pipefail
           pom="https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/$VERSION/zenoh-kotlin-$VERSION.pom"
           code=000
-          for attempt in 1 2 3 4 5; do
+          attempts=5
+          for attempt in $(seq "$attempts"); do
             # curl already writes 000 on a connection failure; don't append another.
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -I "$pom") || true
             [[ -n "$code" ]] || code=000
             case "$code" in
               200) break ;;
-              404) echo "attempt $attempt: not published yet (404)"; sleep $((attempt * 15)) ;;
-              *)   echo "attempt $attempt: Central did not answer (HTTP $code)"; sleep $((attempt * 15)) ;;
+              404) echo "attempt $attempt: not published yet (404)" ;;
+              *)   echo "attempt $attempt: Central did not answer (HTTP $code)" ;;
             esac
+            # No backoff after the last attempt - the verdict is already decided,
+            # and this is a recovery workflow that should not sit idle for it.
+            [[ "$attempt" -lt "$attempts" ]] && sleep $((attempt * 15))
           done
 
           if [[ "$code" == 200 ]]; then

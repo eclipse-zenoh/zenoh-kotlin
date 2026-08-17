@@ -291,11 +291,13 @@ mistake — wait, or re-run with `check-maven` off. The pipeline leaves it off,
 because it only reaches this job when `maven_publish` was on, so the publish job
 that just ran is the evidence.
 
-This is the asymmetry worth remembering: the Maven publication cannot be
-undone, but a GitHub release can be edited (`gh release edit`) or removed
-(`gh release delete`, which leaves the tag in place), so running this again to
-correct a mistake costs nothing. The one effect that cannot be taken back is
-that publishing notifies everyone watching releases.
+This is the asymmetry worth remembering: the Maven publication cannot be undone,
+but a GitHub release can be edited (`gh release edit`) or removed (`gh release
+delete`, which leaves the tag in place), so a mistake here costs nothing to
+correct. Note that correcting it means editing or deleting the release — this
+workflow runs `gh release create`, which fails rather than replacing one that
+already exists. The one effect that cannot be taken back is that publishing
+notifies everyone watching releases.
 
 ### After a release
 
@@ -371,8 +373,18 @@ previous version and there is no post-release commit to reconstruct.
 `update-release-project.yml` is driven by issues and pull requests, not by
 releases.
 
-Order does not matter, and both are safe to repeat: the documentation deploy
-overwrites, and a GitHub release can be edited or deleted. Verify with the
+Order does not matter. The documentation deploy is safe to repeat — it
+overwrites — but **Release (GitHub) is not**: it runs `gh release create`, which
+fails when a release already exists for the tag rather than replacing it. To
+change one that is already there, edit it directly:
+
+```bash
+gh release edit <version> --repo eclipse-zenoh/zenoh-kotlin --notes-file notes.md
+gh release delete <version> --repo eclipse-zenoh/zenoh-kotlin   # then re-run
+```
+
+`gh release delete` leaves the Git tag in place, so deleting and re-running is a
+valid way back — it just is not what re-running alone does. Verify with the
 [release checklist](#release-checklist) afterwards.
 
 ## Rehearsing before zenoh-flat-jni is released
