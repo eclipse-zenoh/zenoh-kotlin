@@ -41,10 +41,15 @@ org.eclipse.zenoh:zenoh-kotlin:<version>          the JVM artifact
 org.eclipse.zenoh:zenoh-kotlin-android:<version>  the Android artifact
 ```
 
-Both are **pure JVM/Kotlin**. This repository contains no Rust and builds no
-native libraries: they arrive inside the zenoh-flat-jni artifacts, already
-cross-compiled and verified by that repository's own release, and a consumer of
-`zenoh-kotlin` gets them transitively.
+Both are **pure JVM/Kotlin**. Neither carries Rust or a native library: those
+arrive inside the zenoh-flat-jni artifacts, already cross-compiled and verified
+by that repository's own release, and a consumer of `zenoh-kotlin` gets them
+transitively.
+
+The repository does hold one Rust crate, `zenoh-flat-jni-pin` (`Cargo.toml` and
+`ci/pin.rs`). It builds nothing that ships. It exists so the zenoh-flat-jni
+commit this SDK is tested against is recorded in `Cargo.lock`, which is the file
+the organization's lockfile sync knows how to move.
 
 `zenoh-flat-jni` is itself a Kotlin Multiplatform library, so this SDK declares
 **one** dependency on its root coordinate and Gradle resolves the variant
@@ -224,7 +229,9 @@ a GitHub release or the documentation for a version already on Central, use the
 standalone workflows under [If a step after Maven Central
 fails](#if-a-step-after-maven-central-fails), which verify rather than assume.
 
-`live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
+`live-run` and `maven_publish` mean what they mean in zenoh-flat-jni, with one
+difference: this repository refuses a live run with `maven_publish` off, which
+zenoh-flat-jni's release workflow still accepts. Unchecking
 `live-run` publishes `<version>-SNAPSHOT` to the **mutable** snapshot repository
 and never runs `closeAndReleaseSonatypeStagingRepository`, while `maven_publish`
 decides whether any upload happens at all. **A rehearsal with `maven_publish`
@@ -570,9 +577,10 @@ repository.
 
 ## Known gaps
 
-- **The rewritten release path has never run.** The workflows were repaired for
-  a repository that no longer contains Rust; no rehearsal has yet exercised
-  them.
+- **The recovery and gating paths added for this have never run.** The release
+  path itself has: 1.10.0 published from it on 2026-08-14. What is unexercised
+  is the standalone recovery of a GitHub release or of the documentation, and
+  the refusal of a live run with uploads disabled.
 - **No consumer test before a *release*.** Every snapshot publication is followed
   by `ci/consumer-smoke-test`, which resolves the published artifact from the
   snapshot repository and runs it — but a release goes to a staging repository
@@ -583,8 +591,11 @@ repository.
   binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.
-- **`zenoh-flat-jni` itself has not been released**, so the ordering constraint
-  above has never been satisfied for a real release.
+- **The snapshot still pins a `zenoh-flat-jni` version that was never
+  released.** `gradle.properties` names `1.9.0-kotlin-SNAPSHOT`, our own copy;
+  `zenoh-flat-jni:1.9.0` is not on Maven Central and never was. `1.10.0` is, so
+  the ordering constraint is satisfiable now, but a live release still has to be
+  given that version explicitly.
 
 ## Release checklist
 
