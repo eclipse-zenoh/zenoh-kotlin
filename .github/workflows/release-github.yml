@@ -50,7 +50,7 @@ on:
         type: string
         required: true
       check-maven:
-        description: "Best-effort check that the version is on Maven Central (404 fails; unreachable warns)"
+        description: Require the version to be on Maven Central before releasing
         type: boolean
         required: false
         # False from the pipeline, which only reaches this job when
@@ -73,7 +73,7 @@ on:
         type: string
         required: true
       check-maven:
-        description: "Best-effort check that the version is on Maven Central (404 fails; unreachable warns)"
+        description: Require the version to be on Maven Central before releasing
         type: boolean
         required: false
         default: true
@@ -131,49 +131,47 @@ jobs:
           fi
           echo "tag $VERSION carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"
 
-      # Only a 404 is evidence of absence. A timeout, a CDN 5xx or a DNS failure
-      # means Central did not answer, which is not the same thing - and a
-      # release that just went out can take a while to appear, so an early 404
-      # can be lag rather than a typo. So: retry, fail closed on a *settled*
-      # 404, and on anything else say so and continue. The version.txt check
-      # above is the one that must hold; this catches the narrower case of a
-      # version that was tagged but never published, and it should not be able
-      # to block a release because repo1.maven.org had a bad minute.
+      # Fails on anything but a 200. The two failures are different problems
+      # and get different messages - a 404 means the version is wrong or was
+      # never published, an unanswered request means Central is down - but
+      # neither is a reason to continue: proceeding unverified is exactly what
+      # this check exists to prevent, and it would do so precisely when
+      # verification was impossible.
+      #
+      # There is already an escape hatch for a deliberate release during an
+      # outage, and it is `check-maven` itself. Continuing on a network error
+      # would be a second one that fires automatically, overriding an operator
+      # who asked for the check with a warning in a green log that nobody reads.
       - name: Verify the version is on Maven Central
         if: ${{ inputs.check-maven }}
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          set -uo pipefail
+          set -euo pipefail
           pom="https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/$VERSION/zenoh-kotlin-$VERSION.pom"
-          code=000
-          attempts=5
-          for attempt in $(seq "$attempts"); do
-            # curl already writes 000 on a connection failure; don't append another.
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -I "$pom") || true
-            [[ -n "$code" ]] || code=000
-            case "$code" in
-              200) break ;;
-              404) echo "attempt $attempt: not published yet (404)" ;;
-              *)   echo "attempt $attempt: Central did not answer (HTTP $code)" ;;
-            esac
-            # No backoff after the last attempt - the verdict is already decided,
-            # and this is a recovery workflow that should not sit idle for it.
-            [[ "$attempt" -lt "$attempts" ]] && sleep $((attempt * 15))
-          done
 
-          if [[ "$code" == 200 ]]; then
-            echo "zenoh-kotlin:$VERSION resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
-          elif [[ "$code" == 404 ]]; then
-            echo "::error::zenoh-kotlin:$VERSION is not on Maven Central (404 after 5 attempts)." \
-                 "Releasing it on GitHub would announce a version nobody can depend on." \
-                 "If it was published minutes ago this may be propagation lag - wait, or re-run with check-maven off." >&2
-            exit 1
-          else
-            echo "::warning::Could not reach Maven Central (last status $code); proceeding unverified." >&2
-            echo "⚠️ Maven Central unreachable (HTTP $code) - the release was **not** verified against it." \
-              >> "$GITHUB_STEP_SUMMARY"
-          fi
+          # curl already writes 000 on a connection failure; don't append another.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -I "$pom") || true
+          [[ -n "$code" ]] || code=000
+
+          case "$code" in
+            200)
+              echo "zenoh-kotlin:$VERSION resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            404)
+              echo "::error::zenoh-kotlin:$VERSION is not on Maven Central." \
+                   "Releasing it on GitHub would announce a version nobody can depend on." \
+                   "Check the version, or wait if it was published minutes ago -" \
+                   "a release takes a while to propagate." >&2
+              exit 1
+              ;;
+            *)
+              echo "::error::Maven Central did not answer (HTTP $code), so $VERSION" \
+                   "could not be verified. Try again when it is reachable, or re-run" \
+                   "with check-maven off to release without this check." >&2
+              exit 1
+              ;;
+          esac
 
       # The org's shared release action, as zenoh-java and the rest of the Zenoh
       # repositories use it. It creates the release from the tag with generated

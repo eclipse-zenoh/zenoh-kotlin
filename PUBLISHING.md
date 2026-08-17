@@ -304,14 +304,22 @@ commit carrying the same `version.txt` would still pass. Reaching that state
 means re-running a release whose version Central already accepted, which
 [If a release fails](#if-a-release-fails) says not to do.
 
-`check-maven` is **best-effort by design**, not a guarantee. It distinguishes
-*absent* from *unanswered*: a settled 404 fails the run, while a timeout or a
-5xx is reported as a warning and the release proceeds, because Central having a
-bad minute is not evidence about the version and should not block a release. A
-404 immediately after a live release can also be propagation lag rather than a
-mistake — wait, or re-run with `check-maven` off. The pipeline leaves it off,
-because it only reaches this job when `maven_publish` was on, so the publish job
-that just ran is the evidence.
+`check-maven` **fails the run on anything but a success**, but it tells the two
+failures apart, because they need different responses:
+
+| Result | Meaning | What to do |
+| --- | --- | --- |
+| `404` | the version is wrong, or was never published | fix the version — or wait, if it was published minutes ago and has not propagated |
+| no answer | Central is unreachable | try again later, or untick `check-maven` to release without the check |
+
+Neither is a reason to continue. Proceeding unverified is the one thing this
+check exists to prevent, and it would do so exactly when verification was
+impossible — announcing a version that may not be published, in a notification
+that cannot be unsent. Releasing during an outage is a decision to make
+deliberately by unticking the box, not one the workflow should make silently.
+
+The pipeline leaves `check-maven` off, because it only reaches this job when
+`maven_publish` was on, so the publish job that just ran is the evidence.
 
 This is the asymmetry worth remembering: the Maven publication cannot be undone,
 but a GitHub release can be edited (`gh release edit`) or removed (`gh release
