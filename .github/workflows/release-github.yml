@@ -131,17 +131,10 @@ jobs:
           fi
           echo "tag $VERSION carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"
 
-      # Fails on anything but a 200. The two failures are different problems
-      # and get different messages - a 404 means the version is wrong or was
-      # never published, an unanswered request means Central is down - but
-      # neither is a reason to continue: proceeding unverified is exactly what
-      # this check exists to prevent, and it would do so precisely when
-      # verification was impossible.
-      #
-      # There is already an escape hatch for a deliberate release during an
-      # outage, and it is `check-maven` itself. Continuing on a network error
-      # would be a second one that fires automatically, overriding an operator
-      # who asked for the check with a warning in a green log that nobody reads.
+      # A 404 and an unanswered request are different problems - fix the
+      # version, versus try again later - so they get different messages, but
+      # both fail. Releasing during a Central outage is what `check-maven` off
+      # is for; the check should not decide that on its own.
       - name: Verify the version is on Maven Central
         if: ${{ inputs.check-maven }}
         env:

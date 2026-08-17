@@ -304,19 +304,13 @@ commit carrying the same `version.txt` would still pass. Reaching that state
 means re-running a release whose version Central already accepted, which
 [If a release fails](#if-a-release-fails) says not to do.
 
-`check-maven` **fails the run on anything but a success**, but it tells the two
-failures apart, because they need different responses:
+`check-maven` requires the version to resolve from Maven Central, and reports
+its two failures differently, since they call for different responses:
 
 | Result | Meaning | What to do |
 | --- | --- | --- |
 | `404` | the version is wrong, or was never published | fix the version — or wait, if it was published minutes ago and has not propagated |
 | no answer | Central is unreachable | try again later, or untick `check-maven` to release without the check |
-
-Neither is a reason to continue. Proceeding unverified is the one thing this
-check exists to prevent, and it would do so exactly when verification was
-impossible — announcing a version that may not be published, in a notification
-that cannot be unsent. Releasing during an outage is a decision to make
-deliberately by unticking the box, not one the workflow should make silently.
 
 The pipeline leaves `check-maven` off, because it only reaches this job when
 `maven_publish` was on, so the publish job that just ran is the evidence.
