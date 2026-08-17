@@ -92,10 +92,11 @@ jobs:
     #   Is the tag self-consistent?     version.txt at the tag == version input
     #   Was the version published?      check-maven
     #
-    # The second is tautological for any tag the pipeline made, since
-    # bump-and-tag writes version.txt and creates the tag in one run. Its value
-    # is rejecting tags the pipeline did not make: created by hand, or
-    # force-moved onto a commit belonging to another version.
+    # The second is narrow. bump-and-tag writes version.txt and creates the tag
+    # in one run, so every tag the pipeline made passes it. What it rejects is a
+    # tag pointing at a commit whose version.txt names a different version - one
+    # moved onto another version's commit, or created there. A tag made by hand
+    # on the right commit passes, so this does not establish who made the tag.
     #
     # The third is what rejects a rehearsal tag. Rehearsals are tagged too and
     # are self-consistent - version.txt at `1.10.0-rc4` reads `1.10.0-rc4` - so
@@ -104,6 +105,29 @@ jobs:
     # None of the three ties the published artifact to this commit: nothing
     # published records the commit it was built from.
     steps:
+      # `version` and `branch` reach publish-crates-github, which builds a shell
+      # command string from them and runs it with the bot token in the
+      # environment (eclipse-zenoh/ci#470). Until that is fixed upstream, both
+      # are constrained here to characters that cannot become shell syntax.
+      # The value is never echoed back: an invalid one is attacker-controlled
+      # and would itself be interpreted as a workflow command.
+      - name: Validate the inputs
+        env:
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          check() {
+            if [[ ! "$2" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+              echo "::error::input '$1' is not a plain ref name." \
+                   "Allowed: letters, digits, and . _ - / after a leading" \
+                   "letter or digit." >&2
+              exit 1
+            fi
+          }
+          check version "$VERSION"
+          check branch "$BRANCH"
+
       # Fully qualified, because actions/checkout resolves a bare name to a
       # remote branch before a tag. A branch named `1.10.0` beside the tag would
       # have this step read version.txt from the branch while
@@ -122,8 +146,8 @@ jobs:
           set -euo pipefail
           tagged="$(tr -d '[:space:]' < version.txt)"
           if [[ "$tagged" != "$VERSION" ]]; then
-            echo "::error::tag '$VERSION' has version.txt='$tagged'." \
-                 "This tag is not the release tag for that version." >&2
+            echo "::error::tag '$VERSION' points at a commit whose version.txt" \
+                 "reads '$tagged'. The tag and the commit name different versions." >&2
             exit 1
           fi
           echo "tag $VERSION carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"

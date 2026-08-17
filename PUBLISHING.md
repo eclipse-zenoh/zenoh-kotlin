@@ -283,13 +283,14 @@ They answer different questions, and it is worth being clear which does what:
 
 | Check | Question | Catches |
 | --- | --- | --- |
-| `version.txt` at the tag equals the `version` you entered | is this tag internally consistent? | a tag the release pipeline did not create, or one force-moved onto a commit belonging to another version |
+| `version.txt` at the tag equals the `version` you entered | do the tag and its commit name the same version? | a tag pointing at a commit whose `version.txt` names a different version |
 | `check-maven` | was this version ever published? | a tag for a version that never shipped — **including rehearsal tags** |
 
-The first cannot do more than that, and it is worth understanding why: since
-`bump-and-tag.bash` writes `version.txt` and tags it in the same run, the two
-agree by construction for every tag the pipeline produced. It is tautological
-for those. Its value is rejecting tags that did *not* come from the pipeline.
+The first is narrower than it looks. `bump-and-tag.bash` writes `version.txt`
+and tags it in the same run, so every tag the pipeline produced passes. What it
+rejects is a tag pointing at a commit whose `version.txt` names a different
+version — moved onto another version's commit, or created there. A tag made by
+hand on the right commit passes, so this does not establish who made the tag.
 
 In particular it does **not** catch a rehearsal. Rehearsal tags are
 self-consistent too — `version.txt` at `1.10.0-rc4` reads `1.10.0-rc4` — so
@@ -385,12 +386,13 @@ point must therefore be recoverable on its own, and each piece is:
 | Maven Central coordinates | `publish` | nothing to do — immutable and done |
 | Release branch and tag | `tag` | already pushed, before `publish` ran |
 | GitHub release | `publish-github` | **Release (GitHub)**, [above](#creating-a-github-release-on-its-own) |
-| `gh-pages` documentation | `publish-dokka` | **Publish (Dokka)**, `live-run` checked and `branch` set to the tag |
+| `gh-pages` documentation | `publish-dokka` | **Publish (Dokka)**, `live-run` checked and `branch` set to `refs/tags/<version>` |
 
 Both recovery workflows need `live-run` **checked** — unchecked, each builds and
 verifies but changes nothing, which is also how you rehearse one. Give
-`publish-dokka` the released tag as `branch`, not a branch name: the release
-branch can move afterwards, the tag cannot.
+`publish-dokka` the released tag as `branch`, written in full as
+`refs/tags/<version>`: the release branch can move afterwards, the tag cannot,
+and a bare `1.10.0` would resolve to a branch of that name before the tag.
 
 Nothing else in a release is one-shot. `main` is deliberately untouched —
 `version.txt` is bumped on the release branch only, so `main` keeps naming the

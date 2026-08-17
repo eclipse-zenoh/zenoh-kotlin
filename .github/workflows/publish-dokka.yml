@@ -26,8 +26,13 @@ on:
       # Empty here would fall back to the ref the dispatch was started from -
       # normally `main` - and a live run would then overwrite the published
       # documentation with the unreleased API. Recovery wants the released tag.
+      #
+      # Give it fully qualified as `refs/tags/<version>`: actions/checkout
+      # resolves a bare name to a remote branch before a tag, so a bare
+      # `1.10.0` would build a branch of that name if one existed, deploying
+      # movable content where the released tag was meant.
       branch:
-        description: Branch or tag to build the documentation from (use the released tag, e.g. 1.10.0)
+        description: Ref to build the documentation from - use refs/tags/<version> for a released version
         type: string
         required: true
 
