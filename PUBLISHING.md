@@ -511,16 +511,10 @@ then attaches any `*-standalone.zip` / `*-debian.zip` build archives. This
 repository produces none, so that half is inert and every release it has made
 here carries notes and GitHub's own source archives only.
 
-Two upstream defects are known and tracked in `eclipse-zenoh/ci`. Neither
+Two upstream defects are known and tracked in
+[eclipse-zenoh/ci#470](https://github.com/eclipse-zenoh/ci/issues/470). Neither
 affects a normal release, and both are left upstream deliberately — a fix there
-reaches every Zenoh repository, whereas working around them here would fix one:
-
-- it installs `toml-cli2` from crates.io before running `gh`, costing roughly 40
-  seconds and a crates.io dependency this workflow has no use for;
-- it bounds the generated notes with the *newest* existing release rather than
-  the one preceding this version. Identical during a release; wrong only when
-  recovering a version after a newer one has already shipped, which produces
-  empty notes.
+reaches every Zenoh repository, whereas working around them here would fix one.
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.

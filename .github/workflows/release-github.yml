@@ -178,20 +178,10 @@ jobs:
       # archives - of which this repository produces none, so that half is inert
       # here and every release it has ever made carried notes only.
       #
-      # Two known upstream defects, tracked in eclipse-zenoh/ci, neither of which
-      # affects a normal release:
-      #
-      #  - it installs `toml-cli2` from crates.io before running `gh`, because
-      #    `publish-crates-github.ts` imports `build-crates-debian.ts` for one
-      #    filename pattern and that module runs `await TOML.init()` at import.
-      #    Roughly 40s and a crates.io dependency this workflow does not need.
-      #  - it bounds the generated notes with the *newest* existing release
-      #    rather than the one preceding this version. Identical during a
-      #    release; wrong only when recovering a version after a newer one has
-      #    already shipped, which then produces empty notes.
-      #
-      # Reusing the shared action is worth both: fixes belong upstream where
-      # every Zenoh repository gets them, not worked around in one repo.
+      # Two known upstream defects are tracked in eclipse-zenoh/ci#470; neither
+      # affects a normal release. They are deliberately not worked around here:
+      # a fix upstream reaches every Zenoh repository, one here reaches this
+      # repository only.
       - uses: eclipse-zenoh/ci/publish-crates-github@main
         with:
           repo: ${{ github.repository }}
