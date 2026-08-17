@@ -25,6 +25,7 @@ which covers them once for the whole stack.
   - [Creating a GitHub release on its own](#creating-a-github-release-on-its-own)
   - [After a release](#after-a-release)
   - [If a release fails](#if-a-release-fails)
+  - [If a step after Maven Central fails](#if-a-step-after-maven-central-fails)
 - [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released)
   - [Rehearsing the release workflow with a snapshot](#rehearsing-the-release-workflow-with-a-snapshot)
 - [How the pipeline works](#how-the-pipeline-works)
@@ -303,6 +304,35 @@ recovery case for
 [Release (GitHub)](#creating-a-github-release-on-its-own) — and its
 `check-maven` check is what distinguishes it from this one, since a tag left by
 a failed publish resolves to nothing on Central and is refused.
+
+### If a step after Maven Central fails
+
+Once Central accepts the version, **re-running the release is not an option**:
+the version cannot be republished, and the tag would force-move onto a different
+commit than the artifact was built from. Everything the pipeline does after that
+point must therefore be recoverable on its own, and each piece is:
+
+| Produced | By | Recover with |
+| --- | --- | --- |
+| Maven Central coordinates | `publish` | nothing to do — immutable and done |
+| Release branch and tag | `tag` | already pushed, before `publish` ran |
+| GitHub release | `publish-github` | **Release (GitHub)**, [above](#creating-a-github-release-on-its-own) |
+| `gh-pages` documentation | `publish-dokka` | **Publish (Dokka)**, `live-run` checked and `branch` set to the tag |
+
+Both recovery workflows need `live-run` **checked** — unchecked, each builds and
+verifies but changes nothing, which is also how you rehearse one. Give
+`publish-dokka` the released tag as `branch`, not a branch name: the release
+branch can move afterwards, the tag cannot.
+
+Nothing else in a release is one-shot. `main` is deliberately untouched —
+`version.txt` is bumped on the release branch only, so `main` keeps naming the
+previous version and there is no post-release commit to reconstruct.
+`update-release-project.yml` is driven by issues and pull requests, not by
+releases.
+
+Order does not matter, and both are safe to repeat: the documentation deploy
+overwrites, and a GitHub release can be edited or deleted. Verify with the
+[release checklist](#release-checklist) afterwards.
 
 ## Rehearsing before zenoh-flat-jni is released
 

@@ -11,7 +11,21 @@ on:
         description: Target branch
         type: string
         required: false
+  # Dispatchable on its own so the documentation can be redeployed for a version
+  # that is already released - the same recovery path release-github.yml exists
+  # for. These inputs are not optional decoration: without them a dispatch got
+  # an empty `inputs`, so `live-run` was false and the deploy step below was
+  # skipped, which made a manual run build the site and silently throw it away.
   workflow_dispatch:
+    inputs:
+      live-run:
+        description: Live-run — actually deploy to gh-pages
+        type: boolean
+        required: false
+      branch:
+        description: Branch or tag to build the documentation from (e.g. 1.10.0)
+        type: string
+        required: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,6 +34,11 @@ jobs:
   build_doc_and_deploy:
     name: Build and Deploy Documentation
     runs-on: ubuntu-latest
+    # Declared here rather than only on the caller, so a direct dispatch can
+    # push to gh-pages too. A called workflow gets the intersection of this and
+    # what the caller granted, and release.yml grants exactly this.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
