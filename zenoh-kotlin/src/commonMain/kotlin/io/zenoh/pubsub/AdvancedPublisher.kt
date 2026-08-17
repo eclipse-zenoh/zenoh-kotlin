@@ -16,6 +16,8 @@ package io.zenoh.pubsub
 
 import io.zenoh.annotations.Unstable
 import io.zenoh.exceptions.ZError
+import io.zenoh.exceptions.throwZError
+import io.zenoh.exceptions.throwZError0
 import io.zenoh.exceptions.zCall
 import io.zenoh.exceptions.zCallUnit
 import io.zenoh.keyexpr.KeyExpr
@@ -33,7 +35,6 @@ import io.zenoh.handlers.MatchingHandler
 import io.zenoh.jni.VoidCallback
 import io.zenoh.jni.boolCallback
 import io.zenoh.jni.pubsub.AdvancedPublisher as JniAdvancedPublisher
-import io.zenoh.jni.pubsub.MatchingListener as JniMatchingListener
 import io.zenoh.session.SessionDeclaration
 import kotlinx.coroutines.channels.Channel
 
@@ -158,7 +159,7 @@ class AdvancedPublisher internal constructor(
                 p.declareBackgroundMatchingListener(jniCallback, jniOnClose, onBindingError, onError)
             }.map { MatchingListener(null) }
         } else {
-            zCall({ JniMatchingListener(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 p.declareMatchingListener(jniCallback, jniOnClose, onBindingError, onError)
             }.map { MatchingListener(it) }
         }
@@ -171,9 +172,11 @@ class AdvancedPublisher internal constructor(
      */
     fun getMatchingStatus(): Result<Boolean> {
         val p = jniAdvancedPublisher ?: return invalidPublisherResult()
-        return zCall({ false }) { onBindingError, onError ->
-            p.matchingStatus(onBindingError, onError)
-        }
+        // Not zCall: a `Boolean` return keeps its non-null contract, so its
+        // handlers have no `null` to decline with. They throw instead, and
+        // runCatching turns that into the Result — throwing from a handler is
+        // safe, it runs after the native call has returned.
+        return runCatching { p.matchingStatus(throwZError0, throwZError) }
     }
 
     /** Performs a PUT operation on the publisher's [keyExpr] with the specified [payload]. */

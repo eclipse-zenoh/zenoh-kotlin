@@ -1366,9 +1366,8 @@ checksum = "00af7901ba50898c9e545c24d5c580c96a982298134e8037d8978b6594782c07"
 
 [[package]]
 name = "kotlin-codegen"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bba9922acc37e9f38dce99ed966c2777c09a458566b75932bdcf2a1717b46b1"
+version = "0.3.0"
+source = "git+https://github.com/milyin/kotlin-codegen.git?branch=ctor-vis-and-file-annotations#a3d6b26d8a201214e105829177bb6756990c3f78"
 
 [[package]]
 name = "lazy_static"
@@ -1932,12 +1931,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "prebindgen"
+version = "0.5.0"
+source = "git+https://github.com/milyin/prebindgen.git?branch=main#04cfe414888cf92bd0dbdab8d23a20d12f88c1c8"
+dependencies = [
+ "if_rust_version",
+ "itertools",
+ "konst 0.3.17",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "roxygen",
+ "serde",
+ "serde_json",
+ "syn 2.0.119",
+ "toml",
+]
+
+[[package]]
 name = "prebindgen-flat"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b61ae0f7eea879df64ed40837b4111b09084533648c71a7b5f528ec67063cb05"
+source = "git+https://github.com/milyin/prebindgen.git?branch=main#04cfe414888cf92bd0dbdab8d23a20d12f88c1c8"
 dependencies = [
- "prebindgen",
+ "prebindgen 0.5.0 (git+https://github.com/milyin/prebindgen.git?branch=main)",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -1946,12 +1963,11 @@ dependencies = [
 [[package]]
 name = "prebindgen-jni"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa15d7c2b59f15249fa5fd0f97beeff2785587e6046e749c1bbcc15cc00340a9"
+source = "git+https://github.com/milyin/prebindgen.git?branch=main#04cfe414888cf92bd0dbdab8d23a20d12f88c1c8"
 dependencies = [
  "jni 0.21.1",
  "kotlin-codegen",
- "prebindgen",
+ "prebindgen 0.5.0 (git+https://github.com/milyin/prebindgen.git?branch=main)",
  "prebindgen-jni-runtime",
  "prebindgen-registry",
  "proc-macro2",
@@ -1962,8 +1978,7 @@ dependencies = [
 [[package]]
 name = "prebindgen-jni-runtime"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63e1c12ad857da45a8c6977a4b5b3395b4f53c8082239dcde925f3b964144531"
+source = "git+https://github.com/milyin/prebindgen.git?branch=main#04cfe414888cf92bd0dbdab8d23a20d12f88c1c8"
 dependencies = [
  "jni 0.21.1",
 ]
@@ -1974,7 +1989,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4ec12eecd2811fd1395a20bdd40e3740026be0603bf2812172445fc524c98e7"
 dependencies = [
- "prebindgen",
+ "prebindgen 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2",
  "quote",
  "rand 0.9.5",
@@ -1986,11 +2001,10 @@ dependencies = [
 [[package]]
 name = "prebindgen-registry"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56a3be56008ab6c8631ea5d6b0df8f7a9142134d39befe6e695679a7d618a12a"
+source = "git+https://github.com/milyin/prebindgen.git?branch=main#04cfe414888cf92bd0dbdab8d23a20d12f88c1c8"
 dependencies = [
  "itertools",
- "prebindgen",
+ "prebindgen 0.5.0 (git+https://github.com/milyin/prebindgen.git?branch=main)",
  "prebindgen-flat",
  "prettyplease",
  "proc-macro2",
@@ -3994,10 +4008,10 @@ dependencies = [
 [[package]]
 name = "zenoh-flat"
 version = "1.9.0"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#5819b4997db7d71b495a36b76d5d8a9da58bbbfd"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#acd7d716d71b74f0795d00cc5411fcf23a5de16c"
 dependencies = [
  "android-logd-logger",
- "prebindgen",
+ "prebindgen 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prebindgen-proc-macro",
  "serde_yaml",
  "tracing",
@@ -4008,7 +4022,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat-jni"
 version = "1.9.0"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#8331748be65346d796d04ed1f03f046c714e9028"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=deps%2Fprebindgen-main#59878aa8dca6087c421f90a48e88b52a2f641179"
 dependencies = [
  "jni 0.21.1",
  "konst 0.3.17",

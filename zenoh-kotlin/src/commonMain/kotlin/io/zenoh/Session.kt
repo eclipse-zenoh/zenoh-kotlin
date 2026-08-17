@@ -22,22 +22,13 @@ import io.zenoh.exceptions.zCallUnit
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.config.Config as JniConfig
-import io.zenoh.jni.config.ZenohId as JniZenohId
-import io.zenoh.jni.keyexpr.KeyExpr as JniKeyExpr
-import io.zenoh.jni.pubsub.AdvancedPublisher as JniAdvancedPublisher
-import io.zenoh.jni.pubsub.AdvancedSubscriber as JniAdvancedSubscriber
 import io.zenoh.jni.pubsub.CacheConfig as JniCacheConfig
 import io.zenoh.jni.pubsub.HistoryConfig as JniHistoryConfig
 import io.zenoh.jni.pubsub.MissDetectionConfig as JniMissDetectionConfig
-import io.zenoh.jni.pubsub.Publisher as JniPublisher
 import io.zenoh.jni.pubsub.RecoveryConfig as JniRecoveryConfig
 import io.zenoh.jni.query.Selector as JniSelector
 import io.zenoh.jni.pubsub.RecoveryMode as JniRecoveryMode
 import io.zenoh.jni.pubsub.RepliesConfig as JniRepliesConfig
-import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
-import io.zenoh.jni.query.Querier as JniQuerier
-import io.zenoh.jni.query.Queryable as JniQueryable
 import io.zenoh.jni.session.Session as JniSession
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.jniHandle
@@ -686,7 +677,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
      */
     fun declareKeyExpr(keyExpr: String): Result<KeyExpr> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniKeyExpr(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareKeyexpr(keyExpr, onBindingError, onError)
         }
             .map { KeyExpr(keyExpr, it) }
@@ -1122,7 +1113,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         reliability: Reliability
     ): Result<Publisher> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniPublisher(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declarePublisher(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
@@ -1157,7 +1148,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
                 JniRepliesConfig(it.repliesQoS.priority.jni, it.repliesQoS.congestionControl.jni, it.repliesQoS.express)
             )
         }
-        return zCall({ JniAdvancedPublisher(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareAdvancedPublisher(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 encoding.jniSel, encoding.jniId, encoding.jniSchema, encoding.jniHandle,
@@ -1195,7 +1186,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
             }
             JniRecoveryConfig(mode, null)
         }
-        return zCall({ JniAdvancedSubscriber(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareAdvancedSubscriber(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 sampleCallbackOf { callback.run(it) },
@@ -1214,7 +1205,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         receiver: R
     ): Result<Subscriber<R>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniSubscriber(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareSubscriber(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 sampleCallbackOf { callback.run(it) },
@@ -1233,7 +1224,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         complete: Boolean
     ): Result<Queryable<R>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniQueryable(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareQueryable(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 complete,
@@ -1254,7 +1245,7 @@ class Session private constructor(private val config: Config) : AutoCloseable {
         acceptReplies: ReplyKeyExpr
     ): Result<Querier> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall({ JniQuerier(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             session.declareQuerier(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 target.jni, consolidation.jni,
@@ -1330,28 +1321,28 @@ class Session private constructor(private val config: Config) : AutoCloseable {
 
     internal fun zid(): Result<ZenohId> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall0({ JniZenohId(ByteArray(0)) }) { session.getZid(it) }
+        return zCall0 { session.getZid(it) }
             .map { ZenohId(it.bytes) }
     }
 
     internal fun getPeersId(): Result<List<ZenohId>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall0({ emptyList() }) { session.getPeersZid(it) }
+        return zCall0 { session.getPeersZid(it) }
             .map { ids -> ids.map { ZenohId(it.bytes) } }
     }
 
     internal fun getRoutersId(): Result<List<ZenohId>> {
         val session = jniSession ?: return Result.failure(sessionClosedException)
-        return zCall0({ emptyList() }) { session.getRoutersZid(it) }
+        return zCall0 { session.getRoutersZid(it) }
             .map { ids -> ids.map { ZenohId(it.bytes) } }
     }
 
     /** Launches the session through the jni session, returning the [Session] on success. */
     private fun launch(): Result<Session> {
         // `open` consumes its config; clone so the user's [Config] stays reusable.
-        val cloned = zCall0({ JniConfig(0L) }) { config.jniConfig.newClone(it) }
+        val cloned = zCall0 { config.jniConfig.newClone(it) }
             .getOrElse { return Result.failure(it) }
-        return zCall({ JniSession(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             JniSession.open(cloned, onBindingError, onError)
         }
             .map {

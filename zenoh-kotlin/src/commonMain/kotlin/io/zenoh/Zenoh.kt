@@ -21,7 +21,6 @@ import io.zenoh.exceptions.zCall
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.scouting.Scout as JniScout
 import io.zenoh.scouting.Hello
 import io.zenoh.scouting.Scout
 import kotlinx.coroutines.channels.Channel
@@ -100,7 +99,7 @@ object Zenoh {
         whatAmI: Set<WhatAmI>,
         config: Config?
     ): Result<Scout<R>> {
-        return zCall({ JniScout(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             // Argument preparation stays inside the captured block: an empty
             // [whatAmI] makes `reduce` throw, which must surface as
             // Result.failure (the pre-flat API contract).

@@ -73,7 +73,7 @@ class ZBytes private constructor(
         get() = eager ?: synchronized(this) {
             eager ?: run {
                 val h = handle!!
-                val b = h.toBytes(throwZError0)
+                val b = h.toBytes(throwZError0)!!
                 eager = b
                 handle = null
                 h.close()
@@ -104,7 +104,7 @@ class ZBytes private constructor(
      * the caller does not close it.
      */
     internal fun toZZBytes(): JniZBytes =
-        JniZBytes.newFromVec(bytes, throwZError0)
+        JniZBytes.newFromVec(bytes, throwZError0)!!
 
     /** Returns the internal byte representation of the [ZBytes]. */
     fun toBytes(): ByteArray = bytes

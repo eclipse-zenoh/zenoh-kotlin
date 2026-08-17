@@ -20,8 +20,6 @@ import io.zenoh.exceptions.zCallUnit
 import io.zenoh.handlers.Callback
 import io.zenoh.handlers.ChannelHandler
 import io.zenoh.handlers.Handler
-import io.zenoh.jni.liveliness.LivelinessToken as JniLivelinessToken
-import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.keyexpr.jniHandle
 import io.zenoh.keyexpr.jniSel
@@ -51,7 +49,7 @@ class Liveliness internal constructor(private val session: Session) {
      */
     fun declareToken(keyExpr: KeyExpr): Result<LivelinessToken> {
         val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
-        return zCall({ JniLivelinessToken(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             jniSession.livelinessDeclareToken(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 onBindingError, onError
@@ -189,7 +187,7 @@ class Liveliness internal constructor(private val session: Session) {
         history: Boolean
     ): Result<Subscriber<R>> {
         val jniSession = session.jniSession ?: return Result.failure(Session.sessionClosedException)
-        return zCall({ JniSubscriber(0L) }) { onBindingError, onError ->
+        return zCall { onBindingError, onError ->
             jniSession.livelinessDeclareSubscriber(
                 keyExpr.jniSel, keyExpr.jniStr, keyExpr.cloneHandle(),
                 history,

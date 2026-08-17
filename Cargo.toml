@@ -20,4 +20,11 @@ path = "ci/pin.rs"
 [dependencies]
 # No features: the pin must resolve the same way the real build does, and the
 # real build is zenoh-flat-jni's own `cargo build`.
-zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "main" }
+#
+# TEMPORARY: on the branch of eclipse-zenoh/zenoh-flat-jni#45 rather than on
+# `main`, because the call-site changes in this pull request compile only
+# against the generated Kotlin that pull request produces. Restore
+# `branch = "main"` and re-resolve before merging — a branch that no longer
+# exists resolves to nothing, and while this points at a branch the lockfile
+# sync bot cannot move the pin.
+zenoh-flat-jni = { git = "https://github.com/eclipse-zenoh/zenoh-flat-jni.git", branch = "deps/prebindgen-main" }

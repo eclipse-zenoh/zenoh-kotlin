@@ -30,11 +30,11 @@ import io.zenoh.jni.JniErrorHandler
  *    binding-layer failure — UTF-8 decode, closed handle, …) and `onError`
  *    (the typed domain [ErrorHandler], the decomposed zenoh error message).
  *    The [zCall]/[zCallUnit] helpers supply BOTH — each records the error
- *    into one local and, where the wrapper's return type demands a value,
- *    produces a throw-away *sentinel* (a born-closed handle such as
- *    `Session(0L)`, an empty list, …). No exception is ever in flight for a
- *    native error. Binding-only-fallible wrappers ([zCall0]/[zCallUnit0]) take
- *    just the single [JniErrorHandler].
+ *    into one local and returns `null`, which a wrapper whose return type is a
+ *    reference accepts (prebindgen #419); nothing has to be fabricated to
+ *    satisfy the signature. No exception is ever in flight for a native error.
+ *    Binding-only-fallible wrappers ([zCall0]/[zCallUnit0]) take just the
+ *    single [JniErrorHandler].
  * 2. **JVM-side exceptions** — argument preparation (collection ops, …),
  *    user-supplied conversions (`IntoZBytes.into()`), and class
  *    initialization (native-library loading) can throw before or around the
@@ -49,8 +49,9 @@ import io.zenoh.jni.JniErrorHandler
  * call has returned.
  */
 
-/** Fallible flat call returning `Unit` — no sentinel needed. The wrapper takes
- * both channels (`onBindingError`, `onError`); each records into [err]. */
+/** Fallible flat call returning `Unit` — the handlers have nothing to return.
+ * The wrapper takes both channels (`onBindingError`, `onError`); each records
+ * into [err]. */
 internal inline fun zCallUnit(
     crossinline block: (JniErrorHandler<Unit>, ErrorHandler<Unit>) -> Unit
 ): Result<Unit> {
@@ -76,48 +77,51 @@ internal inline fun zCallUnit0(crossinline block: (JniErrorHandler<Unit>) -> Uni
 }
 
 /**
- * Fallible flat call returning `T`; [sentinel] runs only on the error path to
- * satisfy the wrapper's return type (its value is discarded). The wrapper takes
- * both channels (`onBindingError`, `onError`); each records into [err] and
- * produces the sentinel.
+ * Fallible flat call returning a reference-shaped `T`. Each handler records the
+ * error into [err] and declines by returning `null`, which a wrapper whose
+ * return type is a reference accepts. The wrapper takes both channels
+ * (`onBindingError`, `onError`).
+ *
+ * A `null` with no error recorded means the wrapper returned no value and
+ * reported no failure. No wrapper called from here does that — every one of
+ * them returns a value the Rust side always produces — so it is reported as a
+ * failure rather than passed on as a null.
  */
-internal inline fun <T> zCall(
-    crossinline sentinel: () -> T,
-    crossinline block: (JniErrorHandler<T>, ErrorHandler<T>) -> T
+internal inline fun <T : Any> zCall(
+    crossinline block: (JniErrorHandler<T?>, ErrorHandler<T?>) -> T?
 ): Result<T> {
     var err: ZError? = null
     val outcome = runCatching {
         block(
             JniErrorHandler { je ->
                 err = ZError(je ?: "native binding error")
-                sentinel()
+                null
             },
             ErrorHandler { message ->
                 err = ZError(message)
-                sentinel()
+                null
             },
         )
     }
     err?.let { return Result.failure(it) }
-    return outcome
+    return outcome.mapCatching { it ?: throw ZError("native call returned no value and reported no error") }
 }
 
-/** Binding-only-fallible flat call returning `T`; [sentinel] as in [zCall]. */
-internal inline fun <T> zCall0(
-    crossinline sentinel: () -> T,
-    crossinline block: (JniErrorHandler<T>) -> T
+/** Binding-only-fallible flat call returning a reference-shaped `T`, otherwise as [zCall]. */
+internal inline fun <T : Any> zCall0(
+    crossinline block: (JniErrorHandler<T?>) -> T?
 ): Result<T> {
     var err: ZError? = null
     val outcome = runCatching {
         block(
             JniErrorHandler { je ->
                 err = ZError(je ?: "native binding error")
-                sentinel()
+                null
             }
         )
     }
     err?.let { return Result.failure(it) }
-    return outcome
+    return outcome.mapCatching { it ?: throw ZError("native call returned no value and reported no error") }
 }
 
 /** Domain handler for non-[Result] contexts: throws [ZError] (safe — runs after

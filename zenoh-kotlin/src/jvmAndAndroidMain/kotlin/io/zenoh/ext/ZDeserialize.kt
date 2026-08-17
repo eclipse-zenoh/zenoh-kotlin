@@ -1,7 +1,7 @@
 package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
-import io.zenoh.exceptions.zCall0
+import io.zenoh.exceptions.throwZError0
 import io.zenoh.jni.bytes.SerializationCodec
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -80,9 +80,11 @@ inline fun <reified T : Any> zDeserialize(zbytes: ZBytes): Result<T> =
  * Implementation of [zDeserialize]: builds a [SerializationCodec.SerdeType] from the [KType]
  * and runs the **pure-Kotlin** [SerializationCodec] deserializer — no JNI crossing. Supports
  * the Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types in
- * addition to the signed/collection types. Wired through [zCall0] exactly like
- * a generated wrapper.
+ * addition to the signed/collection types. [SerializationCodec] is handwritten
+ * rather than generated, so its error handler keeps a non-null result type and
+ * cannot decline with `null`: it throws instead, and `runCatching` turns that
+ * into the [Result].
  */
 @PublishedApi
 internal fun zDeserializeImpl(zbytes: ZBytes, type: KType): Result<Any> =
-    zCall0<Any>({ Unit }) { SerializationCodec.deserialize(zbytes.toBytes(), serdeTypeOf(type), it) }
+    runCatching { SerializationCodec.deserialize(zbytes.toBytes(), serdeTypeOf(type), throwZError0) }
