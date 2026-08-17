@@ -24,6 +24,7 @@ which covers them once for the whole stack.
   - [The real release](#the-real-release)
   - [Creating a GitHub release on its own](#creating-a-github-release-on-its-own)
   - [After a release](#after-a-release)
+  - [If a release fails](#if-a-release-fails)
 - [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released)
   - [Rehearsing the release workflow with a snapshot](#rehearsing-the-release-workflow-with-a-snapshot)
 - [How the pipeline works](#how-the-pipeline-works)
@@ -263,6 +264,45 @@ must reference a real `zenoh-flat-jni` release:
 curl -s https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
   | grep -A2 zenoh-flat-jni
 ```
+
+### If a release fails
+
+**The tag job runs first and pushes before anything is published.** So a run
+that dies in `publish` — an unresolvable dependency, a credential problem, a
+Central outage — still leaves the release branch and the tag pushed, for a
+version that has no artifacts anywhere. zenoh-java's failed run of 2026-08-10
+left exactly that: tag `1.10.0-rc1` and branch `release/dry-run/1.10.0-rc1`.
+
+Nothing downstream runs, though. `publish-dokka` and `publish-github` both
+`need` the publish job, so no documentation is deployed and **no GitHub release
+is created**. The whole visible residue is a tag pointing at unpublished code.
+
+**Retrying the same version is safe, as long as Central did not accept it.**
+Nothing accumulates across attempts, because every step is recreated rather than
+advanced:
+
+- `create-release-branch` does `git switch --force-create` and `git push
+  --force`, so the release branch is cut from `main` again, not extended;
+- `bump-and-tag.bash` therefore rewrites `version.txt` on a fresh branch, so its
+  bump commit applies cleanly on a retry;
+- the tag is `git tag --force` and `git push --force`.
+
+Fix the cause and run it again with the same number. Check the Central Portal
+first for a staging repository left open by the failed attempt, and drop it.
+
+**The one case where retrying the same number is wrong** is a run that got far
+enough for Central to accept the version. Maven Central is immutable: the
+version cannot be republished, and re-running would force-move the tag onto a
+new commit while Central keeps the artifact built from the old one — the tag and
+the published artifact would then describe different code. Move to a new version
+instead. This is also why the release number for a rehearsal must never be one
+you intend to release.
+
+If a version reached Central but produced no GitHub release, that is the
+recovery case for
+[Release (GitHub)](#creating-a-github-release-on-its-own) — and its
+`check-maven` check is what distinguishes it from this one, since a tag left by
+a failed publish resolves to nothing on Central and is refused.
 
 ## Rehearsing before zenoh-flat-jni is released
 
