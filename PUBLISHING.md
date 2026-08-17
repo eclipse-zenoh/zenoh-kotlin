@@ -304,16 +304,17 @@ commit carrying the same `version.txt` would still pass. Reaching that state
 means re-running a release whose version Central already accepted, which
 [If a release fails](#if-a-release-fails) says not to do.
 
-`check-maven` requires the version to resolve from Maven Central, and reports
-its two failures differently, since they call for different responses:
+`check-maven` confirms the version is on Maven Central before the release is
+created, and reports the two ways that can fail separately:
 
-| Result | Meaning | What to do |
+| What happened | What it means | What to do |
 | --- | --- | --- |
-| `404` | the version is wrong, or was never published | fix the version — or wait, if it was published minutes ago and has not propagated |
-| no answer | Central is unreachable | try again later, or untick `check-maven` to release without the check |
+| Central says the version is not there | the version is wrong, or was never published | correct it — or wait, if the release is minutes old and has not propagated |
+| Central does not answer | Maven Central is unreachable | try again later, or untick `check-maven` to release without this check |
 
-The pipeline leaves `check-maven` off, because it only reaches this job when
-`maven_publish` was on, so the publish job that just ran is the evidence.
+The release pipeline switches `check-maven` off, because the publish job that
+just uploaded the version is proof enough. A manual run has no such proof, so
+`check-maven` defaults to on there.
 
 This is the asymmetry worth remembering: the Maven publication cannot be undone,
 but a GitHub release can be edited (`gh release edit`) or removed (`gh release
