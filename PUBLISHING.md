@@ -257,7 +257,7 @@ still had no `publish-github` job.
 
 | Field | Value |
 | --- | --- |
-| `live-run` | **checked** — without it the action does nothing |
+| `live-run` | **checked** — without it the workflow does nothing |
 | `version` | the released number, e.g. `1.10.0` |
 | `branch` | the release branch the tag is on, e.g. `release/1.10.0` |
 | `check-maven` | checked |

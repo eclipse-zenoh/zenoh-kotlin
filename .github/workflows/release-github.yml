@@ -22,17 +22,17 @@ name: Release (GitHub)
 # GitHub release, unlike a Maven coordinate, can be edited or deleted afterwards
 # (`gh release edit` / `gh release delete`, which leaves the tag alone), so a
 # mistake here is cheap to correct - though correcting it means editing or
-# deleting, since the action runs `gh release create`, which fails rather than
-# replacing an existing release. The one thing that cannot be undone is that
-# publishing notifies watchers.
+# deleting, since `eclipse-zenoh/ci/publish-crates-github`, the shared action
+# this calls, runs `gh release create`, which fails rather than replacing an
+# existing release. The one thing that cannot be undone is that publishing
+# notifies watchers.
 #
 # The job was removed in the zenoh-flat transition on the belief that
-# `eclipse-zenoh/ci/publish-crates-github` publishes crates and would fail
-# without any in the repository. That was wrong: it needs no crate here, and
-# zenoh-java has been running it successfully throughout. So the action is back,
-# unchanged, and this repository stays on the same release path as the rest of
-# the org - see the note above the step for what that costs and why it is worth
-# it anyway.
+# `publish-crates-github` publishes crates and would fail without any in the
+# repository. That was wrong: it needs no crate here, and zenoh-java has been
+# running it successfully throughout. So the action is back, unchanged, and this
+# repository stays on the same release path as the rest of the org - see the
+# note above the step for what that costs and why it is worth it anyway.
 
 on:
   workflow_call:
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Three checks, each answering a different question about the version the
-      # operator typed. `--verify-tag`, in the action below: does a tag exist at
+      # operator typed. `--verify-tag`, in `publish-crates-github` below: does a tag exist at
       # all? Then:
       #
       # 1. version.txt at the tag == the version input. Note what this can and
@@ -105,8 +105,8 @@ jobs:
       # carries the same version.txt would pass both.
       # Fully qualified: given a bare name, actions/checkout looks for a remote
       # branch before a tag, so a branch named `1.10.0` alongside the tag would
-      # have this validate version.txt from the branch while the action below
-      # publishes the tag - the guard failing open in exactly the ambiguous case
+      # have this validate version.txt from the branch while
+      # `publish-crates-github` below publishes the tag - the guard failing open in exactly the ambiguous case
       # it exists to catch. `refs/tags/` names the same thing `--verify-tag`
       # resolves.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
