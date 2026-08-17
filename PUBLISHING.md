@@ -262,12 +262,18 @@ still had no `publish-github` job.
 | `branch` | the release branch the tag is on, e.g. `release/1.10.0` |
 | `check-maven` | checked |
 
-**The release describes the tag, not the branch.** `ci/scripts/bump-and-tag.bash`
-— run by the `tag` job of the **Release** workflow, on the release branch just
-cut, before anything is published — writes `version.txt` and creates the tag in
-the same run. So the tag *is* the version, and `gh release create --verify-tag`
-refuses a version that has none. `branch` only names where to cut a tag that
-does not exist yet, which here it always does.
+**The release describes the tag, not the branch.** `version` is a release number
+such as `1.10.0`, and it is used **verbatim as the Git tag name**:
+`ci/scripts/bump-and-tag.bash` — run by the `tag` job of the **Release**
+workflow, on the release branch just cut, before anything is published — writes
+`version.txt` and then runs `git tag --force "$version"`. Tag name and version
+string are the same characters.
+
+That is what makes `version` sufficient on its own. `gh release create` takes the
+tag name as its argument, so the workflow passes `version` straight through, and
+`--verify-tag` aborts unless a tag of exactly that name already exists on the
+remote. `branch` only names where to cut a tag that does not exist yet, which
+here it always does.
 
 A tag existing is not proof it was ever released, so two more checks run first.
 They answer different questions, and it is worth being clear which does what:
