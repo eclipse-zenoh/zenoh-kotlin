@@ -1,7 +1,7 @@
 package io.zenoh.ext
 
 import io.zenoh.bytes.ZBytes
-import io.zenoh.exceptions.zCall0
+import io.zenoh.exceptions.throwZError0
 import io.zenoh.jni.bytes.SerializationCodec
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -79,11 +79,12 @@ inline fun <reified T : Any> zSerialize(t: T): Result<ZBytes> = zSerializeImpl(t
  * Implementation of [zSerialize]: builds a [SerializationCodec.SerdeType] from the [KType]
  * and runs the **pure-Kotlin** [SerializationCodec] serializer — no JNI crossing. Supports
  * the Kotlin-specific `UByte`/`UShort`/`UInt`/`ULong`/`Pair`/`Triple` types in
- * addition to the signed/collection types. Wired through [zCall0] exactly like
- * a generated wrapper: the error-sink callback carries a serializer failure, and
- * `serdeTypeOf` failures surface through the same `runCatching`.
+ * addition to the signed/collection types. [SerializationCodec] is handwritten
+ * rather than generated, so its error handler keeps a non-null result type and
+ * cannot decline with `null`: it throws instead, and `runCatching` — which also
+ * catches a `serdeTypeOf` failure — turns that into the [Result].
  */
 @PublishedApi
 internal fun zSerializeImpl(t: Any, type: KType): Result<ZBytes> =
-    zCall0({ ByteArray(0) }) { SerializationCodec.serialize(t, serdeTypeOf(type), it) }
+    runCatching { SerializationCodec.serialize(t, serdeTypeOf(type), throwZError0) }
         .map { ZBytes.from(it) }

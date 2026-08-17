@@ -85,7 +85,7 @@ class KeyExpr internal constructor(
      * [io.zenoh.jni.query.Selector]) with no string arm to select.
      */
     internal fun intoJniHandle(): JniKeyExpr =
-        cloneHandle() ?: JniKeyExpr.newTryFrom(keyExpr, throwZError0, throwZError)
+        cloneHandle() ?: JniKeyExpr.newTryFrom(keyExpr, throwZError0, throwZError)!!
 
     /**
      * Run [body] with a native handle: the declared handle when present,
@@ -95,7 +95,7 @@ class KeyExpr internal constructor(
     private inline fun <R> withHandle(body: (JniKeyExpr) -> R): R {
         val h = jniKeyExpr
         if (h != null) return body(h)
-        val tmp = JniKeyExpr.newTryFrom(keyExpr, throwZError0, throwZError)
+        val tmp = JniKeyExpr.newTryFrom(keyExpr, throwZError0, throwZError)!!
         try {
             return body(tmp)
         } finally {
@@ -112,12 +112,12 @@ class KeyExpr internal constructor(
          * [Result.failure].
          */
         private inline fun fromProbe(
-            crossinline makeProbe: (JniErrorHandler<JniKeyExpr>, ErrorHandler<JniKeyExpr>) -> JniKeyExpr
+            crossinline makeProbe: (JniErrorHandler<JniKeyExpr?>, ErrorHandler<JniKeyExpr?>) -> JniKeyExpr?
         ): Result<KeyExpr> =
-            zCall({ JniKeyExpr(0L) }) { onBindingError, onError -> makeProbe(onBindingError, onError) }
+            zCall { onBindingError, onError -> makeProbe(onBindingError, onError) }
                 .mapCatching { probe ->
                     try {
-                        KeyExpr(probe.asStr(throwZError0))
+                        KeyExpr(probe.asStr(throwZError0)!!)
                     } finally {
                         probe.close()
                     }
@@ -139,7 +139,7 @@ class KeyExpr internal constructor(
          * @return a [Result] with the [KeyExpr] in case of success.
          */
         fun tryFrom(keyExpr: String): Result<KeyExpr> =
-            zCall({ JniKeyExpr(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 JniKeyExpr.newTryFrom(keyExpr, onBindingError, onError)
             }
                 .map { probe ->
@@ -190,7 +190,7 @@ class KeyExpr internal constructor(
     fun relationTo(other: KeyExpr): SetIntersectionLevel = withHandle { h ->
         val raw = other.jniKeyExpr?.let { h.relationTo(it, throwZError0) }
             ?: h.relationTo(other.keyExpr, throwZError0)
-        SetIntersectionLevel.fromInt(raw.value)
+        SetIntersectionLevel.fromInt(raw!!.value)
     }
 
     /**

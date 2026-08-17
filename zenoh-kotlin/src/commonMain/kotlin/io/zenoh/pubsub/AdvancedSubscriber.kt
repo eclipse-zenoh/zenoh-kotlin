@@ -26,8 +26,6 @@ import io.zenoh.handlers.SampleMissChannelHandler
 import io.zenoh.handlers.SampleMissHandler
 import io.zenoh.jni.VoidCallback
 import io.zenoh.jni.pubsub.AdvancedSubscriber as JniAdvancedSubscriber
-import io.zenoh.jni.pubsub.SampleMissListener as JniSampleMissListener
-import io.zenoh.jni.pubsub.Subscriber as JniSubscriber
 import io.zenoh.keyexpr.KeyExpr
 import io.zenoh.sample.Sample
 import io.zenoh.sampleCallbackOf
@@ -205,7 +203,7 @@ class AdvancedSubscriber<R> internal constructor(
                 s.declareBackgroundDetectPublishersSubscriber(jniCallback, jniOnClose, history, onBindingError, onError)
             }.map { Subscriber(keyExpr, receiver, null) }
         } else {
-            zCall({ JniSubscriber(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 s.declareDetectPublishersSubscriber(jniCallback, jniOnClose, history, onBindingError, onError)
             }.map { Subscriber(keyExpr, receiver, it) }
         }
@@ -331,7 +329,7 @@ class AdvancedSubscriber<R> internal constructor(
                 s.declareBackgroundSampleMissListener(jniCallback, jniOnClose, onBindingError, onError)
             }.map { SampleMissListener(null) }
         } else {
-            zCall({ JniSampleMissListener(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 s.declareSampleMissListener(jniCallback, jniOnClose, onBindingError, onError)
             }.map { SampleMissListener(it) }
         }

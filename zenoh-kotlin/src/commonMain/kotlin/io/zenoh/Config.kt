@@ -140,7 +140,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
          * Returns the default config.
          */
         fun default(): Config {
-            return Config(JniConfig.newDefault(throwZError0))
+            return Config(JniConfig.newDefault(throwZError0)!!)
         }
 
         /**
@@ -160,7 +160,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
          * @return A result with the [Config].
          */
         fun fromFile(path: Path): Result<Config> =
-            zCall({ JniConfig(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 JniConfig.newFromFile(path.toString(), onBindingError, onError)
             }.map { Config(it) }
 
@@ -200,7 +200,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
         // and JSON is a subset of JSON5, so every input accepted here before is
         // still accepted and parses to the same config.
         fun fromJson(config: String): Result<Config> =
-            zCall({ JniConfig(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 JniConfig.newFromJson5(config, onBindingError, onError)
             }.map { Config(it) }
 
@@ -237,7 +237,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
          * @return A result with the [Config].
          */
         fun fromJson5(config: String): Result<Config> =
-            zCall({ JniConfig(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 JniConfig.newFromJson5(config, onBindingError, onError)
             }.map { Config(it) }
 
@@ -270,7 +270,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
          * @return A result with the [Config].
          */
         fun fromYaml(config: String): Result<Config> =
-            zCall({ JniConfig(0L) }) { onBindingError, onError ->
+            zCall { onBindingError, onError ->
                 JniConfig.newFromYaml(config, onBindingError, onError)
             }.map { Config(it) }
 
@@ -298,7 +298,7 @@ class Config internal constructor(internal val jniConfig: JniConfig) {
      * Returns the json value associated to the [key].
      */
     fun getJson(key: String): Result<String> {
-        return zCall({ "" }) { onBindingError, onError -> jniConfig.getJson(key, onBindingError, onError) }
+        return zCall { onBindingError, onError -> jniConfig.getJson(key, onBindingError, onError) }
     }
 
     /**
