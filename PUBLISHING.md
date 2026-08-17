@@ -193,6 +193,12 @@ builds and publishes.
 | `maven_publish` | checked — or uncheck for the very first run |
 | `github_release` | either — a rehearsal is not a live run, so no release is created regardless |
 
+Unchecking `maven_publish` also skips the GitHub release, whatever
+`github_release` says: with no upload there is nothing for a release to
+announce. To create one for a version already on Central, use
+[Release (GitHub)](#creating-a-github-release-on-its-own), which verifies
+instead of assuming.
+
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
 `live-run` publishes `<version>-SNAPSHOT` to the **mutable** snapshot repository
 and never runs `closeAndReleaseSonatypeStagingRepository`, while `maven_publish`
@@ -240,15 +246,25 @@ always does.
 A tag alone is not proof, though — rehearsals are tagged too, so `1.10.0-rc4`
 is a real tag that was never published. Two checks run before the release is
 created: `version.txt` at the tag must equal `version`, and with `check-maven`
-the coordinate must already resolve from Maven Central. A mistyped version
-fails rather than announcing a release Maven never got.
+the coordinate should resolve from Maven Central. Together they catch a
+mistyped version reaching a real but wrong tag.
 
-`check-maven` distinguishes *absent* from *unanswered*. A settled 404 fails the
-run; a timeout or a 5xx is reported and the release proceeds, because Central
-having a bad minute is not evidence about the version and should not block a
-release. A 404 immediately after a live release can also be propagation lag
-rather than a mistake — wait, or re-run with `check-maven` off. The pipeline
-leaves it off for that reason: the publish job that just ran is the evidence.
+Be precise about what they establish: **this tag is a release tag for this
+version, and this version exists on Central**. They do not tie the published
+artifact to this commit. Nothing published carries the commit it was built from
+— the POM has `<scm>` but no `<tag>` — so a tag force-moved onto a different
+commit carrying the same `version.txt` would still pass. Reaching that state
+means re-running a release whose version Central already accepted, which
+[If a release fails](#if-a-release-fails) says not to do.
+
+`check-maven` is **best-effort by design**, not a guarantee. It distinguishes
+*absent* from *unanswered*: a settled 404 fails the run, while a timeout or a
+5xx is reported as a warning and the release proceeds, because Central having a
+bad minute is not evidence about the version and should not block a release. A
+404 immediately after a live release can also be propagation lag rather than a
+mistake — wait, or re-run with `check-maven` off. The pipeline leaves it off,
+because it only reaches this job when `maven_publish` was on, so the publish job
+that just ran is the evidence.
 
 This is the asymmetry worth remembering: the Maven publication cannot be
 undone, but a GitHub release can be edited (`gh release edit`) or removed
@@ -430,9 +446,24 @@ policy, but because the repository that serves them is not on the path.
    only, deploys it to the `gh-pages` site README.md links to. The javadoc JAR
    attached to the Maven publications does not serve that site; this job does.
 4. **`publish-github`** — creates the GitHub release from the tag, on a live run
-   only. It calls `release-github.yml`, which is **also dispatchable on its
-   own** — see [Creating a GitHub release on its
-   own](#creating-a-github-release-on-its-own).
+   only, and only when `maven_publish` was on. It calls `release-github.yml`,
+   which is **also dispatchable on its own** — see [Creating a GitHub release on
+   its own](#creating-a-github-release-on-its-own).
+
+Jobs 3 and 4 both delegate to workflows that can be dispatched directly, which
+is what makes [recovery](#if-a-step-after-maven-central-fails) possible without
+re-running a release.
+
+`publish-github` calls `gh release create` itself rather than
+`eclipse-zenoh/ci/publish-crates-github`, which zenoh-java uses. The action
+would work — it needs no crate in the repository — but it reaches
+`build-crates-debian.ts` for one artifact regex, and that module initializes
+TOML at import, so every run first does `cargo +stable install
+toml-cli2@0.3.2 --force`: a Rust toolchain, a crates.io fetch and about 40
+seconds before it calls `gh`. A workflow whose purpose is to work when the
+release pipeline did not should not depend on crates.io. The two `gh` calls it
+makes for us are short enough to keep inline, and the artifact upload it also
+does is a no-op here.
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
@@ -482,9 +513,8 @@ repository.
   snapshot repository and runs it — but a release goes to a staging repository
   and is not resolvable at that point, so nothing consumes a release candidate
   the way zenoh-flat-jni's own dry-run repository lets it consume one.
-- **The GitHub release carries generated notes only.** The action uploads any
-  `*-standalone.zip` / `*-debian.zip` build artifacts it finds, and this
-  repository produces none, so the release is notes and source archives — the
+- **The GitHub release carries generated notes only** — notes and the source
+  archives GitHub attaches itself. There are no build artifacts to add: the
   binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.

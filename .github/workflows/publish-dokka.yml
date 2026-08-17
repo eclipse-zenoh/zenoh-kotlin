@@ -22,10 +22,14 @@ on:
         description: Live-run — actually deploy to gh-pages
         type: boolean
         required: false
+      # Required, unlike the workflow_call side that release.yml always fills.
+      # Empty here would fall back to the ref the dispatch was started from -
+      # normally `main` - and a live run would then overwrite the published
+      # documentation with the unreleased API. Recovery wants the released tag.
       branch:
-        description: Branch or tag to build the documentation from (e.g. 1.10.0)
+        description: Branch or tag to build the documentation from (use the released tag, e.g. 1.10.0)
         type: string
-        required: false
+        required: true
 
 env:
   CARGO_TERM_COLOR: always

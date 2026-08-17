@@ -24,12 +24,23 @@ name: Release (GitHub)
 # alone), so re-running this is cheap - the one thing it does that cannot be
 # undone is notify watchers.
 #
-# The underlying action only shells out to `gh release create --verify-tag
-# --generate-notes` and then uploads any `*-standalone.zip` / `*-debian.zip`
-# workflow artifacts. This repository builds no Rust crates, so that upload
-# loop finds nothing and the release carries generated notes only. It was
-# removed in the zenoh-flat transition on the belief that it published crates
-# and would fail without them; it does not, and zenoh-java never dropped it.
+# The job was removed in the zenoh-flat transition on the belief that
+# `eclipse-zenoh/ci/publish-crates-github` publishes Rust crates and would fail
+# without any in the repository. That was wrong - it needs no crate here, and
+# zenoh-java runs it successfully today - but the action is still not the right
+# thing to call from a recovery path. It reaches
+# `build-crates-debian.ts` for one artifact regex, and that module runs
+# `await TOML.init()` at import, so every invocation first does
+# `cargo +stable install toml-cli2@0.3.2 --force`: a Rust toolchain, a
+# crates.io fetch and about 40s of compiling before it runs `gh`. This
+# workflow's whole purpose is to still work when the release pipeline did not,
+# so it should not depend on crates.io being up.
+#
+# What the action does that we need is two `gh` calls, reproduced below. What it
+# does that we do not need is upload `*-standalone.zip` / `*-debian.zip` build
+# artifacts, of which this repository produces none. Keeping the two calls
+# inline costs a few lines and removes a whole class of unrelated failure.
+# See eclipse-zenoh/ci - the eager TOML init is worth removing upstream too.
 
 on:
   workflow_call:
@@ -47,10 +58,11 @@ on:
         type: string
         required: true
       check-maven:
-        description: Require the version to be on Maven Central first
+        description: "Best-effort check that the version is on Maven Central (404 fails; unreachable warns)"
         type: boolean
         required: false
-        # False from the pipeline: the publish job that just ran is the
+        # False from the pipeline, which only reaches this job when
+        # maven_publish was on - so the publish job that just ran is the
         # evidence, and a freshly released coordinate takes a while to appear on
         # repo1.maven.org, so checking here would fail every live release.
         default: false
@@ -69,7 +81,7 @@ on:
         type: string
         required: true
       check-maven:
-        description: Require the version to be on Maven Central first
+        description: "Best-effort check that the version is on Maven Central (404 fails; unreachable warns)"
         type: boolean
         required: false
         default: true
@@ -79,11 +91,18 @@ jobs:
     name: Create the GitHub release
     runs-on: ubuntu-latest
     steps:
-      # The GitHub release must describe the same commit Maven Central got.
-      # `--verify-tag` below already refuses a version with no tag, but tags
-      # alone do not establish that: `bump-and-tag.bash` tags rehearsals too, so
-      # `1.10.0-rc4` is a tag that was never published to anything. Both checks
-      # here are about a mistyped `version` reaching a real but wrong tag.
+      # These two checks catch a mistyped `version` reaching a real but wrong
+      # tag. `--verify-tag` below refuses a version with no tag at all, but a
+      # tag alone establishes little: `bump-and-tag.bash` tags rehearsals too,
+      # so `1.10.0-rc4` is a real tag that was never published to anything.
+      #
+      # What they establish, precisely: this tag is *a* release tag for this
+      # version, and this version exists on Central. They do not tie the
+      # artifact to this commit - nothing published carries the commit it was
+      # built from (the POM has <scm> but no <tag>), so that cannot be checked
+      # here. A tag force-moved onto another commit with the same version.txt
+      # would still pass. Reaching that state means re-running a release whose
+      # version Central already accepted, which PUBLISHING.md says not to do.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.version }}
@@ -137,10 +156,46 @@ jobs:
               >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - uses: eclipse-zenoh/ci/publish-crates-github@main
-        with:
-          repo: ${{ github.repository }}
-          live-run: ${{ inputs.live-run || false }}
-          version: ${{ inputs.version }}
-          branch: ${{ inputs.branch }}
-          github-token: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+      # Same two calls eclipse-zenoh/ci/publish-crates-github makes, minus the
+      # Cargo dependency it drags in - see the note at the top of this file.
+      # Notes start at the newest existing release so they cover only what is
+      # new in this one. Pre-release detection matches the action's rule: a `-`
+      # anywhere but the front, or four dot-separated components.
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN_WORKFLOW }}
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          args=(--repo "$REPO" --target "$BRANCH" --verify-tag --generate-notes)
+
+          previous="$(gh release list --repo "$REPO" --exclude-drafts --order desc \
+                        --limit 1 --json tagName --jq '.[0].tagName // empty')"
+          if [[ -n "$previous" ]]; then
+            args+=(--notes-start-tag "$previous")
+            echo "notes start after $previous"
+          else
+            echo "no previous release; notes cover the full history"
+          fi
+
+          prerelease=false
+          case "$VERSION" in ?*-*) prerelease=true ;; esac
+          if [[ "$(printf '%s' "$VERSION" | awk -F. '{print NF}')" == 4 ]]; then
+            prerelease=true
+          fi
+          if [[ "$prerelease" == true ]]; then
+            args+=(--prerelease)
+            echo "$VERSION is a pre-release"
+          fi
+
+          if [[ "${{ inputs.live-run || false }}" != "true" ]]; then
+            echo "dry run; would have run: gh release create $VERSION ${args[*]}" \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh release create "$VERSION" "${args[@]}"
+          echo "released https://github.com/$REPO/releases/tag/$VERSION" >> "$GITHUB_STEP_SUMMARY"

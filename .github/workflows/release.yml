@@ -109,10 +109,17 @@ jobs:
   # `release-github.yml` is also dispatchable on its own, which is how you
   # recover a release that was published to Maven Central without one - see the
   # comment at the top of that file.
+  #
+  # Gated on `maven_publish` as well as `github_release`. The publish job
+  # succeeds either way - with `maven_publish` off it only assembles locally -
+  # so without this a live run with uploads disabled would announce a release
+  # for a coordinate that was never published. That combination is a rehearsal,
+  # not a release; a genuine GitHub-only release is the standalone workflow,
+  # which verifies against Central rather than assuming an upload happened.
   publish-github:
     name: Create the GitHub release
     needs: [tag, publish]
-    if: ${{ !contains(inputs.github_release, 'false') }}
+    if: ${{ !contains(inputs.github_release, 'false') && !contains(inputs.maven_publish, 'false') }}
     uses: ./.github/workflows/release-github.yml
     with:
       live-run: ${{ inputs.live-run || false }}
