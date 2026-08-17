@@ -231,16 +231,9 @@ decides whether any upload happens at all. **A rehearsal with `maven_publish`
 checked performs a real, signed upload** — into the snapshot repository — and is
 the only configuration that exercises the credentials.
 
-`bump-and-tag.bash` tags whatever version it is handed, rehearsals included, so
-never give a rehearsal the number you intend to release.
-
-1.10.0 is the worked example: it was rehearsed as `1.10.0-rc1` through
-`1.10.0-rc4` before shipping, and all four tags are still on the remote
-alongside the real `1.10.0`, each with a `release/dry-run/<version>` branch. By
-name alone they are indistinguishable from a release tag. What separates them is
-Maven Central — `zenoh-kotlin:1.10.0` resolves, `1.10.0-rc4` is a 404 — which is
-why [Release (GitHub)](#creating-a-github-release-on-its-own) checks it rather
-than trusting the tag.
+`bump-and-tag.bash` tags whatever version it is handed, rehearsals included —
+1.10.0 was rehearsed as `1.10.0-rc1`…`rc4`, and those tags are still on the
+remote — so never give a rehearsal the number you intend to release.
 
 ### The real release
 
