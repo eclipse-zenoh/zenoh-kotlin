@@ -283,7 +283,7 @@ They answer different questions, and it is worth being clear which does what:
 
 | Check | Question | Catches |
 | --- | --- | --- |
-| `version.txt` at the tag equals `version` | is this tag internally consistent? | a tag the release pipeline did not create, or one force-moved onto a commit belonging to another version |
+| `version.txt` at the tag equals the `version` you entered | is this tag internally consistent? | a tag the release pipeline did not create, or one force-moved onto a commit belonging to another version |
 | `check-maven` | was this version ever published? | a tag for a version that never shipped — **including rehearsal tags** |
 
 The first cannot do more than that, and it is worth understanding why: since
