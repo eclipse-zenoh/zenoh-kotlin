@@ -193,11 +193,18 @@ builds and publishes.
 | `maven_publish` | checked — or uncheck for the very first run |
 | `github_release` | either — a rehearsal is not a live run, so no release is created regardless |
 
-Unchecking `maven_publish` also skips the GitHub release, whatever
-`github_release` says: with no upload there is nothing for a release to
-announce. To create one for a version already on Central, use
-[Release (GitHub)](#creating-a-github-release-on-its-own), which verifies
-instead of assuming.
+Unchecking `maven_publish` suppresses **everything outward-facing**, even on a
+live run: no GitHub release, whatever `github_release` says, and no
+documentation deploy. With no upload there is nothing to announce, and nothing
+whose documentation should replace the published site. Both jobs still run and
+still build, so the rehearsal value is intact — only the publishing stops.
+
+Note that `live-run` checked with `maven_publish` unchecked is *not* a
+rehearsal: it cuts the real release branch and force-pushes the real tag. It is
+a live release with the upload switched off. To publish a GitHub release or the
+documentation for a version already on Central, use the standalone workflows
+under [If a step after Maven Central
+fails](#if-a-step-after-maven-central-fails), which verify rather than assume.
 
 `live-run` and `maven_publish` behave exactly as in zenoh-flat-jni: unchecking
 `live-run` publishes `<version>-SNAPSHOT` to the **mutable** snapshot repository

@@ -92,12 +92,18 @@ jobs:
       packages: write
     secrets: inherit
 
+  # `live-run` is ANDed with `maven_publish` rather than passed through. With
+  # uploads off the publish job still succeeds, so a live run would otherwise
+  # deploy the documentation of a version that exists nowhere but this
+  # repository, over the docs of the version people are actually using. The job
+  # still runs and still builds the site - that is the part worth exercising -
+  # it just does not publish it.
   publish-dokka:
     name: Publish documentation
     needs: [tag, publish]
     uses: ./.github/workflows/publish-dokka.yml
     with:
-      live-run: ${{ inputs.live-run || false }}
+      live-run: ${{ (inputs.live-run || false) && !contains(inputs.maven_publish, 'false') }}
       branch: ${{ needs.tag.outputs.branch }}
     # peaceiris/actions-gh-pages pushes the generated site to the gh-pages
     # branch, which the default read-only token cannot do.
@@ -113,9 +119,15 @@ jobs:
   # Gated on `maven_publish` as well as `github_release`. The publish job
   # succeeds either way - with `maven_publish` off it only assembles locally -
   # so without this a live run with uploads disabled would announce a release
-  # for a coordinate that was never published. That combination is a rehearsal,
-  # not a release; a genuine GitHub-only release is the standalone workflow,
-  # which verifies against Central rather than assuming an upload happened.
+  # for a coordinate that was never published.
+  #
+  # `live-run: true` with `maven_publish: false` is not a rehearsal: it cuts the
+  # real release branch, force-pushes the real tag, and but for these two gates
+  # would deploy the real docs and announce a real release. It is a live release
+  # with the upload switched off - useful for exercising the tag and build path,
+  # and precisely the state in which nothing outward-facing should happen. A
+  # genuine GitHub-only release is the standalone workflow, which verifies
+  # against Central rather than assuming an upload happened.
   publish-github:
     name: Create the GitHub release
     needs: [tag, publish]

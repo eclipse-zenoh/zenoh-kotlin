@@ -107,16 +107,20 @@ jobs:
         with:
           ref: ${{ inputs.version }}
 
+      # `version` is operator-supplied, so it reaches the shell through the
+      # environment rather than being pasted into the script source.
       - name: Verify the tag is the release tag for this version
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           tagged="$(tr -d '[:space:]' < version.txt)"
-          if [[ "$tagged" != "${{ inputs.version }}" ]]; then
-            echo "::error::tag '${{ inputs.version }}' has version.txt='$tagged'." \
+          if [[ "$tagged" != "$VERSION" ]]; then
+            echo "::error::tag '$VERSION' has version.txt='$tagged'." \
                  "This tag is not the release tag for that version." >&2
             exit 1
           fi
-          echo "tag ${{ inputs.version }} carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"
+          echo "tag $VERSION carries version.txt=$tagged" >> "$GITHUB_STEP_SUMMARY"
 
       # Only a 404 is evidence of absence. A timeout, a CDN 5xx or a DNS failure
       # means Central did not answer, which is not the same thing - and a
@@ -128,9 +132,11 @@ jobs:
       # to block a release because repo1.maven.org had a bad minute.
       - name: Verify the version is on Maven Central
         if: ${{ inputs.check-maven }}
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           set -uo pipefail
-          pom="https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/${{ inputs.version }}/zenoh-kotlin-${{ inputs.version }}.pom"
+          pom="https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/$VERSION/zenoh-kotlin-$VERSION.pom"
           code=000
           for attempt in 1 2 3 4 5; do
             # curl already writes 000 on a connection failure; don't append another.
@@ -144,9 +150,9 @@ jobs:
           done
 
           if [[ "$code" == 200 ]]; then
-            echo "zenoh-kotlin:${{ inputs.version }} resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
+            echo "zenoh-kotlin:$VERSION resolves from Maven Central" >> "$GITHUB_STEP_SUMMARY"
           elif [[ "$code" == 404 ]]; then
-            echo "::error::zenoh-kotlin:${{ inputs.version }} is not on Maven Central (404 after 5 attempts)." \
+            echo "::error::zenoh-kotlin:$VERSION is not on Maven Central (404 after 5 attempts)." \
                  "Releasing it on GitHub would announce a version nobody can depend on." \
                  "If it was published minutes ago this may be propagation lag - wait, or re-run with check-maven off." >&2
             exit 1
@@ -172,13 +178,24 @@ jobs:
 
           args=(--repo "$REPO" --target "$BRANCH" --verify-tag --generate-notes)
 
-          previous="$(gh release list --repo "$REPO" --exclude-drafts --order desc \
-                        --limit 1 --json tagName --jq '.[0].tagName // empty')"
+          # The release *preceding this version*, not simply the newest one.
+          # They are the same during a release, but not for a recovery run: if
+          # 1.11.0 shipped while 1.10.0 was missing its release, starting from
+          # the newest would generate notes from 1.11.0 to 1.10.0 - backwards,
+          # and empty. Sorting VERSION into the list and taking its predecessor
+          # is right in both cases.
+          previous="$(
+            {
+              gh release list --repo "$REPO" --exclude-drafts --limit 100 \
+                 --json tagName --jq '.[].tagName'
+              printf '%s\n' "$VERSION"
+            } | sort -V -u | awk -v v="$VERSION" '$0 == v { print prev; exit } { prev = $0 }'
+          )"
           if [[ -n "$previous" ]]; then
             args+=(--notes-start-tag "$previous")
             echo "notes start after $previous"
           else
-            echo "no previous release; notes cover the full history"
+            echo "no earlier release; notes cover the full history"
           fi
 
           prerelease=false
