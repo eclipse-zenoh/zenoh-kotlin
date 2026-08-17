@@ -85,9 +85,10 @@ jobs:
     steps:
       # Three checks, each answering a different question about the version the
       # operator typed. `version` is used verbatim as the tag name - bump-and-tag
-      # runs `git tag --force "$version"` - so the string names both. First,
-      # `--verify-tag` in `publish-crates-github` below: does a remote tag of
-      # that exact name exist at all? Then:
+      # runs `git tag --force "$version"` - so the string names both. First, the
+      # `--verify-tag` flag that `publish-crates-github` below passes to
+      # `gh release create`: does a remote tag of that exact name exist at all?
+      # Then:
       #
       # 1. version.txt at the tag == the version input. Note what this can and
       #    cannot prove. `bump-and-tag.bash` writes version.txt and creates the

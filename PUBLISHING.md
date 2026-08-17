@@ -270,10 +270,12 @@ workflow, on the release branch just cut, before anything is published — write
 `version.txt` and then runs `git tag --force "$version"`. Tag name and version
 string are the same characters.
 
-That is what makes `version` sufficient on its own. `gh release create` takes the
-tag name as its argument, so the workflow passes `version` straight through, and
-`--verify-tag` aborts unless a tag of exactly that name already exists on the
-remote. `branch` only names where to cut a tag that does not exist yet, which
+That is what makes `version` sufficient on its own. `publish-crates-github`
+creates the release by invoking `gh release create`, the GitHub CLI command for
+the job, which takes the tag name as its first argument — so the workflow passes
+`version` straight through. The action always passes that command's
+`--verify-tag` flag, which makes it abort unless a tag of exactly that name
+already exists on the remote. `branch` only names where to cut a tag that does not exist yet, which
 here it always does.
 
 A tag existing is not proof it was ever released, so two more checks run first.
