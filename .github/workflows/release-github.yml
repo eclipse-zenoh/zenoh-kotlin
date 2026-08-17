@@ -83,18 +83,26 @@ jobs:
     name: Create the GitHub release
     runs-on: ubuntu-latest
     steps:
-      # These two checks catch a mistyped `version` reaching a real but wrong
-      # tag. `--verify-tag` below refuses a version with no tag at all, but a
-      # tag alone establishes little: `bump-and-tag.bash` tags rehearsals too,
-      # so `1.10.0-rc4` is a real tag that was never published to anything.
+      # Three checks, each answering a different question about the version the
+      # operator typed. `--verify-tag`, in the action below: does a tag exist at
+      # all? Then:
       #
-      # What they establish, precisely: this tag is *a* release tag for this
-      # version, and this version exists on Central. They do not tie the
-      # artifact to this commit - nothing published carries the commit it was
-      # built from (the POM has <scm> but no <tag>), so that cannot be checked
-      # here. A tag force-moved onto another commit with the same version.txt
-      # would still pass. Reaching that state means re-running a release whose
-      # version Central already accepted, which PUBLISHING.md says not to do.
+      # 1. version.txt at the tag == the version input. Note what this can and
+      #    cannot prove. `bump-and-tag.bash` writes version.txt and creates the
+      #    tag in the same run, so for any tag the release pipeline produced this
+      #    holds by construction - it is tautological for those. Its value is
+      #    rejecting tags the pipeline did *not* produce: one created by hand, or
+      #    one force-moved onto a commit belonging to a different version, where
+      #    the tag name and the file disagree.
+      # 2. check-maven: was this version ever published? This is the one that
+      #    rejects a rehearsal tag. Rehearsals are tagged too, and they are
+      #    self-consistent - version.txt at `1.10.0-rc4` reads `1.10.0-rc4` - so
+      #    they sail through check 1 and are caught only here.
+      #
+      # Neither ties the published artifact to this commit. Nothing published
+      # records the commit it was built from (the POM has <scm> but no <tag>),
+      # so that cannot be checked. A tag force-moved onto another commit that
+      # carries the same version.txt would pass both.
       # Fully qualified: given a bare name, actions/checkout looks for a remote
       # branch before a tag, so a branch named `1.10.0` alongside the tag would
       # have this validate version.txt from the branch while the action below

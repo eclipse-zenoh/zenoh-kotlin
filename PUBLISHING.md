@@ -262,19 +262,32 @@ still had no `publish-github` job.
 | `branch` | the release branch the tag is on, e.g. `release/1.10.0` |
 | `check-maven` | checked |
 
-**The release describes the tag, not the branch.** `bump-and-tag.bash` writes
-`version.txt` and tags it in the same run that publishes, so the tag *is* the
-version, and `gh release create --verify-tag` refuses a version that has none.
-`branch` only names where to cut a tag that does not exist yet, which here it
-always does.
+**The release describes the tag, not the branch.** `ci/scripts/bump-and-tag.bash`
+— run by the `tag` job of the **Release** workflow, on the release branch just
+cut, before anything is published — writes `version.txt` and creates the tag in
+the same run. So the tag *is* the version, and `gh release create --verify-tag`
+refuses a version that has none. `branch` only names where to cut a tag that
+does not exist yet, which here it always does.
 
-A tag alone is not proof, though — rehearsals are tagged too, so `1.10.0-rc4`
-is a real tag that was never published. Two checks run before the release is
-created: `version.txt` at the tag must equal `version`, and with `check-maven`
-the coordinate should resolve from Maven Central. Together they catch a
-mistyped version reaching a real but wrong tag.
+A tag existing is not proof it was ever released, so two more checks run first.
+They answer different questions, and it is worth being clear which does what:
 
-Be precise about what they establish: **this tag is a release tag for this
+| Check | Question | Catches |
+| --- | --- | --- |
+| `version.txt` at the tag equals `version` | is this tag internally consistent? | a tag the release pipeline did not create, or one force-moved onto a commit belonging to another version |
+| `check-maven` | was this version ever published? | a tag for a version that never shipped — **including rehearsal tags** |
+
+The first cannot do more than that, and it is worth understanding why: since
+`bump-and-tag.bash` writes `version.txt` and tags it in the same run, the two
+agree by construction for every tag the pipeline produced. It is tautological
+for those. Its value is rejecting tags that did *not* come from the pipeline.
+
+In particular it does **not** catch a rehearsal. Rehearsal tags are
+self-consistent too — `version.txt` at `1.10.0-rc4` reads `1.10.0-rc4` — so
+they pass the first check and are stopped only by `check-maven`, which is why
+that box should stay ticked for a manual run.
+
+Be precise about what the pair establishes: **this tag is a release tag for this
 version, and this version exists on Central**. They do not tie the published
 artifact to this commit. Nothing published carries the commit it was built from
 — the POM has `<scm>` but no `<tag>` — so a tag force-moved onto a different
