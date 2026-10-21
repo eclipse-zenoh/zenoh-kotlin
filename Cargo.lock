@@ -1921,9 +1921,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df70aa887ea86326a03ccd4ddffcad0858c5c1ade86a9b25047f0b6b27222ce2"
+checksum = "49957c13e4915599711d3f1551a21a4fb41b5180e9b9af5382c40995378db9c1"
 dependencies = [
  "if_rust_version",
  "itertools",
@@ -1941,9 +1941,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen-flat"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b61ae0f7eea879df64ed40837b4111b09084533648c71a7b5f528ec67063cb05"
+checksum = "4d5b0f89381b281ba0cbc335321b696fa988219e636701788d4f054e7991b8f8"
 dependencies = [
  "prebindgen",
  "proc-macro2",
@@ -1953,9 +1953,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen-jni"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa15d7c2b59f15249fa5fd0f97beeff2785587e6046e749c1bbcc15cc00340a9"
+checksum = "9566daa990cd9c165bb2405939bb2972123340c47f71e1f4aa2a38b17d154d85"
 dependencies = [
  "jni 0.21.1",
  "kotlin-codegen",
@@ -1969,18 +1969,18 @@ dependencies = [
 
 [[package]]
 name = "prebindgen-jni-runtime"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63e1c12ad857da45a8c6977a4b5b3395b4f53c8082239dcde925f3b964144531"
+checksum = "a86b2543b279a33a0b2b947e973e55aaf8b9ac948d19095c2641938be5db14fd"
 dependencies = [
  "jni 0.21.1",
 ]
 
 [[package]]
 name = "prebindgen-proc-macro"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4ec12eecd2811fd1395a20bdd40e3740026be0603bf2812172445fc524c98e7"
+checksum = "031bbf398c31f9a0acf400040aa92379272ac9cea40aff736a8cfde9c6c10b5c"
 dependencies = [
  "prebindgen",
  "proc-macro2",
@@ -1993,9 +1993,9 @@ dependencies = [
 
 [[package]]
 name = "prebindgen-registry"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56a3be56008ab6c8631ea5d6b0df8f7a9142134d39befe6e695679a7d618a12a"
+checksum = "241d1dacee3067d8838bfcb7b5a65bce72afac0488b486b64b2447335d42f1aa"
 dependencies = [
  "itertools",
  "prebindgen",
@@ -4003,7 +4003,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat"
 version = "1.10.1"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#9367ae23f9606073f6af92fdbe22153d54e1250f"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#1d6e415b0de8b453f2c68b43037b9d6aac51bd23"
 dependencies = [
  "android-logd-logger",
  "prebindgen",
@@ -4017,7 +4017,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat-jni"
 version = "1.10.1"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#339eec5967768869fbdb3704de06dbae28c27ce2"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#80db8b88e96f6684a6f603d0a6042a7ee07906b6"
 dependencies = [
  "jni 0.21.1",
  "konst 0.3.17",
