@@ -4003,7 +4003,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat"
 version = "1.10.1"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#df2c53b708ed0169c98bdb1d24828db1ad84f944"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat.git?branch=main#81c8d79da139568abc832fd49a0e70f38bf0fe36"
 dependencies = [
  "android-logd-logger",
  "prebindgen",
@@ -4017,7 +4017,7 @@ dependencies = [
 [[package]]
 name = "zenoh-flat-jni"
 version = "1.10.1"
-source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#5e02723b8cbf8e3bcb834df87a81a8d9d8fc1382"
+source = "git+https://github.com/eclipse-zenoh/zenoh-flat-jni.git?branch=main#d8112c41a39fa9907b9c028202c3728ae1abda68"
 dependencies = [
  "jni 0.21.1",
  "konst 0.3.17",
