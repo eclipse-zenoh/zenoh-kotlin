@@ -32,6 +32,10 @@ which covers them once for the whole stack.
 - [Building against zenoh-flat-jni source](#building-against-zenoh-flat-jni-source)
 - [Required secrets](#required-secrets)
 - [Known gaps](#known-gaps)
+- [Release checklist](#release-checklist)
+  - [Before the live release](#before-the-live-release)
+  - [After the live release](#after-the-live-release)
+  - [When merging back to main](#when-merging-back-to-main)
 
 ## What this repository publishes
 
@@ -147,17 +151,17 @@ library loading together.
 
 ### Updating the snapshot dependency
 
-On `main`, [update the JNI source pin](#building-against-zenoh-flat-jni-source).
-Read `version.txt` at that pinned
-**zenoh-flat-jni** commit and set the checked-in `gradle.properties` to:
+The JNI dependency on `main` has this form in `gradle.properties`:
 
 ```properties
 zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT
 ```
 
-For JNI base version `1.10.1`, use `1.10.1-kotlin-SNAPSHOT`. Leave this property
-alone when updating the pin within the same base version; if the base changes,
-update it in the same PR as `Cargo.lock`. The JNI publisher checks that the
+When [updating the JNI source pin](#building-against-zenoh-flat-jni-source), read
+`version.txt` at the pinned **zenoh-flat-jni** commit to determine the base.
+For base version `1.10.1`, use `1.10.1-kotlin-SNAPSHOT`. Leave this property
+alone when the base version stays the same; if it changes, update the property
+in the same PR as `Cargo.lock`. The JNI publisher checks that the
 requested base matches the pinned source before building. Leave the SDK's own
 `version.txt` unchanged for a JNI-only update.
 
@@ -181,6 +185,7 @@ the source branch or commit to release; empty means the repository's default
 branch, `main`. The Actions **Use workflow from** selector chooses the workflow
 definition to run, not the source the shared release action clones. For a patch
 release based on `release/1.10.1`, explicitly enter `branch=release/1.10.1`.
+For a live release, use the [release checklist](#release-checklist).
 
 The workflow cuts `release/<version>` for a live run or
 `release/dry-run/<version>` for a release dry run, then bumps, tags, builds and
@@ -264,6 +269,17 @@ by [source-based tests](#building-against-zenoh-flat-jni-source).
 
 ### The real release
 
+First confirm that the JNI release you will select is already on Maven Central.
+You can open its POM URL in a browser or check it from the command line:
+
+```bash
+curl -fsSI https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-flat-jni/<version>/zenoh-flat-jni-<version>.pom
+```
+
+Run a [release dry run](#release-dry-run) with uploads enabled, the intended
+source and JNI release, and a separate provisional SDK version. After that
+workflow succeeds, start the live release with:
+
 | Field | Value |
 | --- | --- |
 | `live-run` | **checked** |
@@ -285,12 +301,22 @@ input and refuses a live run if it ends in `-SNAPSHOT`. Omitting the input on
 
 ### After a release
 
-To inspect the published JVM artifact's JNI dependency from the command line:
+Confirm both SDK artifacts are available on Central and their POMs name the
+selected JNI version. The JVM POM must depend on `zenoh-flat-jni-jvm`, and the
+Android POM on `zenoh-flat-jni-android`. For example:
 
 ```bash
 curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
   | grep -A2 zenoh-flat-jni
+
+curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin-android/<version>/zenoh-kotlin-android-<version>.pom \
+  | grep -A2 zenoh-flat-jni
 ```
+
+If a GitHub release was requested, confirm it exists and its generated notes
+start at the correct previous release tag. The shared action can choose the
+wrong predecessor for a backfilled release; see
+[eclipse-zenoh/ci#470](https://github.com/eclipse-zenoh/ci/issues/470).
 
 When merging the release branch back into `main`, preserve or restore
 `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT` in `gradle.properties`
@@ -313,7 +339,7 @@ input; merging that release branch back updates `main`. The ordering is defined 
 that dies in `publish` — an unresolvable dependency, a credential problem, a
 Central outage — still leaves the release branch and the tag pushed, for a
 version that has no artifacts anywhere. zenoh-kotlin's
-[failed Release run of 2026-08-12](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/runs/31549368670)
+[failed nightly dry run of 2026-08-12](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/runs/31549368670)
 tagged and then failed to resolve `zenoh-flat-jni:1.9.0` while compiling.
 
 Nothing downstream runs, though. `publish-dokka` and `publish-github` both
@@ -555,3 +581,32 @@ repository.
   binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.
+
+## Release checklist
+
+Use the GitHub workflows and published metadata for these checks. The runtime
+tests missing from the release workflow remain listed under
+[Known gaps](#known-gaps).
+
+### Before the live release
+
+- [ ] The JNI Maven release selected in `zenoh-flat-jni-version` is already
+      [available on Central](#the-real-release).
+- [ ] A [release dry run](#release-dry-run) succeeded with the intended source
+      and JNI release, uploads enabled, and a separate provisional SDK version.
+- [ ] The live Release inputs select the intended `branch`, an explicit unused
+      SDK `version`, and the intended JNI release, with `live-run` and
+      `maven_publish` checked.
+
+### After the live release
+
+- [ ] Both SDK artifacts resolve from Central. The JVM POM names
+      `zenoh-flat-jni-jvm`; the Android POM names `zenoh-flat-jni-android`.
+      Both name the selected JNI version; see [After a release](#after-a-release).
+- [ ] If requested, the GitHub release exists and its notes start at the correct
+      previous release tag.
+
+### When merging back to main
+
+- [ ] `main` keeps `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT`,
+      using the base version of the JNI commit it pins after the merge.
