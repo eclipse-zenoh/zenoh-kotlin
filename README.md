@@ -145,7 +145,7 @@ Three ways to build. Pick by what you are doing:
 
 **The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` with the native
 library already inside it. Nothing is compiled from Rust and no toolchain is
-needed. On `main` that is `1.10.1-kotlin-SNAPSHOT`, published from this repository
+needed. On `main` that is `1.9.0-kotlin-SNAPSHOT`, published from this repository
 alongside the SDK snapshot ([CI.md](CI.md#what-publishing-uses)); a release
 names a zenoh-flat-jni release on Maven Central. Either way it is one coordinate
 in `gradle.properties`, and if it has not been published yet the other two rows

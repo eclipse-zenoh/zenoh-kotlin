@@ -167,7 +167,7 @@ the only construction that does both is to publish what it depends on:
 
 ```text
 Cargo.lock pin ──> build zenoh-flat-jni from that commit
-                   publish it as 1.10.1-kotlin-SNAPSHOT
+                   publish it as 1.9.0-kotlin-SNAPSHOT
                                    |
                                    v
                    build the SDK against that coordinate
