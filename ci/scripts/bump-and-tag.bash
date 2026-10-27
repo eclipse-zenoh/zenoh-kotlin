@@ -42,8 +42,8 @@ fi
 # workflow input: main inherits a qualified JNI snapshot, our own mutable copy
 # of zenoh-flat-jni, so omitting the input is exactly how a release would reach
 # a snapshot dependency — which the earlier input-only check did not cover.
-# A rehearsal may depend on one; that is how the SDK is exercised before the
-# binding is released at all.
+# A release dry run may depend on one to test the SDK before the binding is
+# released.
 effective_flat_jni_version=$(sed -n 's/^zenohFlatJniVersion=//p' gradle.properties | tr -d '[:space:]')
 case "$effective_flat_jni_version" in
   *-SNAPSHOT)
@@ -52,7 +52,7 @@ case "$effective_flat_jni_version" in
       echo "       Pass zenoh-flat-jni-version naming a release that is on Maven Central." >&2
       exit 1
     fi
-    echo "note: rehearsing against snapshot $effective_flat_jni_version"
+    echo "note: release dry run against snapshot $effective_flat_jni_version"
     ;;
 esac
 

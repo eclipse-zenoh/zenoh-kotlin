@@ -1,7 +1,7 @@
 # Publishing zenoh-kotlin
 
 This document describes how `zenoh-kotlin` is built, verified, and published to
-Maven Central, and how to rehearse a release without publishing one.
+Maven Central, and how to test the release process with a dry run.
 
 It describes the pipeline as it exists in this repository. Where something is
 not yet implemented or not yet exercised, it is listed under
@@ -21,8 +21,8 @@ which covers them once for the whole stack.
   - [What it does not guarantee](#what-it-does-not-guarantee)
 - [Running a release](#running-a-release)
   - [Before the first run](#before-the-first-run)
-  - [Rehearsal (dry run)](#rehearsal-dry-run)
-    - [Choosing a JNI snapshot for a rehearsal](#choosing-a-jni-snapshot-for-a-rehearsal)
+  - [Release dry run](#release-dry-run)
+    - [Choosing a JNI snapshot for a dry run](#choosing-a-jni-snapshot-for-a-dry-run)
   - [The real release](#the-real-release)
   - [After a release](#after-a-release)
   - [If a release fails](#if-a-release-fails)
@@ -185,7 +185,7 @@ definition to run, not the source the shared release action clones. For a patch
 release based on `release/1.10.1`, explicitly enter `branch=release/1.10.1`.
 
 The workflow cuts `release/<version>` for a live run or
-`release/dry-run/<version>` for a rehearsal, then bumps, tags, builds and
+`release/dry-run/<version>` for a release dry run, then bumps, tags, builds and
 publishes from that new branch. Always supply `version` explicitly. An empty
 input is accepted and replaced with `git describe` output, which can produce a
 tag such as `1.9.0-42-g07cbcc32` even for a live run. These defaults come from
@@ -197,16 +197,15 @@ are accepted and the fourth is refused:
 
 | `live-run` | `maven_publish` | What it does |
 | --- | --- | --- |
-| ✗ | ✓ | **The normal rehearsal.** Uploads `<version>-SNAPSHOT` to the mutable snapshot repository — a real signed upload, so credentials and signing are exercised |
+| ✗ | ✓ | **Release dry run.** Uploads `<version>-SNAPSHOT` to the mutable snapshot repository — a real signed upload, so credentials and signing are exercised |
 | ✗ | ✗ | Assembles both publications and their POMs, uploads nothing |
 | ✓ | ✓ | **The real release.** Permanent and immutable on Maven Central |
 | ✓ | ✗ | **Refused** by the `tag` job — it would tag a version and publish nothing |
 
-Note that `maven_publish` defaults to checked, and that a rehearsal uploading a
-snapshot is normal rather than something to avoid: the snapshot repository is
-mutable, is not on consumers' default resolution path, and is cleaned after 90
-days. A rehearsal that uploads nothing cannot tell you whether the signing key
-and credentials work, which is the half of a release most likely to fail.
+`maven_publish` defaults to checked so a dry run tests signing and uploading.
+The snapshot repository is mutable, is not on consumers' default resolution
+path, and is cleaned after 90 days. A dry run without uploads cannot verify the
+signing key and credentials.
 
 ### Before the first run
 
@@ -233,43 +232,44 @@ Before a live release, also complete these checks:
 These are manual release checks: the live publication job does not run tests
 against the Maven dependency or wait for the release branch's CI.
 
-### Rehearsal (dry run)
+### Release dry run
 
 | Field | Value |
 | --- | --- |
 | `live-run` | **unchecked** |
 | `branch` | `main`, or the maintenance branch for a patch release, e.g. `release/1.10.1` |
-| `version` | an explicit provisional SDK number reserved for this rehearsal; never an already-released number or one reserved for a live release |
+| `version` | an explicit provisional SDK number reserved for this dry run; never an already-released number or one reserved for a live release |
 | `zenoh-flat-jni-version` | empty to inherit the branch's checked-in JNI version, or an available JNI Maven release or snapshot |
 | `maven_publish` | checked to test a real signed upload; unchecked to assemble without uploading |
-| `github_release` | either — a rehearsal creates no GitHub release |
+| `github_release` | either — a dry run creates no GitHub release |
 
 The workflow prepares a dry-run release branch and applies any explicit
 `zenoh-flat-jni-version` to `gradle.properties` there, leaving `main` unchanged.
 It publishes the SDK as `<version>-SNAPSHOT` when uploads are enabled. When the
 run reaches tagging, `bump-and-tag.bash` creates and **force-pushes** the tag
 even with `LIVE_RUN=false`: its `[[ ${live_run} ]]` test accepts either nonempty
-string, `true` or `false`. A rehearsal given an already-released number can
-therefore move the real release tag onto rehearsal code. Use a fresh explicit
-number such as `1.10.2-rc1` and check existing tags before dispatching. Reuse one
+string, `true` or `false`. A dry run given an already-released number can move
+the real release tag onto the dry-run commit. Use a fresh explicit number such
+as `1.10.2-rc1` and check existing tags before dispatching. Reuse one
 only when retrying your own unpublished attempt under
 [If a release fails](#if-a-release-fails).
 
-Rehearsal tags are not cleaned up automatically. The shared action prunes old
-`release/dry-run/*` branches to retain a small history, but leaves tags such as
-`1.10.0-rc1` through `1.10.0-rc4` behind. An uploading rehearsal also runs the
-consumer smoke test described under [The snapshot publication](#the-snapshot-publication).
+Tags from dry runs are not cleaned up automatically. The shared action prunes
+old `release/dry-run/*` branches to retain a small history, but leaves tags such
+as `1.10.0-rc1` through `1.10.0-rc4` behind. A dry run with uploads enabled also
+runs the consumer smoke test described under
+[The snapshot publication](#the-snapshot-publication).
 
 To create documentation or a GitHub release for an SDK already on Central, use the
 [recovery workflows](#if-a-step-after-maven-central-fails) instead of running
 Release again.
 
-#### Choosing a JNI snapshot for a rehearsal
+#### Choosing a JNI snapshot for a dry run
 
-A rehearsal can run before the next JNI release exists on Maven Central,
-provided its JNI snapshot has already been published. For a rehearsal from
+A dry run can run before the next JNI release exists on Maven Central,
+provided its JNI snapshot has already been published. For a dry run from
 `main`, leave `zenoh-flat-jni-version` empty to use the JNI snapshot named in
-`gradle.properties`. The release rehearsal does not build or publish that
+`gradle.properties`. The dry run does not build or publish that
 package; the [main CI pipeline](#the-snapshot-publication) does.
 
 To use another JNI snapshot, find an available version:
@@ -278,8 +278,8 @@ To use another JNI snapshot, find an available version:
 curl -s https://central.sonatype.com/repository/maven-snapshots/org/eclipse/zenoh/zenoh-flat-jni/maven-metadata.xml
 ```
 
-Enter the chosen version in `zenoh-flat-jni-version` with the other rehearsal
-inputs above. To try a published snapshot in an individual Maven-based local
+Enter the chosen version in `zenoh-flat-jni-version` with the other inputs
+above. To try a published snapshot in an individual Maven-based local
 build, override the Gradle property, for example:
 
 ```bash
@@ -369,8 +369,8 @@ enough for Central to accept the version. Maven Central is immutable: the
 version cannot be republished, and re-running would force-move the tag onto a
 new commit while Central keeps the artifact built from the old one — the tag and
 the published artifact would then describe different code. Move to a new version
-instead. This is also why the release number for a rehearsal must never be one
-you intend to release.
+instead. This is also why a dry run must never use a number reserved for a
+permanent release.
 
 If a version reached Central but produced no GitHub release, that is the
 recovery case for
@@ -392,9 +392,9 @@ point must therefore be recoverable on its own, and each piece is:
 | GitHub release | `publish-github` | [Release (GitHub)](#creating-a-github-release-on-its-own) |
 | `gh-pages` documentation | `publish-dokka` | **Publish (Dokka)**, `live-run` checked and `branch` set to `refs/tags/<version>` |
 
-Both recovery workflows need `live-run` **checked** — unchecked, each builds and
-verifies but changes nothing, which is also how you rehearse one. Give
-`publish-dokka` the released tag as `branch`, written in full as
+Both recovery workflows need `live-run` **checked** to publish. Unchecked, each
+builds and verifies without publishing, allowing a dry run. Give `publish-dokka`
+the released tag as `branch`, written in full as
 `refs/tags/<version>`: the release branch can move afterwards, the tag cannot,
 and a bare `1.10.0` would resolve to a branch of that name before the tag.
 
@@ -424,8 +424,8 @@ Before creating the release, the workflow also checks:
 | `version.txt` at the tag equals the requested `version` | rejects a tag pointing at a commit naming a different SDK version |
 | `check-maven` | confirms the SDK version was published to Maven Central |
 
-A rehearsal tag also passes the version check, so keep `check-maven` enabled
-for a manual run. The normal release pipeline disables it only because its
+A tag from a dry run also passes the version check, so keep `check-maven`
+enabled for a manual run. The normal release pipeline disables it only because its
 successful Maven publication job supplies that evidence already.
 
 These checks establish that the tag names this version and that the version
@@ -462,8 +462,8 @@ release notifies release watchers. Verify the result with the
    `zenohFlatJniVersion` in `gradle.properties`, commits and tags.
 2. **`publish`** — assembles both SDK artifacts and uploads them when
    `maven_publish` is enabled. Live releases use one staging repository;
-   rehearsals upload to the snapshot repository. Native libraries come from
-   the selected JNI Maven dependency.
+   dry runs upload to the snapshot repository. Native libraries come from the
+   selected JNI Maven dependency.
 3. **`publish-dokka`** — regenerates the API documentation and, on a live run
    only, deploys it to the `gh-pages` site README.md links to. The javadoc JAR
    attached to the Maven publications does not serve that site; this job does.
@@ -574,8 +574,8 @@ repository.
   without waiting for the release branch's CI result. Before releasing,
   [check that the commits match and run tests against the Maven package](#before-the-first-run);
   neither check is automated.
-- **The consumer smoke test covers snapshot uploads, including rehearsals.**
-  A rehearsal that uploads a candidate exercises its SDK package and transitive
+- **The consumer smoke test covers snapshot uploads, including release dry runs.**
+  A dry run that uploads a candidate exercises its SDK package and transitive
   JNI dependency. The live-release staging upload has no equivalent consumer
   test before Central accepts it, and the SDK's full test suite is not run by
   the publication job.
@@ -596,8 +596,8 @@ repository.
       source, and `version` explicitly names a number not already accepted by
       Central.
 - [ ] `version.txt` and the intended tag agree.
-- [ ] A rehearsal completed under a fresh version, with publication enabled at
-      least once so signing and credentials were exercised.
+- [ ] A release dry run completed under a fresh version, with publication
+      enabled at least once so signing and credentials were exercised.
 - [ ] `useLocalJni` is off — the release resolves from Central.
 - [ ] The published POM references a released `zenoh-flat-jni`, not a snapshot.
 - [ ] For an Android release: the Android POM references
