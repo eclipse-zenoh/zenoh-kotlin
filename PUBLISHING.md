@@ -7,7 +7,7 @@ It describes the pipeline as it exists in this repository. Where something is
 not yet implemented or not yet exercised, it is listed under
 [Known gaps](#known-gaps) rather than described as if it worked.
 
-If you just need to run a release, go to [Running a release](#running-a-release).
+To run a release, follow the [release checklist](#release-checklist).
 For the JVM publishing concepts — coordinates, staging, signing — see
 [zenoh-flat-jni's PUBLISHING.md](https://github.com/eclipse-zenoh/zenoh-flat-jni/blob/main/PUBLISHING.md#background-if-you-do-not-work-in-the-jvm-ecosystem),
 which covers them once for the whole stack.
@@ -34,6 +34,7 @@ which covers them once for the whole stack.
 - [Known gaps](#known-gaps)
 - [Release checklist](#release-checklist)
   - [Before the live release](#before-the-live-release)
+  - [Run the live release](#run-the-live-release)
   - [After the live release](#after-the-live-release)
   - [When merging back to main](#when-merging-back-to-main)
 
@@ -584,29 +585,65 @@ repository.
 
 ## Release checklist
 
-Use the GitHub workflows and published metadata for these checks. The runtime
-tests missing from the release workflow remain listed under
+Follow these steps in order. All builds and publication run through GitHub
+Actions; no local test run is required. The runtime tests missing from the
+release workflow remain listed under
 [Known gaps](#known-gaps).
 
 ### Before the live release
 
-- [ ] The JNI Maven release selected in `zenoh-flat-jni-version` is already
-      [available on Central](#the-real-release).
-- [ ] A [release dry run](#release-dry-run) succeeded with the intended source
-      and JNI release, `maven_publish` checked, and a separate provisional SDK version.
-- [ ] The live Release inputs select the intended `branch`, an explicit unused
-      SDK `version`, and the intended JNI release, with `live-run` and
-      `maven_publish` checked.
+- [ ] Choose the source `branch`: `main`, or the maintenance branch for a patch
+      release. Choose the SDK release number and the JNI Maven release to use.
+      Confirm the JNI release is already [available on Central](#the-real-release).
+- [ ] Choose a separate, unused provisional SDK number for the dry run, such as
+      `1.10.2-rc1`. Check [existing tags](https://github.com/eclipse-zenoh/zenoh-kotlin/tags)
+      and do not use a number reserved for a live release: the dry run also
+      pushes a tag. See [Release dry run](#release-dry-run).
+- [ ] Open the [Release workflow](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml)
+      and expand **Run workflow**. Select `main` under **Use workflow from**.
+      Set `branch` to the chosen source, `version` to the provisional number,
+      and `zenoh-flat-jni-version` to the chosen JNI release. Leave `live-run`
+      unchecked, check `maven_publish`, and leave `github_release` unchecked.
+      The [workflow selector and source branch](#running-a-release) are separate settings.
+- [ ] Click **Run workflow** and wait for the dry run to succeed, including
+      **Consume the published snapshot**. If it fails, follow
+      [If a release fails](#if-a-release-fails) before proceeding.
+
+### Run the live release
+
+- [ ] Confirm the SDK release number is unused on Maven Central and has no
+      existing release tag. Never reuse the dry-run number. See
+      [The real release](#the-real-release).
+- [ ] Open the [Release workflow](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/workflows/release.yml)
+      and expand **Run workflow** again, with **Use workflow from** set to `main`.
+      Set `branch` to the same source used for the dry run, `version` to the
+      actual SDK release number, and `zenoh-flat-jni-version` to the same JNI
+      release. Check `live-run`, `maven_publish`, and `github_release`.
+      See the [release input table](#the-real-release) for details.
+- [ ] Click **Run workflow** and wait for Maven publication, documentation
+      deployment, and GitHub release creation to succeed. If a job fails, use
+      [If a release fails](#if-a-release-fails) or, once Central has accepted
+      the version, [recovery after Maven Central](#if-a-step-after-maven-central-fails).
+      Do not restart the full release after Central accepts the version.
 
 ### After the live release
 
-- [ ] Both SDK artifacts resolve from Central. The JVM POM names
-      `zenoh-flat-jni-jvm`; the Android POM names `zenoh-flat-jni-android`.
+- [ ] Confirm both SDK artifacts resolve from Central. The JVM POM must name
+      `zenoh-flat-jni-jvm`; the Android POM must name `zenoh-flat-jni-android`.
       Both name the selected JNI version; see [After a release](#after-a-release).
-- [ ] If requested, the GitHub release exists and its notes start at the correct
-      previous release tag.
+- [ ] Check the [GitHub release](https://github.com/eclipse-zenoh/zenoh-kotlin/releases)
+      exists and its notes start at the correct previous release tag. See
+      [After a release](#after-a-release) for the known notes-range issue and
+      [Creating a GitHub release on its own](#creating-a-github-release-on-its-own)
+      for corrections or recovery.
 
 ### When merging back to main
 
-- [ ] `main` keeps `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT`,
-      using the base version of the JNI commit it pins after the merge.
+- [ ] Open a PR merging `release/<version>` back into `main`. In that PR,
+      preserve or restore
+      `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT` in
+      `gradle.properties`, using the base version of the JNI commit that `main`
+      will pin after the merge. Follow
+      [Updating the snapshot dependency](#updating-the-snapshot-dependency).
+- [ ] Merge the PR after CI passes, then confirm `main`'s
+      [snapshot publication](#the-snapshot-publication) succeeds.
