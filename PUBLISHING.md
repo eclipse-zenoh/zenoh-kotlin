@@ -74,12 +74,6 @@ tasks instead of using `publishAllPublicationsTo…`: the unpublished root
 publication carries the same `zenoh-kotlin` artifactId as the JVM one, and
 publishing both would upload two different things to one coordinate.
 
-Building the SDK artifacts requires no native cross-compilation. During
-snapshot CI, zenoh-flat-jni's workflow cross-compiles the native libraries if
-the published JNI `-kotlin-SNAPSHOT` package is missing or was built from a
-different commit than `Cargo.lock` pins. See
-[The snapshot publication](#the-snapshot-publication).
-
 ## Relationship to zenoh-flat-jni
 
 zenoh-kotlin uses the Kotlin bindings and native libraries packaged in
