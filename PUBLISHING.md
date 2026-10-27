@@ -42,6 +42,9 @@ org.eclipse.zenoh:zenoh-kotlin:<version>          the JVM artifact
 org.eclipse.zenoh:zenoh-kotlin-android:<version>  the Android artifact
 ```
 
+`<version>` comes from this repository's `version.txt`; snapshot uploads append
+`-SNAPSHOT` to it for both artifacts.
+
 Both are **pure JVM/Kotlin**. Neither carries Rust or a native library: those
 arrive inside the compiled zenoh-flat-jni artifacts, which a consumer of
 `zenoh-kotlin` gets transitively.
@@ -98,17 +101,6 @@ The copy is named `<JNI base version>-kotlin-SNAPSHOT`. `-SNAPSHOT` allows
 successive development builds to replace it; `-kotlin` prevents collisions with
 snapshots published by zenoh-flat-jni or zenoh-java, which may pin different
 commits. The base comes from the pinned JNI source's `version.txt`.
-
-The SDK's own `version.txt` sets its publication version. For example, `1.10.1`
-produces `org.eclipse.zenoh:zenoh-kotlin:1.10.1` and
-`org.eclipse.zenoh:zenoh-kotlin-android:1.10.1` for a release. Snapshot CI appends
-`-SNAPSHOT` to that number for both SDK packages. This SDK version does not
-select or change the JNI dependency version.
-
-A permanent SDK release instead depends on a JNI release already on Maven
-Central. Both are immutable: a snapshot dependency could change or disappear,
-and an SDK published against a missing JNI version would need a new release to
-repair it.
 
 ## The snapshot publication
 
