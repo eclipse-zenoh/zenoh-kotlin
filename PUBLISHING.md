@@ -97,8 +97,13 @@ bindings match the tested source, independently of upstream JNI publications.
 The copy is named `<JNI base version>-kotlin-SNAPSHOT`. `-SNAPSHOT` allows
 successive development builds to replace it; `-kotlin` prevents collisions with
 snapshots published by zenoh-flat-jni or zenoh-java, which may pin different
-commits. The base comes from the pinned JNI source's `version.txt`. The SDK's
-own `version.txt` names the zenoh-kotlin artifact separately.
+commits. The base comes from the pinned JNI source's `version.txt`.
+
+The SDK's own `version.txt` sets its publication version. For example, `1.10.1`
+produces `org.eclipse.zenoh:zenoh-kotlin:1.10.1` and
+`org.eclipse.zenoh:zenoh-kotlin-android:1.10.1` for a release. Snapshot CI appends
+`-SNAPSHOT` to that number for both SDK packages. This SDK version does not
+select or change the JNI dependency version.
 
 A permanent SDK release instead depends on a JNI release already on Maven
 Central. Both are immutable: a snapshot dependency could change or disappear,
