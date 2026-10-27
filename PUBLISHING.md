@@ -62,9 +62,9 @@ matching each target:
 | `zenoh-kotlin` | `zenoh-flat-jni-jvm` | six desktop targets |
 | `zenoh-kotlin-android` | `zenoh-flat-jni-android` | four Android ABIs, as `jni/<abi>/` |
 
-Nothing selects between them by hand, so a publication cannot name the wrong one.
-And because one Gradle invocation produces both publications correctly, they are
-uploaded into a single staging repository and released together.
+Gradle selects the matching JNI variant for each SDK target. For a permanent
+release, both SDK publications are uploaded in one Gradle invocation to a
+single staging repository and released together.
 
 That automatic resolution applies to the *dependency*, not to this SDK itself.
 zenoh-kotlin keeps the two plain coordinates above: the release publishes the
@@ -104,10 +104,11 @@ commits. The base comes from the pinned JNI source's `version.txt`.
 
 ## The snapshot publication
 
-After the source-based tests pass, every merge to `main` runs the publication
-test described [above](#relationship-to-zenoh-flat-jni). It uploads to the
-[Central snapshot repository](https://central.sonatype.com/repository/maven-snapshots/).
-Pull requests and other branches run tests without publishing.
+Every merge to `main` first runs the SDK tests against the pinned JNI source.
+If they pass, CI uploads an SDK snapshot to the
+[Central snapshot repository](https://central.sonatype.com/repository/maven-snapshots/)
+and tests the downloaded package in a separate consumer build. Pull requests and
+other branches run tests without publishing.
 
 The publication covers five coordinates:
 
@@ -221,9 +222,10 @@ The workflow prepares a dry-run release branch and applies any explicit
 `zenoh-flat-jni-version` to `gradle.properties` there, leaving `main` unchanged.
 It publishes the SDK as `<version>-SNAPSHOT` when uploads are enabled and still
 pushes a tag, so use a provisional number such as `1.10.2-rc1` rather than the
-number you intend to release. To create documentation or a GitHub release for an SDK already on
-Central, use the [recovery workflows](#if-a-step-after-maven-central-fails)
-instead of running Release again.
+number you intend to release. To create documentation or a GitHub release for
+an SDK already on Central, use the
+[recovery workflows](#if-a-step-after-maven-central-fails) instead of running
+Release again.
 
 #### Choosing a JNI snapshot for a rehearsal
 
@@ -337,7 +339,7 @@ point must therefore be recoverable on its own, and each piece is:
 | --- | --- | --- |
 | Maven Central coordinates | `publish` | nothing to do — immutable and done |
 | Release branch and tag | `tag` | already pushed, before `publish` ran |
-| GitHub release | `publish-github` | **Release (GitHub)**, [below](#creating-a-github-release-on-its-own) |
+| GitHub release | `publish-github` | [Release (GitHub)](#creating-a-github-release-on-its-own) |
 | `gh-pages` documentation | `publish-dokka` | **Publish (Dokka)**, `live-run` checked and `branch` set to `refs/tags/<version>` |
 
 Both recovery workflows need `live-run` **checked** — unchecked, each builds and
@@ -408,10 +410,10 @@ release notifies release watchers. Verify the result with the
 1. **`tag`** — `eclipse-zenoh/ci/create-release-branch` cuts the release branch,
    then `ci/scripts/bump-and-tag.bash` writes `version.txt`, optionally rewrites
    `zenohFlatJniVersion` in `gradle.properties`, commits and tags.
-2. **`publish`** — compiles Kotlin and publishes both artifacts in one Gradle
-   invocation, so they share one staging repository and are released together.
-   No native toolchain is installed and no Rust is built; both would be
-   pointless here.
+2. **`publish`** — assembles both SDK artifacts and uploads them when
+   `maven_publish` is enabled. Live releases use one staging repository;
+   rehearsals upload to the snapshot repository. Native libraries come from
+   the selected JNI Maven dependency.
 3. **`publish-dokka`** — regenerates the API documentation and, on a live run
    only, deploys it to the `gh-pages` site README.md links to. The javadoc JAR
    attached to the Maven publications does not serve that site; this job does.
@@ -431,10 +433,10 @@ then attaches any `*-standalone.zip` / `*-debian.zip` build archives. This
 repository produces none, so that half is inert and every release it has made
 here carries notes and GitHub's own source archives only.
 
-Two upstream defects are known and tracked in
-[eclipse-zenoh/ci#470](https://github.com/eclipse-zenoh/ci/issues/470). Neither
-affects a normal release, and both are left upstream deliberately — a fix there
-reaches every Zenoh repository, whereas working around them here would fix one.
+The shared release action's unnecessary TOML-tool installation and incorrect
+notes range for backfilled releases are tracked in
+[eclipse-zenoh/ci#470](https://github.com/eclipse-zenoh/ci/issues/470). These
+operational fixes belong upstream so they reach every Zenoh repository.
 
 Publishing goes through `io.github.gradle-nexus.publish-plugin` to the Central
 Portal, signed with the organization GPG key, exactly as in zenoh-flat-jni.
@@ -474,7 +476,7 @@ permanent SDK release uses a released JNI dependency.
 A build can be pointed at zenoh-flat-jni's *source* through a Gradle composite
 build, which is what CI and local development do — see
 [Where the native library comes from](README.md#where-the-native-library-comes-from) in the README,
-and [CI.md](CI.md) for the commit pin behind it.
+and [The pin](CI.md#the-pin) for how the source commit is selected.
 
 To adopt new JNI code, let the bot update `Cargo.lock` or
 [move the pin by hand](CI.md#moving-the-pin-by-hand). Keep the Git dependency in
