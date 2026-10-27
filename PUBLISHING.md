@@ -223,8 +223,8 @@ run reaches tagging, `bump-and-tag.bash` creates and **force-pushes** the tag
 even with `LIVE_RUN=false`: its `[[ ${live_run} ]]` test accepts either nonempty
 string, `true` or `false`. A dry run given an already-released number can move
 the real release tag onto the dry-run commit. Use a fresh explicit number such
-as `1.10.2-rc1`. Reuse a version only when retrying your own unpublished
-attempt under
+as `1.10.2-rc1` and check existing tags before dispatching. Reuse a version only
+when retrying your own unpublished attempt under
 [If a release fails](#if-a-release-fails).
 
 Tags from dry runs are not cleaned up automatically. The shared action prunes
@@ -245,8 +245,22 @@ provided its JNI snapshot has already been published. For a dry run from
 `gradle.properties`. The dry run does not build or publish that
 package; the [main CI pipeline](#the-snapshot-publication) does.
 
-To use another published JNI snapshot, enter its Maven version in the
-`zenoh-flat-jni-version` workflow input.
+To use another JNI snapshot, find an available version:
+
+```bash
+curl -s https://central.sonatype.com/repository/maven-snapshots/org/eclipse/zenoh/zenoh-flat-jni/maven-metadata.xml
+```
+
+Enter the chosen version in the `zenoh-flat-jni-version` workflow input.
+For an optional local build using a published snapshot, override the Gradle
+property, for example:
+
+```bash
+./gradlew build -PzenohFlatJniVersion=1.10.1-kotlin-SNAPSHOT
+```
+
+That override changes neither the checked-in property nor the source pin used
+by [source-based tests](#building-against-zenoh-flat-jni-source).
 
 ### The real release
 
@@ -270,6 +284,13 @@ input and refuses a live run if it ends in `-SNAPSHOT`. Omitting the input on
 `main` therefore does not bypass the check.
 
 ### After a release
+
+To inspect the published JVM artifact's JNI dependency from the command line:
+
+```bash
+curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
+  | grep -A2 zenoh-flat-jni
+```
 
 When merging the release branch back into `main`, preserve or restore
 `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT` in `gradle.properties`
@@ -394,6 +415,12 @@ If the Maven check fails, the workflow distinguishes these cases:
 The documentation deploy can be repeated. The GitHub workflow creates a
 release and fails if one already exists. Edit an existing release on its GitHub
 page, or delete it there before running the recovery workflow again.
+The equivalent GitHub CLI commands are:
+
+```bash
+gh release edit <version> --repo eclipse-zenoh/zenoh-kotlin --notes-file notes.md
+gh release delete <version> --repo eclipse-zenoh/zenoh-kotlin   # then re-run
+```
 
 Deleting the GitHub release leaves its Git tag in place. Publishing a GitHub
 release notifies release watchers.
