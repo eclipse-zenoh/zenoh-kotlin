@@ -223,7 +223,7 @@ signing key and credentials.
 
 The workflow prepares a dry-run release branch and applies any explicit
 `zenoh-flat-jni-version` to `gradle.properties` there, leaving `main` unchanged.
-It publishes the SDK as `<version>-SNAPSHOT` when uploads are enabled. When the
+It publishes the SDK as `<version>-SNAPSHOT` when `maven_publish` is checked. When the
 run reaches tagging, `bump-and-tag.bash` creates and **force-pushes** the tag
 even with `LIVE_RUN=false`: its `[[ ${live_run} ]]` test accepts either nonempty
 string, `true` or `false`. A dry run given an already-released number can move
@@ -234,7 +234,7 @@ when retrying your own unpublished attempt under
 
 Tags from dry runs are not cleaned up automatically. The shared action prunes
 old `release/dry-run/*` branches to retain a small history, but leaves tags such
-as `1.10.0-rc1` through `1.10.0-rc4` behind. A dry run with uploads enabled also
+as `1.10.0-rc1` through `1.10.0-rc4` behind. A dry run with `maven_publish` checked also
 runs the consumer smoke test described under
 [The snapshot publication](#the-snapshot-publication).
 
@@ -276,7 +276,7 @@ You can open its POM URL in a browser or check it from the command line:
 curl -fsSI https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-flat-jni/<version>/zenoh-flat-jni-<version>.pom
 ```
 
-Run a [release dry run](#release-dry-run) with uploads enabled, the intended
+Run a [release dry run](#release-dry-run) with `maven_publish` checked, the intended
 source and JNI release, and a separate provisional SDK version. After that
 workflow succeeds, start the live release with:
 
@@ -459,14 +459,14 @@ release notifies release watchers.
    then `ci/scripts/bump-and-tag.bash` writes `version.txt`, optionally rewrites
    `zenohFlatJniVersion` in `gradle.properties`, commits and tags.
 2. **`publish`** — assembles both SDK artifacts and uploads them when
-   `maven_publish` is enabled. Live releases use one staging repository;
+   `maven_publish` is checked. Live releases use one staging repository;
    dry runs upload to the snapshot repository. Native libraries come from the
    selected JNI Maven dependency.
 3. **`publish-dokka`** — regenerates the API documentation and, on a live run
    only, deploys it to the `gh-pages` site README.md links to. The javadoc JAR
    attached to the Maven publications does not serve that site; this job does.
 4. **`publish-github`** — creates the GitHub release from the tag, on a live run
-   only, and only when `maven_publish` was on. It calls `release-github.yml`,
+   only, and only when `maven_publish` was checked. It calls `release-github.yml`,
    which is **also dispatchable on its own** — see [Creating a GitHub release on
    its own](#creating-a-github-release-on-its-own).
 
@@ -593,7 +593,7 @@ tests missing from the release workflow remain listed under
 - [ ] The JNI Maven release selected in `zenoh-flat-jni-version` is already
       [available on Central](#the-real-release).
 - [ ] A [release dry run](#release-dry-run) succeeded with the intended source
-      and JNI release, uploads enabled, and a separate provisional SDK version.
+      and JNI release, `maven_publish` checked, and a separate provisional SDK version.
 - [ ] The live Release inputs select the intended `branch`, an explicit unused
       SDK `version`, and the intended JNI release, with `live-run` and
       `maven_publish` checked.
