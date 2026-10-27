@@ -124,12 +124,12 @@ with the SDK; its purpose is to express the source dependency in a form the
 shared update machinery understands. See [CI.md](CI.md#lockfile-synchronization)
 for how the bot advances it.
 
-To adopt new JNI code, let the bot update that pin or
-[move it by hand](CI.md#moving-the-pin-by-hand). CI then builds the pinned JNI
-commit from source with `-PuseLocalJni=true` and tests the SDK against it. The
-source pin and the Maven version now serve two stages of the same process:
-the pin chooses the code to test, while the Maven version tells consumers where
-to get the compiled bindings.
+To test the SDK against new JNI code, let the bot update that pin or
+[move it by hand](CI.md#moving-the-pin-by-hand). CI builds the pinned JNI commit
+from source and tests the SDK against it with
+`./gradlew jvmTest -PuseLocalJni=true`; run the same command to test it locally.
+The JNI changes need no Maven publication at this stage: Gradle builds the
+bindings and native library from the selected source commit.
 
 To let people try that development version through Maven, we must make those
 same bindings available as a package. Our snapshot pipeline therefore first
