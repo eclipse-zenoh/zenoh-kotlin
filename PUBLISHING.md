@@ -210,27 +210,19 @@ signing key and credentials.
 ### Before the first run
 
 The [required secrets](#required-secrets) must be available to the workflows.
-Before a live release, also complete these checks:
 
-- **The zenoh-flat-jni version must already be on Maven Central** for a live
-  run. Fetch its POM before starting:
+Before a live release, test the SDK source you intend to release against the
+JNI Maven release you will select in `zenoh-flat-jni-version`. Run without a
+local JNI directory or Cargo path override. For JNI release `1.10.1`, use:
 
-  ```bash
-  curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-flat-jni/<version>/zenoh-flat-jni-<version>.pom
-  ```
+```bash
+./gradlew jvmTest -PuseLocalJni=false -PzenohFlatJniVersion=1.10.1
+```
 
-- On the chosen source branch, compare the POM's `zenoh.flatJniCommit` property
-  with the zenoh-flat-jni commit in `Cargo.lock`. If they differ, align the pin
-  with the JNI release and rerun CI, or choose a matching JNI release.
-- Test against that Maven package too, with no local JNI directory or Cargo
-  path override. For JNI release `1.10.1`, run:
-
-  ```bash
-  ./gradlew jvmTest -PuseLocalJni=false -PzenohFlatJniVersion=1.10.1
-  ```
-
-These are manual release checks: the live publication job does not run tests
-against the Maven dependency or wait for the release branch's CI.
+This downloads the selected JNI package and tests the SDK against it, checking
+both availability and runtime compatibility. Run it before dispatching Release:
+the publication job does not run these tests or wait for the release branch's
+CI.
 
 ### Release dry run
 
@@ -312,11 +304,11 @@ input and refuses a live run if it ends in `-SNAPSHOT`. Omitting the input on
 
 ### After a release
 
-Confirm the coordinates resolve, then verify the dependency is right — the POM
-must reference a real `zenoh-flat-jni` release:
+Confirm both SDK coordinates resolve and their POMs name the JNI version
+selected for the release. For the JVM artifact:
 
 ```bash
-curl -s https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
+curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
   | grep -A2 zenoh-flat-jni
 ```
 
@@ -569,11 +561,12 @@ repository.
 - **A live release can publish the SDK without testing the JNI package users
   will download.** CI builds JNI from the source commit in `Cargo.lock` and
   tests the SDK against it. The release job instead downloads the selected JNI
-  Maven package and compiles the SDK against it, but runs no tests. That package
-  may contain different code from the source CI tested. Publication also starts
-  without waiting for the release branch's CI result. Before releasing,
-  [check that the commits match and run tests against the Maven package](#before-the-first-run);
-  neither check is automated.
+  Maven package and compiles the SDK against it, but runs no tests. Passing
+  source-based CI therefore does not establish that the selected Maven package
+  works with the SDK. Publication also starts without waiting for the release
+  branch's CI result. Before releasing,
+  [run the SDK tests against the selected Maven package](#before-the-first-run);
+  this test is not automated by the release workflow.
 - **The consumer smoke test covers snapshot uploads, including release dry runs.**
   A dry run that uploads a candidate exercises its SDK package and transitive
   JNI dependency. The live-release staging upload has no equivalent consumer
@@ -587,22 +580,16 @@ repository.
 
 ## Release checklist
 
-- [ ] The `zenoh-flat-jni` version to build against is on Maven Central.
-- [ ] Its POM's `zenoh.flatJniCommit` matches the JNI commit pinned in the
-      chosen source branch's `Cargo.lock`.
-- [ ] SDK tests passed against that Maven release with composite substitution
-      disabled.
+- [ ] SDK tests passed on the intended release source against the selected
+      JNI Maven release, with composite substitution disabled.
 - [ ] The Release workflow's `branch` input explicitly selects the intended
       source, and `version` explicitly names a number not already accepted by
       Central.
-- [ ] `version.txt` and the intended tag agree.
-- [ ] A release dry run completed under a fresh version, with publication
-      enabled at least once so signing and credentials were exercised.
-- [ ] `useLocalJni` is off — the release resolves from Central.
-- [ ] The published POM references a released `zenoh-flat-jni`, not a snapshot.
-- [ ] For an Android release: the Android POM references
-      `zenoh-flat-jni-android`, not the desktop coordinate.
-- [ ] The released coordinates resolve from Maven Central.
-- [ ] The GitHub release exists and its notes start at the previous release.
+- [ ] A release dry run passed using the intended source and selected JNI
+      Maven release, with a fresh SDK version and uploads enabled.
+- [ ] Both published SDK coordinates resolve from Maven Central and their
+      POMs name the selected JNI version.
+- [ ] If `github_release` was enabled, the GitHub release exists and its notes
+      start at the previous release.
 - [ ] When merging the release branch back into `main`, preserve or restore
       `zenohFlatJniVersion=<pinned JNI base version>-kotlin-SNAPSHOT` in that merge.
