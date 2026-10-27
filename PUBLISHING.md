@@ -104,7 +104,8 @@ commits. The base comes from the pinned JNI source's `version.txt`.
 
 ## The snapshot publication
 
-Every merge to `main` first runs the SDK tests against the pinned JNI source.
+Every merge to `main`, and a manual CI dispatch on `main`, first runs the SDK
+tests against the pinned JNI source.
 If they pass, CI uploads an SDK snapshot to the
 [Central snapshot repository](https://central.sonatype.com/repository/maven-snapshots/)
 and tests the downloaded package in a separate consumer build. Pull requests and
@@ -177,9 +178,18 @@ which conflicts with the fixed names above.
 
 ## Running a release
 
-Run the **Release** workflow from the Actions tab, from `main` or a release
-branch. The workflow creates the release branch, bumps the version, tags it,
-builds and publishes.
+Run the **Release** workflow from the Actions tab. Its `branch` input selects
+the source branch or commit to release; empty means the repository's default
+branch, `main`. The Actions **Use workflow from** selector chooses the workflow
+definition to run, not the source the shared release action clones. For a patch
+release based on `release/1.10.1`, explicitly enter `branch=release/1.10.1`.
+
+The workflow cuts `release/<version>` for a live run or
+`release/dry-run/<version>` for a rehearsal, then bumps, tags, builds and
+publishes from that new branch. Always supply `version` explicitly. An empty
+input is accepted and replaced with `git describe` output, which can produce a
+tag such as `1.9.0-42-g07cbcc32` even for a live run. These defaults come from
+the shared [create-release-branch action](https://github.com/eclipse-zenoh/ci/blob/main/src/create-release-branch.ts).
 
 Two checkboxes decide what it does. `live-run` chooses what "publish" *means*;
 `maven_publish` chooses whether the upload happens at all. Three combinations
@@ -200,30 +210,57 @@ and credentials work, which is the half of a release most likely to fail.
 
 ### Before the first run
 
-- The [required secrets](#required-secrets) must be available to the workflows.
+The [required secrets](#required-secrets) must be available to the workflows.
+Before a live release, also complete these checks:
+
 - **The zenoh-flat-jni version must already be on Maven Central** for a live
-  run. Check before starting:
+  run. Fetch its POM before starting:
 
   ```bash
-  curl -sfI https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-flat-jni/<version>/zenoh-flat-jni-<version>.pom
+  curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-flat-jni/<version>/zenoh-flat-jni-<version>.pom
   ```
+
+- On the chosen source branch, compare the POM's `zenoh.flatJniCommit` property
+  with the zenoh-flat-jni commit in `Cargo.lock`. If they differ, align the pin
+  with the JNI release and rerun CI, or choose a matching JNI release.
+- Test against that Maven package too, with no local JNI directory or Cargo
+  path override. For JNI release `1.10.1`, run:
+
+  ```bash
+  ./gradlew jvmTest -PuseLocalJni=false -PzenohFlatJniVersion=1.10.1
+  ```
+
+These are manual release checks: the live publication job does not run tests
+against the Maven dependency or wait for the release branch's CI.
 
 ### Rehearsal (dry run)
 
 | Field | Value |
 | --- | --- |
 | `live-run` | **unchecked** |
-| `version` | a fresh provisional SDK number, not one intended for a permanent release |
+| `branch` | the source branch or commit; set `main` explicitly, or a maintenance branch such as `release/1.10.1` |
+| `version` | an explicit provisional SDK number reserved for this rehearsal; never an already-released number or one reserved for a live release |
 | `zenoh-flat-jni-version` | empty to inherit the branch's checked-in JNI version, or an available JNI Maven release or snapshot |
 | `maven_publish` | checked to test a real signed upload; unchecked to assemble without uploading |
 | `github_release` | either — a rehearsal creates no GitHub release |
 
 The workflow prepares a dry-run release branch and applies any explicit
 `zenoh-flat-jni-version` to `gradle.properties` there, leaving `main` unchanged.
-It publishes the SDK as `<version>-SNAPSHOT` when uploads are enabled and still
-pushes a tag, so use a provisional number such as `1.10.2-rc1` rather than the
-number you intend to release. To create documentation or a GitHub release for
-an SDK already on Central, use the
+It publishes the SDK as `<version>-SNAPSHOT` when uploads are enabled. When the
+run reaches tagging, `bump-and-tag.bash` creates and **force-pushes** the tag
+even with `LIVE_RUN=false`: its `[[ ${live_run} ]]` test accepts either nonempty
+string, `true` or `false`. A rehearsal given an already-released number can
+therefore move the real release tag onto rehearsal code. Use a fresh explicit
+number such as `1.10.2-rc1` and check existing tags before dispatching. Reuse one
+only when retrying your own unpublished attempt under
+[If a release fails](#if-a-release-fails).
+
+Rehearsal tags are not cleaned up automatically. The shared action prunes old
+`release/dry-run/*` branches to retain a small history, but leaves tags such as
+`1.10.0-rc1` through `1.10.0-rc4` behind. An uploading rehearsal also runs the
+consumer smoke test described under [The snapshot publication](#the-snapshot-publication).
+
+To create documentation or a GitHub release for an SDK already on Central, use the
 [recovery workflows](#if-a-step-after-maven-central-fails) instead of running
 Release again.
 
@@ -257,7 +294,8 @@ by [source-based tests](#building-against-zenoh-flat-jni-source).
 | Field | Value |
 | --- | --- |
 | `live-run` | **checked** |
-| `version` | the release number |
+| `branch` | the source branch or commit; set `main` explicitly, or the maintenance branch being released |
+| `version` | the explicit release number; never leave empty or reuse a version already accepted by Central |
 | `zenoh-flat-jni-version` | the zenoh-flat-jni release to build against — **must already be on Central** |
 | `maven_publish` | checked — the only accepted value on a live run |
 | `github_release` | checked |
@@ -289,13 +327,22 @@ after the merge, following [Updating the snapshot dependency](#updating-the-snap
 There is no automatic reset: carrying the plain release value back would break
 snapshot publication even if source-based tests pass.
 
+Merging the release branch can also carry the SDK's `version.txt` back to
+`main`. Retaining that number is accepted for the publication test: after the
+`1.10.1` release, `main` can publish `1.10.1-SNAPSHOT`. Maven orders that
+snapshot below `1.10.1`, so it is not a way to advertise `main` as newer than
+the release. Set a new SDK version explicitly when starting the next version
+series; the workflow does not choose one. The ordering is defined in
+[Maven's version specification](https://maven.apache.org/pom.html#version-order-specification).
+
 ### If a release fails
 
 **The tag job runs first and pushes before anything is published.** So a run
 that dies in `publish` — an unresolvable dependency, a credential problem, a
 Central outage — still leaves the release branch and the tag pushed, for a
-version that has no artifacts anywhere. zenoh-java's failed run of 2026-08-10
-left exactly that: tag `1.10.0-rc1` and branch `release/dry-run/1.10.0-rc1`.
+version that has no artifacts anywhere. zenoh-kotlin's
+[failed Release run of 2026-08-12](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/runs/31549368670)
+tagged and then failed to resolve `zenoh-flat-jni:1.9.0` while compiling.
 
 Nothing downstream runs, though. `publish-dokka` and `publish-github` both
 `need` the publish job, so no documentation is deployed and **no GitHub release
@@ -306,13 +353,16 @@ Nothing accumulates across attempts, because every step is recreated rather than
 advanced:
 
 - `create-release-branch` does `git switch --force-create` and `git push
-  --force`, so the release branch is cut from `main` again, not extended;
+  --force`, recreating the release branch from the selected source ref
+  (`main` only when `branch` is empty or explicitly `main`);
 - `bump-and-tag.bash` therefore rewrites `version.txt` on a fresh branch, so its
   bump commit applies cleanly on a retry;
 - the tag is `git tag --force` and `git push --force`.
 
-Fix the cause and run it again with the same number. Check the Central Portal
-first for a staging repository left open by the failed attempt, and drop it.
+Fix the cause and run it again with the same explicit version and original
+source `branch` input, rather than using the generated release branch as the
+source. Check the Central Portal first for a staging repository left open by
+the failed attempt, and drop it.
 
 **The one case where retrying the same number is wrong** is a run that got far
 enough for Central to accept the version. Maven Central is immutable: the
@@ -426,6 +476,10 @@ Jobs 3 and 4 both delegate to workflows that can be dispatched directly, which
 is what makes [recovery](#if-a-step-after-maven-central-fails) possible without
 re-running a release.
 
+The full pipeline [released 1.10.1 on 2026-09-07](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/runs/34136408421).
+Standalone GitHub-release recovery was also exercised: it
+[created the 1.10.0 GitHub release on 2026-08-18](https://github.com/eclipse-zenoh/zenoh-kotlin/actions/runs/32131721797).
+
 The release itself is created by `eclipse-zenoh/ci/publish-crates-github`, the
 shared action the rest of the Zenoh repositories use. Despite the name it
 publishes no crate: it creates the release from the tag with generated notes,
@@ -513,15 +567,16 @@ repository.
 
 ## Known gaps
 
-- **The recovery and gating paths added for this have never run.** The release
-  path itself has: 1.10.0 published from it on 2026-08-14. What is unexercised
-  is the standalone recovery of a GitHub release or of the documentation, and
-  the refusal of a live run with uploads disabled.
-- **No consumer test before a *release*.** Every snapshot publication is followed
-  by `ci/consumer-smoke-test`, which resolves the published artifact from the
-  snapshot repository and runs it — but a release goes to a staging repository
-  and is not resolvable at that point, so nothing consumes a release candidate
-  the way zenoh-flat-jni's own dry-run repository lets it consume one.
+- **Live releases do not test the selected JNI Maven package automatically.**
+  CI on `release/*` tests the source commit in `Cargo.lock`; the publication job
+  compiles against the selected Maven version, runs no tests, and does not wait
+  for that branch's CI. No gate checks that the Maven package's commit matches
+  the pin. The [manual checks](#before-the-first-run) cover this gap.
+- **The consumer smoke test covers snapshot uploads, including rehearsals.**
+  A rehearsal that uploads a candidate exercises its SDK package and transitive
+  JNI dependency. The live-release staging upload has no equivalent consumer
+  test before Central accepts it, and the SDK's full test suite is not run by
+  the publication job.
 - **The GitHub release carries generated notes only** — notes and the source
   archives GitHub attaches itself. There are no build artifacts to add: the
   binaries live on Maven Central.
@@ -531,6 +586,13 @@ repository.
 ## Release checklist
 
 - [ ] The `zenoh-flat-jni` version to build against is on Maven Central.
+- [ ] Its POM's `zenoh.flatJniCommit` matches the JNI commit pinned in the
+      chosen source branch's `Cargo.lock`.
+- [ ] SDK tests passed against that Maven release with composite substitution
+      disabled.
+- [ ] The Release workflow's `branch` input explicitly selects the intended
+      source, and `version` explicitly names a number not already accepted by
+      Central.
 - [ ] `version.txt` and the intended tag agree.
 - [ ] A rehearsal completed under a fresh version, with publication enabled at
       least once so signing and credentials were exercised.

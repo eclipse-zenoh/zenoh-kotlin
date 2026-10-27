@@ -17,8 +17,8 @@ export GIT_AUTHOR_EMAIL=$git_user_email
 export GIT_COMMITTER_NAME=$git_user_name
 export GIT_COMMITTER_EMAIL=$git_user_email
 
-# Bump Gradle project version. There is no Cargo manifest here any more: the
-# native libraries live inside the zenoh-flat-jni artifact this SDK depends on.
+# Bump the SDK's Gradle version. The root Cargo manifest only carries a source
+# pin; native libraries arrive through the zenoh-flat-jni Maven dependency.
 printf '%s' "$version" > version.txt
 
 git commit version.txt -m "chore: Bump version to \`$version\`"
@@ -39,7 +39,7 @@ if [[ -n "$flat_jni_version" ]]; then
 fi
 
 # Checked on the value the release will actually build against, not on the
-# workflow input: main now inherits `1.9.0-kotlin-SNAPSHOT`, our own mutable copy
+# workflow input: main inherits a qualified JNI snapshot, our own mutable copy
 # of zenoh-flat-jni, so omitting the input is exactly how a release would reach
 # a snapshot dependency — which the earlier input-only check did not cover.
 # A rehearsal may depend on one; that is how the SDK is exercised before the

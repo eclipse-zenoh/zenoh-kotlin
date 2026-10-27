@@ -75,9 +75,9 @@ subprojects {
         mavenCentral()
 
         // Between releases this SDK builds against a snapshot: our own copy of
-        // zenoh-flat-jni, `1.9.0-kotlin-SNAPSHOT`, published by the same job
-        // that publishes this SDK's snapshot (see CI.md). A rehearsal can name
-        // another one. Reachable only when the version asked for is a snapshot,
+        // zenoh-flat-jni, `<JNI base version>-kotlin-SNAPSHOT`, published by
+        // the same job that publishes this SDK's snapshot (see CI.md).
+        // A rehearsal can name another one. Reachable only for a snapshot,
         // so a release — whose version never ends in -SNAPSHOT — cannot resolve
         // a mutable artifact by accident.
         //
