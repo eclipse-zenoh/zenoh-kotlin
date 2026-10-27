@@ -106,19 +106,36 @@ see
 
 ### Maintaining the JNI dependency version
 
-When the SDK should use new JNI code, update the zenoh-flat-jni commit in
-`Cargo.lock`. CI builds that commit from source with `-PuseLocalJni=true` and
-runs the SDK tests against it. This checks that the SDK works with the chosen
-bindings before they are published.
+zenoh-kotlin is a Kotlin library built with Gradle. Its native implementation
+arrives through the separate zenoh-flat-jni Maven dependency, which contains
+the Kotlin bindings and compiled native libraries. `zenohFlatJniVersion` in
+`gradle.properties` tells Gradle which version of that package to download.
+Publishing the SDK records this dependency in its Maven metadata, so someone
+installing the SDK gets the required JNI package automatically.
 
-Someone installing the SDK from Maven does not build that Rust source or read
-our `Cargo.lock`. They download a compiled zenoh-flat-jni package containing the
-Kotlin bindings and native libraries. `zenohFlatJniVersion` in
-`gradle.properties` tells Gradle which version of that package to use; publishing
-the SDK records that dependency in its Maven metadata so consumers download it
-too. To publish a snapshot against the code CI tested, we therefore first
-publish a JNI package built from our pinned commit, then build and publish the
-SDK against that package.
+During development, we also need to test JNI changes before they have a Maven
+release. That requires choosing an exact source commit so a test run can be
+reproduced. We store it in `Cargo.lock` because Zenoh already has a bot that
+updates Cargo lockfiles across its repositories. The root `Cargo.toml` and
+empty `ci/pin.rs` let this Gradle project participate in that existing process:
+the manifest declares zenoh-flat-jni as a Git dependency, and Cargo resolves it
+to a commit in the lockfile. This small Rust crate produces nothing that ships
+with the SDK; its purpose is to express the source dependency in a form the
+shared update machinery understands. See [CI.md](CI.md#lockfile-synchronization)
+for how the bot advances it.
+
+To adopt new JNI code, let the bot update that pin or
+[move it by hand](CI.md#moving-the-pin-by-hand). CI then builds the pinned JNI
+commit from source with `-PuseLocalJni=true` and tests the SDK against it. The
+source pin and the Maven version now serve two stages of the same process:
+the pin chooses the code to test, while the Maven version tells consumers where
+to get the compiled bindings.
+
+To let people try that development version through Maven, we must make those
+same bindings available as a package. Our snapshot pipeline therefore first
+publishes a JNI package built from the pinned commit, then builds and publishes
+the SDK against that package. This connects the source tested by CI to the
+dependency named in the SDK's Maven metadata.
 
 That JNI package needs a name we can keep updating as the pin moves. On `main`,
 use `<JNI base version>-kotlin-SNAPSHOT`: for a pinned JNI commit whose
