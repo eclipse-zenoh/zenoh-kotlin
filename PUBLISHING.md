@@ -106,46 +106,58 @@ see
 
 ### Maintaining the JNI dependency version
 
-These settings have separate jobs:
+When the SDK should use new JNI code, update the zenoh-flat-jni commit in
+`Cargo.lock`. CI builds that commit from source with `-PuseLocalJni=true` and
+runs the SDK tests against it. This checks that the SDK works with the chosen
+bindings before they are published.
 
-| Setting | Selects |
-| --- | --- |
-| `Cargo.lock` | The zenoh-flat-jni source commit used by CI tests with `-PuseLocalJni=true`, and by the snapshot copy publication |
-| `zenohFlatJniVersion` in `gradle.properties` | The Maven dependency used by ordinary builds and recorded in the published SDK's dependency metadata |
-| `version.txt` in this repository | The SDK's own publication version, with `-SNAPSHOT` appended for snapshot uploads |
+Someone installing the SDK from Maven does not build that Rust source or read
+our `Cargo.lock`. They download a compiled zenoh-flat-jni package containing the
+Kotlin bindings and native libraries. `zenohFlatJniVersion` in
+`gradle.properties` tells Gradle which version of that package to use; publishing
+the SDK records that dependency in its Maven metadata so consumers download it
+too. To publish a snapshot against the code CI tested, we therefore first
+publish a JNI package built from our pinned commit, then build and publish the
+SDK against that package.
 
-On **`main`**, set `zenohFlatJniVersion` to
-`<JNI base version>-kotlin-SNAPSHOT`. The base must equal `version.txt` in the
-zenoh-flat-jni commit that `Cargo.lock` pins. For example, a pin whose
-`version.txt` reads `1.10.1` needs:
+That JNI package needs a name we can keep updating as the pin moves. On `main`,
+use `<JNI base version>-kotlin-SNAPSHOT`: for a pinned JNI commit whose
+`version.txt` reads `1.10.1`, set:
 
 ```properties
 zenohFlatJniVersion=1.10.1-kotlin-SNAPSHOT
 ```
 
-Updating the pin within the same base version needs no property change: CI
-rebuilds the same snapshot coordinate from the new commit. When a pin crosses a
-base-version bump, update the property in the same pull request. The JNI
-publication workflow checks that the requested base matches the pinned source
-before cross-compiling.
+The `-SNAPSHOT` suffix allows successive builds to replace this development
+version; the plain `1.10.1` name belongs to an immutable release on Maven
+Central. The `-kotlin` part gives this SDK its own copy: zenoh-flat-jni and
+zenoh-java publish snapshots too, and may be building different commits. Using
+zenoh-flat-jni's own `1.10.1-SNAPSHOT` would let its next publication change our
+dependency without changing our pin.
 
-On a **release branch**, use the Release workflow's `zenoh-flat-jni-version`
-input to select a JNI release already on Maven Central. The workflow commits
-that value on the release branch; it does not update `main`. A rehearsal may
-instead name an available snapshot, or leave the input empty to inherit the
-checked-in value.
+Leave the property alone when updating the pin within the same JNI base
+version: CI checks the published copy's commit and rebuilds it when needed.
+If the new pin's JNI `version.txt` changes, update the property in the same pull
+request, keeping `-kotlin-SNAPSHOT`. The JNI publisher derives its package name
+from that source file and refuses a different base requested by the SDK. The
+SDK's own `version.txt` separately names the zenoh-kotlin package being
+published; it does not select the JNI dependency.
 
-When **merging a release branch back into `main`**, preserve or restore the
-qualified snapshot value as part of that merge. Derive its base from the pin
-that `main` will contain after the merge, not necessarily from the release being
-merged. There is no automatic reset after a merge. Carrying the release value
-back would make `flat-jni-copy.bash` refuse the next snapshot publication, even
-though the source-based test jobs can still pass.
+When ready for a permanent SDK release, first ensure the required JNI release
+is on Maven Central. Then run the Release workflow with, for example,
+`zenoh-flat-jni-version=1.10.1`. It writes that value to `gradle.properties` on
+the release branch, so the released SDK depends on an existing, immutable JNI
+package. A live release rejects snapshot dependencies because their contents
+can change or disappear. A rehearsal can use an available snapshot, and leaving
+the input empty uses the branch's checked-in value.
 
-For an individual Maven-based build, `-PzenohFlatJniVersion=...` overrides the
-property without editing the file. That override does not change the source pin
-used by a composite build, and `flat-jni-copy.bash` reads `gradle.properties`
-directly, so fixing `main`'s publication requires changing the checked-in value.
+After the release, keep development on `main` using our snapshot copy. If you
+merge the release branch back, preserve or restore
+`<JNI base version>-kotlin-SNAPSHOT` in `gradle.properties` as part of the merge,
+using the base from the JNI pin that `main` will contain. The release workflow
+does not reset this setting after a merge. If the plain release version reaches
+`main`, tests can still pass because they build the pinned source, but
+`flat-jni-copy.bash` will refuse to publish into a name reserved for a release.
 
 ## The snapshot publication
 
