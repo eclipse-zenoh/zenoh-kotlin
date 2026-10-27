@@ -20,7 +20,6 @@ which covers them once for the whole stack.
   - [Updating the snapshot dependency](#updating-the-snapshot-dependency)
   - [What it does not guarantee](#what-it-does-not-guarantee)
 - [Running a release](#running-a-release)
-  - [Before the first run](#before-the-first-run)
   - [Release dry run](#release-dry-run)
     - [Choosing a JNI snapshot for a dry run](#choosing-a-jni-snapshot-for-a-dry-run)
   - [The real release](#the-real-release)
@@ -33,7 +32,6 @@ which covers them once for the whole stack.
 - [Building against zenoh-flat-jni source](#building-against-zenoh-flat-jni-source)
 - [Required secrets](#required-secrets)
 - [Known gaps](#known-gaps)
-- [Release checklist](#release-checklist)
 
 ## What this repository publishes
 
@@ -149,7 +147,7 @@ library loading together.
 
 ### Updating the snapshot dependency
 
-On `main`, [update and test the JNI source pin](#building-against-zenoh-flat-jni-source).
+On `main`, [update the JNI source pin](#building-against-zenoh-flat-jni-source).
 Read `version.txt` at that pinned
 **zenoh-flat-jni** commit and set the checked-in `gradle.properties` to:
 
@@ -207,23 +205,6 @@ The snapshot repository is mutable, is not on consumers' default resolution
 path, and is cleaned after 90 days. A dry run without uploads cannot verify the
 signing key and credentials.
 
-### Before the first run
-
-The [required secrets](#required-secrets) must be available to the workflows.
-
-Before a live release, test the SDK source you intend to release against the
-JNI Maven release you will select in `zenoh-flat-jni-version`. Run without a
-local JNI directory or Cargo path override. For JNI release `1.10.1`, use:
-
-```bash
-./gradlew jvmTest -PuseLocalJni=false -PzenohFlatJniVersion=1.10.1
-```
-
-This downloads the selected JNI package and tests the SDK against it, checking
-both availability and runtime compatibility. Run it before dispatching Release:
-the publication job does not run these tests or wait for the release branch's
-CI.
-
 ### Release dry run
 
 | Field | Value |
@@ -242,8 +223,8 @@ run reaches tagging, `bump-and-tag.bash` creates and **force-pushes** the tag
 even with `LIVE_RUN=false`: its `[[ ${live_run} ]]` test accepts either nonempty
 string, `true` or `false`. A dry run given an already-released number can move
 the real release tag onto the dry-run commit. Use a fresh explicit number such
-as `1.10.2-rc1` and check existing tags before dispatching. Reuse one
-only when retrying your own unpublished attempt under
+as `1.10.2-rc1`. Reuse a version only when retrying your own unpublished
+attempt under
 [If a release fails](#if-a-release-fails).
 
 Tags from dry runs are not cleaned up automatically. The shared action prunes
@@ -264,22 +245,8 @@ provided its JNI snapshot has already been published. For a dry run from
 `gradle.properties`. The dry run does not build or publish that
 package; the [main CI pipeline](#the-snapshot-publication) does.
 
-To use another JNI snapshot, find an available version:
-
-```bash
-curl -s https://central.sonatype.com/repository/maven-snapshots/org/eclipse/zenoh/zenoh-flat-jni/maven-metadata.xml
-```
-
-Enter the chosen version in `zenoh-flat-jni-version` with the other inputs
-above. To try a published snapshot in an individual Maven-based local
-build, override the Gradle property, for example:
-
-```bash
-./gradlew build -PzenohFlatJniVersion=1.10.1-kotlin-SNAPSHOT
-```
-
-That override changes neither the checked-in property nor the source pin used
-by [source-based tests](#building-against-zenoh-flat-jni-source).
+To use another published JNI snapshot, enter its Maven version in the
+`zenoh-flat-jni-version` workflow input.
 
 ### The real release
 
@@ -304,14 +271,6 @@ input and refuses a live run if it ends in `-SNAPSHOT`. Omitting the input on
 
 ### After a release
 
-Confirm both SDK coordinates resolve and their POMs name the JNI version
-selected for the release. For the JVM artifact:
-
-```bash
-curl -fsSL https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/zenoh-kotlin-<version>.pom \
-  | grep -A2 zenoh-flat-jni
-```
-
 When merging the release branch back into `main`, preserve or restore
 `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT` in `gradle.properties`
 as part of that merge. Use the base from the JNI pin that `main` will contain
@@ -323,8 +282,8 @@ Merging the release branch can also carry the SDK's `version.txt` back to
 `main`. Retaining that number is accepted for the publication test: after the
 `1.10.1` release, `main` can publish `1.10.1-SNAPSHOT`. Maven orders that
 snapshot below `1.10.1`, so it is not a way to advertise `main` as newer than
-the release. Set a new SDK version explicitly when starting the next version
-series; the workflow does not choose one. The ordering is defined in
+the release. The Release workflow takes the next SDK version from its `version`
+input; merging that release branch back updates `main`. The ordering is defined in
 [Maven's version specification](https://maven.apache.org/pom.html#version-order-specification).
 
 ### If a release fails
@@ -417,7 +376,7 @@ Before creating the release, the workflow also checks:
 | `check-maven` | confirms the SDK version was published to Maven Central |
 
 A tag from a dry run also passes the version check, so keep `check-maven`
-enabled for a manual run. The normal release pipeline disables it only because its
+enabled for a standalone workflow run. The normal release pipeline disables it because its
 successful Maven publication job supplies that evidence already.
 
 These checks establish that the tag names this version and that the version
@@ -433,17 +392,11 @@ If the Maven check fails, the workflow distinguishes these cases:
 | Central does not answer | retry later, or disable `check-maven` to proceed without that verification |
 
 The documentation deploy can be repeated. The GitHub workflow creates a
-release and fails if one already exists; edit an existing release directly,
-or delete it before running the workflow again:
-
-```bash
-gh release edit <version> --repo eclipse-zenoh/zenoh-kotlin --notes-file notes.md
-gh release delete <version> --repo eclipse-zenoh/zenoh-kotlin   # then re-run
-```
+release and fails if one already exists. Edit an existing release on its GitHub
+page, or delete it there before running the recovery workflow again.
 
 Deleting the GitHub release leaves its Git tag in place. Publishing a GitHub
-release notifies release watchers. Verify the result with the
-[release checklist](#release-checklist).
+release notifies release watchers.
 
 ## How the release pipeline works
 
@@ -529,7 +482,7 @@ To adopt new JNI code, let the bot update `Cargo.lock` or
 the pin on `main`, also check the
 [snapshot dependency's base version](#updating-the-snapshot-dependency).
 
-Test the update locally with the same command CI runs:
+To reproduce CI locally, run:
 
 ```bash
 ./gradlew jvmTest -PuseLocalJni=true
@@ -564,32 +517,14 @@ repository.
   Maven package and compiles the SDK against it, but runs no tests. Passing
   source-based CI therefore does not establish that the selected Maven package
   works with the SDK. Publication also starts without waiting for the release
-  branch's CI result. Before releasing,
-  [run the SDK tests against the selected Maven package](#before-the-first-run);
-  this test is not automated by the release workflow.
-- **The consumer smoke test covers snapshot uploads, including release dry runs.**
-  A dry run that uploads a candidate exercises its SDK package and transitive
-  JNI dependency. The live-release staging upload has no equivalent consumer
-  test before Central accepts it, and the SDK's full test suite is not run by
-  the publication job.
+  branch's CI result. A test job against the selected JNI Maven package is
+  missing from the release workflow.
+- **Published release artifacts have no consumer test.** Snapshot uploads,
+  including release dry runs, run a smoke test against the downloaded SDK and
+  its JNI dependency. Live releases skip that job and have no consumer test
+  before or after publication.
 - **The GitHub release carries generated notes only** — notes and the source
   archives GitHub attaches itself. There are no build artifacts to add: the
   binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.
-
-## Release checklist
-
-- [ ] SDK tests passed on the intended release source against the selected
-      JNI Maven release, with composite substitution disabled.
-- [ ] The Release workflow's `branch` input explicitly selects the intended
-      source, and `version` explicitly names a number not already accepted by
-      Central.
-- [ ] A release dry run passed using the intended source and selected JNI
-      Maven release, with a fresh SDK version and uploads enabled.
-- [ ] Both published SDK coordinates resolve from Maven Central and their
-      POMs name the selected JNI version.
-- [ ] If `github_release` was enabled, the GitHub release exists and its notes
-      start at the previous release.
-- [ ] When merging the release branch back into `main`, preserve or restore
-      `zenohFlatJniVersion=<pinned JNI base version>-kotlin-SNAPSHOT` in that merge.
