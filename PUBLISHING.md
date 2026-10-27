@@ -108,8 +108,8 @@ Every merge to `main`, and a manual CI dispatch on `main`, first runs the SDK
 tests against the pinned JNI source.
 If they pass, CI uploads an SDK snapshot to the
 [Central snapshot repository](https://central.sonatype.com/repository/maven-snapshots/)
-and tests the downloaded package in a separate consumer build. Pull requests and
-other branches run tests without publishing.
+and tests the downloaded package in a separate consumer build. Pull requests
+run tests without publishing.
 
 The publication covers five coordinates:
 
@@ -149,8 +149,8 @@ library loading together.
 
 ### Updating the snapshot dependency
 
-On development branches targeting `main`, [update the JNI source pin and test
-it](#building-against-zenoh-flat-jni-source). Read `version.txt` at that pinned
+On `main`, [update and test the JNI source pin](#building-against-zenoh-flat-jni-source).
+Read `version.txt` at that pinned
 **zenoh-flat-jni** commit and set the checked-in `gradle.properties` to:
 
 ```properties
@@ -238,7 +238,7 @@ against the Maven dependency or wait for the release branch's CI.
 | Field | Value |
 | --- | --- |
 | `live-run` | **unchecked** |
-| `branch` | the source branch or commit; set `main` explicitly, or a maintenance branch such as `release/1.10.1` |
+| `branch` | `main`, or the maintenance branch for a patch release, e.g. `release/1.10.1` |
 | `version` | an explicit provisional SDK number reserved for this rehearsal; never an already-released number or one reserved for a live release |
 | `zenoh-flat-jni-version` | empty to inherit the branch's checked-in JNI version, or an available JNI Maven release or snapshot |
 | `maven_publish` | checked to test a real signed upload; unchecked to assemble without uploading |
@@ -267,10 +267,10 @@ Release again.
 #### Choosing a JNI snapshot for a rehearsal
 
 A rehearsal can run before the next JNI release exists on Maven Central,
-provided its JNI snapshot has already been published. Leaving
-`zenoh-flat-jni-version` empty uses the checked-in dependency, normally Kotlin's
-own copy on `main`. The release rehearsal does not build or publish that copy;
-the [main CI pipeline](#the-snapshot-publication) does.
+provided its JNI snapshot has already been published. For a rehearsal from
+`main`, leave `zenoh-flat-jni-version` empty to use the JNI snapshot named in
+`gradle.properties`. The release rehearsal does not build or publish that
+package; the [main CI pipeline](#the-snapshot-publication) does.
 
 To use another JNI snapshot, find an available version:
 
@@ -294,7 +294,7 @@ by [source-based tests](#building-against-zenoh-flat-jni-source).
 | Field | Value |
 | --- | --- |
 | `live-run` | **checked** |
-| `branch` | the source branch or commit; set `main` explicitly, or the maintenance branch being released |
+| `branch` | `main`, or the maintenance branch for a patch release |
 | `version` | the explicit release number; never leave empty or reuse a version already accepted by Central |
 | `zenoh-flat-jni-version` | the zenoh-flat-jni release to build against — **must already be on Central** |
 | `maven_publish` | checked — the only accepted value on a live run |
@@ -320,7 +320,7 @@ curl -s https://repo1.maven.org/maven2/org/eclipse/zenoh/zenoh-kotlin/<version>/
   | grep -A2 zenoh-flat-jni
 ```
 
-If merging the release branch back into `main`, preserve or restore
+When merging the release branch back into `main`, preserve or restore
 `zenohFlatJniVersion=<JNI base version>-kotlin-SNAPSHOT` in `gradle.properties`
 as part of that merge. Use the base from the JNI pin that `main` will contain
 after the merge, following [Updating the snapshot dependency](#updating-the-snapshot-dependency).
@@ -527,18 +527,17 @@ permanent SDK release uses a released JNI dependency.
 
 ## Building against zenoh-flat-jni source
 
-A build can be pointed at zenoh-flat-jni's *source* through a Gradle composite
-build, which is what CI and local development do — see
-[Where the native library comes from](README.md#where-the-native-library-comes-from) in the README,
-and [The pin](CI.md#the-pin) for how the source commit is selected.
+CI builds zenoh-flat-jni from source through a Gradle composite build.
+The [README](README.md#where-the-native-library-comes-from) describes local build
+options; [The pin](CI.md#the-pin) explains how the source commit is selected.
 
 To adopt new JNI code, let the bot update `Cargo.lock` or
 [move the pin by hand](CI.md#moving-the-pin-by-hand). Keep the Git dependency in
 `Cargo.toml` tracking `main` so the bot can continue advancing it. When updating
-the pin on a branch targeting `main`, also check the
+the pin on `main`, also check the
 [snapshot dependency's base version](#updating-the-snapshot-dependency).
 
-Before merging, test locally with the same command CI runs:
+Test the update locally with the same command CI runs:
 
 ```bash
 ./gradlew jvmTest -PuseLocalJni=true
@@ -602,5 +601,5 @@ repository.
       `zenoh-flat-jni-android`, not the desktop coordinate.
 - [ ] The released coordinates resolve from Maven Central.
 - [ ] The GitHub release exists and its notes start at the previous release.
-- [ ] If merging the release branch back into `main`, preserve or restore
+- [ ] When merging the release branch back into `main`, preserve or restore
       `zenohFlatJniVersion=<pinned JNI base version>-kotlin-SNAPSHOT` in that merge.

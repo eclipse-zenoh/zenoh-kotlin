@@ -41,7 +41,7 @@ time. In order:
 | | | |
 | --- | --- | --- |
 | `-PlocalJniDir=<path>` | that directory, as it is | `Cargo.toml` not read |
-| `-PuseLocalJni=true` | whatever `Cargo.toml` says | `git` → the `Cargo.lock` commit; `path` → that directory |
+| `-PuseLocalJni=true` | the zenoh-flat-jni dependency in `Cargo.toml` | `git` → the `Cargo.lock` commit; `path` → that directory |
 | neither | Maven Central | no composite build |
 
 The middle row is the Rust-shaped one: the manifest is the switch, exactly as it
@@ -138,8 +138,8 @@ commit is the pin; the rest of the lockfile is a by-product.
 
 ## Moving the pin by hand
 
-Normally you don't — the bot's pull request does. When you need to, for example
-to test against an unreleased zenoh-flat-jni change:
+The bot updates the pin through a pull request. To test a JNI change before
+the next sync, update it manually:
 
 ```bash
 cargo update -p zenoh-flat-jni                 # to zenoh-flat-jni's main tip
