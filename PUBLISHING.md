@@ -16,6 +16,7 @@ which covers them once for the whole stack.
 
 - [What this repository publishes](#what-this-repository-publishes)
 - [Relationship to zenoh-flat-jni](#relationship-to-zenoh-flat-jni)
+  - [Maintaining the JNI dependency version](#maintaining-the-jni-dependency-version)
 - [The snapshot publication](#the-snapshot-publication)
   - [What it does not guarantee](#what-it-does-not-guarantee)
 - [Running a release](#running-a-release)
@@ -103,6 +104,49 @@ one. A rehearsal is allowed to, which is what makes the transition workable —
 see
 [Rehearsing before zenoh-flat-jni is released](#rehearsing-before-zenoh-flat-jni-is-released).
 
+### Maintaining the JNI dependency version
+
+These settings have separate jobs:
+
+| Setting | Selects |
+| --- | --- |
+| `Cargo.lock` | The zenoh-flat-jni source commit used by CI tests with `-PuseLocalJni=true`, and by the snapshot copy publication |
+| `zenohFlatJniVersion` in `gradle.properties` | The Maven dependency used by ordinary builds and recorded in the published SDK's dependency metadata |
+| `version.txt` in this repository | The SDK's own publication version, with `-SNAPSHOT` appended for snapshot uploads |
+
+On **`main`**, set `zenohFlatJniVersion` to
+`<JNI base version>-kotlin-SNAPSHOT`. The base must equal `version.txt` in the
+zenoh-flat-jni commit that `Cargo.lock` pins. For example, a pin whose
+`version.txt` reads `1.10.1` needs:
+
+```properties
+zenohFlatJniVersion=1.10.1-kotlin-SNAPSHOT
+```
+
+Updating the pin within the same base version needs no property change: CI
+rebuilds the same snapshot coordinate from the new commit. When a pin crosses a
+base-version bump, update the property in the same pull request. The JNI
+publication workflow checks that the requested base matches the pinned source
+before cross-compiling.
+
+On a **release branch**, use the Release workflow's `zenoh-flat-jni-version`
+input to select a JNI release already on Maven Central. The workflow commits
+that value on the release branch; it does not update `main`. A rehearsal may
+instead name an available snapshot, or leave the input empty to inherit the
+checked-in value.
+
+When **merging a release branch back into `main`**, preserve or restore the
+qualified snapshot value as part of that merge. Derive its base from the pin
+that `main` will contain after the merge, not necessarily from the release being
+merged. There is no automatic reset after a merge. Carrying the release value
+back would make `flat-jni-copy.bash` refuse the next snapshot publication, even
+though the source-based test jobs can still pass.
+
+For an individual Maven-based build, `-PzenohFlatJniVersion=...` overrides the
+property without editing the file. That override does not change the source pin
+used by a composite build, and `flat-jni-copy.bash` reads `gradle.properties`
+directly, so fixing `main`'s publication requires changing the checked-in value.
+
 ## The snapshot publication
 
 Between releases, every merge to `main` uploads a mutable pre-release build to
@@ -116,7 +160,7 @@ It publishes **five** coordinates, not two:
 ```text
 org.eclipse.zenoh:zenoh-kotlin:<version>-SNAPSHOT
 org.eclipse.zenoh:zenoh-kotlin-android:<version>-SNAPSHOT
-org.eclipse.zenoh:zenoh-flat-jni:1.9.0-kotlin-SNAPSHOT        (+ -jvm, -android)
+org.eclipse.zenoh:zenoh-flat-jni:1.10.1-kotlin-SNAPSHOT        (+ -jvm, -android)
 ```
 
 The last three are **our own copy** of zenoh-flat-jni, built from the commit
@@ -127,7 +171,7 @@ self-sufficient and coherent:
   publication still works. It uses that repository's *source at a commit we
   choose*, never an artifact its CI produced.
 - **coherent** — the dependency our POM names is the code we compiled against.
-  Pointing instead at zenoh-flat-jni's own `1.9.0-SNAPSHOT` would name the tip
+  Pointing instead at zenoh-flat-jni's own `1.10.1-SNAPSHOT` would name the tip
   of *its* `main` while we compiled against our pin; JNI being a binary
   contract, that mismatch surfaces as `UnsatisfiedLinkError` at runtime rather
   than as a build failure.
@@ -145,8 +189,8 @@ hour, and the pin moves roughly once a day — so it is rebuilt only when it has
 to be. Every POM zenoh-flat-jni publishes carries the commit it was built from:
 
 ```console
-$ curl -s .../1.9.0-kotlin-SNAPSHOT/maven-metadata.xml           # ~2.9 kB
-$ curl -s .../zenoh-flat-jni-1.9.0-kotlin-<timestamp>-<n>.pom    # ~1.8 kB
+$ curl -s .../1.10.1-kotlin-SNAPSHOT/maven-metadata.xml           # ~2.9 kB
+$ curl -s .../zenoh-flat-jni-1.10.1-kotlin-<timestamp>-<n>.pom    # ~1.8 kB
 <zenoh.flatJniCommit>e75529ce…</zenoh.flatJniCommit>
 ```
 
@@ -211,7 +255,7 @@ and credentials work, which is the half of a release most likely to fail.
 | --- | --- |
 | `live-run` | **unchecked** |
 | `version` | a fresh provisional number, not one already used |
-| `zenoh-flat-jni-version` | a version that exists — today a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names our own `1.9.0-kotlin-SNAPSHOT` copy: fine for a rehearsal, refused for a live run |
+| `zenoh-flat-jni-version` | a version that exists — a release or a snapshot, see [below](#rehearsing-the-release-workflow-with-a-snapshot). Empty falls back to `gradle.properties`, which names our own `1.10.1-kotlin-SNAPSHOT` copy: fine for a rehearsal, refused for a live run |
 | `maven_publish` | checked — or uncheck for the very first run |
 | `github_release` | either — a rehearsal is not a live run, so no release is created regardless |
 
@@ -403,7 +447,9 @@ and a bare `1.10.0` would resolve to a branch of that name before the tag.
 
 Nothing else in a release is one-shot. `main` is deliberately untouched —
 `version.txt` is bumped on the release branch only, so `main` keeps naming the
-previous version and there is no post-release commit to reconstruct.
+previous version. If the release branch is later merged back, preserve `main`'s
+qualified JNI snapshot dependency as described under
+[Maintaining the JNI dependency version](#maintaining-the-jni-dependency-version).
 `update-release-project.yml` is driven by issues and pull requests, not by
 releases.
 
@@ -435,7 +481,7 @@ release is blocked.
 
 A snapshot may depend on a snapshot, because nothing published is permanent —
 which is what [The snapshot publication](#the-snapshot-publication) above rests
-on. `gradle.properties` names `1.9.0-kotlin-SNAPSHOT`, our own copy, and every
+on. `gradle.properties` names `1.10.1-kotlin-SNAPSHOT`, our own copy, and every
 merge to `main` republishes it from the pinned commit. So a rehearsal needs
 nothing set: the default already resolves.
 
@@ -470,7 +516,7 @@ Then run **Release** from the Actions tab with:
 
 **`zenoh-flat-jni-version` decides what the rehearsal builds against.** Left
 empty it falls back to `zenohFlatJniVersion` in `gradle.properties` —
-`1.9.0-kotlin-SNAPSHOT`, our own copy, which `main` republishes on every merge. A
+`1.10.1-kotlin-SNAPSHOT`, our own copy, which `main` republishes on every merge. A
 rehearsal against that is a real rehearsal — leaving the field empty is now a
 sound default rather than the guaranteed compile failure it used to be.
 
@@ -591,11 +637,6 @@ repository.
   binaries live on Maven Central.
 - **The Android artifact has no runtime test.** Only the JVM tests run
   (`jvmTest`); the Android variant is assembled and published unexercised.
-- **The snapshot still pins a `zenoh-flat-jni` version that was never
-  released.** `gradle.properties` names `1.9.0-kotlin-SNAPSHOT`, our own copy;
-  `zenoh-flat-jni:1.9.0` is not on Maven Central and never was. `1.10.0` is, so
-  the ordering constraint is satisfiable now, but a live release still has to be
-  given that version explicitly.
 
 ## Release checklist
 
@@ -609,3 +650,5 @@ repository.
       `zenoh-flat-jni-android`, not the desktop coordinate.
 - [ ] The released coordinates resolve from Maven Central.
 - [ ] The GitHub release exists and its notes start at the previous release.
+- [ ] If merging the release branch back into `main`, preserve or restore
+      `zenohFlatJniVersion=<pinned JNI base version>-kotlin-SNAPSHOT` in that merge.
