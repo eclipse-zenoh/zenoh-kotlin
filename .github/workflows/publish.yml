@@ -48,8 +48,8 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       # Assembles both artifacts and generates their POMs without uploading, so
-      # a `maven_publish: false` release dry run checks the build. Only the remote
-      # upload below is gated.
+      # a `maven_publish: false` rehearsal actually proves something. Only the
+      # remote upload below is gated.
       #
       # `--refresh-dependencies` because zenohFlatJniVersion is a snapshot that
       # the job before this one may have just replaced. Gradle caches changing

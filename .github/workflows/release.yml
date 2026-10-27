@@ -17,8 +17,8 @@ on:
   # Dispatch only. The weekday schedule this had ran a dry-run release every
   # night with no inputs, which means no `zenoh-flat-jni-version` - so it
   # resolved the unreleased fallback in gradle.properties and died compiling,
-  # every night. Releases and release dry runs are deliberate acts, started
-  # through `Run workflow`. See PUBLISHING.md.
+  # every night. A release is a deliberate act, and rehearsing one is a
+  # deliberate act too; both are `Run workflow` here. See PUBLISHING.md.
   workflow_dispatch:
     inputs:
       live-run:
@@ -59,12 +59,12 @@ jobs:
       # First, so nothing is created when the combination is rejected.
       #
       # `maven_publish` suppresses the upload; it does not make a run a
-      # release dry run. Combined with `live-run` it would cut the real release
+      # rehearsal. Combined with `live-run` it would cut the real release
       # branch, force-push the real tag, and then upload, deploy and announce
       # nothing - leaving a tag for a version that exists nowhere, which is the
       # state a failed release leaves and that PUBLISHING.md says to avoid.
       #
-      # Nothing is lost by refusing it. A release dry run without uploading is
+      # Nothing is lost by refusing it. Rehearsing without uploading is
       # `live-run` off, which does the same build and leaves a prunable
       # dry-run branch; a GitHub-only release is the Release (GitHub) workflow,
       # which verifies against Central instead of assuming an upload happened.
@@ -73,7 +73,7 @@ jobs:
         run: |
           echo "::error::live-run with maven_publish disabled would force-push the real tag" \
                "and publish nothing, leaving a tag for a version that exists nowhere." \
-               "For a release dry run without uploading, uncheck live-run." \
+               "To rehearse without uploading, uncheck live-run." \
                "To create a GitHub release for a version already on Central, run" \
                "the 'Release (GitHub)' workflow." >&2
           exit 1

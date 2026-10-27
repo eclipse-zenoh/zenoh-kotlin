@@ -145,17 +145,16 @@ Three ways to build. Pick by what you are doing:
 
 **The default** downloads `org.eclipse.zenoh:zenoh-flat-jni` with the native
 library already inside it. Nothing is compiled from Rust and no toolchain is
-needed. On `main` that is `<JNI base version>-kotlin-SNAPSHOT`, selected by
-`zenohFlatJniVersion` in `gradle.properties` and published alongside the SDK
-snapshot ([CI.md](CI.md#what-publishing-uses)); a release
+needed. On `main` that is `1.10.1-kotlin-SNAPSHOT`, published from this repository
+alongside the SDK snapshot ([CI.md](CI.md#what-publishing-uses)); a release
 names a zenoh-flat-jni release on Maven Central. Either way it is one coordinate
 in `gradle.properties`, and if it has not been published yet the other two rows
 build without it.
 
-**`-PuseLocalJni=true`** builds the zenoh-flat-jni dependency declared in
-`Cargo.toml` from source. CI uses the Git dependency, pinned to the commit in
-`Cargo.lock` (resolved on the spot if there is no lockfile yet). A local `path`
-dependency uses that directory. So
+**`-PuseLocalJni=true`** builds the bindings from source, as `Cargo.toml`
+says — the usual Rust arrangement, and the one CI uses. A `git` dependency there
+means the exact commit recorded in `Cargo.lock` (resolved on the spot if there is
+no lockfile yet); a `path` means that directory. So
 
 ```bash
 ./gradlew jvmTest -PuseLocalJni=true

@@ -17,8 +17,8 @@ export GIT_AUTHOR_EMAIL=$git_user_email
 export GIT_COMMITTER_NAME=$git_user_name
 export GIT_COMMITTER_EMAIL=$git_user_email
 
-# Bump the SDK's Gradle version. The root Cargo manifest only carries a source
-# pin; native libraries arrive through the zenoh-flat-jni Maven dependency.
+# Bump Gradle project version. There is no Cargo manifest here any more: the
+# native libraries live inside the zenoh-flat-jni artifact this SDK depends on.
 printf '%s' "$version" > version.txt
 
 git commit version.txt -m "chore: Bump version to \`$version\`"
@@ -39,11 +39,11 @@ if [[ -n "$flat_jni_version" ]]; then
 fi
 
 # Checked on the value the release will actually build against, not on the
-# workflow input: main inherits a qualified JNI snapshot, our own mutable copy
+# workflow input: main now inherits `1.9.0-kotlin-SNAPSHOT`, our own mutable copy
 # of zenoh-flat-jni, so omitting the input is exactly how a release would reach
 # a snapshot dependency — which the earlier input-only check did not cover.
-# A release dry run may depend on one to test the SDK before the binding is
-# released.
+# A rehearsal may depend on one; that is how the SDK is exercised before the
+# binding is released at all.
 effective_flat_jni_version=$(sed -n 's/^zenohFlatJniVersion=//p' gradle.properties | tr -d '[:space:]')
 case "$effective_flat_jni_version" in
   *-SNAPSHOT)
@@ -52,7 +52,7 @@ case "$effective_flat_jni_version" in
       echo "       Pass zenoh-flat-jni-version naming a release that is on Maven Central." >&2
       exit 1
     fi
-    echo "note: release dry run against snapshot $effective_flat_jni_version"
+    echo "note: rehearsing against snapshot $effective_flat_jni_version"
     ;;
 esac
 
