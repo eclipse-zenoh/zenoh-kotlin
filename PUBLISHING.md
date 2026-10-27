@@ -131,11 +131,16 @@ from source and tests the SDK against it with
 The JNI changes need no Maven publication at this stage: Gradle builds the
 bindings and native library from the selected source commit.
 
-To let people try that development version through Maven, we must make those
-same bindings available as a package. Our snapshot pipeline therefore first
-publishes a JNI package built from the pinned commit, then builds and publishes
-the SDK against that package. This connects the source tested by CI to the
-dependency named in the SDK's Maven metadata.
+CI also needs to check that the SDK can be published and then used as a Maven
+dependency. Building from source does not exercise signing, upload credentials,
+or whether the uploaded packages and their dependency metadata work together.
+The snapshot pipeline tests this path with a real upload: it first publishes a
+JNI package built from the pinned commit, then builds and publishes the SDK
+against that package. Finally, a separate smoke test downloads the SDK from the
+snapshot repository and runs it through JNI. For that test to succeed, the
+SDK's Maven metadata must name an available JNI package containing the bindings
+it was compiled against. Publishing our own copy makes this test independent
+of whether zenoh-flat-jni's own publication workflow has run.
 
 That JNI package needs a name we can keep updating as the pin moves. On `main`,
 use `<JNI base version>-kotlin-SNAPSHOT`: for a pinned JNI commit whose
