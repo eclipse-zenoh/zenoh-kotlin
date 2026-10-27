@@ -566,11 +566,14 @@ repository.
 
 ## Known gaps
 
-- **Live releases do not test the selected JNI Maven package automatically.**
-  CI on `release/*` tests the source commit in `Cargo.lock`; the publication job
-  compiles against the selected Maven version, runs no tests, and does not wait
-  for that branch's CI. No gate checks that the Maven package's commit matches
-  the pin. The [manual checks](#before-the-first-run) cover this gap.
+- **A live release can publish the SDK without testing the JNI package users
+  will download.** CI builds JNI from the source commit in `Cargo.lock` and
+  tests the SDK against it. The release job instead downloads the selected JNI
+  Maven package and compiles the SDK against it, but runs no tests. That package
+  may contain different code from the source CI tested. Publication also starts
+  without waiting for the release branch's CI result. Before releasing,
+  [check that the commits match and run tests against the Maven package](#before-the-first-run);
+  neither check is automated.
 - **The consumer smoke test covers snapshot uploads, including rehearsals.**
   A rehearsal that uploads a candidate exercises its SDK package and transitive
   JNI dependency. The live-release staging upload has no equivalent consumer
